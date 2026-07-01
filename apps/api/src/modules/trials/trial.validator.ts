@@ -1,0 +1,117 @@
+import { z } from 'zod';
+import { paginationMetaSchema } from '../../validators/api-responses.validator.js';
+
+const trialRequestStatusEnum = z.enum([
+  'REQUESTED',
+  'APPROVED',
+  'REJECTED',
+  'IN_PROGRESS',
+  'COMPLETED',
+  'FAILED',
+  'CANCELLED',
+]);
+
+export const createTrialBodySchema = z.object({
+  candidateId: z.coerce.number().int().positive(),
+  clientId: z.coerce.number().int().positive(),
+  deploymentId: z.coerce.number().int().positive().optional(),
+  roleTitle: z.string().max(255).optional(),
+  startDate: z.string().date().optional(),
+  endDate: z.string().date().optional(),
+  durationDays: z.coerce.number().int().positive().optional(),
+  feedback: z.string().max(5000).optional(),
+});
+
+export const updateTrialBodySchema = z.object({
+  candidateId: z.coerce.number().int().positive().optional(),
+  clientId: z.coerce.number().int().positive().optional(),
+  deploymentId: z.coerce.number().int().positive().nullable().optional(),
+  status: trialRequestStatusEnum.optional(),
+  roleTitle: z.string().max(255).optional(),
+  startDate: z.string().date().nullable().optional(),
+  endDate: z.string().date().nullable().optional(),
+  durationDays: z.coerce.number().int().positive().nullable().optional(),
+  feedback: z.string().max(5000).optional(),
+  outcome: z.string().max(500).optional(),
+});
+
+export const rejectTrialBodySchema = z.object({
+  reason: z.string().max(500).optional(),
+});
+
+export const listTrialsQuerySchema = z.object({
+  page: z.coerce.number().int().positive().default(1),
+  limit: z.coerce.number().int().positive().max(100).default(20),
+  sort: z
+    .string()
+    .regex(
+      /^(-?(createdAt|updatedAt|status|startDate|endDate))(,-?(createdAt|updatedAt|status|startDate|endDate))*$/,
+      'Invalid sort format',
+    )
+    .optional(),
+  candidateId: z.coerce.number().int().positive().optional(),
+  clientId: z.coerce.number().int().positive().optional(),
+  status: trialRequestStatusEnum.optional(),
+});
+
+export const trialIdParamSchema = z.object({
+  id: z.coerce.number().int().positive(),
+});
+
+export type CreateTrialBody = z.infer<typeof createTrialBodySchema>;
+export type UpdateTrialBody = z.infer<typeof updateTrialBodySchema>;
+export type RejectTrialBody = z.infer<typeof rejectTrialBodySchema>;
+export type ListTrialsQuery = z.infer<typeof listTrialsQuerySchema>;
+
+const trialDtoSchema = z.object({
+  id: z.number(),
+  organizationId: z.number(),
+  candidateId: z.number(),
+  candidateName: z.string(),
+  clientId: z.number(),
+  clientName: z.string(),
+  deploymentId: z.number().nullable(),
+  requestedById: z.number(),
+  requestedByName: z.string(),
+  status: z.string(),
+  roleTitle: z.string().nullable(),
+  startDate: z.string().nullable(),
+  endDate: z.string().nullable(),
+  durationDays: z.number().nullable(),
+  feedback: z.string().nullable(),
+  outcome: z.string().nullable(),
+  approvedAt: z.string().nullable(),
+  rejectedAt: z.string().nullable(),
+  rejectReason: z.string().nullable(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
+
+export const trialResponseSchema = z.object({
+  data: trialDtoSchema,
+});
+
+export const trialListItemSchema = z.object({
+  id: z.number(),
+  candidateId: z.number(),
+  candidateName: z.string(),
+  clientId: z.number(),
+  clientName: z.string(),
+  status: z.string(),
+  roleTitle: z.string().nullable(),
+  startDate: z.string().nullable(),
+  endDate: z.string().nullable(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
+
+export const trialListResponseSchema = z.object({
+  data: z.array(trialListItemSchema),
+  meta: paginationMetaSchema,
+});
+
+export const trialMessageResponseSchema = z.object({
+  data: z.object({
+    message: z.string(),
+  }),
+});

@@ -1,0 +1,838 @@
+// BesTal — Production PostgreSQL Schema
+// Conventions: BIGINT PKs, snake_case columns, soft delete via deleted_at
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Enums — Auth & Platform
+// ---------------------------------------------------------------------------
+
+enum Role {
+  ADMIN
+  RECRUITER
+  SALES
+  CLIENT
+}
+
+enum Portal {
+  ADMIN
+  RECRUITER
+  SALES
+  CLIENT
+}
+
+// ---------------------------------------------------------------------------
+// Enums — Domain
+// ---------------------------------------------------------------------------
+
+enum ClientStatus {
+  PROSPECT
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+enum CandidateStatus {
+  NEW
+  ACTIVE
+  INACTIVE
+  PLACED
+  DO_NOT_CONTACT
+}
+
+enum CandidateVisibility {
+  DRAFT
+  PUBLISHED
+  HIDDEN
+}
+
+enum CandidateApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum DocumentKind {
+  GENERAL
+  RESUME
+  PROFILE_IMAGE
+  INTRO_VIDEO
+}
+
+enum CandidateSource {
+  DIRECT
+  REFERRAL
+  JOB_BOARD
+  LINKEDIN
+  AGENCY
+  INTERNAL
+  OTHER
+}
+
+enum ProficiencyLevel {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+  EXPERT
+}
+
+enum EvaluationStatus {
+  DRAFT
+  IN_PROGRESS
+  COMPLETED
+  ARCHIVED
+}
+
+enum EvaluationRecommendation {
+  STRONG_HIRE
+  HIRE
+  NEUTRAL
+  NO_HIRE
+  STRONG_NO_HIRE
+}
+
+enum BackgroundCheckStatus {
+  NOT_STARTED
+  PENDING
+  IN_PROGRESS
+  CLEAR
+  CONSIDER
+  SUSPENDED
+  FAILED
+  CANCELLED
+}
+
+enum BackgroundCheckType {
+  CRIMINAL
+  EMPLOYMENT
+  EDUCATION
+  REFERENCE
+  IDENTITY
+  CREDIT
+  COMPREHENSIVE
+}
+
+enum ShortlistStatus {
+  DRAFT
+  ACTIVE
+  CLOSED
+  ARCHIVED
+}
+
+enum InterviewRequestStatus {
+  REQUESTED
+  SCHEDULED
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+  RESCHEDULED
+}
+
+enum InterviewType {
+  PHONE
+  VIDEO
+  IN_PERSON
+  TECHNICAL
+  PANEL
+  FINAL
+  HR
+}
+
+enum TrialRequestStatus {
+  REQUESTED
+  APPROVED
+  REJECTED
+  IN_PROGRESS
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum DeploymentStatus {
+  PENDING
+  ACTIVE
+  COMPLETED
+  TERMINATED
+  ON_HOLD
+}
+
+enum PlacementType {
+  CONTRACT
+  PERMANENT
+  TEMP_TO_PERM
+  FREELANCE
+}
+
+enum DocumentEntityType {
+  CANDIDATE
+  CLIENT
+  DEPLOYMENT
+  EVALUATION
+  BACKGROUND_CHECK
+  INTERVIEW_REQUEST
+  TRIAL_REQUEST
+  USER
+}
+
+enum DocumentStatus {
+  PENDING
+  UPLOADED
+  VERIFIED
+  REJECTED
+  ARCHIVED
+}
+
+enum NotificationType {
+  SYSTEM
+  INTERVIEW
+  SHORTLIST
+  TRIAL
+  DEPLOYMENT
+  DOCUMENT
+  BACKGROUND_CHECK
+  EVALUATION
+  GENERAL
+}
+
+enum NotificationChannel {
+  IN_APP
+  EMAIL
+  SMS
+}
+
+enum NotificationStatus {
+  PENDING
+  SENT
+  DELIVERED
+  READ
+  FAILED
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  RESTORE
+  LOGIN
+  LOGOUT
+  VIEW
+  EXPORT
+  APPROVE
+  REJECT
+  ASSIGN
+  UNASSIGN
+}
+
+// ---------------------------------------------------------------------------
+// Auth & Tenancy
+// ---------------------------------------------------------------------------
+
+model User {
+  id           BigInt    @id @default(autoincrement())
+  email        String    @unique @db.VarChar(255)
+  passwordHash String    @map("password_hash") @db.VarChar(255)
+  firstName    String    @map("first_name") @db.VarChar(100)
+  lastName     String    @map("last_name") @db.VarChar(100)
+  phone        String?   @db.VarChar(30)
+  isActive     Boolean   @default(true) @map("is_active")
+  lastLoginAt  DateTime? @map("last_login_at")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  deletedAt    DateTime? @map("deleted_at")
+
+  refreshTokens            RefreshToken[]
+  passwordResetTokens      PasswordResetToken[]
+  memberships              Membership[]
+  managedClients           Client[]            @relation("ClientAccountManager")
+  evaluationsGiven         Evaluation[]        @relation("EvaluationEvaluator")
+  backgroundChecksRequested BackgroundCheck[]  @relation("BackgroundCheckRequester")
+  shortlistsCreated        Shortlist[]         @relation("ShortlistCreator")
+  shortlistEntriesAdded    ShortlistCandidate[] @relation("ShortlistEntryAddedBy")
+  interviewRequestsCreated InterviewRequest[]  @relation("InterviewRequestCreator")
+  interviewRequestsAssigned InterviewRequest[] @relation("InterviewRequestAssignee")
+  trialRequestsCreated     TrialRequest[]      @relation("TrialRequestCreator")
+  deploymentsCreated       Deployment[]        @relation("DeploymentCreator")
+  documentsUploaded        Document[]          @relation("DocumentUploader")
+  candidatesApproved       Candidate[]         @relation("CandidateApprovedBy")
+  candidatesRejected       Candidate[]         @relation("CandidateRejectedBy")
+  notifications            Notification[]
+  auditLogs                AuditLog[]          @relation("AuditLogActor")
+
+  @@index([deletedAt])
+  @@index([isActive, deletedAt])
+  @@map("users")
+}
+
+model Organization {
+  id        BigInt    @id @default(autoincrement())
+  name      String    @db.VarChar(255)
+  slug      String    @unique @db.VarChar(100)
+  isActive  Boolean   @default(true) @map("is_active")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  memberships       Membership[]
+  clients           Client[]
+  candidates        Candidate[]
+  skillCommunities  SkillCommunity[]
+  evaluations       Evaluation[]
+  backgroundChecks  BackgroundCheck[]
+  shortlists        Shortlist[]
+  interviewRequests InterviewRequest[]
+  trialRequests     TrialRequest[]
+  deployments       Deployment[]
+  documents         Document[]
+  notifications     Notification[]
+  auditLogs         AuditLog[]
+
+  @@index([deletedAt])
+  @@index([isActive, deletedAt])
+  @@map("organizations")
+}
+
+model Membership {
+  id             BigInt   @id @default(autoincrement())
+  userId         BigInt   @map("user_id")
+  organizationId BigInt   @map("organization_id")
+  role           Role
+  isActive       Boolean  @default(true) @map("is_active")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, organizationId])
+  @@index([organizationId, role])
+  @@index([userId, isActive])
+  @@map("memberships")
+}
+
+model RefreshToken {
+  id        BigInt    @id @default(autoincrement())
+  userId    BigInt    @map("user_id")
+  tokenHash String    @unique @map("token_hash") @db.VarChar(128)
+  expiresAt DateTime  @map("expires_at")
+  revokedAt DateTime? @map("revoked_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([userId, revokedAt])
+  @@index([expiresAt])
+  @@map("refresh_tokens")
+}
+
+model PasswordResetToken {
+  id        BigInt    @id @default(autoincrement())
+  userId    BigInt    @map("user_id")
+  tokenHash String    @unique @map("token_hash") @db.VarChar(128)
+  expiresAt DateTime  @map("expires_at")
+  usedAt    DateTime? @map("used_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([userId, usedAt])
+  @@index([expiresAt])
+  @@map("password_reset_tokens")
+}
+
+// ---------------------------------------------------------------------------
+// Clients
+// ---------------------------------------------------------------------------
+
+model Client {
+  id               BigInt       @id @default(autoincrement())
+  organizationId   BigInt       @map("organization_id")
+  accountManagerId BigInt?      @map("account_manager_id")
+  name             String       @db.VarChar(255)
+  slug             String       @db.VarChar(100)
+  status           ClientStatus @default(PROSPECT)
+  industry         String?      @db.VarChar(100)
+  website          String?      @db.VarChar(255)
+  contactEmail     String?      @map("contact_email") @db.VarChar(255)
+  contactPhone     String?      @map("contact_phone") @db.VarChar(30)
+  addressLine1     String?      @map("address_line1") @db.VarChar(255)
+  addressLine2     String?      @map("address_line2") @db.VarChar(255)
+  city             String?      @db.VarChar(100)
+  state            String?      @db.VarChar(100)
+  postalCode       String?      @map("postal_code") @db.VarChar(20)
+  country          String?      @db.VarChar(2)
+  notes            String?      @db.Text
+  createdAt        DateTime     @default(now()) @map("created_at")
+  updatedAt        DateTime     @updatedAt @map("updated_at")
+  deletedAt        DateTime?    @map("deleted_at")
+
+  organization      Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  accountManager    User?              @relation("ClientAccountManager", fields: [accountManagerId], references: [id], onDelete: SetNull)
+  evaluations       Evaluation[]
+  shortlists        Shortlist[]
+  interviewRequests InterviewRequest[]
+  trialRequests     TrialRequest[]
+  deployments       Deployment[]
+
+  @@unique([organizationId, slug])
+  @@index([organizationId, status, deletedAt])
+  @@index([accountManagerId])
+  @@index([organizationId, name])
+  @@map("clients")
+}
+
+// ---------------------------------------------------------------------------
+// Skill Communities & Candidates
+// ---------------------------------------------------------------------------
+
+model SkillCommunity {
+  id             BigInt    @id @default(autoincrement())
+  organizationId BigInt    @map("organization_id")
+  name           String    @db.VarChar(150)
+  slug           String    @db.VarChar(100)
+  description    String?   @db.Text
+  isActive       Boolean   @default(true) @map("is_active")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+  deletedAt      DateTime? @map("deleted_at")
+
+  organization       Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  candidateSkills    CandidateSkill[]
+  primaryCandidates  Candidate[]      @relation("CandidatePrimaryCommunity")
+
+  @@unique([organizationId, slug])
+  @@index([organizationId, isActive, deletedAt])
+  @@index([organizationId, name])
+  @@map("skill_communities")
+}
+
+model Candidate {
+  id                      BigInt                  @id @default(autoincrement())
+  organizationId          BigInt                  @map("organization_id")
+  primarySkillCommunityId BigInt?                 @map("primary_skill_community_id")
+  resumeDocumentId        BigInt?                 @unique @map("resume_document_id")
+  profileImageDocumentId  BigInt?                 @unique @map("profile_image_document_id")
+  introVideoDocumentId    BigInt?                 @unique @map("intro_video_document_id")
+  firstName               String                  @map("first_name") @db.VarChar(100)
+  lastName                String                  @map("last_name") @db.VarChar(100)
+  email                   String                  @db.VarChar(255)
+  phone                   String?                 @db.VarChar(30)
+  status                  CandidateStatus         @default(NEW)
+  visibility              CandidateVisibility     @default(DRAFT)
+  approvalStatus          CandidateApprovalStatus @default(PENDING) @map("approval_status")
+  source                  CandidateSource         @default(DIRECT)
+  headline                String?                 @db.VarChar(255)
+  summary                 String?                 @db.Text
+  location                String?                 @db.VarChar(255)
+  yearsExperience         Int?                    @map("years_experience")
+  availableFrom           DateTime?               @map("available_from") @db.Date
+  expectedRate            Decimal?                @map("expected_rate") @db.Decimal(12, 2)
+  currency                String?                 @default("USD") @db.VarChar(3)
+  linkedinUrl             String?                 @map("linkedin_url") @db.VarChar(500)
+  publishedAt             DateTime?               @map("published_at")
+  hiddenAt                DateTime?               @map("hidden_at")
+  approvedAt              DateTime?               @map("approved_at")
+  approvedById            BigInt?                 @map("approved_by_id")
+  rejectedAt              DateTime?               @map("rejected_at")
+  rejectedById            BigInt?                 @map("rejected_by_id")
+  rejectionReason         String?                 @map("rejection_reason") @db.VarChar(500)
+  createdAt               DateTime                @default(now()) @map("created_at")
+  updatedAt               DateTime                @updatedAt @map("updated_at")
+  deletedAt               DateTime?               @map("deleted_at")
+
+  organization          Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  primarySkillCommunity SkillCommunity?    @relation("CandidatePrimaryCommunity", fields: [primarySkillCommunityId], references: [id], onDelete: SetNull)
+  resumeDocument        Document?          @relation("CandidateResume", fields: [resumeDocumentId], references: [id], onDelete: SetNull)
+  profileImageDocument  Document?          @relation("CandidateProfileImage", fields: [profileImageDocumentId], references: [id], onDelete: SetNull)
+  introVideoDocument    Document?          @relation("CandidateIntroVideo", fields: [introVideoDocumentId], references: [id], onDelete: SetNull)
+  approvedBy            User?              @relation("CandidateApprovedBy", fields: [approvedById], references: [id], onDelete: SetNull)
+  rejectedBy            User?              @relation("CandidateRejectedBy", fields: [rejectedById], references: [id], onDelete: SetNull)
+  skills                CandidateSkill[]
+  evaluations           Evaluation[]
+  backgroundChecks      BackgroundCheck[]
+  shortlistEntries      ShortlistCandidate[]
+  interviewRequests     InterviewRequest[]
+  trialRequests         TrialRequest[]
+  deployments           Deployment[]
+
+  @@unique([organizationId, email])
+  @@index([organizationId, status, deletedAt])
+  @@index([organizationId, visibility, approvalStatus, deletedAt])
+  @@index([organizationId, lastName, firstName])
+  @@index([primarySkillCommunityId])
+  @@index([organizationId, source])
+  @@map("candidates")
+}
+
+model CandidateSkill {
+  id               BigInt           @id @default(autoincrement())
+  candidateId      BigInt           @map("candidate_id")
+  skillCommunityId BigInt           @map("skill_community_id")
+  proficiencyLevel ProficiencyLevel @default(INTERMEDIATE) @map("proficiency_level")
+  yearsExperience  Int?             @map("years_experience")
+  isPrimary        Boolean          @default(false) @map("is_primary")
+  notes            String?          @db.Text
+  createdAt        DateTime         @default(now()) @map("created_at")
+  updatedAt        DateTime         @updatedAt @map("updated_at")
+  deletedAt        DateTime?        @map("deleted_at")
+
+  candidate      Candidate      @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  skillCommunity SkillCommunity @relation(fields: [skillCommunityId], references: [id], onDelete: Cascade)
+
+  @@unique([candidateId, skillCommunityId])
+  @@index([skillCommunityId, deletedAt])
+  @@index([candidateId, isPrimary])
+  @@map("candidate_skills")
+}
+
+// ---------------------------------------------------------------------------
+// Evaluations & Background Checks
+// ---------------------------------------------------------------------------
+
+model Evaluation {
+  id             BigInt                    @id @default(autoincrement())
+  organizationId BigInt                    @map("organization_id")
+  candidateId    BigInt                    @map("candidate_id")
+  clientId       BigInt?                   @map("client_id")
+  evaluatorId    BigInt                    @map("evaluator_id")
+  status         EvaluationStatus          @default(DRAFT)
+  recommendation EvaluationRecommendation?
+  overallScore   Decimal?                  @map("overall_score") @db.Decimal(5, 2)
+  technicalScore Decimal?                  @map("technical_score") @db.Decimal(5, 2)
+  softSkillScore Decimal?                  @map("soft_skill_score") @db.Decimal(5, 2)
+  summary        String?                   @db.Text
+  strengths      String?                   @db.Text
+  weaknesses     String?                   @db.Text
+  evaluatedAt    DateTime?                 @map("evaluated_at")
+  createdAt      DateTime                  @default(now()) @map("created_at")
+  updatedAt      DateTime                  @updatedAt @map("updated_at")
+  deletedAt      DateTime?                 @map("deleted_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  candidate    Candidate    @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  client       Client?      @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  evaluator    User         @relation("EvaluationEvaluator", fields: [evaluatorId], references: [id], onDelete: Restrict)
+
+  @@index([organizationId, status, deletedAt])
+  @@index([candidateId, deletedAt])
+  @@index([clientId, deletedAt])
+  @@index([evaluatorId])
+  @@index([organizationId, evaluatedAt])
+  @@map("evaluations")
+}
+
+model BackgroundCheck {
+  id                  BigInt                @id @default(autoincrement())
+  organizationId      BigInt                @map("organization_id")
+  candidateId         BigInt                @map("candidate_id")
+  requestedById       BigInt                @map("requested_by_id")
+  type                BackgroundCheckType
+  status              BackgroundCheckStatus @default(NOT_STARTED)
+  provider            String?               @db.VarChar(100)
+  externalReferenceId String?               @map("external_reference_id") @db.VarChar(255)
+  resultSummary       String?               @map("result_summary") @db.Text
+  initiatedAt         DateTime?             @map("initiated_at")
+  completedAt         DateTime?             @map("completed_at")
+  expiresAt           DateTime?             @map("expires_at")
+  createdAt           DateTime              @default(now()) @map("created_at")
+  updatedAt           DateTime              @updatedAt @map("updated_at")
+  deletedAt           DateTime?             @map("deleted_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  candidate    Candidate    @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  requestedBy  User         @relation("BackgroundCheckRequester", fields: [requestedById], references: [id], onDelete: Restrict)
+
+  @@index([organizationId, status, deletedAt])
+  @@index([candidateId, type, deletedAt])
+  @@index([requestedById])
+  @@index([externalReferenceId])
+  @@index([organizationId, completedAt])
+  @@map("background_checks")
+}
+
+// ---------------------------------------------------------------------------
+// Shortlists
+// ---------------------------------------------------------------------------
+
+model Shortlist {
+  id             BigInt          @id @default(autoincrement())
+  organizationId BigInt          @map("organization_id")
+  clientId       BigInt          @map("client_id")
+  createdById    BigInt          @map("created_by_id")
+  title          String          @db.VarChar(255)
+  description    String?         @db.Text
+  status         ShortlistStatus @default(DRAFT)
+  roleTitle      String?         @map("role_title") @db.VarChar(255)
+  dueDate        DateTime?       @map("due_date") @db.Date
+  closedAt       DateTime?       @map("closed_at")
+  createdAt      DateTime        @default(now()) @map("created_at")
+  updatedAt      DateTime        @updatedAt @map("updated_at")
+  deletedAt      DateTime?       @map("deleted_at")
+
+  organization      Organization         @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  client            Client               @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  createdBy         User                 @relation("ShortlistCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  candidates        ShortlistCandidate[]
+  interviewRequests InterviewRequest[]
+
+  @@index([organizationId, status, deletedAt])
+  @@index([clientId, deletedAt])
+  @@index([createdById])
+  @@index([organizationId, dueDate])
+  @@map("shortlists")
+}
+
+model ShortlistCandidate {
+  id           BigInt    @id @default(autoincrement())
+  shortlistId  BigInt    @map("shortlist_id")
+  candidateId  BigInt    @map("candidate_id")
+  addedById    BigInt    @map("added_by_id")
+  rank         Int       @default(0)
+  notes        String?   @db.Text
+  clientNotes  String?   @map("client_notes") @db.Text
+  isApproved   Boolean?  @map("is_approved")
+  approvedAt   DateTime? @map("approved_at")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  deletedAt    DateTime? @map("deleted_at")
+
+  shortlist Shortlist @relation(fields: [shortlistId], references: [id], onDelete: Cascade)
+  candidate Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  addedBy   User      @relation("ShortlistEntryAddedBy", fields: [addedById], references: [id], onDelete: Restrict)
+
+  @@unique([shortlistId, candidateId])
+  @@index([candidateId, deletedAt])
+  @@index([shortlistId, rank])
+  @@map("shortlist_candidates")
+}
+
+// ---------------------------------------------------------------------------
+// Interviews & Trials
+// ---------------------------------------------------------------------------
+
+model InterviewRequest {
+  id             BigInt                 @id @default(autoincrement())
+  organizationId BigInt                 @map("organization_id")
+  candidateId    BigInt                 @map("candidate_id")
+  clientId       BigInt                 @map("client_id")
+  shortlistId    BigInt?                @map("shortlist_id")
+  requestedById  BigInt                 @map("requested_by_id")
+  assignedToId   BigInt?                @map("assigned_to_id")
+  type           InterviewType
+  status         InterviewRequestStatus @default(REQUESTED)
+  scheduledAt    DateTime?              @map("scheduled_at")
+  durationMinutes Int?                  @map("duration_minutes")
+  timezone       String?                @db.VarChar(50)
+  location       String?                @db.VarChar(500)
+  meetingLink    String?                @map("meeting_link") @db.VarChar(500)
+  notes          String?                @db.Text
+  feedback       String?                @db.Text
+  completedAt    DateTime?              @map("completed_at")
+  cancelledAt    DateTime?              @map("cancelled_at")
+  cancelReason   String?                @map("cancel_reason") @db.VarChar(500)
+  createdAt      DateTime               @default(now()) @map("created_at")
+  updatedAt      DateTime               @updatedAt @map("updated_at")
+  deletedAt      DateTime?              @map("deleted_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  candidate    Candidate    @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  client       Client       @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  shortlist    Shortlist?   @relation(fields: [shortlistId], references: [id], onDelete: SetNull)
+  requestedBy  User         @relation("InterviewRequestCreator", fields: [requestedById], references: [id], onDelete: Restrict)
+  assignedTo   User?        @relation("InterviewRequestAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, status, deletedAt])
+  @@index([candidateId, scheduledAt])
+  @@index([clientId, status, deletedAt])
+  @@index([shortlistId])
+  @@index([requestedById])
+  @@index([assignedToId])
+  @@index([organizationId, scheduledAt])
+  @@map("interview_requests")
+}
+
+model TrialRequest {
+  id             BigInt             @id @default(autoincrement())
+  organizationId BigInt             @map("organization_id")
+  candidateId    BigInt             @map("candidate_id")
+  clientId       BigInt             @map("client_id")
+  deploymentId   BigInt?            @map("deployment_id")
+  requestedById  BigInt             @map("requested_by_id")
+  status         TrialRequestStatus @default(REQUESTED)
+  roleTitle      String?            @map("role_title") @db.VarChar(255)
+  startDate      DateTime?          @map("start_date") @db.Date
+  endDate        DateTime?          @map("end_date") @db.Date
+  durationDays   Int?               @map("duration_days")
+  feedback       String?            @db.Text
+  outcome        String?            @db.VarChar(500)
+  approvedAt     DateTime?          @map("approved_at")
+  rejectedAt     DateTime?          @map("rejected_at")
+  rejectReason   String?            @map("reject_reason") @db.VarChar(500)
+  createdAt      DateTime           @default(now()) @map("created_at")
+  updatedAt      DateTime           @updatedAt @map("updated_at")
+  deletedAt      DateTime?          @map("deleted_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  candidate    Candidate    @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  client       Client       @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  deployment   Deployment?  @relation(fields: [deploymentId], references: [id], onDelete: SetNull)
+  requestedBy  User         @relation("TrialRequestCreator", fields: [requestedById], references: [id], onDelete: Restrict)
+
+  @@index([organizationId, status, deletedAt])
+  @@index([candidateId, deletedAt])
+  @@index([clientId, status, deletedAt])
+  @@index([deploymentId])
+  @@index([requestedById])
+  @@index([organizationId, startDate])
+  @@map("trial_requests")
+}
+
+// ---------------------------------------------------------------------------
+// Deployments
+// ---------------------------------------------------------------------------
+
+model Deployment {
+  id             BigInt           @id @default(autoincrement())
+  organizationId BigInt           @map("organization_id")
+  candidateId    BigInt           @map("candidate_id")
+  clientId       BigInt           @map("client_id")
+  createdById    BigInt           @map("created_by_id")
+  status         DeploymentStatus @default(PENDING)
+  placementType  PlacementType    @default(CONTRACT) @map("placement_type")
+  roleTitle      String           @map("role_title") @db.VarChar(255)
+  startDate      DateTime?        @map("start_date") @db.Date
+  endDate        DateTime?        @map("end_date") @db.Date
+  billingRate    Decimal?         @map("billing_rate") @db.Decimal(12, 2)
+  currency       String?          @default("USD") @db.VarChar(3)
+  workLocation   String?          @map("work_location") @db.VarChar(255)
+  notes          String?          @db.Text
+  terminatedAt   DateTime?        @map("terminated_at")
+  terminateReason String?         @map("terminate_reason") @db.VarChar(500)
+  createdAt      DateTime         @default(now()) @map("created_at")
+  updatedAt      DateTime         @updatedAt @map("updated_at")
+  deletedAt      DateTime?        @map("deleted_at")
+
+  organization  Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  candidate     Candidate      @relation(fields: [candidateId], references: [id], onDelete: Restrict)
+  client        Client         @relation(fields: [clientId], references: [id], onDelete: Restrict)
+  createdBy     User           @relation("DeploymentCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  trialRequests TrialRequest[]
+
+  @@index([organizationId, status, deletedAt])
+  @@index([candidateId, deletedAt])
+  @@index([clientId, status, deletedAt])
+  @@index([createdById])
+  @@index([organizationId, startDate])
+  @@index([organizationId, endDate])
+  @@map("deployments")
+}
+
+// ---------------------------------------------------------------------------
+// Documents
+// ---------------------------------------------------------------------------
+
+model Document {
+  id             BigInt             @id @default(autoincrement())
+  organizationId BigInt             @map("organization_id")
+  uploadedById   BigInt             @map("uploaded_by_id")
+  entityType     DocumentEntityType @map("entity_type")
+  entityId       BigInt             @map("entity_id")
+  kind           DocumentKind       @default(GENERAL)
+  fileName       String             @map("file_name") @db.VarChar(255)
+  originalName   String             @map("original_name") @db.VarChar(255)
+  s3Key          String             @map("s3_key") @db.VarChar(500)
+  s3Bucket       String             @map("s3_bucket") @db.VarChar(100)
+  mimeType       String             @map("mime_type") @db.VarChar(127)
+  fileSize       BigInt             @map("file_size")
+  status         DocumentStatus     @default(PENDING)
+  description    String?            @db.VarChar(500)
+  verifiedAt     DateTime?          @map("verified_at")
+  rejectedAt     DateTime?          @map("rejected_at")
+  rejectReason   String?            @map("reject_reason") @db.VarChar(500)
+  createdAt      DateTime           @default(now()) @map("created_at")
+  updatedAt      DateTime           @updatedAt @map("updated_at")
+  deletedAt      DateTime?          @map("deleted_at")
+
+  organization         Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  uploadedBy           User         @relation("DocumentUploader", fields: [uploadedById], references: [id], onDelete: Restrict)
+  candidateResume      Candidate?   @relation("CandidateResume")
+  candidateProfileImage Candidate?  @relation("CandidateProfileImage")
+  candidateIntroVideo  Candidate?   @relation("CandidateIntroVideo")
+
+  @@index([organizationId, entityType, entityId, deletedAt])
+  @@index([organizationId, entityType, entityId, kind, deletedAt])
+  @@index([uploadedById])
+  @@index([organizationId, status, deletedAt])
+  @@index([s3Key])
+  @@map("documents")
+}
+
+// ---------------------------------------------------------------------------
+// Notifications
+// ---------------------------------------------------------------------------
+
+model Notification {
+  id             BigInt              @id @default(autoincrement())
+  organizationId BigInt?             @map("organization_id")
+  userId         BigInt              @map("user_id")
+  type           NotificationType
+  channel        NotificationChannel @default(IN_APP)
+  status         NotificationStatus  @default(PENDING)
+  title          String              @db.VarChar(255)
+  body           String              @db.Text
+  actionUrl      String?             @map("action_url") @db.VarChar(500)
+  metadata       Json?               @db.JsonB
+  sentAt         DateTime?           @map("sent_at")
+  readAt         DateTime?           @map("read_at")
+  failedAt       DateTime?           @map("failed_at")
+  failureReason  String?             @map("failure_reason") @db.VarChar(500)
+  createdAt      DateTime            @default(now()) @map("created_at")
+  updatedAt      DateTime            @updatedAt @map("updated_at")
+  deletedAt      DateTime?           @map("deleted_at")
+
+  organization Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, status, deletedAt])
+  @@index([userId, readAt])
+  @@index([organizationId, type, createdAt])
+  @@index([userId, channel, status])
+  @@map("notifications")
+}
+
+// ---------------------------------------------------------------------------
+// Audit Logs (append-only — no soft delete)
+// ---------------------------------------------------------------------------
+
+model AuditLog {
+  id             BigInt      @id @default(autoincrement())
+  organizationId BigInt?     @map("organization_id")
+  actorId        BigInt?     @map("actor_id")
+  action         AuditAction
+  resourceType   String      @map("resource_type") @db.VarChar(100)
+  resourceId     BigInt?     @map("resource_id")
+  description    String?     @db.VarChar(500)
+  metadata       Json?       @db.JsonB
+  ipAddress      String?     @map("ip_address") @db.VarChar(45)
+  userAgent      String?     @map("user_agent") @db.VarChar(500)
+  createdAt      DateTime    @default(now()) @map("created_at")
+
+  organization Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  actor        User?         @relation("AuditLogActor", fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, createdAt])
+  @@index([actorId, createdAt])
+  @@index([resourceType, resourceId])
+  @@index([action, createdAt])
+  @@index([createdAt])
+  @@map("audit_logs")
+}

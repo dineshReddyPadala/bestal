@@ -1,0 +1,161 @@
+import type { AppConfig } from '../../config/index.js';
+import type {
+  CandidateDocumentDto,
+  CandidateDto,
+  CandidateListItemDto,
+} from './candidate.types.js';
+import type { CandidateWithRelations } from './candidate.repository.js';
+import type { Document } from '@prisma/client';
+import { bigintToNumber } from '../../utils/index.js';
+
+type UrlResolver = (
+  key: string,
+  bucket: string,
+  mimeType?: string,
+) => Promise<string | null> | string | null;
+
+export async function mapDocumentToDtoAsync(
+  doc: Document | null | undefined,
+  resolveUrl: UrlResolver,
+): Promise<CandidateDocumentDto | null> {
+  if (!doc || doc.deletedAt) {
+    return null;
+  }
+
+  const url = await resolveUrl(doc.s3Key, doc.s3Bucket, doc.mimeType);
+
+  return {
+    id: bigintToNumber(doc.id),
+    kind: doc.kind,
+    fileName: doc.fileName,
+    originalName: doc.originalName,
+    mimeType: doc.mimeType,
+    fileSize: bigintToNumber(doc.fileSize),
+    status: doc.status,
+    url,
+    createdAt: doc.createdAt.toISOString(),
+  };
+}
+
+export async function mapCandidateToDtoAsync(
+  candidate: CandidateWithRelations,
+  resolveUrl: UrlResolver,
+): Promise<CandidateDto> {
+  const [resume, profileImage, introVideo] = await Promise.all([
+    mapDocumentToDtoAsync(candidate.resumeDocument, resolveUrl),
+    mapDocumentToDtoAsync(candidate.profileImageDocument, resolveUrl),
+    mapDocumentToDtoAsync(candidate.introVideoDocument, resolveUrl),
+  ]);
+
+  return {
+    id: bigintToNumber(candidate.id),
+    organizationId: bigintToNumber(candidate.organizationId),
+    firstName: candidate.firstName,
+    lastName: candidate.lastName,
+    email: candidate.email,
+    phone: candidate.phone,
+    status: candidate.status,
+    visibility: candidate.visibility,
+    approvalStatus: candidate.approvalStatus,
+    source: candidate.source,
+    headline: candidate.headline,
+    summary: candidate.summary,
+    location: candidate.location,
+    yearsExperience: candidate.yearsExperience,
+    availableFrom: candidate.availableFrom?.toISOString().slice(0, 10) ?? null,
+    expectedRate: candidate.expectedRate ? Number(candidate.expectedRate) : null,
+    currency: candidate.currency,
+    linkedinUrl: candidate.linkedinUrl,
+    primarySkillCommunityId: candidate.primarySkillCommunityId
+      ? bigintToNumber(candidate.primarySkillCommunityId)
+      : null,
+    primarySkillCommunityName: candidate.primarySkillCommunity?.name ?? null,
+    publishedAt: candidate.publishedAt?.toISOString() ?? null,
+    hiddenAt: candidate.hiddenAt?.toISOString() ?? null,
+    approvedAt: candidate.approvedAt?.toISOString() ?? null,
+    approvedById: candidate.approvedById
+      ? bigintToNumber(candidate.approvedById)
+      : null,
+    rejectedAt: candidate.rejectedAt?.toISOString() ?? null,
+    rejectedById: candidate.rejectedById
+      ? bigintToNumber(candidate.rejectedById)
+      : null,
+    rejectionReason: candidate.rejectionReason,
+    resume,
+    profileImage,
+    introVideo,
+    skills: (candidate.skills ?? []).map((skill) => ({
+      id: bigintToNumber(skill.id),
+      skillCommunityId: bigintToNumber(skill.skillCommunityId),
+      skillCommunityName: skill.skillCommunity.name,
+      proficiencyLevel: skill.proficiencyLevel,
+      yearsExperience: skill.yearsExperience,
+      isPrimary: skill.isPrimary,
+    })),
+    createdAt: candidate.createdAt.toISOString(),
+    updatedAt: candidate.updatedAt.toISOString(),
+  };
+}
+
+export function mapCandidateToListItem(
+  candidate: CandidateWithRelations,
+): CandidateListItemDto {
+  return {
+    id: bigintToNumber(candidate.id),
+    firstName: candidate.firstName,
+    lastName: candidate.lastName,
+    email: candidate.email,
+    status: candidate.status,
+    visibility: candidate.visibility,
+    approvalStatus: candidate.approvalStatus,
+    headline: candidate.headline,
+    location: candidate.location,
+    yearsExperience: candidate.yearsExperience,
+    primarySkillCommunityName: candidate.primarySkillCommunity?.name ?? null,
+    hasResume: Boolean(candidate.resumeDocumentId),
+    hasProfileImage: Boolean(candidate.profileImageDocumentId),
+    hasIntroVideo: Boolean(candidate.introVideoDocumentId),
+    createdAt: candidate.createdAt.toISOString(),
+    updatedAt: candidate.updatedAt.toISOString(),
+  };
+}
+
+export function parseSortParam(
+  sort: string | undefined,
+): import('@prisma/client').Prisma.CandidateOrderByWithRelationInput[] {
+  if (!sort) {
+    return [{ createdAt: 'desc' }];
+  }
+
+  return sort.split(',').map((field) => {
+    const desc = field.startsWith('-');
+    const key = desc ? field.slice(1) : field;
+    const direction = desc ? 'desc' : 'asc';
+
+    switch (key) {
+      case 'firstName':
+      case 'lastName':
+      case 'email':
+      case 'status':
+      case 'visibility':
+      case 'approvalStatus':
+      case 'yearsExperience':
+      case 'createdAt':
+      case 'updatedAt':
+        return { [key]: direction };
+      default:
+        return { createdAt: 'desc' as const };
+    }
+  });
+}
+
+export function buildPublicUploadUrl(
+  config: AppConfig,
+  key: string,
+  bucket: string,
+): string | null {
+  if (bucket === 'local') {
+    return `${config.appUrl}/uploads/${key.replace(/\\/g, '/')}`;
+  }
+  return null;
+}

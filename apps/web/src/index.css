@@ -1,0 +1,7 @@
+@import '@bestal/ui/globals.css';
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
