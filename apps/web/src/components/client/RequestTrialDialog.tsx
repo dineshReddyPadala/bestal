@@ -23,8 +23,8 @@ export function RequestTrialDialog({ open, onClose, candidateName }: RequestTria
     <Dialog
       open={open}
       onClose={onClose}
-      title="Request Trial"
-      description={`Start a trial engagement with ${candidateName}`}
+      title="Request 20-Hour Pilot"
+      description={`Start a paid pilot engagement with ${candidateName}`}
       footer={
         !submitted && (
           <>
@@ -40,7 +40,7 @@ export function RequestTrialDialog({ open, onClose, candidateName }: RequestTria
     >
       {submitted ? (
         <p className="py-4 text-center text-sm text-emerald-600">
-          Trial request submitted. Your account manager will coordinate start dates.
+          20-hour pilot request submitted. Your account manager will coordinate start dates.
         </p>
       ) : (
         <form id="trial-request-form" onSubmit={handleSubmit} className="space-y-4">
@@ -68,8 +68,8 @@ export function RequestTrialDialog({ open, onClose, candidateName }: RequestTria
             <label htmlFor="hours" className="text-sm font-medium">
               Hours per week
             </label>
-            <Select id="hours" defaultValue="40">
-              <option value="20">20 hours</option>
+            <Select id="hours" defaultValue="20">
+              <option value="20">20 hours (pilot)</option>
               <option value="32">32 hours</option>
               <option value="40">40 hours</option>
             </Select>

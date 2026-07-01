@@ -22,7 +22,7 @@ export function ClientsPage() {
         header: 'Client',
         cell: ({ row }) => (
           <Link
-            to={`/admin/clients/${row.original.id}`}
+            to={`/sales/clients/${row.original.id}`}
             className="flex items-center gap-3 hover:text-brand"
           >
             <Avatar name={row.original.name} src={row.original.logoUrl} size="sm" />
@@ -34,13 +34,6 @@ export function ClientsPage() {
         ),
       },
       { accessorKey: 'industry', header: 'Industry' },
-      {
-        accessorKey: 'location',
-        header: 'Location',
-        cell: ({ getValue }) => (
-          <span className="text-muted-foreground">{getValue() as string}</span>
-        ),
-      },
       { accessorKey: 'accountManager', header: 'Account Manager' },
       {
         accessorKey: 'activeDeployments',
@@ -51,8 +44,7 @@ export function ClientsPage() {
         id: 'spend',
         header: 'Total Spend',
         accessorFn: (row) => row.totalSpend,
-        cell: ({ row }) =>
-          formatCurrency(row.original.totalSpend, row.original.currency),
+        cell: ({ row }) => formatCurrency(row.original.totalSpend, row.original.currency),
       },
       {
         accessorKey: 'status',
@@ -66,8 +58,8 @@ export function ClientsPage() {
   return (
     <div>
       <PageHeader
-        title="Clients"
-        description="Enterprise accounts, spend, and deployment activity"
+        title="Client Accounts"
+        description="Manage enterprise accounts, spend, and engagement history"
         actions={
           <Button>
             <Plus className="mr-2 h-4 w-4" />
@@ -91,7 +83,6 @@ export function ClientsPage() {
               <option value="ACTIVE">Active</option>
               <option value="PROSPECT">Prospect</option>
               <option value="INACTIVE">Inactive</option>
-              <option value="SUSPENDED">Suspended</option>
             </Select>
           }
         />

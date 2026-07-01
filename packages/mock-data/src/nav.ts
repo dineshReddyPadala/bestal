@@ -1,11 +1,20 @@
 import type { NavItem } from './types.js';
 
+export const salesNav = [
+  { id: 'dashboard', label: 'Dashboard', href: '/sales', icon: 'layout-dashboard' },
+  { id: 'clients', label: 'Client Accounts', href: '/sales/clients', icon: 'briefcase' },
+  { id: 'trials', label: 'Trial Requests', href: '/sales/trials', icon: 'flask-conical', badge: 3 },
+  { id: 'deployments', label: 'Deployments', href: '/sales/deployments', icon: 'rocket' },
+  { id: 'margin', label: 'Margin Report', href: '/sales/margin', icon: 'trending-up' },
+] as const satisfies readonly NavItem[];
+
 export const adminNav = [
   { id: 'dashboard', label: 'Dashboard', href: '/admin', icon: 'layout-dashboard' },
   { id: 'candidates', label: 'Candidates', href: '/admin/candidates', icon: 'user-check' },
   { id: 'clients', label: 'Clients', href: '/admin/clients', icon: 'briefcase' },
   { id: 'deployments', label: 'Deployments', href: '/admin/deployments', icon: 'rocket' },
   { id: 'trials', label: 'Trials', href: '/admin/trials', icon: 'flask-conical', badge: 4 },
+  { id: 'margin', label: 'Margin Report', href: '/admin/margin', icon: 'trending-up' },
   { id: 'evaluations', label: 'Evaluations', href: '/admin/evaluations', icon: 'clipboard-check', badge: 2 },
   { id: 'background-checks', label: 'Background Checks', href: '/admin/background-checks', icon: 'shield-check', badge: 3 },
   { id: 'settings', label: 'Settings', href: '/admin/settings', icon: 'settings' },
@@ -41,6 +50,7 @@ export const publicNav = [
   { id: 'login', label: 'Sign In', href: '/login' },
 ] as const satisfies readonly NavItem[];
 
+export type SalesNav = typeof salesNav;
 export type AdminNav = typeof adminNav;
 export type RecruiterNav = typeof recruiterNav;
 export type ClientNav = typeof clientNav;

@@ -22,6 +22,11 @@ export type {
   AdminKpi,
   ChartDataPoint,
   MockTrial,
+  MockDocument,
+  MockScreeningResult,
+  MockCandidatePricing,
+  MockAvailability,
+  MockSalesDeal,
 } from './types.js';
 
 export {
@@ -52,13 +57,33 @@ export { auditLogs, type AuditLogs } from './auditLogs.js';
 export { notifications, type Notifications } from './notifications.js';
 export { approvals, type Approvals } from './approvals.js';
 export { skillCommunities, type SkillCommunities } from './skillCommunities.js';
+export { documents, getDocumentsForCandidate, type Documents } from './documents.js';
+export {
+  screeningResults,
+  getScreeningForCandidate,
+  type ScreeningResults,
+} from './screening.js';
+export {
+  candidatePricing,
+  getPricingForCandidate,
+  computeMarginPercent,
+  type CandidatePricing,
+} from './pricing.js';
+export {
+  candidateAvailability,
+  getAvailabilityForCandidate,
+  type CandidateAvailability,
+} from './availability.js';
+export { salesDeals, type SalesDeals } from './salesPipeline.js';
 export {
   adminNav,
   recruiterNav,
   clientNav,
+  salesNav,
   publicNav,
   type AdminNav,
   type RecruiterNav,
   type ClientNav,
+  type SalesNav,
   type PublicNav,
 } from './nav.js';

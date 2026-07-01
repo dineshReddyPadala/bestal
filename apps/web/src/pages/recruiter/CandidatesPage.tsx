@@ -1,7 +1,8 @@
 import { candidates } from '@bestal/mock-data';
-import { EmptyState, PageHeader, SearchInput, TalentCard } from '@bestal/ui';
+import { EmptyState, PageHeader, SearchInput, TalentCard, Button } from '@bestal/ui';
+import { Plus } from 'lucide-react';
 import { useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 export function CandidatesPage() {
   const navigate = useNavigate();
@@ -25,13 +26,21 @@ export function CandidatesPage() {
         title="Candidates"
         description="Search and review vetted talent in your pipeline"
         actions={
-          <SearchInput
-            placeholder="Search by name, skill, or location..."
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            onClear={() => setQuery('')}
-            className="w-72"
-          />
+          <div className="flex items-center gap-3">
+            <SearchInput
+              placeholder="Search by name, skill, or location..."
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onClear={() => setQuery('')}
+              className="w-72"
+            />
+            <Link to="/recruiter/candidates/new">
+              <Button>
+                <Plus className="mr-2 h-4 w-4" />
+                Add candidate
+              </Button>
+            </Link>
+          </div>
         }
       />
 

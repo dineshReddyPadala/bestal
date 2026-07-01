@@ -170,8 +170,74 @@ export type MockDeployment = {
   readonly startDate: string;
   readonly endDate: string | null;
   readonly rate: number;
+  readonly payRate: number;
+  readonly billRate: number;
   readonly currency: string;
   readonly hoursPerWeek: number;
+};
+
+export type MockDocument = {
+  readonly id: number;
+  readonly entityType: 'CANDIDATE' | 'EVALUATION' | 'BACKGROUND_CHECK';
+  readonly entityId: number;
+  readonly candidateId: number;
+  readonly candidateName: string;
+  readonly kind: 'RESUME' | 'EVALUATION_FORM' | 'BGV_FORM' | 'OTHER';
+  readonly fileName: string;
+  readonly fileSizeKb: number;
+  readonly mimeType: string;
+  readonly uploadedBy: string;
+  readonly uploadedAt: string;
+  readonly status: 'UPLOADED' | 'PROCESSING' | 'VERIFIED' | 'REJECTED';
+};
+
+export type MockScreeningResult = {
+  readonly id: number;
+  readonly candidateId: number;
+  readonly candidateName: string;
+  readonly runAt: string;
+  readonly modelVersion: string;
+  readonly overallScore: number;
+  readonly skillsMatch: number;
+  readonly experienceMatch: number;
+  readonly communicationScore: number;
+  readonly riskLevel: 'LOW' | 'MEDIUM' | 'HIGH';
+  readonly recommendation: 'STRONG_PASS' | 'PASS' | 'REVIEW' | 'FAIL';
+  readonly flags: readonly string[];
+  readonly summary: string;
+};
+
+export type MockCandidatePricing = {
+  readonly candidateId: number;
+  readonly payRate: number;
+  readonly billRate: number;
+  readonly currency: string;
+  readonly effectiveFrom: string;
+  readonly notes: string;
+};
+
+export type MockAvailability = {
+  readonly candidateId: number;
+  readonly timezone: string;
+  readonly noticePeriodDays: number;
+  readonly availableFrom: string;
+  readonly hoursPerWeek: number;
+  readonly preferredEngagement: 'FULL_TIME' | 'PART_TIME' | 'CONTRACT' | 'FREELANCE';
+  readonly blackoutDates: readonly string[];
+  readonly notes: string;
+};
+
+export type MockSalesDeal = {
+  readonly id: number;
+  readonly clientId: number;
+  readonly clientName: string;
+  readonly title: string;
+  readonly stage: 'PROSPECT' | 'QUALIFIED' | 'PROPOSAL' | 'NEGOTIATION' | 'WON' | 'LOST';
+  readonly value: number;
+  readonly currency: string;
+  readonly owner: string;
+  readonly expectedCloseDate: string;
+  readonly lastActivity: string;
 };
 
 export type MockUser = {
@@ -275,8 +341,11 @@ export type MockTrial = {
   readonly startDate: string;
   readonly endDate: string;
   readonly rate: number;
+  readonly payRate: number;
+  readonly billRate: number;
   readonly currency: string;
   readonly hoursPerWeek: number;
+  readonly pilotType: '20_HOUR' | '32_HOUR' | '40_HOUR' | 'CUSTOM';
   readonly feedback: string | null;
   readonly recruiter: string;
 };

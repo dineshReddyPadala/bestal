@@ -53,4 +53,8 @@ export { AuthLayout, type AuthLayoutProps } from './layouts/auth-layout.js';
 
 // Utilities
 export { Dialog, type DialogProps } from './components/dialog.js';
+export { FileUpload, type FileUploadProps } from './components/file-upload.js';
+export { FormField, type FormFieldProps } from './components/form-field.js';
+export { DocumentList, type DocumentListProps, type DocumentItem } from './components/document-list.js';
+export { PricingEditor, type PricingEditorProps } from './components/pricing-editor.js';
 export { resolveIcon } from './lib/icons.js';

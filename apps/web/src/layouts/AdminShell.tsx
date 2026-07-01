@@ -12,7 +12,9 @@ export function AdminShell() {
   const { pathname } = useLocation();
   const currentPath = pathname.startsWith('/admin/candidates')
     ? '/admin/candidates'
-    : pathname;
+    : pathname.startsWith('/admin/clients')
+      ? '/admin/clients'
+      : pathname;
 
   return (
     <DashboardLayout

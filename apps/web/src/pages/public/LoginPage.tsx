@@ -1,4 +1,4 @@
-import { ArrowUpRight, Briefcase, Building2, Users } from 'lucide-react';
+import { ArrowUpRight, Briefcase, Building2, TrendingUp, Users } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const portals = [
@@ -9,6 +9,14 @@ const portals = [
     href: '/admin/login',
     icon: Building2,
     color: 'bg-violet-100 text-violet-700',
+  },
+  {
+    id: 'sales',
+    name: 'Sales Portal',
+    description: 'Client accounts, trial requests, deployments, and margin tracking.',
+    href: '/sales/login',
+    icon: TrendingUp,
+    color: 'bg-amber-100 text-amber-700',
   },
   {
     id: 'recruiter',
