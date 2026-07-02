@@ -3,7 +3,6 @@ import { Button } from '@bestal/ui';
 import { Container } from '../../components/Container';
 import { formatCurrency } from '@bestal/shared-utils';
 import { ArrowRight, CheckCircle2, Shield, Star, Users, Zap } from 'lucide-react';
-import { Link } from 'react-router-dom';
 
 function formatStatValue(value: number | string, format?: string) {
   if (typeof value === 'string') return value;
@@ -43,21 +42,22 @@ export function HomePage() {
               screened by experts, ready to deliver from day one.
             </p>
             <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
-              <Link to="/contact">
-                <Button size="lg" className="min-w-[200px] bg-white text-navy hover:bg-white/90">
-                  Hire Talent
-                  <ArrowRight className="ml-2 h-5 w-5" />
-                </Button>
-              </Link>
-              <Link to="/how-it-works">
-                <Button
-                  size="lg"
-                  variant="outline"
-                  className="min-w-[200px] border-white/30 bg-transparent text-white hover:bg-white/10"
-                >
-                  How It Works
-                </Button>
-              </Link>
+              <Button
+                to="/contact"
+                size="lg"
+                className="min-w-[200px] bg-white text-navy hover:bg-white/90"
+              >
+                Hire Talent
+                <ArrowRight className="ml-2 h-5 w-5" />
+              </Button>
+              <Button
+                to="/how-it-works"
+                size="lg"
+                variant="outline"
+                className="min-w-[200px] border-white/30 bg-transparent text-white hover:bg-white/10"
+              >
+                How It Works
+              </Button>
             </div>
             <div className="mt-12 flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-sm text-white/60">
               <span className="inline-flex items-center gap-2">
@@ -212,20 +212,17 @@ export function HomePage() {
               Tell us what you need. We&apos;ll deliver a curated shortlist of top-tier talent within 48 hours.
             </p>
             <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
-              <Link to="/contact">
-                <Button size="lg" className="min-w-[200px] bg-white text-navy hover:bg-white/90">
-                  Get Started
-                </Button>
-              </Link>
-              <Link to="/talent">
-                <Button
-                  size="lg"
-                  variant="outline"
-                  className="min-w-[200px] border-white/30 bg-transparent text-white hover:bg-white/10"
-                >
-                  Browse Talent
-                </Button>
-              </Link>
+              <Button to="/contact" size="lg" className="min-w-[200px] bg-white text-navy hover:bg-white/90">
+                Get Started
+              </Button>
+              <Button
+                to="/talent"
+                size="lg"
+                variant="outline"
+                className="min-w-[200px] border-white/30 bg-transparent text-white hover:bg-white/10"
+              >
+                Browse Talent
+              </Button>
             </div>
           </div>
         </Container>

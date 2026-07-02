@@ -103,7 +103,7 @@ export function CandidatesPage() {
         title="Candidates"
         description="Full talent pool — search, filter, and manage candidate profiles"
         actions={
-          <Button>
+          <Button to="/admin/candidates/new">
             <Plus className="mr-2 h-4 w-4" />
             Add candidate
           </Button>

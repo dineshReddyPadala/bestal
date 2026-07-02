@@ -6,9 +6,11 @@ import { Plus } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import type { MockTrial } from '@bestal/mock-data';
 import { marginColumns } from '../../lib/margin-columns';
+import { useDemoToast } from '../../lib/use-demo-toast';
 
 export function TrialsPage() {
   const [statusFilter, setStatusFilter] = useState('all');
+  const { message, show } = useDemoToast();
 
   const filteredData = useMemo(() => {
     if (statusFilter === 'all') return [...trials];
@@ -77,12 +79,18 @@ export function TrialsPage() {
         title="Trials"
         description="Client trial engagements before full deployment"
         actions={
-          <Button>
+          <Button onClick={() => show('Schedule trial form opened (demo)')}>
             <Plus className="mr-2 h-4 w-4" />
             Schedule trial
           </Button>
         }
       />
+
+      {message && (
+        <div className="mx-6 mt-4 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+          {message}
+        </div>
+      )}
 
       <div className="p-6">
         <TanStackDataTable

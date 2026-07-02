@@ -2,7 +2,7 @@ import { candidates } from '@bestal/mock-data';
 import { EmptyState, PageHeader, SearchInput, TalentCard, Button } from '@bestal/ui';
 import { Plus } from 'lucide-react';
 import { useMemo, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 export function CandidatesPage() {
   const navigate = useNavigate();
@@ -34,12 +34,10 @@ export function CandidatesPage() {
               onClear={() => setQuery('')}
               className="w-72"
             />
-            <Link to="/recruiter/candidates/new">
-              <Button>
-                <Plus className="mr-2 h-4 w-4" />
-                Add candidate
-              </Button>
-            </Link>
+            <Button to="/recruiter/candidates/new">
+              <Plus className="mr-2 h-4 w-4" />
+              Add candidate
+            </Button>
           </div>
         }
       />

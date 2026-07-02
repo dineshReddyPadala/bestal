@@ -1,5 +1,6 @@
 import { cn } from '@bestal/shared-utils';
 import type { ButtonHTMLAttributes, ReactNode } from 'react';
+import { Link } from 'react-router-dom';
 
 type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost';
 type ButtonSize = 'sm' | 'md' | 'lg';
@@ -7,7 +8,8 @@ type ButtonSize = 'sm' | 'md' | 'lg';
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ButtonVariant;
   size?: ButtonSize;
-  asChild?: boolean;
+  /** Renders as a React Router link with button styling */
+  to?: string;
   children: ReactNode;
 }
 
@@ -32,19 +34,27 @@ export function Button({
   size = 'md',
   className,
   children,
+  to,
+  type = 'button',
   ...props
 }: ButtonProps) {
+  const classes = cn(
+    'inline-flex items-center justify-center rounded-md transition-colors disabled:pointer-events-none disabled:opacity-50',
+    variantClasses[variant],
+    sizeClasses[size],
+    className,
+  );
+
+  if (to) {
+    return (
+      <Link to={to} className={classes}>
+        {children}
+      </Link>
+    );
+  }
+
   return (
-    <button
-      type="button"
-      className={cn(
-        'inline-flex items-center justify-center rounded-md transition-colors disabled:pointer-events-none disabled:opacity-50',
-        variantClasses[variant],
-        sizeClasses[size],
-        className,
-      )}
-      {...props}
-    >
+    <button type={type} className={classes} {...props}>
       {children}
     </button>
   );

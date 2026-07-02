@@ -71,12 +71,10 @@ export function TrialRequestsPage() {
         title="Trial Requests"
         description="Manage trial engagements before full deployment"
         actions={
-          <Link to="/client/search">
-            <Button>
-              <Plus className="mr-2 h-4 w-4" />
-              Request from search
-            </Button>
-          </Link>
+          <Button to="/client/search">
+            <Plus className="mr-2 h-4 w-4" />
+            Request from search
+          </Button>
         }
       />
 

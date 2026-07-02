@@ -2,7 +2,6 @@ import { stats } from '@bestal/mock-data';
 import { Button } from '@bestal/ui';
 import { Container } from '../../components/Container';
 import { Building2, Globe, Headphones, Lock, Scale, Users } from 'lucide-react';
-import { Link } from 'react-router-dom';
 
 const features = [
   {
@@ -102,9 +101,9 @@ export function EnterprisePage() {
             <p className="mt-3 text-muted-foreground">
               Custom SLAs, volume pricing, and a dedicated onboarding plan for your organization.
             </p>
-            <Link to="/contact" className="mt-8 inline-block">
-              <Button size="lg">Request Enterprise Demo</Button>
-            </Link>
+            <Button to="/contact" size="lg" className="mt-8">
+              Request Enterprise Demo
+            </Button>
           </div>
         </Container>
       </section>

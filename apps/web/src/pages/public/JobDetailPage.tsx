@@ -90,11 +90,9 @@ export function JobDetailPage() {
               <div className="sticky top-24 rounded-2xl border border-border bg-card p-6 shadow-elevated">
                 <p className="text-sm text-muted-foreground">Compensation</p>
                 <p className="mt-1 text-2xl font-bold text-foreground">{formatRate(job)}</p>
-                <Link to="/contact" className="mt-6 block">
-                  <Button size="lg" className="w-full">
-                    Apply Now
-                  </Button>
-                </Link>
+                <Button to="/contact" size="lg" className="mt-6 w-full">
+                  Apply Now
+                </Button>
                 <p className="mt-4 text-center text-xs text-muted-foreground">
                   Applications reviewed within 48 hours
                 </p>

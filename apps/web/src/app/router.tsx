@@ -137,6 +137,7 @@ const router = createBrowserRouter([
         children: [
           { index: true, element: <AdminDashboardPage /> },
           { path: 'candidates', element: <AdminCandidatesPage /> },
+          { path: 'candidates/new', element: <AddCandidatePage /> },
           { path: 'candidates/:id', element: <AdminCandidateDetailPage /> },
           { path: 'clients', element: <AdminClientsPage /> },
           { path: 'clients/:id', element: <AdminClientDetailPage /> },

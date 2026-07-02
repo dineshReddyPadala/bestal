@@ -5,9 +5,11 @@ import { type ColumnDef } from '@tanstack/react-table';
 import { Plus } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import type { MockBackgroundCheck } from '@bestal/mock-data';
+import { useDemoToast } from '../../lib/use-demo-toast';
 
 export function BackgroundChecksPage() {
   const [statusFilter, setStatusFilter] = useState('all');
+  const { message, show } = useDemoToast();
 
   const filteredData = useMemo(() => {
     if (statusFilter === 'all') return [...backgroundChecks];
@@ -62,12 +64,18 @@ export function BackgroundChecksPage() {
         title="Background Checks"
         description="Compliance and verification status for vetted talent"
         actions={
-          <Button>
+          <Button onClick={() => show('Background check request opened (demo)')}>
             <Plus className="mr-2 h-4 w-4" />
             Request check
           </Button>
         }
       />
+
+      {message && (
+        <div className="mx-6 mt-4 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+          {message}
+        </div>
+      )}
 
       <div className="p-6">
         <TanStackDataTable

@@ -11,16 +11,23 @@ import {
 } from '@bestal/ui';
 import { ArrowLeft } from 'lucide-react';
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+
+function usePortalBasePath() {
+  const { pathname } = useLocation();
+  if (pathname.startsWith('/admin')) return '/admin';
+  return '/recruiter';
+}
 
 export function AddCandidatePage() {
   const navigate = useNavigate();
+  const basePath = usePortalBasePath();
   const [submitted, setSubmitted] = useState(false);
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSubmitted(true);
-    setTimeout(() => navigate('/recruiter/candidates/6'), 1200);
+    setTimeout(() => navigate(`${basePath}/candidates/6`), 1200);
   }
 
   return (
@@ -29,7 +36,7 @@ export function AddCandidatePage() {
         title="Add Candidate"
         description="Create a new candidate profile in your pipeline"
         breadcrumbs={
-          <Link to="/recruiter/candidates" className="inline-flex items-center gap-1 hover:text-foreground">
+          <Link to={`${basePath}/candidates`} className="inline-flex items-center gap-1 hover:text-foreground">
             <ArrowLeft className="h-3.5 w-3.5" />
             Back to candidates
           </Link>
@@ -93,7 +100,7 @@ export function AddCandidatePage() {
             </Card>
 
             <div className="flex justify-end gap-3">
-              <Button variant="outline" type="button" onClick={() => navigate('/recruiter/candidates')}>
+              <Button variant="outline" type="button" onClick={() => navigate(`${basePath}/candidates`)}>
                 Cancel
               </Button>
               <Button type="submit">Create candidate</Button>

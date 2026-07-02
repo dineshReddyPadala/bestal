@@ -108,12 +108,10 @@ export function InterviewRequestsPage() {
         title="Interview Requests"
         description="Track scheduled interviews and pending requests"
         actions={
-          <Link to="/client/search">
-            <Button>
-              <Plus className="mr-2 h-4 w-4" />
-              Request from search
-            </Button>
-          </Link>
+          <Button to="/client/search">
+            <Plus className="mr-2 h-4 w-4" />
+            Request from search
+          </Button>
         }
       />
 

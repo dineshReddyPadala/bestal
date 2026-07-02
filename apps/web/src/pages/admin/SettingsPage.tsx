@@ -1,9 +1,18 @@
 import { Button, Card, CardContent, CardHeader, CardTitle, Input, PageHeader, Tabs } from '@bestal/ui';
+import { useDemoToast } from '../../lib/use-demo-toast';
 
 export function SettingsPage() {
+  const { message, show } = useDemoToast();
+
   return (
     <div>
       <PageHeader title="Settings" description="Platform configuration and preferences" />
+
+      {message && (
+        <div className="mx-6 mt-4 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+          {message}
+        </div>
+      )}
 
       <div className="p-6">
         <Tabs
@@ -143,8 +152,12 @@ export function SettingsPage() {
         />
 
         <div className="mt-6 flex justify-end gap-3">
-          <Button variant="outline">Cancel</Button>
-          <Button>Save changes</Button>
+          <Button variant="outline" type="button">
+            Cancel
+          </Button>
+          <Button type="button" onClick={() => show('Settings saved (demo)')}>
+            Save changes
+          </Button>
         </div>
       </div>
     </div>

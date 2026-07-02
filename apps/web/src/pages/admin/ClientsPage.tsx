@@ -6,9 +6,11 @@ import { Plus } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { MockClient } from '@bestal/mock-data';
+import { useDemoToast } from '../../lib/use-demo-toast';
 
 export function ClientsPage() {
   const [statusFilter, setStatusFilter] = useState('all');
+  const { message, show } = useDemoToast();
 
   const filteredData = useMemo(() => {
     if (statusFilter === 'all') return [...clients];
@@ -69,12 +71,18 @@ export function ClientsPage() {
         title="Clients"
         description="Enterprise accounts, spend, and deployment activity"
         actions={
-          <Button>
+          <Button onClick={() => show('Add client form opened (demo)')}>
             <Plus className="mr-2 h-4 w-4" />
             Add client
           </Button>
         }
       />
+
+      {message && (
+        <div className="mx-6 mt-4 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+          {message}
+        </div>
+      )}
 
       <div className="p-6">
         <TanStackDataTable

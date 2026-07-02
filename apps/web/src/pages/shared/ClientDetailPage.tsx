@@ -17,6 +17,7 @@ import { ArrowLeft, Pencil } from 'lucide-react';
 import { useMemo } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { marginColumns } from '../../lib/margin-columns';
+import { useDemoToast } from '../../lib/use-demo-toast';
 
 type ClientDetailPageProps = {
   basePath: '/admin/clients' | '/sales/clients';
@@ -24,6 +25,7 @@ type ClientDetailPageProps = {
 
 export function ClientDetailPage({ basePath }: ClientDetailPageProps) {
   const { id } = useParams();
+  const { message, show } = useDemoToast();
   const client = clients.find((c) => c.id === Number(id));
 
   const clientDeployments = useMemo(
@@ -77,12 +79,18 @@ export function ClientDetailPage({ basePath }: ClientDetailPageProps) {
           </Link>
         }
         actions={
-          <Button variant="outline">
+          <Button variant="outline" onClick={() => show('Edit client form opened (demo)')}>
             <Pencil className="mr-2 h-4 w-4" />
             Edit account
           </Button>
         }
       />
+
+      {message && (
+        <div className="mx-6 mt-4 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+          {message}
+        </div>
+      )}
 
       <div className="grid gap-4 p-6 md:grid-cols-4">
         <StatCard label="Active deployments" value={String(client.activeDeployments)} />
