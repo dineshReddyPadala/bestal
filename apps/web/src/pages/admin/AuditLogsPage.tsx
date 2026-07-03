@@ -1,62 +1,40 @@
-import { auditLogs } from '@bestal/mock-data';
-import { formatDate } from '@bestal/shared-utils';
-import {
-  DataTable,
-  DataTableBody,
-  DataTableCell,
-  DataTableHead,
-  DataTableHeader,
-  DataTableRow,
-  PageHeader,
-  StatusBadge,
-} from '@bestal/ui';
+import { schemaAuditLogs } from '@bestal/mock-data';
+import { PageHeader, StatusBadge, TanStackDataTable } from '@bestal/ui';
+import { type ColumnDef } from '@tanstack/react-table';
+import { useMemo } from 'react';
+import type { SchemaAuditLog } from '@bestal/mock-data';
 
 export function AuditLogsPage() {
+  const columns = useMemo<ColumnDef<SchemaAuditLog>[]>(
+    () => [
+      { accessorKey: 'id', header: 'ID' },
+      {
+        accessorKey: 'action',
+        header: 'Action',
+        cell: ({ getValue }) => <StatusBadge status={getValue() as string} />,
+      },
+      { accessorKey: 'resourceType', header: 'Resource Type' },
+      { accessorKey: 'resourceId', header: 'Resource ID' },
+      { accessorKey: 'description', header: 'Description' },
+      { accessorKey: 'actorName', header: 'Actor' },
+      { accessorKey: 'actorId', header: 'Actor ID' },
+      { accessorKey: 'organizationId', header: 'Org ID' },
+      { accessorKey: 'ipAddress', header: 'IP' },
+      { accessorKey: 'userAgent', header: 'User Agent' },
+      { accessorKey: 'createdAt', header: 'Created' },
+    ],
+    [],
+  );
+
   return (
     <div>
-      <PageHeader
-        title="Audit Logs"
-        description="Complete platform activity and compliance trail"
-      />
-
+      <PageHeader title="Audit Logs" description="Append-only compliance trail — all schema fields" />
       <div className="p-6">
-        <DataTable>
-          <DataTableHeader>
-            <DataTableRow>
-              <DataTableHead>Action</DataTableHead>
-              <DataTableHead>Entity</DataTableHead>
-              <DataTableHead>Summary</DataTableHead>
-              <DataTableHead>Actor</DataTableHead>
-              <DataTableHead>IP</DataTableHead>
-              <DataTableHead>Date</DataTableHead>
-            </DataTableRow>
-          </DataTableHeader>
-          <DataTableBody>
-            {auditLogs.map((log) => (
-              <DataTableRow key={log.id}>
-                <DataTableCell>
-                  <StatusBadge status={log.action} />
-                </DataTableCell>
-                <DataTableCell>
-                  {log.entityType} #{log.entityId}
-                </DataTableCell>
-                <DataTableCell className="max-w-md">{log.summary}</DataTableCell>
-                <DataTableCell>
-                  <div>
-                    <p className="font-medium">{log.actorName}</p>
-                    <p className="text-xs text-muted-foreground">{log.actorEmail}</p>
-                  </div>
-                </DataTableCell>
-                <DataTableCell className="font-mono text-xs text-muted-foreground">
-                  {log.ipAddress}
-                </DataTableCell>
-                <DataTableCell className="text-muted-foreground">
-                  {formatDate(log.createdAt)}
-                </DataTableCell>
-              </DataTableRow>
-            ))}
-          </DataTableBody>
-        </DataTable>
+        <TanStackDataTable
+          columns={columns}
+          data={[...schemaAuditLogs]}
+          searchPlaceholder="Search audit logs…"
+        />
       </div>
     </div>
   );

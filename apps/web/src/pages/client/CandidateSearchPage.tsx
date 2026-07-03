@@ -1,99 +1,161 @@
-import { EmptyState, PageHeader } from '@bestal/ui';
-import { Users } from 'lucide-react';
+import { getClientSearchRecords } from '@bestal/mock-data';
+import { EmptyState, PageHeader, Select } from '@bestal/ui';
+import { Grid3X3, List, Users } from 'lucide-react';
 import { useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import {
-  CandidateFiltersPanel,
-  MobileFilterButton,
-} from '../../components/client/CandidateFiltersPanel';
-import { ClientCandidateCard } from '../../components/client/ClientCandidateCard';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { ToptalCandidateCard } from '../../components/client/ToptalCandidateCard';
+import { PremiumSearchFilters } from '../../components/client/PremiumSearchFilters';
 import { RequestInterviewDialog } from '../../components/client/RequestInterviewDialog';
 import { RequestTrialDialog } from '../../components/client/RequestTrialDialog';
 import { useClientShortlist } from '../../hooks/useClientShortlist';
 import {
-  DEFAULT_FILTERS,
-  filterCandidates,
-  getClientVisibleCandidates,
-  type CandidateFilters,
-} from '../../lib/client-candidates';
-import type { MockCandidate } from '@bestal/mock-data';
+  countActiveFilters,
+  DEFAULT_CLIENT_SEARCH_FILTERS,
+  filterClientSearchRecords,
+  sortClientSearchRecords,
+  type ClientSearchFilters,
+  type ClientSearchSort,
+} from '../../lib/client-search';
+import { useDemoToast } from '../../lib/use-demo-toast';
+import { cn } from '@bestal/shared-utils';
 
 export function CandidateSearchPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const { message } = useDemoToast();
   const { isShortlisted, toggleShortlist } = useClientShortlist();
-  const [filters, setFilters] = useState<CandidateFilters>(DEFAULT_FILTERS);
-  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
-  const [dialogCandidate, setDialogCandidate] = useState<MockCandidate | null>(null);
+
+  const [filters, setFilters] = useState<ClientSearchFilters>(() => ({
+    ...DEFAULT_CLIENT_SEARCH_FILTERS,
+    query: searchParams.get('q') ?? '',
+  }));
+  const [sort, setSort] = useState<ClientSearchSort>('best-match');
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [dialogCandidate, setDialogCandidate] = useState<{ name: string } | null>(null);
   const [dialogType, setDialogType] = useState<'interview' | 'trial' | null>(null);
 
-  const visible = useMemo(() => getClientVisibleCandidates(), []);
-  const filtered = useMemo(
-    () => filterCandidates(visible, filters),
-    [visible, filters],
-  );
+  const allRecords = useMemo(() => getClientSearchRecords(), []);
 
-  const activeFilterCount = useMemo(() => {
-    let count = 0;
-    if (filters.query) count++;
-    if (filters.community !== 'all') count++;
-    if (filters.minExperience > 0) count++;
-    if (filters.maxRate < 250) count++;
-    if (filters.minScore > 0) count++;
-    if (filters.availability !== 'all') count++;
-    return count;
-  }, [filters]);
+  const filtered = useMemo(() => {
+    const rows = filterClientSearchRecords(allRecords, filters);
+    return sortClientSearchRecords(rows, sort);
+  }, [allRecords, filters, sort]);
 
   return (
-    <div>
+    <div className="min-h-full bg-muted/10">
       <PageHeader
         title="Candidate Search"
-        description="Browse vetted, client-visible talent with advanced filters"
-        actions={
-          <MobileFilterButton
-            onClick={() => setMobileFiltersOpen(true)}
-            activeCount={activeFilterCount}
-          />
-        }
+        description="Premium talent discovery — filter, sort, and engage vetted candidates"
       />
 
-      <div className="flex gap-6 p-4 sm:p-6">
-        <CandidateFiltersPanel
+      {message && (
+        <div className="mx-6 mt-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+          {message}
+        </div>
+      )}
+
+      <div className="space-y-6 p-4 sm:p-6">
+        <PremiumSearchFilters
           filters={filters}
           onChange={setFilters}
           resultCount={filtered.length}
-          mobileOpen={mobileFiltersOpen}
-          onMobileClose={() => setMobileFiltersOpen(false)}
         />
 
-        <div className="min-w-0 flex-1">
-          {filtered.length === 0 ? (
-            <EmptyState
-              icon={<Users className="h-8 w-8" />}
-              title="No candidates match your filters"
-              description="Try adjusting search terms, rate, or community filters."
-            />
-          ) : (
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-2">
-              {filtered.map((candidate) => (
-                <ClientCandidateCard
-                  key={candidate.id}
-                  candidate={candidate}
-                  shortlisted={isShortlisted(candidate.id)}
-                  onView={() => navigate(`/client/candidates/${candidate.id}`)}
-                  onShortlist={() => toggleShortlist(candidate.id)}
-                  onRequestInterview={() => {
-                    setDialogCandidate(candidate);
-                    setDialogType('interview');
-                  }}
-                  onRequestTrial={() => {
-                    setDialogCandidate(candidate);
-                    setDialogType('trial');
-                  }}
-                />
-              ))}
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <p className="text-sm text-muted-foreground">
+            {filtered.length} result{filtered.length === 1 ? '' : 's'}
+            {countActiveFilters(filters) > 0 && (
+              <span> · {countActiveFilters(filters)} filter(s) active</span>
+            )}
+          </p>
+          <div className="flex flex-wrap items-center gap-2">
+            <Select
+              value={sort}
+              onChange={(e) => setSort(e.target.value as ClientSearchSort)}
+              className="h-9 w-44 text-sm"
+            >
+              <option value="best-match">Best Match</option>
+              <option value="highest-score">Highest Score</option>
+              <option value="lowest-rate">Lowest Rate</option>
+              <option value="experience">Experience</option>
+              <option value="availability">Availability</option>
+            </Select>
+            <div className="flex rounded-lg border border-border p-0.5">
+              <button
+                type="button"
+                className={cn(
+                  'rounded-md p-2 transition-colors',
+                  viewMode === 'grid' ? 'bg-brand text-white' : 'text-muted-foreground hover:bg-muted',
+                )}
+                onClick={() => setViewMode('grid')}
+                aria-label="Grid view"
+              >
+                <Grid3X3 className="h-4 w-4" />
+              </button>
+              <button
+                type="button"
+                className={cn(
+                  'rounded-md p-2 transition-colors',
+                  viewMode === 'list' ? 'bg-brand text-white' : 'text-muted-foreground hover:bg-muted',
+                )}
+                onClick={() => setViewMode('list')}
+                aria-label="List view"
+              >
+                <List className="h-4 w-4" />
+              </button>
             </div>
-          )}
+          </div>
         </div>
+
+        {filtered.length === 0 ? (
+          <EmptyState
+            icon={<Users className="h-8 w-8" />}
+            title="No candidates match your filters"
+            description="Try adjusting community, rate, score, or trial eligibility filters."
+          />
+        ) : viewMode === 'grid' ? (
+          <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+            {filtered.map((record) => (
+              <ToptalCandidateCard
+                key={record.id}
+                record={record}
+                shortlisted={isShortlisted(record.id)}
+                layout="grid"
+                onView={() => navigate(`/client/candidates/${record.id}`)}
+                onShortlist={() => toggleShortlist(record.id)}
+                onInterview={() => {
+                  setDialogCandidate({ name: record.fullName });
+                  setDialogType('interview');
+                }}
+                onPilot={() => {
+                  setDialogCandidate({ name: record.fullName });
+                  setDialogType('trial');
+                }}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {filtered.map((record) => (
+              <ToptalCandidateCard
+                key={record.id}
+                record={record}
+                shortlisted={isShortlisted(record.id)}
+                layout="list"
+                onView={() => navigate(`/client/candidates/${record.id}`)}
+                onShortlist={() => toggleShortlist(record.id)}
+                onInterview={() => {
+                  setDialogCandidate({ name: record.fullName });
+                  setDialogType('interview');
+                }}
+                onPilot={() => {
+                  setDialogCandidate({ name: record.fullName });
+                  setDialogType('trial');
+                }}
+              />
+            ))}
+          </div>
+        )}
       </div>
 
       {dialogCandidate && (
@@ -101,12 +163,12 @@ export function CandidateSearchPage() {
           <RequestInterviewDialog
             open={dialogType === 'interview'}
             onClose={() => setDialogType(null)}
-            candidateName={`${dialogCandidate.firstName} ${dialogCandidate.lastName}`}
+            candidateName={dialogCandidate.name}
           />
           <RequestTrialDialog
             open={dialogType === 'trial'}
             onClose={() => setDialogType(null)}
-            candidateName={`${dialogCandidate.firstName} ${dialogCandidate.lastName}`}
+            candidateName={dialogCandidate.name}
           />
         </>
       )}

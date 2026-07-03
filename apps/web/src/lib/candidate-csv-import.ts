@@ -1,0 +1,295 @@
+import { candidates } from '@bestal/mock-data';
+
+export const CANDIDATE_CSV_HEADERS = [
+  'first_name',
+  'last_name',
+  'email',
+  'phone',
+  'location',
+  'headline',
+  'years_experience',
+  'primary_skill',
+  'source',
+  'expected_rate',
+  'currency',
+  'timezone',
+] as const;
+
+export type CandidateCsvHeader = (typeof CANDIDATE_CSV_HEADERS)[number];
+
+export type CsvImportRow = {
+  readonly rowNumber: number;
+  readonly firstName: string;
+  readonly lastName: string;
+  readonly email: string;
+  readonly phone: string;
+  readonly location: string;
+  readonly headline: string;
+  readonly yearsExperience: string;
+  readonly primarySkill: string;
+  readonly source: string;
+  readonly expectedRate: string;
+  readonly currency: string;
+  readonly timezone: string;
+  readonly errors: readonly string[];
+  readonly isDuplicate: boolean;
+  readonly duplicateOf: string | null;
+};
+
+export type CsvValidationResult = {
+  readonly rows: readonly CsvImportRow[];
+  readonly totalRows: number;
+  readonly validCount: number;
+  readonly errorCount: number;
+  readonly duplicateCount: number;
+  readonly readyCount: number;
+  readonly isValid: boolean;
+  readonly headerValid: boolean;
+};
+
+export type CsvImportSummary = {
+  readonly imported: number;
+  readonly skippedDuplicates: number;
+  readonly failed: number;
+  readonly totalProcessed: number;
+};
+
+const EXISTING_EMAILS = new Set(
+  candidates.map((c) => c.email.toLowerCase()),
+);
+
+const VALID_SOURCES = new Set([
+  'DIRECT',
+  'REFERRAL',
+  'JOB_BOARD',
+  'LINKEDIN',
+  'AGENCY',
+  'INTERNAL',
+  'OTHER',
+]);
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+/** Minimal RFC4180-style CSV parser (handles quoted fields). */
+export function parseCsv(text: string): string[][] {
+  const rows: string[][] = [];
+  let row: string[] = [];
+  let field = '';
+  let inQuotes = false;
+
+  for (let i = 0; i < text.length; i++) {
+    const char = text[i];
+    const next = text[i + 1];
+
+    if (inQuotes) {
+      if (char === '"' && next === '"') {
+        field += '"';
+        i++;
+      } else if (char === '"') {
+        inQuotes = false;
+      } else {
+        field += char;
+      }
+      continue;
+    }
+
+    if (char === '"') {
+      inQuotes = true;
+    } else if (char === ',') {
+      row.push(field.trim());
+      field = '';
+    } else if (char === '\n' || (char === '\r' && next === '\n')) {
+      row.push(field.trim());
+      field = '';
+      if (row.some((cell) => cell.length > 0)) {
+        rows.push(row);
+      }
+      row = [];
+      if (char === '\r') i++;
+    } else if (char !== '\r') {
+      field += char;
+    }
+  }
+
+  if (field.length > 0 || row.length > 0) {
+    row.push(field.trim());
+    if (row.some((cell) => cell.length > 0)) {
+      rows.push(row);
+    }
+  }
+
+  return rows;
+}
+
+export function generateTemplateCsv(): string {
+  const header = CANDIDATE_CSV_HEADERS.join(',');
+  const sample = [
+    'Jordan',
+    'Lee',
+    'jordan.lee@email.com',
+    '+1 (415) 555-0199',
+    'Austin, TX',
+    'Senior React Engineer',
+    '8',
+    'Full-Stack Development',
+    'LINKEDIN',
+    '145',
+    'USD',
+    'America/Chicago',
+  ].join(',');
+  return `${header}\n${sample}\n`;
+}
+
+export function downloadTemplateCsv(): void {
+  const blob = new Blob([generateTemplateCsv()], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = 'bestal-candidate-import-template.csv';
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
+function normalizeHeader(h: string): string {
+  return h.trim().toLowerCase().replace(/\s+/g, '_');
+}
+
+function mapRow(cells: string[], rowNumber: number): Omit<CsvImportRow, 'errors' | 'isDuplicate' | 'duplicateOf'> {
+  const get = (index: number) => cells[index]?.trim() ?? '';
+  return {
+    rowNumber,
+    firstName: get(0),
+    lastName: get(1),
+    email: get(2),
+    phone: get(3),
+    location: get(4),
+    headline: get(5),
+    yearsExperience: get(6),
+    primarySkill: get(7),
+    source: get(8).toUpperCase(),
+    expectedRate: get(9),
+    currency: get(10).toUpperCase(),
+    timezone: get(11),
+  };
+}
+
+function validateRow(
+  row: Omit<CsvImportRow, 'errors' | 'isDuplicate' | 'duplicateOf'>,
+  seenEmails: Set<string>,
+): CsvImportRow {
+  const errors: string[] = [];
+
+  if (!row.firstName) errors.push('First name is required');
+  if (!row.lastName) errors.push('Last name is required');
+  if (!row.email) {
+    errors.push('Email is required');
+  } else if (!EMAIL_RE.test(row.email)) {
+    errors.push('Invalid email format');
+  }
+
+  if (row.yearsExperience && Number.isNaN(Number(row.yearsExperience))) {
+    errors.push('Years experience must be a number');
+  }
+  if (row.expectedRate && Number.isNaN(Number(row.expectedRate))) {
+    errors.push('Expected rate must be a number');
+  }
+  if (row.source && !VALID_SOURCES.has(row.source)) {
+    errors.push(`Invalid source (use ${[...VALID_SOURCES].join(', ')})`);
+  }
+  if (row.currency && row.currency.length !== 3) {
+    errors.push('Currency must be a 3-letter code');
+  }
+
+  const emailKey = row.email.toLowerCase();
+  let isDuplicate = false;
+  let duplicateOf: string | null = null;
+
+  if (emailKey && EXISTING_EMAILS.has(emailKey)) {
+    isDuplicate = true;
+    duplicateOf = row.email;
+    errors.push('Duplicate — email already exists in talent pool');
+  } else if (emailKey && seenEmails.has(emailKey)) {
+    isDuplicate = true;
+    duplicateOf = row.email;
+    errors.push('Duplicate — email repeated in this file');
+  } else if (emailKey) {
+    seenEmails.add(emailKey);
+  }
+
+  return { ...row, errors, isDuplicate, duplicateOf };
+}
+
+export function validateCandidateCsv(text: string): CsvValidationResult {
+  const parsed = parseCsv(text);
+  if (parsed.length === 0) {
+    return {
+      rows: [],
+      totalRows: 0,
+      validCount: 0,
+      errorCount: 0,
+      duplicateCount: 0,
+      readyCount: 0,
+      isValid: false,
+      headerValid: false,
+    };
+  }
+
+  const headerRow = parsed[0]!.map(normalizeHeader);
+  const expected = [...CANDIDATE_CSV_HEADERS];
+  const headerValid = expected.every((h, i) => headerRow[i] === h);
+  const dataRows = headerValid ? parsed.slice(1) : parsed;
+  const seenEmails = new Set<string>();
+
+  const rows = dataRows.map((cells, index) => {
+    const rowNumber = headerValid ? index + 2 : index + 1;
+    const mapped = mapRow(cells, rowNumber);
+    const validated = validateRow(mapped, seenEmails);
+    if (!headerValid && index === 0) {
+      return {
+        ...validated,
+        errors: [
+          ...validated.errors,
+          'Header row does not match template — download template for correct columns',
+        ],
+      };
+    }
+    return validated;
+  });
+
+  const validCount = rows.filter((r) => r.errors.length === 0).length;
+  const duplicateCount = rows.filter((r) => r.isDuplicate).length;
+  const errorCount = rows.filter((r) => r.errors.length > 0 && !r.isDuplicate).length;
+  const readyCount = rows.filter((r) => r.errors.length === 0).length;
+
+  return {
+    rows,
+    totalRows: rows.length,
+    validCount,
+    errorCount,
+    duplicateCount,
+    readyCount,
+    isValid: rows.length > 0 && errorCount === 0 && duplicateCount === 0 && headerValid,
+    headerValid,
+  };
+}
+
+export function simulateImport(result: CsvValidationResult): CsvImportSummary {
+  const imported = result.rows.filter((r) => r.errors.length === 0).length;
+  const skippedDuplicates = result.rows.filter((r) => r.isDuplicate).length;
+  const failed = result.rows.filter((r) => r.errors.length > 0 && !r.isDuplicate).length;
+
+  return {
+    imported,
+    skippedDuplicates,
+    failed,
+    totalProcessed: result.totalRows,
+  };
+}
+
+/** Demo CSV with one duplicate (Alexandra) and one invalid row for validation UX. */
+export const DEMO_CSV_WITH_ISSUES = `first_name,last_name,email,phone,location,headline,years_experience,primary_skill,source,expected_rate,currency,timezone
+Alexandra,Petrov,alexandra.petrov@email.com,+1 (415) 555-0101,San Francisco CA,Staff Engineer,10,Full-Stack Development,LINKEDIN,155,USD,America/Los_Angeles
+Taylor,Reed,taylor.reed@email.com,+1 (512) 555-0188,Austin TX,DevOps Engineer,6,DevOps & Cloud,REFERRAL,140,USD,America/Chicago
+Sam,Invalid,,+1 (212) 555-0177,New York NY,Backend Engineer,5,Full-Stack Development,LINKEDIN,130,USD,America/New_York
+Morgan,Chen,morgan.chen@email.com,+1 (206) 555-0166,Seattle WA,ML Engineer,7,Machine Learning,AGENCY,160,USD,America/Los_Angeles
+`;

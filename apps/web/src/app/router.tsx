@@ -5,6 +5,7 @@ import { AdminShell } from '../layouts/AdminShell';
 import { ClientShell } from '../layouts/ClientShell';
 import { RecruiterShell } from '../layouts/RecruiterShell';
 import { BackgroundChecksPage as AdminBackgroundChecksPage } from '../pages/admin/BackgroundChecksPage';
+import { CandidateCsvImportPage as AdminCandidateCsvImportPage } from '../pages/admin/CandidateCsvImportPage';
 import { CandidateDetailPage as AdminCandidateDetailPage } from '../pages/admin/CandidateDetailPage';
 import { CandidatesPage as AdminCandidatesPage } from '../pages/admin/CandidatesPage';
 import { ClientDetailPage as AdminClientDetailPage } from '../pages/admin/ClientDetailPage';
@@ -16,6 +17,10 @@ import { LoginPage as AdminLoginPage } from '../pages/admin/LoginPage';
 import { MarginReportPage as AdminMarginReportPage } from '../pages/admin/MarginReportPage';
 import { SettingsPage } from '../pages/admin/SettingsPage';
 import { TrialsPage } from '../pages/admin/TrialsPage';
+import { UsersPage } from '../pages/admin/UsersPage';
+import { OrganizationsPage } from '../pages/admin/OrganizationsPage';
+import { AuditLogsPage } from '../pages/admin/AuditLogsPage';
+import { SkillCommunitiesPage } from '../pages/admin/SkillCommunitiesPage';
 import { CandidateDetailPage as ClientCandidateDetailPage } from '../pages/client/CandidateDetailPage';
 import { CandidateSearchPage } from '../pages/client/CandidateSearchPage';
 import { DashboardPage as ClientDashboardPage } from '../pages/client/DashboardPage';
@@ -35,6 +40,7 @@ import { PortalLoginPage } from '../pages/public/LoginPage';
 import { TalentPage } from '../pages/public/TalentPage';
 import { AddCandidatePage } from '../pages/recruiter/AddCandidatePage';
 import { BackgroundChecksPage } from '../pages/recruiter/BackgroundChecksPage';
+import { CandidateCsvImportPage as RecruiterCandidateCsvImportPage } from '../pages/recruiter/CandidateCsvImportPage';
 import { CandidateDetailPage } from '../pages/recruiter/CandidateDetailPage';
 import { CandidatesPage as RecruiterCandidatesPage } from '../pages/recruiter/CandidatesPage';
 import { ClientsPage as RecruiterClientsPage } from '../pages/recruiter/ClientsPage';
@@ -137,6 +143,7 @@ const router = createBrowserRouter([
         children: [
           { index: true, element: <AdminDashboardPage /> },
           { path: 'candidates', element: <AdminCandidatesPage /> },
+          { path: 'candidates/import', element: <AdminCandidateCsvImportPage /> },
           { path: 'candidates/new', element: <AddCandidatePage /> },
           { path: 'candidates/:id', element: <AdminCandidateDetailPage /> },
           { path: 'clients', element: <AdminClientsPage /> },
@@ -146,6 +153,10 @@ const router = createBrowserRouter([
           { path: 'margin', element: <AdminMarginReportPage /> },
           { path: 'evaluations', element: <AdminEvaluationsPage /> },
           { path: 'background-checks', element: <AdminBackgroundChecksPage /> },
+          { path: 'users', element: <UsersPage /> },
+          { path: 'organizations', element: <OrganizationsPage /> },
+          { path: 'skill-communities', element: <SkillCommunitiesPage /> },
+          { path: 'audit-logs', element: <AuditLogsPage /> },
           { path: 'settings', element: <SettingsPage /> },
         ],
       },
@@ -163,6 +174,7 @@ const router = createBrowserRouter([
         children: [
           { index: true, element: <RecruiterDashboardPage /> },
           { path: 'candidates', element: <RecruiterCandidatesPage /> },
+          { path: 'candidates/import', element: <RecruiterCandidateCsvImportPage /> },
           { path: 'candidates/new', element: <AddCandidatePage /> },
           { path: 'candidates/:id', element: <CandidateDetailPage /> },
           { path: 'evaluations', element: <EvaluationsPage /> },

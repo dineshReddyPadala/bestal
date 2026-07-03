@@ -1,63 +1,57 @@
-import { organizations } from '@bestal/mock-data';
-import { formatDate } from '@bestal/shared-utils';
-import {
-  Button,
-  DataTable,
-  DataTableBody,
-  DataTableCell,
-  DataTableHead,
-  DataTableHeader,
-  DataTableRow,
-  PageHeader,
-  StatusBadge,
-} from '@bestal/ui';
+import { schemaOrganizations } from '@bestal/mock-data';
+import { Button, PageHeader, StatusBadge, TanStackDataTable } from '@bestal/ui';
+import { type ColumnDef } from '@tanstack/react-table';
 import { Plus } from 'lucide-react';
+import { useMemo } from 'react';
+import type { SchemaOrganization } from '@bestal/mock-data';
+import { useDemoToast } from '../../lib/use-demo-toast';
 
 export function OrganizationsPage() {
+  const { message, show } = useDemoToast();
+
+  const columns = useMemo<ColumnDef<SchemaOrganization>[]>(
+    () => [
+      { accessorKey: 'id', header: 'ID' },
+      { accessorKey: 'name', header: 'Name', cell: ({ getValue }) => <span className="font-medium">{getValue() as string}</span> },
+      { accessorKey: 'slug', header: 'Slug' },
+      { accessorKey: 'memberCount', header: 'Members' },
+      { accessorKey: 'clientCount', header: 'Clients' },
+      { accessorKey: 'candidateCount', header: 'Candidates' },
+      {
+        accessorKey: 'isActive',
+        header: 'Status',
+        cell: ({ getValue }) => <StatusBadge status={(getValue() as boolean) ? 'ACTIVE' : 'INACTIVE'} />,
+      },
+      { accessorKey: 'createdAt', header: 'Created' },
+      { accessorKey: 'updatedAt', header: 'Updated' },
+      { accessorKey: 'deletedAt', header: 'Deleted' },
+    ],
+    [],
+  );
+
   return (
     <div>
       <PageHeader
         title="Organizations"
-        description="Manage platform organizations and their members"
+        description="Platform organizations — all schema fields"
         actions={
-          <Button>
+          <Button onClick={() => show('Add organization form opened (demo)')}>
             <Plus className="mr-2 h-4 w-4" />
             Add organization
           </Button>
         }
       />
-
+      {message && (
+        <div className="mx-6 mt-4 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+          {message}
+        </div>
+      )}
       <div className="p-6">
-        <DataTable>
-          <DataTableHeader>
-            <DataTableRow>
-              <DataTableHead>Name</DataTableHead>
-              <DataTableHead>Slug</DataTableHead>
-              <DataTableHead>Members</DataTableHead>
-              <DataTableHead>Clients</DataTableHead>
-              <DataTableHead>Candidates</DataTableHead>
-              <DataTableHead>Status</DataTableHead>
-              <DataTableHead>Created</DataTableHead>
-            </DataTableRow>
-          </DataTableHeader>
-          <DataTableBody>
-            {organizations.map((org) => (
-              <DataTableRow key={org.id}>
-                <DataTableCell className="font-medium">{org.name}</DataTableCell>
-                <DataTableCell className="text-muted-foreground">{org.slug}</DataTableCell>
-                <DataTableCell>{org.memberCount}</DataTableCell>
-                <DataTableCell>{org.clientCount}</DataTableCell>
-                <DataTableCell>{org.candidateCount}</DataTableCell>
-                <DataTableCell>
-                  <StatusBadge status={org.isActive ? 'ACTIVE' : 'INACTIVE'} />
-                </DataTableCell>
-                <DataTableCell className="text-muted-foreground">
-                  {formatDate(org.createdAt)}
-                </DataTableCell>
-              </DataTableRow>
-            ))}
-          </DataTableBody>
-        </DataTable>
+        <TanStackDataTable
+          columns={columns}
+          data={[...schemaOrganizations]}
+          searchPlaceholder="Search organizations…"
+        />
       </div>
     </div>
   );
