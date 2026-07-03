@@ -7,7 +7,7 @@ import {
   type BgvCheckStatus,
 } from '@bestal/mock-data';
 import { formatDate } from '@bestal/shared-utils';
-import { Button, PageHeader, Select, StatusBadge, TanStackDataTable } from '@bestal/ui';
+import { Button, Dialog, PageHeader, Select, StatusBadge, TanStackDataTable } from '@bestal/ui';
 import { type ColumnDef } from '@tanstack/react-table';
 import {
   Download,
@@ -18,6 +18,8 @@ import {
   Upload,
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { DocumentUploadForm } from '../forms/DocumentUploadForm';
+import { buildDocumentPayload } from '../../lib/entity-field-metadata';
 import { useDemoToast } from '../../lib/use-demo-toast';
 
 type BgvAction = 'Upload' | 'View' | 'AI Summary' | 'Download' | 'Reprocess';
@@ -121,6 +123,8 @@ export function BackgroundVerificationManagementView({
     ...backgroundVerificationRecords,
   ]);
   const [filters, setFilters] = useState(defaultFilters);
+  const [uploadOpen, setUploadOpen] = useState(false);
+  const [uploadRecord, setUploadRecord] = useState<BackgroundVerificationRecord | null>(null);
 
   const filteredData = useMemo(() => {
     let rows = [...records];
@@ -154,6 +158,11 @@ export function BackgroundVerificationManagementView({
 
   const handleAction = useCallback(
     (record: BackgroundVerificationRecord, action: BgvAction) => {
+      if (action === 'Upload') {
+        setUploadRecord(record);
+        setUploadOpen(true);
+        return;
+      }
       if (action === 'Reprocess') {
         setRecords((prev) =>
           prev.map((row) =>
@@ -254,7 +263,7 @@ export function BackgroundVerificationManagementView({
         title={title}
         description={description}
         actions={
-          <Button onClick={() => show('Request background verification opened (demo)')}>
+          <Button onClick={() => show('BGV requests are initiated by recruiters — select a row to upload documents')}>
             Request BGV
           </Button>
         }
@@ -350,6 +359,34 @@ export function BackgroundVerificationManagementView({
           }}
         />
       </div>
+
+      <Dialog
+        open={uploadOpen}
+        onClose={() => {
+          setUploadOpen(false);
+          setUploadRecord(null);
+        }}
+        title="Upload BGV document"
+        description={`Upload report or consent form for ${uploadRecord?.candidateName ?? 'candidate'}`}
+        className="max-w-lg"
+      >
+        <DocumentUploadForm
+          kind="BGV_FORM"
+          accept=".pdf,.doc,.docx"
+          hint="PDF or Word — upload file, not a URL"
+          submitLabel="Upload document"
+          onSubmit={(values) => {
+            buildDocumentPayload(values, 'background_check', uploadRecord?.id ?? 0);
+            show(`Document uploaded — ${uploadRecord?.candidateName} (demo)`);
+            setUploadOpen(false);
+            setUploadRecord(null);
+          }}
+          onCancel={() => {
+            setUploadOpen(false);
+            setUploadRecord(null);
+          }}
+        />
+      </Dialog>
     </div>
   );
 }

@@ -29,7 +29,7 @@ export function AddCandidatePage() {
     <div className="min-h-full bg-muted/10">
       <PageHeader
         title="Add Candidate"
-        description="7-step wizard — every candidate schema field"
+        description="Add a new candidate to the talent pool"
         breadcrumbs={
           <Link to={`${basePath}/candidates`} className="inline-flex items-center gap-1 hover:text-foreground">
             <ArrowLeft className="h-3.5 w-3.5" />

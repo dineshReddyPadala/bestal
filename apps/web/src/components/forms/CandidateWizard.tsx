@@ -1,4 +1,4 @@
-import { skillCommunities, users } from '@bestal/mock-data';
+import { skillCommunities } from '@bestal/mock-data';
 import { cn } from '@bestal/shared-utils';
 import { Button, FileUpload, Input, Select } from '@bestal/ui';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -14,11 +14,14 @@ import {
 } from 'react-hook-form';
 import { Label } from '../ui/label';
 import {
+  buildCandidatePayload,
   candidateWizardDefaults,
-  candidateWizardSchema,
+  candidateWizardFormSchema,
   DRAFT_STORAGE_KEY,
-  FIELD_LABELS,
+  REVIEW_FIELD_KEYS,
+  USER_FIELD_LABELS,
   WIZARD_STEPS,
+  type CandidateWizardFormValues,
   type CandidateWizardValues,
   type WizardStepId,
 } from './candidate-wizard-schema';
@@ -99,25 +102,10 @@ function PersonalStep() {
   const {
     register,
     formState: { errors },
-  } = useFormContext<CandidateWizardValues>();
+  } = useFormContext<CandidateWizardFormValues>();
 
   return (
     <div className="grid gap-4 sm:grid-cols-2">
-      <FormField label="Organization ID" name="organizationId" required>
-        <Input id="organizationId" type="number" {...register('organizationId', { valueAsNumber: true })} />
-        <FieldError message={errors.organizationId?.message} />
-      </FormField>
-      <FormField label="Source" name="source" required>
-        <Select id="source" {...register('source')}>
-          <option value="DIRECT">Direct</option>
-          <option value="REFERRAL">Referral</option>
-          <option value="JOB_BOARD">Job Board</option>
-          <option value="LINKEDIN">LinkedIn</option>
-          <option value="AGENCY">Agency</option>
-          <option value="INTERNAL">Internal</option>
-          <option value="OTHER">Other</option>
-        </Select>
-      </FormField>
       <FormField label="First Name" name="firstName" required>
         <Input id="firstName" {...register('firstName')} />
         <FieldError message={errors.firstName?.message} />
@@ -136,36 +124,48 @@ function PersonalStep() {
       <FormField label="Location" name="location">
         <Input id="location" {...register('location')} placeholder="San Francisco, CA" />
       </FormField>
-      <FormField label="LinkedIn URL" name="linkedinUrl">
-        <Input id="linkedinUrl" {...register('linkedinUrl')} placeholder="https://linkedin.com/in/..." />
+      <FormField label="Source" name="source" required>
+        <Select id="source" {...register('source')}>
+          <option value="DIRECT">Direct</option>
+          <option value="REFERRAL">Referral</option>
+          <option value="JOB_BOARD">Job Board</option>
+          <option value="LINKEDIN">LinkedIn</option>
+          <option value="AGENCY">Agency</option>
+          <option value="INTERNAL">Internal</option>
+          <option value="OTHER">Other</option>
+        </Select>
       </FormField>
-      <FormField label="Profile Photo URL" name="photoUrl">
-        <Input id="photoUrl" {...register('photoUrl')} placeholder="https://..." />
-      </FormField>
+      <div className="sm:col-span-2">
+        <FormField label="LinkedIn Profile" name="linkedinUrl">
+          <Input id="linkedinUrl" {...register('linkedinUrl')} placeholder="https://linkedin.com/in/..." />
+        </FormField>
+      </div>
     </div>
   );
 }
 
 function ProfessionalStep() {
-  const {
-    register,
-    formState: { errors },
-  } = useFormContext<CandidateWizardValues>();
+  const { register } = useFormContext<CandidateWizardFormValues>();
 
   return (
     <div className="grid gap-4 sm:grid-cols-2">
       <FormField label="Headline" name="headline">
-        <Input id="headline" {...register('headline')} />
+        <Input id="headline" {...register('headline')} placeholder="Senior Full-Stack Engineer" />
       </FormField>
       <FormField label="Years Experience" name="yearsExperience">
-        <Input id="yearsExperience" type="number" min={0} {...register('yearsExperience', { valueAsNumber: true })} />
+        <Input
+          id="yearsExperience"
+          type="number"
+          min={0}
+          {...register('yearsExperience', { valueAsNumber: true })}
+        />
       </FormField>
-      <FormField label="Primary Skill Community ID" name="primarySkillCommunityId">
+      <FormField label="Primary Skill Community" name="primarySkillCommunityId">
         <Select id="primarySkillCommunityId" {...register('primarySkillCommunityId', { valueAsNumber: true })}>
           <option value="">— Select —</option>
           {skillCommunities.map((sc) => (
             <option key={sc.id} value={sc.id}>
-              {sc.id} — {sc.name}
+              {sc.name}
             </option>
           ))}
         </Select>
@@ -175,76 +175,6 @@ function ProfessionalStep() {
           <textarea id="summary" rows={4} className={textareaClass} {...register('summary')} />
         </FormField>
       </div>
-      <FormField label="Status" name="status" required>
-        <Select id="status" {...register('status')}>
-          <option value="NEW">New</option>
-          <option value="ACTIVE">Active</option>
-          <option value="INACTIVE">Inactive</option>
-          <option value="PLACED">Placed</option>
-          <option value="DO_NOT_CONTACT">Do Not Contact</option>
-        </Select>
-      </FormField>
-      <FormField label="Visibility" name="visibility" required>
-        <Select id="visibility" {...register('visibility')}>
-          <option value="DRAFT">Draft</option>
-          <option value="PUBLISHED">Published</option>
-          <option value="HIDDEN">Hidden</option>
-        </Select>
-      </FormField>
-      <FormField label="Approval Status" name="approvalStatus" required>
-        <Select id="approvalStatus" {...register('approvalStatus')}>
-          <option value="PENDING">Pending</option>
-          <option value="APPROVED">Approved</option>
-          <option value="REJECTED">Rejected</option>
-        </Select>
-      </FormField>
-      <FormField label="Published At" name="publishedAt">
-        <Input id="publishedAt" type="datetime-local" {...register('publishedAt')} />
-      </FormField>
-      <FormField label="Hidden At" name="hiddenAt">
-        <Input id="hiddenAt" type="datetime-local" {...register('hiddenAt')} />
-      </FormField>
-      <FormField label="Approved At" name="approvedAt">
-        <Input id="approvedAt" type="datetime-local" {...register('approvedAt')} />
-      </FormField>
-      <FormField label="Approved By" name="approvedById">
-        <Select id="approvedById" {...register('approvedById', { valueAsNumber: true })}>
-          <option value="">— None —</option>
-          {users.map((u) => (
-            <option key={u.id} value={u.id}>
-              {u.id} — {u.firstName} {u.lastName}
-            </option>
-          ))}
-        </Select>
-      </FormField>
-      <FormField label="Rejected At" name="rejectedAt">
-        <Input id="rejectedAt" type="datetime-local" {...register('rejectedAt')} />
-      </FormField>
-      <FormField label="Rejected By" name="rejectedById">
-        <Select id="rejectedById" {...register('rejectedById', { valueAsNumber: true })}>
-          <option value="">— None —</option>
-          {users.map((u) => (
-            <option key={u.id} value={u.id}>
-              {u.id} — {u.firstName} {u.lastName}
-            </option>
-          ))}
-        </Select>
-      </FormField>
-      <div className="sm:col-span-2">
-        <FormField label="Rejection Reason" name="rejectionReason">
-          <Input id="rejectionReason" {...register('rejectionReason')} />
-        </FormField>
-      </div>
-      <FormField label="Created At" name="createdAt">
-        <Input id="createdAt" type="datetime-local" {...register('createdAt')} />
-      </FormField>
-      <FormField label="Updated At" name="updatedAt">
-        <Input id="updatedAt" type="datetime-local" {...register('updatedAt')} />
-      </FormField>
-      <FormField label="Deleted At" name="deletedAt">
-        <Input id="deletedAt" type="datetime-local" {...register('deletedAt')} />
-      </FormField>
-      <FieldError message={errors.headline?.message} />
     </div>
   );
 }
@@ -254,13 +184,13 @@ function SkillsStep() {
     register,
     control,
     formState: { errors },
-  } = useFormContext<CandidateWizardValues>();
+  } = useFormContext<CandidateWizardFormValues>();
   const { fields, append, remove } = useFieldArray({ control, name: 'skills' });
 
   return (
     <div className="space-y-4">
       <p className="text-sm text-muted-foreground">
-        Add skill communities with proficiency, years, and primary flag (maps to CandidateSkill).
+        Add skill communities with proficiency level and years of experience.
       </p>
       {fields.map((field, index) => (
         <div key={field.id} className="rounded-lg border border-border/80 bg-muted/10 p-4">
@@ -291,7 +221,11 @@ function SkillsStep() {
               </Select>
             </FormField>
             <FormField label="Years Experience" name={`skills.${index}.yearsExperience`}>
-              <Input type="number" min={0} {...register(`skills.${index}.yearsExperience`, { valueAsNumber: true })} />
+              <Input
+                type="number"
+                min={0}
+                {...register(`skills.${index}.yearsExperience`, { valueAsNumber: true })}
+              />
             </FormField>
             <FormField label="Primary Skill" name={`skills.${index}.isPrimary`}>
               <label className="flex items-center gap-2 text-sm">
@@ -304,9 +238,6 @@ function SkillsStep() {
                 <textarea rows={2} className={textareaClass} {...register(`skills.${index}.notes`)} />
               </FormField>
             </div>
-            <FormField label="Deleted At" name={`skills.${index}.deletedAt`}>
-              <Input type="datetime-local" {...register(`skills.${index}.deletedAt`)} />
-            </FormField>
           </div>
         </div>
       ))}
@@ -321,7 +252,6 @@ function SkillsStep() {
             yearsExperience: undefined,
             isPrimary: false,
             notes: '',
-            deletedAt: '',
           })
         }
       >
@@ -333,12 +263,16 @@ function SkillsStep() {
 }
 
 function AvailabilityStep() {
-  const { register } = useFormContext<CandidateWizardValues>();
+  const {
+    register,
+    formState: { errors },
+  } = useFormContext<CandidateWizardFormValues>();
 
   return (
     <div className="grid gap-4 sm:grid-cols-2">
       <FormField label="Available From" name="availableFrom" required>
         <Input id="availableFrom" type="date" {...register('availableFrom')} />
+        <FieldError message={errors.availableFrom?.message} />
       </FormField>
       <FormField label="Timezone" name="timezone">
         <Input id="timezone" {...register('timezone')} placeholder="America/New_York" />
@@ -370,7 +304,7 @@ function AvailabilityStep() {
 }
 
 function PricingStep() {
-  const { register } = useFormContext<CandidateWizardValues>();
+  const { register } = useFormContext<CandidateWizardFormValues>();
 
   return (
     <div className="grid gap-4 sm:grid-cols-2">
@@ -386,9 +320,6 @@ function PricingStep() {
       <FormField label="Bill Rate ($/hr)" name="billRate">
         <Input id="billRate" type="number" min={0} step={0.01} {...register('billRate', { valueAsNumber: true })} />
       </FormField>
-      <FormField label="Pricing Effective From" name="pricingEffectiveFrom">
-        <Input id="pricingEffectiveFrom" type="date" {...register('pricingEffectiveFrom')} />
-      </FormField>
       <div className="sm:col-span-2">
         <FormField label="Pricing Notes" name="pricingNotes">
           <textarea id="pricingNotes" rows={3} className={textareaClass} {...register('pricingNotes')} />
@@ -398,91 +329,78 @@ function PricingStep() {
   );
 }
 
-function UploadStep() {
-  const { register, setValue, watch } = useFormContext<CandidateWizardValues>();
+function DocumentsStep() {
+  const { setValue, watch } = useFormContext<CandidateWizardFormValues>();
 
   return (
     <div className="space-y-6">
-      <div className="grid gap-4 sm:grid-cols-2">
-        <FormField label="Resume Document ID" name="resumeDocumentId">
-          <Input id="resumeDocumentId" type="number" {...register('resumeDocumentId', { valueAsNumber: true })} placeholder="Auto-set on upload" />
-        </FormField>
-        <FormField label="Profile Image Document ID" name="profileImageDocumentId">
-          <Input id="profileImageDocumentId" type="number" {...register('profileImageDocumentId', { valueAsNumber: true })} />
-        </FormField>
-        <FormField label="Intro Video Document ID" name="introVideoDocumentId">
-          <Input id="introVideoDocumentId" type="number" {...register('introVideoDocumentId', { valueAsNumber: true })} />
-        </FormField>
+      <p className="text-sm text-muted-foreground">
+        Upload files directly — no URLs needed. Documents are stored securely after you submit.
+      </p>
+
+      <div>
+        <FileUpload
+          label="Resume (PDF / Word)"
+          accept=".pdf,.doc,.docx"
+          onFileSelect={(file) => setValue('resumeFileName', file.name, { shouldValidate: true })}
+        />
+        {watch('resumeFileName') && (
+          <p className="mt-2 text-sm text-emerald-700">Selected: {watch('resumeFileName')}</p>
+        )}
       </div>
 
-      <FileUpload
-        label="Resume (PDF / Word)"
-        accept=".pdf,.doc,.docx"
-        onFileSelect={(file) => {
-          setValue('resumeFileName', file.name);
-          setValue('resumeDocumentId', Math.floor(Math.random() * 9000) + 1000);
-        }}
-      />
-      {watch('resumeFileName') && (
-        <p className="text-sm text-muted-foreground">Selected: {watch('resumeFileName')}</p>
-      )}
+      <div>
+        <FileUpload
+          label="Profile Photo"
+          accept=".jpg,.jpeg,.png,.webp"
+          hint="JPEG or PNG up to 5 MB"
+          onFileSelect={(file) => setValue('profileImageFileName', file.name, { shouldValidate: true })}
+        />
+        {watch('profileImageFileName') && (
+          <p className="mt-2 text-sm text-emerald-700">Selected: {watch('profileImageFileName')}</p>
+        )}
+      </div>
 
-      <FileUpload
-        label="Profile Image"
-        accept=".jpg,.jpeg,.png,.webp"
-        hint="JPEG or PNG up to 5 MB"
-        onFileSelect={(file) => {
-          setValue('profileImageFileName', file.name);
-          setValue('profileImageDocumentId', Math.floor(Math.random() * 9000) + 1000);
-          setValue('photoUrl', `https://demo.bestal.local/uploads/${file.name}`);
-        }}
-      />
-      {watch('profileImageFileName') && (
-        <p className="text-sm text-muted-foreground">Selected: {watch('profileImageFileName')}</p>
-      )}
-
-      <FileUpload
-        label="Intro Video (optional)"
-        accept=".mp4,.webm,.mov"
-        hint="MP4 or WebM up to 100 MB"
-        onFileSelect={(file) => {
-          setValue('introVideoFileName', file.name);
-          setValue('introVideoDocumentId', Math.floor(Math.random() * 9000) + 1000);
-        }}
-      />
-      {watch('introVideoFileName') && (
-        <p className="text-sm text-muted-foreground">Selected: {watch('introVideoFileName')}</p>
-      )}
+      <div>
+        <FileUpload
+          label="Intro Video (optional)"
+          accept=".mp4,.webm,.mov"
+          hint="MP4 or WebM up to 100 MB"
+          onFileSelect={(file) => setValue('introVideoFileName', file.name, { shouldValidate: true })}
+        />
+        {watch('introVideoFileName') && (
+          <p className="mt-2 text-sm text-emerald-700">Selected: {watch('introVideoFileName')}</p>
+        )}
+      </div>
     </div>
   );
 }
 
 function ReviewStep() {
-  const { getValues } = useFormContext<CandidateWizardValues>();
+  const { getValues } = useFormContext<CandidateWizardFormValues>();
   const values = getValues();
-
-  const scalarKeys = (Object.keys(FIELD_LABELS) as (keyof CandidateWizardValues)[]).filter(
-    (k) => k !== 'skills',
-  );
 
   return (
     <div className="space-y-6">
       <p className="text-sm text-muted-foreground">
-        Review all candidate schema fields before submitting. Data is saved locally only (demo).
+        Review your entries before creating the candidate. Status, approval workflow, and audit
+        fields are set automatically by the system.
       </p>
       <dl className="grid gap-x-8 gap-y-3 sm:grid-cols-2">
-        {scalarKeys.map((key) => {
+        {REVIEW_FIELD_KEYS.map((key) => {
           const val = values[key];
-          const display =
-            val === undefined || val === null || val === ''
-              ? '—'
-              : typeof val === 'number'
-                ? String(val)
-                : String(val);
+          let display: string;
+          if (val === undefined || val === null || val === '') {
+            display = '—';
+          } else if (key === 'primarySkillCommunityId' && typeof val === 'number') {
+            display = skillCommunities.find((sc) => sc.id === val)?.name ?? String(val);
+          } else {
+            display = String(val);
+          }
           return (
             <div key={key} className="border-b border-border/50 pb-2">
               <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                {FIELD_LABELS[key]}
+                {USER_FIELD_LABELS[key]}
               </dt>
               <dd className="mt-0.5 break-words text-sm">{display}</dd>
             </div>
@@ -521,7 +439,7 @@ function StepContent({ stepId }: { stepId: WizardStepId }) {
     case 'pricing':
       return <PricingStep />;
     case 'upload':
-      return <UploadStep />;
+      return <DocumentsStep />;
     case 'review':
       return <ReviewStep />;
     default:
@@ -533,8 +451,8 @@ export function CandidateWizard({ onSubmit, onCancel, onToast }: CandidateWizard
   const [stepIndex, setStepIndex] = useState(0);
   const currentStep = WIZARD_STEPS[stepIndex]!;
 
-  const methods = useForm<CandidateWizardValues>({
-    resolver: zodResolver(candidateWizardSchema) as Resolver<CandidateWizardValues>,
+  const methods = useForm<CandidateWizardFormValues>({
+    resolver: zodResolver(candidateWizardFormSchema) as Resolver<CandidateWizardFormValues>,
     defaultValues: candidateWizardDefaults,
     mode: 'onBlur',
   });
@@ -545,7 +463,7 @@ export function CandidateWizard({ onSubmit, onCancel, onToast }: CandidateWizard
     try {
       const raw = localStorage.getItem(DRAFT_STORAGE_KEY);
       if (raw) {
-        const parsed = JSON.parse(raw) as CandidateWizardValues;
+        const parsed = JSON.parse(raw) as CandidateWizardFormValues;
         reset({ ...candidateWizardDefaults, ...parsed });
       }
     } catch {
@@ -563,13 +481,13 @@ export function CandidateWizard({ onSubmit, onCancel, onToast }: CandidateWizard
     const headline = getValues('headline') || 'Senior Engineer';
     setValue(
       'summary',
-      `AI-generated summary: ${first} is a strong ${headline} profile with verified skills and enterprise-ready experience. Recommended for client shortlists after evaluation.`,
+      `${first} is a strong ${headline} with verified skills and enterprise-ready experience. Recommended for client shortlists after evaluation.`,
     );
     onToast('AI screening complete — summary pre-filled (demo)');
   }, [getValues, setValue, onToast]);
 
   async function goNext() {
-    const fields = [...currentStep.fields] as FieldPath<CandidateWizardValues>[];
+    const fields = [...currentStep.fields] as FieldPath<CandidateWizardFormValues>[];
     if (fields.length > 0) {
       const valid = await trigger(fields);
       if (!valid) return;
@@ -587,9 +505,9 @@ export function CandidateWizard({ onSubmit, onCancel, onToast }: CandidateWizard
   return (
     <FormProvider {...methods}>
       <form
-        onSubmit={handleSubmit((values) => {
+        onSubmit={handleSubmit((formValues) => {
           localStorage.removeItem(DRAFT_STORAGE_KEY);
-          onSubmit(values);
+          onSubmit(buildCandidatePayload(formValues));
         })}
       >
         <StepIndicator currentStep={stepIndex} />
@@ -631,7 +549,7 @@ export function CandidateWizard({ onSubmit, onCancel, onToast }: CandidateWizard
             )}
             {isLast && (
               <Button type="submit" variant="primary" size="sm">
-                Submit
+                Create Candidate
               </Button>
             )}
           </div>

@@ -8,10 +8,12 @@ import {
   type DeploymentStatus,
 } from '@bestal/mock-data';
 import { formatCurrency, formatDate } from '@bestal/shared-utils';
-import { Button, PageHeader, Select, StatusBadge, TanStackDataTable } from '@bestal/ui';
+import { Button, Dialog, PageHeader, Select, StatusBadge, TanStackDataTable } from '@bestal/ui';
 import { type ColumnDef } from '@tanstack/react-table';
-import { Download } from 'lucide-react';
+import { Download, Plus } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
+import { DeploymentForm } from '../forms/DeploymentForm';
+import { buildDeploymentPayload, type DeploymentFormValues } from '../../lib/entity-field-metadata';
 import { useDemoToast } from '../../lib/use-demo-toast';
 
 type DeploymentAction = 'Pause' | 'Terminate' | 'Complete' | 'Replace';
@@ -162,6 +164,7 @@ export function DeploymentManagementView({
     ...deploymentManagementRecords,
   ]);
   const [filters, setFilters] = useState(defaultFilters);
+  const [createOpen, setCreateOpen] = useState(false);
 
   const filteredData = useMemo(() => {
     let rows = [...records];
@@ -223,6 +226,37 @@ export function DeploymentManagementView({
       show(`${action} — ${record.candidateName} @ ${record.clientName} (demo)`);
     },
     [show],
+  );
+
+  const handleCreateSubmit = useCallback(
+    (values: DeploymentFormValues) => {
+      const payload = buildDeploymentPayload(values);
+      const nextId = Math.max(0, ...records.map((r) => r.id)) + 1;
+      setRecords((prev) => [
+        ...prev,
+        {
+          id: nextId,
+          clientId: payload.clientId,
+          clientName: values.clientName,
+          candidateId: payload.candidateId,
+          candidateName: values.candidateName,
+          roleTitle: values.roleTitle,
+          startDate: values.startDate,
+          endDate: values.endDate ?? null,
+          billRate: values.billRate,
+          payRate: values.payRate,
+          marginPercent: payload.marginPercent,
+          currency: values.currency,
+          hoursPerWeek: values.hoursPerWeek,
+          timezone: values.timezone,
+          manager: payload.manager,
+          status: 'PENDING',
+        },
+      ]);
+      show(`Deployment created — ${values.candidateName} @ ${values.clientName} (demo)`);
+      setCreateOpen(false);
+    },
+    [records, show],
   );
 
   const columns = useMemo<ColumnDef<DeploymentManagementRecord>[]>(
@@ -321,10 +355,16 @@ export function DeploymentManagementView({
         title={title}
         description={description}
         actions={
-          <Button variant="outline" onClick={handleExport} disabled={filteredData.length === 0}>
-            <Download className="mr-2 h-4 w-4" />
-            Export
-          </Button>
+          <div className="flex gap-2">
+            <Button onClick={() => setCreateOpen(true)}>
+              <Plus className="mr-2 h-4 w-4" />
+              New deployment
+            </Button>
+            <Button variant="outline" onClick={handleExport} disabled={filteredData.length === 0}>
+              <Download className="mr-2 h-4 w-4" />
+              Export
+            </Button>
+          </div>
         }
       />
 
@@ -412,6 +452,19 @@ export function DeploymentManagementView({
           }}
         />
       </div>
+
+      <Dialog
+        open={createOpen}
+        onClose={() => setCreateOpen(false)}
+        title="New deployment"
+        description="Place a candidate at a client. Status, margin, and manager are set automatically."
+        className="max-w-2xl"
+      >
+        <DeploymentForm
+          onSubmit={handleCreateSubmit}
+          onCancel={() => setCreateOpen(false)}
+        />
+      </Dialog>
     </div>
   );
 }

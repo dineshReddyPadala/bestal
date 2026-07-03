@@ -18,7 +18,7 @@ import {
 import { useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { DetailPageShell } from '../../components/enterprise/DetailPageShell';
-import { SchemaFieldGrid, clientToFields } from '../../components/enterprise/SchemaFieldGrid';
+import { SchemaFieldGrid, clientUserFields, clientSystemFields } from '../../components/enterprise/SchemaFieldGrid';
 import { useDemoToast } from '../../lib/use-demo-toast';
 
 type ClientDetailPageProps = {
@@ -100,7 +100,13 @@ export function ClientDetailPage({ basePath }: ClientDetailPageProps) {
               <div className="grid gap-6 lg:grid-cols-3">
                 <Card className="lg:col-span-2">
                   <CardContent className="p-6">
-                    <SchemaFieldGrid fields={clientToFields(client)} columns={2} />
+                    <SchemaFieldGrid fields={clientUserFields(client)} columns={2} title="Account details" />
+                    <SchemaFieldGrid
+                      fields={clientSystemFields(client)}
+                      columns={2}
+                      title="System & audit"
+                      className="mt-6 border-t border-border pt-6"
+                    />
                   </CardContent>
                 </Card>
                 <Card>

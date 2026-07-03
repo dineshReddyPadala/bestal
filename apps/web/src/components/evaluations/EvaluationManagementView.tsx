@@ -8,7 +8,7 @@ import {
   type EvaluationManagementRecord,
 } from '@bestal/mock-data';
 import { formatDate } from '@bestal/shared-utils';
-import { Button, PageHeader, Select, StatusBadge, TanStackDataTable } from '@bestal/ui';
+import { Button, Dialog, PageHeader, Select, StatusBadge, TanStackDataTable } from '@bestal/ui';
 import { type ColumnDef } from '@tanstack/react-table';
 import {
   Download,
@@ -19,6 +19,8 @@ import {
   Video,
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { EvaluationForm } from '../forms/EvaluationForm';
+import { buildDocumentPayload, buildEvaluationPayload, type EvaluationFormValues } from '../../lib/entity-field-metadata';
 import { useDemoToast } from '../../lib/use-demo-toast';
 
 type EvaluationAction =
@@ -131,6 +133,8 @@ export function EvaluationManagementView({
 }: EvaluationManagementViewProps) {
   const { message, show } = useDemoToast();
   const [filters, setFilters] = useState(defaultFilters);
+  const [formOpen, setFormOpen] = useState<'upload' | 'edit' | null>(null);
+  const [activeRecord, setActiveRecord] = useState<EvaluationManagementRecord | null>(null);
 
   const filteredData = useMemo(() => {
     let rows: EvaluationManagementRecord[] = [...evaluationManagementRecords];
@@ -175,9 +179,50 @@ export function EvaluationManagementView({
 
   const handleAction = useCallback(
     (record: EvaluationManagementRecord, action: EvaluationAction) => {
+      if (action === 'Upload') {
+        setActiveRecord(record);
+        setFormOpen('upload');
+        return;
+      }
+      if (action === 'Edit') {
+        setActiveRecord(record);
+        setFormOpen('edit');
+        return;
+      }
       show(`${action} — ${record.candidateName} (${record.evaluatorName}) (demo)`);
     },
     [show],
+  );
+
+  const handleFormSubmit = useCallback(
+    (values: EvaluationFormValues) => {
+      buildEvaluationPayload(
+        values,
+        activeRecord
+          ? {
+              id: activeRecord.id,
+              candidateId: activeRecord.candidateId,
+              evaluatorName: activeRecord.evaluatorName,
+              status: activeRecord.status,
+              hasRecording: activeRecord.hasRecording,
+              hasPdf: activeRecord.hasPdf,
+            }
+          : undefined,
+      );
+      if (values.pdfFileName) {
+        buildDocumentPayload(
+          { fileName: values.pdfFileName, kind: 'EVALUATION_FORM' },
+          'evaluation',
+          activeRecord?.id ?? 0,
+        );
+      }
+      show(
+        `${formOpen === 'upload' ? 'Documents uploaded' : 'Evaluation updated'} — ${values.candidateName || activeRecord?.candidateName} (demo)`,
+      );
+      setFormOpen(null);
+      setActiveRecord(null);
+    },
+    [activeRecord, formOpen, show],
   );
 
   const columns = useMemo<ColumnDef<EvaluationManagementRecord>[]>(
@@ -369,6 +414,42 @@ export function EvaluationManagementView({
           }}
         />
       </div>
+
+      <Dialog
+        open={formOpen !== null}
+        onClose={() => {
+          setFormOpen(null);
+          setActiveRecord(null);
+        }}
+        title={formOpen === 'upload' ? 'Upload evaluation documents' : 'Edit evaluation'}
+        description="Upload files or update scores. Evaluator, status, and audit fields are set automatically."
+        className="max-w-2xl"
+      >
+        <EvaluationForm
+          key={activeRecord?.id ?? 'new'}
+          uploadOnly={formOpen === 'upload'}
+          submitLabel={formOpen === 'upload' ? 'Upload documents' : 'Save evaluation'}
+          defaultValues={
+            activeRecord
+              ? {
+                  candidateName: activeRecord.candidateName,
+                  evaluationType: activeRecord.evaluationType,
+                  evaluatedDate: activeRecord.evaluatedDate?.slice(0, 10) ?? '',
+                  technicalScore: activeRecord.technicalScore ?? undefined,
+                  communicationScore: activeRecord.communicationScore ?? undefined,
+                  architectureScore: activeRecord.architectureScore ?? undefined,
+                  problemSolvingScore: activeRecord.problemSolvingScore ?? undefined,
+                  recommendation: activeRecord.recommendation ?? undefined,
+                }
+              : undefined
+          }
+          onSubmit={handleFormSubmit}
+          onCancel={() => {
+            setFormOpen(null);
+            setActiveRecord(null);
+          }}
+        />
+      </Dialog>
     </div>
   );
 }

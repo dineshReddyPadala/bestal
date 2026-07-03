@@ -1,8 +1,10 @@
-import { Button, Input, Select } from '@bestal/ui';
+import { skillCommunities } from '@bestal/mock-data';
+import { Button, FileUpload, Input, Select } from '@bestal/ui';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { Label } from '../ui/label';
+import { FormSystemNote } from './FormSystemNote';
 
 const candidateFormSchema = z.object({
   firstName: z.string().min(1, 'Required').max(100),
@@ -16,12 +18,11 @@ const candidateFormSchema = z.object({
   availableFrom: z.string().optional(),
   expectedRate: z.number().positive().optional(),
   currency: z.string().length(3).optional(),
-  linkedinUrl: z.string().url().optional().or(z.literal('')),
+  linkedinUrl: z.string().max(500).optional(),
   source: z.enum(['DIRECT', 'REFERRAL', 'JOB_BOARD', 'LINKEDIN', 'AGENCY', 'INTERNAL', 'OTHER']),
-  status: z.enum(['NEW', 'ACTIVE', 'INACTIVE', 'PLACED', 'DO_NOT_CONTACT']).optional(),
-  visibility: z.enum(['DRAFT', 'PUBLISHED', 'HIDDEN']).optional(),
-  organizationId: z.number().int().positive().optional(),
   primarySkillCommunityId: z.number().int().positive().optional().nullable(),
+  resumeFileName: z.string().optional(),
+  profileImageFileName: z.string().optional(),
 });
 
 export type CandidateFormValues = z.infer<typeof candidateFormSchema>;
@@ -42,21 +43,21 @@ export function CandidateForm({
   const {
     register,
     handleSubmit,
+    setValue,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm<CandidateFormValues>({
     resolver: zodResolver(candidateFormSchema),
     defaultValues: {
       source: 'LINKEDIN',
       currency: 'USD',
-      status: 'NEW',
-      visibility: 'DRAFT',
-      organizationId: 1,
       ...defaultValues,
     },
   });
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+      <FormSystemNote />
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="firstName">First name *</Label>
@@ -78,8 +79,16 @@ export function CandidateForm({
           <Input id="phone" {...register('phone')} placeholder="+1 (415) 555-0100" />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="organizationId">Organization ID</Label>
-          <Input id="organizationId" type="number" {...register('organizationId', { valueAsNumber: true })} />
+          <Label htmlFor="source">Source</Label>
+          <Select id="source" {...register('source')}>
+            <option value="DIRECT">Direct</option>
+            <option value="REFERRAL">Referral</option>
+            <option value="JOB_BOARD">Job Board</option>
+            <option value="LINKEDIN">LinkedIn</option>
+            <option value="AGENCY">Agency</option>
+            <option value="INTERNAL">Internal</option>
+            <option value="OTHER">Other</option>
+          </Select>
         </div>
         <div className="space-y-2 sm:col-span-2">
           <Label htmlFor="headline">Headline</Label>
@@ -115,44 +124,41 @@ export function CandidateForm({
           <Input id="currency" maxLength={3} {...register('currency')} />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="primarySkillCommunityId">Primary skill community ID</Label>
-          <Input id="primarySkillCommunityId" type="number" {...register('primarySkillCommunityId', { valueAsNumber: true })} />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="source">Source</Label>
-          <Select id="source" {...register('source')}>
-            <option value="DIRECT">Direct</option>
-            <option value="REFERRAL">Referral</option>
-            <option value="JOB_BOARD">Job Board</option>
-            <option value="LINKEDIN">LinkedIn</option>
-            <option value="AGENCY">Agency</option>
-            <option value="INTERNAL">Internal</option>
-            <option value="OTHER">Other</option>
-          </Select>
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="status">Status</Label>
-          <Select id="status" {...register('status')}>
-            <option value="NEW">New</option>
-            <option value="ACTIVE">Active</option>
-            <option value="INACTIVE">Inactive</option>
-            <option value="PLACED">Placed</option>
-            <option value="DO_NOT_CONTACT">Do Not Contact</option>
-          </Select>
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="visibility">Visibility</Label>
-          <Select id="visibility" {...register('visibility')}>
-            <option value="DRAFT">Draft</option>
-            <option value="PUBLISHED">Published</option>
-            <option value="HIDDEN">Hidden</option>
+          <Label htmlFor="primarySkillCommunityId">Primary skill</Label>
+          <Select id="primarySkillCommunityId" {...register('primarySkillCommunityId', { valueAsNumber: true })}>
+            <option value="">— Select —</option>
+            {skillCommunities.map((sc) => (
+              <option key={sc.id} value={sc.id}>
+                {sc.name}
+              </option>
+            ))}
           </Select>
         </div>
         <div className="space-y-2 sm:col-span-2">
-          <Label htmlFor="linkedinUrl">LinkedIn URL</Label>
+          <Label htmlFor="linkedinUrl">LinkedIn profile</Label>
           <Input id="linkedinUrl" {...register('linkedinUrl')} placeholder="https://linkedin.com/in/..." />
-          {errors.linkedinUrl && <p className="text-xs text-red-600">{errors.linkedinUrl.message}</p>}
         </div>
+      </div>
+
+      <div className="space-y-4 border-t border-border pt-4">
+        <p className="text-sm font-medium">Documents</p>
+        <FileUpload
+          label="Resume (PDF / Word)"
+          accept=".pdf,.doc,.docx"
+          onFileSelect={(file) => setValue('resumeFileName', file.name)}
+        />
+        {watch('resumeFileName') && (
+          <p className="text-sm text-muted-foreground">Resume: {watch('resumeFileName')}</p>
+        )}
+        <FileUpload
+          label="Profile photo"
+          accept=".jpg,.jpeg,.png,.webp"
+          hint="JPEG or PNG up to 5 MB"
+          onFileSelect={(file) => setValue('profileImageFileName', file.name)}
+        />
+        {watch('profileImageFileName') && (
+          <p className="text-sm text-muted-foreground">Photo: {watch('profileImageFileName')}</p>
+        )}
       </div>
 
       <div className="flex justify-end gap-3">

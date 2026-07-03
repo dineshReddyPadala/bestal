@@ -1,45 +1,36 @@
 import { z } from 'zod';
 
 const optionalNumber = z.preprocess(
-  (v) => (v === '' || v === null || v === undefined || (typeof v === 'number' && Number.isNaN(v)) ? undefined : Number(v)),
+  (v) =>
+    v === '' || v === null || v === undefined || (typeof v === 'number' && Number.isNaN(v))
+      ? undefined
+      : Number(v),
   z.number().optional().nullable(),
 );
 
 export const skillEntrySchema = z.object({
-  skillCommunityId: z.preprocess((v) => Number(v), z.number().int().positive('Select a community')),
+  skillCommunityId: z.preprocess((v) => Number(v), z.number().int().positive('Select a skill community')),
   proficiencyLevel: z.enum(['BEGINNER', 'INTERMEDIATE', 'ADVANCED', 'EXPERT']),
   yearsExperience: optionalNumber,
   isPrimary: z.boolean(),
   notes: z.string().max(5000).optional().nullable(),
-  deletedAt: z.string().optional().nullable(),
 });
 
-/** All Candidate + CandidateSkill + related wizard fields (Prisma-aligned). */
-export const candidateWizardSchema = z.object({
-  organizationId: z.preprocess((v) => Number(v), z.number().int().positive()),
+/** Fields the recruiter/admin actually fills in. */
+export const candidateWizardFormSchema = z.object({
   firstName: z.string().min(1, 'First name is required').max(100),
   lastName: z.string().min(1, 'Last name is required').max(100),
   email: z.string().email('Invalid email').max(255),
   phone: z.string().max(30).optional().nullable(),
   location: z.string().max(255).optional().nullable(),
   linkedinUrl: z.string().max(500).optional().nullable(),
-  photoUrl: z.string().max(500).optional().nullable(),
   source: z.enum(['DIRECT', 'REFERRAL', 'JOB_BOARD', 'LINKEDIN', 'AGENCY', 'INTERNAL', 'OTHER']),
   headline: z.string().max(255).optional().nullable(),
   summary: z.string().max(10000).optional().nullable(),
   yearsExperience: optionalNumber,
   primarySkillCommunityId: optionalNumber,
-  status: z.enum(['NEW', 'ACTIVE', 'INACTIVE', 'PLACED', 'DO_NOT_CONTACT']),
-  visibility: z.enum(['DRAFT', 'PUBLISHED', 'HIDDEN']),
-  approvalStatus: z.enum(['PENDING', 'APPROVED', 'REJECTED']),
-  publishedAt: z.string().optional().nullable(),
-  hiddenAt: z.string().optional().nullable(),
-  approvedAt: z.string().optional().nullable(),
-  approvedById: optionalNumber,
-  rejectedAt: z.string().optional().nullable(),
-  rejectedById: optionalNumber,
-  rejectionReason: z.string().max(500).optional().nullable(),
-  availableFrom: z.string().optional().nullable(),
+  skills: z.array(skillEntrySchema).min(1, 'Add at least one skill'),
+  availableFrom: z.string().min(1, 'Available from date is required'),
   timezone: z.string().max(100).optional().nullable(),
   noticePeriodDays: optionalNumber,
   hoursPerWeek: optionalNumber,
@@ -53,46 +44,58 @@ export const candidateWizardSchema = z.object({
   currency: z.string().length(3).optional().nullable(),
   payRate: optionalNumber,
   billRate: optionalNumber,
-  pricingEffectiveFrom: z.string().optional().nullable(),
   pricingNotes: z.string().max(2000).optional().nullable(),
-  resumeDocumentId: optionalNumber,
-  profileImageDocumentId: optionalNumber,
-  introVideoDocumentId: optionalNumber,
   resumeFileName: z.string().optional().nullable(),
   profileImageFileName: z.string().optional().nullable(),
   introVideoFileName: z.string().optional().nullable(),
-  createdAt: z.string().optional().nullable(),
-  updatedAt: z.string().optional().nullable(),
-  deletedAt: z.string().optional().nullable(),
-  skills: z.array(skillEntrySchema).min(0),
 });
 
-export type CandidateWizardValues = z.infer<typeof candidateWizardSchema>;
+export type CandidateWizardFormValues = z.infer<typeof candidateWizardFormSchema>;
 
-export const candidateWizardDefaults: CandidateWizardValues = {
-  organizationId: 1,
+/** Full payload shape (includes system-managed fields set on submit). */
+export type CandidateWizardValues = CandidateWizardFormValues & {
+  organizationId: number;
+  photoUrl: string | null;
+  status: 'NEW' | 'ACTIVE' | 'INACTIVE' | 'PLACED' | 'DO_NOT_CONTACT';
+  visibility: 'DRAFT' | 'PUBLISHED' | 'HIDDEN';
+  approvalStatus: 'PENDING' | 'APPROVED' | 'REJECTED';
+  publishedAt: string | null;
+  hiddenAt: string | null;
+  approvedAt: string | null;
+  approvedById: number | null;
+  rejectedAt: string | null;
+  rejectedById: number | null;
+  rejectionReason: string | null;
+  pricingEffectiveFrom: string | null;
+  resumeDocumentId: number | null;
+  profileImageDocumentId: number | null;
+  introVideoDocumentId: number | null;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt: string | null;
+};
+
+export const candidateWizardDefaults: CandidateWizardFormValues = {
   firstName: '',
   lastName: '',
   email: '',
   phone: '',
   location: '',
   linkedinUrl: '',
-  photoUrl: '',
   source: 'LINKEDIN',
   headline: '',
   summary: '',
   yearsExperience: undefined,
   primarySkillCommunityId: undefined,
-  status: 'NEW',
-  visibility: 'DRAFT',
-  approvalStatus: 'PENDING',
-  publishedAt: '',
-  hiddenAt: '',
-  approvedAt: '',
-  approvedById: undefined,
-  rejectedAt: '',
-  rejectedById: undefined,
-  rejectionReason: '',
+  skills: [
+    {
+      skillCommunityId: 1,
+      proficiencyLevel: 'INTERMEDIATE',
+      yearsExperience: undefined,
+      isPrimary: true,
+      notes: '',
+    },
+  ],
   availableFrom: '',
   timezone: 'America/New_York',
   noticePeriodDays: 14,
@@ -104,80 +107,76 @@ export const candidateWizardDefaults: CandidateWizardValues = {
   currency: 'USD',
   payRate: undefined,
   billRate: undefined,
-  pricingEffectiveFrom: '',
   pricingNotes: '',
-  resumeDocumentId: undefined,
-  profileImageDocumentId: undefined,
-  introVideoDocumentId: undefined,
   resumeFileName: '',
   profileImageFileName: '',
   introVideoFileName: '',
-  createdAt: '',
-  updatedAt: '',
-  deletedAt: '',
-  skills: [
-    {
-      skillCommunityId: 1,
-      proficiencyLevel: 'INTERMEDIATE',
-      yearsExperience: undefined,
-      isPrimary: true,
-      notes: '',
-      deletedAt: '',
-    },
-  ],
 };
+
+/** @deprecated Use candidateWizardFormSchema */
+export const candidateWizardSchema = candidateWizardFormSchema;
+
+function demoDocumentId(fileName: string): number {
+  let hash = 0;
+  for (let i = 0; i < fileName.length; i++) {
+    hash = (hash << 5) - hash + fileName.charCodeAt(i);
+  }
+  return Math.abs(hash % 9000) + 1000;
+}
+
+/** Merge user input with server-side defaults (org, audit, workflow). */
+export function buildCandidatePayload(form: CandidateWizardFormValues): CandidateWizardValues {
+  const now = new Date().toISOString();
+
+  return {
+    ...form,
+    organizationId: 1,
+    photoUrl: null,
+    status: 'NEW',
+    visibility: 'DRAFT',
+    approvalStatus: 'PENDING',
+    publishedAt: null,
+    hiddenAt: null,
+    approvedAt: null,
+    approvedById: null,
+    rejectedAt: null,
+    rejectedById: null,
+    rejectionReason: null,
+    pricingEffectiveFrom: form.availableFrom || null,
+    resumeDocumentId: form.resumeFileName ? demoDocumentId(form.resumeFileName) : null,
+    profileImageDocumentId: form.profileImageFileName
+      ? demoDocumentId(form.profileImageFileName)
+      : null,
+    introVideoDocumentId: form.introVideoFileName ? demoDocumentId(form.introVideoFileName) : null,
+    createdAt: now,
+    updatedAt: now,
+    deletedAt: null,
+  };
+}
 
 export const WIZARD_STEPS = [
   {
     id: 'personal',
     label: 'Personal',
-    description: 'Identity, contact, and source',
-    fields: [
-      'organizationId',
-      'firstName',
-      'lastName',
-      'email',
-      'phone',
-      'location',
-      'linkedinUrl',
-      'photoUrl',
-      'source',
-    ] as const,
+    description: 'Name, contact details, and how you sourced this candidate',
+    fields: ['firstName', 'lastName', 'email', 'phone', 'location', 'linkedinUrl', 'source'] as const,
   },
   {
     id: 'professional',
     label: 'Professional',
-    description: 'Profile, status, and approval workflow',
-    fields: [
-      'headline',
-      'summary',
-      'yearsExperience',
-      'primarySkillCommunityId',
-      'status',
-      'visibility',
-      'approvalStatus',
-      'publishedAt',
-      'hiddenAt',
-      'approvedAt',
-      'approvedById',
-      'rejectedAt',
-      'rejectedById',
-      'rejectionReason',
-      'createdAt',
-      'updatedAt',
-      'deletedAt',
-    ] as const,
+    description: 'Role headline, experience, and profile summary',
+    fields: ['headline', 'summary', 'yearsExperience', 'primarySkillCommunityId'] as const,
   },
   {
     id: 'skills',
     label: 'Skills',
-    description: 'Skill communities and proficiency',
+    description: 'Skill communities, proficiency, and primary skill',
     fields: ['skills', 'primarySkillCommunityId'] as const,
   },
   {
     id: 'availability',
     label: 'Availability',
-    description: 'Start date, timezone, and schedule',
+    description: 'Start date, timezone, and weekly hours',
     fields: [
       'availableFrom',
       'timezone',
@@ -192,32 +191,18 @@ export const WIZARD_STEPS = [
     id: 'pricing',
     label: 'Pricing',
     description: 'Expected, pay, and bill rates',
-    fields: [
-      'expectedRate',
-      'currency',
-      'payRate',
-      'billRate',
-      'pricingEffectiveFrom',
-      'pricingNotes',
-    ] as const,
+    fields: ['expectedRate', 'currency', 'payRate', 'billRate', 'pricingNotes'] as const,
   },
   {
     id: 'upload',
-    label: 'Upload Resume',
-    description: 'Resume, profile image, and intro video',
-    fields: [
-      'resumeDocumentId',
-      'profileImageDocumentId',
-      'introVideoDocumentId',
-      'resumeFileName',
-      'profileImageFileName',
-      'introVideoFileName',
-    ] as const,
+    label: 'Documents',
+    description: 'Upload resume, profile photo, and optional intro video',
+    fields: ['resumeFileName', 'profileImageFileName', 'introVideoFileName'] as const,
   },
   {
     id: 'review',
     label: 'Review',
-    description: 'Confirm all fields before submit',
+    description: 'Confirm details before creating the candidate',
     fields: [] as const,
   },
 ] as const;
@@ -226,30 +211,19 @@ export type WizardStepId = (typeof WIZARD_STEPS)[number]['id'];
 
 export const DRAFT_STORAGE_KEY = 'bestal-candidate-wizard-draft';
 
-export const FIELD_LABELS: Record<keyof CandidateWizardValues, string> = {
-  organizationId: 'Organization ID',
+export const USER_FIELD_LABELS: Record<keyof CandidateWizardFormValues, string> = {
   firstName: 'First Name',
   lastName: 'Last Name',
   email: 'Email',
   phone: 'Phone',
   location: 'Location',
-  linkedinUrl: 'LinkedIn URL',
-  photoUrl: 'Profile Photo URL',
+  linkedinUrl: 'LinkedIn',
   source: 'Source',
   headline: 'Headline',
   summary: 'Summary',
   yearsExperience: 'Years Experience',
-  primarySkillCommunityId: 'Primary Skill Community ID',
-  status: 'Status',
-  visibility: 'Visibility',
-  approvalStatus: 'Approval Status',
-  publishedAt: 'Published At',
-  hiddenAt: 'Hidden At',
-  approvedAt: 'Approved At',
-  approvedById: 'Approved By ID',
-  rejectedAt: 'Rejected At',
-  rejectedById: 'Rejected By ID',
-  rejectionReason: 'Rejection Reason',
+  primarySkillCommunityId: 'Primary Skill Community',
+  skills: 'Skills',
   availableFrom: 'Available From',
   timezone: 'Timezone',
   noticePeriodDays: 'Notice Period (days)',
@@ -261,16 +235,36 @@ export const FIELD_LABELS: Record<keyof CandidateWizardValues, string> = {
   currency: 'Currency',
   payRate: 'Pay Rate',
   billRate: 'Bill Rate',
-  pricingEffectiveFrom: 'Pricing Effective From',
   pricingNotes: 'Pricing Notes',
-  resumeDocumentId: 'Resume Document ID',
-  profileImageDocumentId: 'Profile Image Document ID',
-  introVideoDocumentId: 'Intro Video Document ID',
-  resumeFileName: 'Resume File',
-  profileImageFileName: 'Profile Image File',
-  introVideoFileName: 'Intro Video File',
-  createdAt: 'Created At',
-  updatedAt: 'Updated At',
-  deletedAt: 'Deleted At',
-  skills: 'Skills',
+  resumeFileName: 'Resume',
+  profileImageFileName: 'Profile Photo',
+  introVideoFileName: 'Intro Video',
 };
+
+export const FIELD_LABELS = USER_FIELD_LABELS;
+
+export const REVIEW_FIELD_KEYS: (keyof CandidateWizardFormValues)[] = [
+  'firstName',
+  'lastName',
+  'email',
+  'phone',
+  'location',
+  'linkedinUrl',
+  'source',
+  'headline',
+  'summary',
+  'yearsExperience',
+  'primarySkillCommunityId',
+  'availableFrom',
+  'timezone',
+  'noticePeriodDays',
+  'hoursPerWeek',
+  'preferredEngagement',
+  'expectedRate',
+  'currency',
+  'payRate',
+  'billRate',
+  'resumeFileName',
+  'profileImageFileName',
+  'introVideoFileName',
+];

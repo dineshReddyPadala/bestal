@@ -9,11 +9,13 @@ import {
   type PaymentTerms,
 } from '@bestal/mock-data';
 import { formatCurrency } from '@bestal/shared-utils';
-import { Avatar, Button, PageHeader, Select, StatusBadge, TanStackDataTable } from '@bestal/ui';
+import { Avatar, Button, Dialog, PageHeader, Select, StatusBadge, TanStackDataTable } from '@bestal/ui';
 import { type ColumnDef } from '@tanstack/react-table';
 import { Edit, Eye, Plus, UserCog, UserX } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { ClientForm } from '../forms/ClientForm';
+import { buildClientPayload, type ClientFormValues } from '../../lib/entity-field-metadata';
 import { useDemoToast } from '../../lib/use-demo-toast';
 
 type ClientAction = 'View' | 'Edit' | 'Deactivate' | 'Assign Manager';
@@ -92,6 +94,8 @@ export function ClientManagementView({
     ...clientManagementRecords,
   ]);
   const [filters, setFilters] = useState(defaultFilters);
+  const [formOpen, setFormOpen] = useState<'add' | 'edit' | null>(null);
+  const [editingRecord, setEditingRecord] = useState<ClientManagementRecord | null>(null);
 
   const filteredData = useMemo(() => {
     let rows = [...records];
@@ -113,6 +117,11 @@ export function ClientManagementView({
 
   const handleAction = useCallback(
     (record: ClientManagementRecord, action: ClientAction) => {
+      if (action === 'Edit') {
+        setEditingRecord(record);
+        setFormOpen('edit');
+        return;
+      }
       if (action === 'Deactivate') {
         setRecords((prev) =>
           prev.map((row) =>
@@ -133,6 +142,56 @@ export function ClientManagementView({
       show(`${action} — ${record.company} (demo)`);
     },
     [show],
+  );
+
+  const handleFormSubmit = useCallback(
+    (values: ClientFormValues) => {
+      buildClientPayload(values, editingRecord ?? undefined);
+      if (formOpen === 'edit' && editingRecord) {
+        setRecords((prev) =>
+          prev.map((row) =>
+            row.id === editingRecord.id
+              ? {
+                  ...row,
+                  company: values.company,
+                  industry: values.industry,
+                  primaryContact: values.primaryContact,
+                  email: values.email,
+                  phone: values.phone ?? row.phone,
+                  paymentTerms: values.paymentTerms,
+                  accountManager: values.accountManager,
+                }
+              : row,
+          ),
+        );
+        show(`Client updated — ${values.company} (demo)`);
+      } else {
+        const nextId = Math.max(0, ...records.map((r) => r.id)) + 1;
+        setRecords((prev) => [
+          ...prev,
+          {
+            id: nextId,
+            company: values.company,
+            industry: values.industry,
+            primaryContact: values.primaryContact,
+            email: values.email,
+            phone: values.phone ?? '',
+            paymentTerms: values.paymentTerms,
+            status: 'PROSPECT',
+            accountManager: values.accountManager,
+            candidateCount: 0,
+            deploymentCount: 0,
+            revenue: 0,
+            currency: 'USD',
+            logoUrl: values.logoFileName ? `/uploads/logos/${values.logoFileName}` : '',
+          },
+        ]);
+        show(`Client created — ${values.company} (demo)`);
+      }
+      setFormOpen(null);
+      setEditingRecord(null);
+    },
+    [editingRecord, formOpen, records, show],
   );
 
   const columns = useMemo<ColumnDef<ClientManagementRecord>[]>(
@@ -244,7 +303,12 @@ export function ClientManagementView({
         title={title}
         description={description}
         actions={
-          <Button onClick={() => show('Add client form opened (demo)')}>
+          <Button
+            onClick={() => {
+              setEditingRecord(null);
+              setFormOpen('add');
+            }}
+          >
             <Plus className="mr-2 h-4 w-4" />
             Add client
           </Button>
@@ -328,6 +392,41 @@ export function ClientManagementView({
           }}
         />
       </div>
+
+      <Dialog
+        open={formOpen !== null}
+        onClose={() => {
+          setFormOpen(null);
+          setEditingRecord(null);
+        }}
+        title={formOpen === 'edit' ? 'Edit client' : 'Add client'}
+        description="Enter company and contact details. Status and metrics are managed by the system."
+        className="max-w-2xl"
+      >
+        <ClientForm
+          key={editingRecord?.id ?? 'new'}
+          formId="client-mgmt-form"
+          submitLabel={formOpen === 'edit' ? 'Save changes' : 'Create client'}
+          defaultValues={
+            editingRecord
+              ? {
+                  company: editingRecord.company,
+                  industry: editingRecord.industry,
+                  primaryContact: editingRecord.primaryContact,
+                  email: editingRecord.email,
+                  phone: editingRecord.phone,
+                  paymentTerms: editingRecord.paymentTerms,
+                  accountManager: editingRecord.accountManager,
+                }
+              : undefined
+          }
+          onSubmit={handleFormSubmit}
+          onCancel={() => {
+            setFormOpen(null);
+            setEditingRecord(null);
+          }}
+        />
+      </Dialog>
     </div>
   );
 }
