@@ -5,14 +5,21 @@ type RequestTrialDialogProps = {
   open: boolean;
   onClose: () => void;
   candidateName: string;
+  onSubmitted?: () => void;
 };
 
-export function RequestTrialDialog({ open, onClose, candidateName }: RequestTrialDialogProps) {
+export function RequestTrialDialog({
+  open,
+  onClose,
+  candidateName,
+  onSubmitted,
+}: RequestTrialDialogProps) {
   const [submitted, setSubmitted] = useState(false);
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSubmitted(true);
+    onSubmitted?.();
     setTimeout(() => {
       setSubmitted(false);
       onClose();

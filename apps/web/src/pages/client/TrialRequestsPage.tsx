@@ -1,4 +1,3 @@
-import { trials } from '@bestal/mock-data';
 import { formatCurrency, formatDate } from '@bestal/shared-utils';
 import {
   Button,
@@ -10,11 +9,15 @@ import {
   Tabs,
 } from '@bestal/ui';
 import { Calendar, FlaskConical, Plus } from 'lucide-react';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { DEMO_CLIENT_ID } from '../../lib/demo-client';
+import { PickCandidateDialog } from '../../components/client/PickCandidateDialog';
+import { RequestTrialDialog } from '../../components/client/RequestTrialDialog';
+import { useClientTrialRequests } from '../../hooks/useClientEngagementRequests';
+import { useClientShortlist } from '../../hooks/useClientShortlist';
+import { useDemoToast } from '../../lib/use-demo-toast';
 
-function TrialCard({ trial }: { trial: (typeof trials)[number] }) {
+function TrialCard({ trial }: { trial: ReturnType<typeof useClientTrialRequests>['trials'][number] }) {
   return (
     <Card>
       <CardContent className="p-4 sm:p-6">
@@ -30,7 +33,9 @@ function TrialCard({ trial }: { trial: (typeof trials)[number] }) {
                 <Calendar className="h-4 w-4" />
                 {formatDate(trial.startDate)} – {formatDate(trial.endDate)}
               </span>
-              <span>{formatCurrency(trial.rate, trial.currency)}/hr</span>
+              {trial.rate > 0 && (
+                <span>{formatCurrency(trial.rate, trial.currency)}/hr</span>
+              )}
               <span>{trial.hoursPerWeek} hrs/week</span>
               <span>Recruiter: {trial.recruiter}</span>
             </div>
@@ -53,16 +58,22 @@ function TrialCard({ trial }: { trial: (typeof trials)[number] }) {
 }
 
 export function TrialRequestsPage() {
-  const clientTrials = useMemo(
-    () => trials.filter((t) => t.clientId === DEMO_CLIENT_ID),
-    [],
-  );
+  const { message, show } = useDemoToast();
+  const { shortlistedIds } = useClientShortlist();
+  const { trials: clientTrials, addRequest } = useClientTrialRequests();
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [selected, setSelected] = useState<{ id: number; name: string } | null>(null);
 
-  const active = clientTrials.filter((t) =>
-    ['REQUESTED', 'SCHEDULED', 'IN_PROGRESS', 'EXTENDED'].includes(t.status),
+  const active = useMemo(
+    () =>
+      clientTrials.filter((t) =>
+        ['REQUESTED', 'SCHEDULED', 'IN_PROGRESS', 'EXTENDED'].includes(t.status),
+      ),
+    [clientTrials],
   );
-  const completed = clientTrials.filter((t) =>
-    ['COMPLETED', 'CANCELLED'].includes(t.status),
+  const completed = useMemo(
+    () => clientTrials.filter((t) => ['COMPLETED', 'CANCELLED'].includes(t.status)),
+    [clientTrials],
   );
 
   return (
@@ -71,19 +82,26 @@ export function TrialRequestsPage() {
         title="Trial Requests"
         description="Manage trial engagements before full deployment"
         actions={
-          <Button to="/client/search">
+          <Button onClick={() => setPickerOpen(true)}>
             <Plus className="mr-2 h-4 w-4" />
-            Request from search
+            Request trial
           </Button>
         }
       />
+
+      {message && (
+        <div className="mx-6 mb-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+          {message}
+        </div>
+      )}
 
       <div className="p-4 sm:p-6">
         {clientTrials.length === 0 ? (
           <EmptyState
             icon={<FlaskConical className="h-8 w-8" />}
             title="No trial requests"
-            description="Request trials from candidate profiles to evaluate fit before hiring."
+            description="Choose a trial-eligible candidate and submit a pilot request."
+            action={{ label: 'Request trial', onClick: () => setPickerOpen(true) }}
           />
         ) : (
           <Tabs
@@ -118,6 +136,29 @@ export function TrialRequestsPage() {
           />
         )}
       </div>
+
+      <PickCandidateDialog
+        open={pickerOpen}
+        onClose={() => setPickerOpen(false)}
+        title="Select candidate for trial"
+        trialEligibleOnly
+        shortlistedIds={shortlistedIds}
+        onSelect={(candidate) => {
+          setSelected({ id: candidate.id, name: candidate.fullName });
+        }}
+      />
+
+      {selected && (
+        <RequestTrialDialog
+          open
+          onClose={() => setSelected(null)}
+          candidateName={selected.name}
+          onSubmitted={() => {
+            addRequest(selected.id, selected.name);
+            show(`Trial requested — ${selected.name} (demo)`);
+          }}
+        />
+      )}
     </div>
   );
 }

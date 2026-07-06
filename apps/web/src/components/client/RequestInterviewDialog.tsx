@@ -5,18 +5,21 @@ type RequestInterviewDialogProps = {
   open: boolean;
   onClose: () => void;
   candidateName: string;
+  onSubmitted?: () => void;
 };
 
 export function RequestInterviewDialog({
   open,
   onClose,
   candidateName,
+  onSubmitted,
 }: RequestInterviewDialogProps) {
   const [submitted, setSubmitted] = useState(false);
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSubmitted(true);
+    onSubmitted?.();
     setTimeout(() => {
       setSubmitted(false);
       onClose();

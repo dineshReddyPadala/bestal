@@ -1,4 +1,3 @@
-import { interviews } from '@bestal/mock-data';
 import type { MockInterview } from '@bestal/mock-data';
 import {
   Button,
@@ -10,9 +9,13 @@ import {
   Tabs,
 } from '@bestal/ui';
 import { Calendar, Clock, ExternalLink, Plus, User } from 'lucide-react';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { DEMO_CLIENT_ID } from '../../lib/demo-client';
+import { PickCandidateDialog } from '../../components/client/PickCandidateDialog';
+import { RequestInterviewDialog } from '../../components/client/RequestInterviewDialog';
+import { useClientInterviewRequests } from '../../hooks/useClientEngagementRequests';
+import { useClientShortlist } from '../../hooks/useClientShortlist';
+import { useDemoToast } from '../../lib/use-demo-toast';
 
 function formatDateTime(iso: string) {
   return new Intl.DateTimeFormat('en-US', {
@@ -85,22 +88,26 @@ function InterviewCard({ interview }: { interview: MockInterview }) {
 }
 
 export function InterviewRequestsPage() {
-  const clientInterviews: MockInterview[] = useMemo(
+  const { message, show } = useDemoToast();
+  const { shortlistedIds } = useClientShortlist();
+  const { interviews: clientInterviews, addRequest } = useClientInterviewRequests();
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [selected, setSelected] = useState<{ id: number; name: string } | null>(null);
+
+  const sortedInterviews = useMemo(
     () =>
-      [...interviews]
-        .filter((i) => i.clientId === DEMO_CLIENT_ID)
-        .sort((a, b) => {
-          if (!a.scheduledAt) return 1;
-          if (!b.scheduledAt) return -1;
-          return new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime();
-        }),
-    [],
+      [...clientInterviews].sort((a, b) => {
+        if (!a.scheduledAt) return 1;
+        if (!b.scheduledAt) return -1;
+        return new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime();
+      }),
+    [clientInterviews],
   );
 
-  const upcoming = clientInterviews.filter((i) =>
+  const upcoming = sortedInterviews.filter((i) =>
     ['SCHEDULED', 'CONFIRMED', 'REQUESTED', 'RESCHEDULED'].includes(i.status),
   );
-  const completed = clientInterviews.filter((i) => i.status === 'COMPLETED');
+  const completed = sortedInterviews.filter((i) => i.status === 'COMPLETED');
 
   return (
     <div>
@@ -108,19 +115,26 @@ export function InterviewRequestsPage() {
         title="Interview Requests"
         description="Track scheduled interviews and pending requests"
         actions={
-          <Button to="/client/search">
+          <Button onClick={() => setPickerOpen(true)}>
             <Plus className="mr-2 h-4 w-4" />
-            Request from search
+            Request interview
           </Button>
         }
       />
 
+      {message && (
+        <div className="mx-6 mb-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+          {message}
+        </div>
+      )}
+
       <div className="p-4 sm:p-6">
-        {clientInterviews.length === 0 ? (
+        {sortedInterviews.length === 0 ? (
           <EmptyState
             icon={<Calendar className="h-8 w-8" />}
             title="No interview requests"
-            description="Request interviews from candidate profiles in search."
+            description="Choose a published candidate and submit an interview request."
+            action={{ label: 'Request interview', onClick: () => setPickerOpen(true) }}
           />
         ) : (
           <Tabs
@@ -159,6 +173,28 @@ export function InterviewRequestsPage() {
           />
         )}
       </div>
+
+      <PickCandidateDialog
+        open={pickerOpen}
+        onClose={() => setPickerOpen(false)}
+        title="Select candidate for interview"
+        shortlistedIds={shortlistedIds}
+        onSelect={(candidate) => {
+          setSelected({ id: candidate.id, name: candidate.fullName });
+        }}
+      />
+
+      {selected && (
+        <RequestInterviewDialog
+          open
+          onClose={() => setSelected(null)}
+          candidateName={selected.name}
+          onSubmitted={() => {
+            addRequest(selected.id, selected.name);
+            show(`Interview requested — ${selected.name} (demo)`);
+          }}
+        />
+      )}
     </div>
   );
 }
