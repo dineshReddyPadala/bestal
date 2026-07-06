@@ -6,6 +6,7 @@ import { ClientShell } from '../layouts/ClientShell';
 import { RecruiterShell } from '../layouts/RecruiterShell';
 import { BackgroundChecksPage as AdminBackgroundChecksPage } from '../pages/admin/BackgroundChecksPage';
 import { CandidateCsvImportPage as AdminCandidateCsvImportPage } from '../pages/admin/CandidateCsvImportPage';
+import { CandidateApprovalsPage } from '../pages/admin/CandidateApprovalsPage';
 import { CandidateDetailPage as AdminCandidateDetailPage } from '../pages/admin/CandidateDetailPage';
 import { CandidatesPage as AdminCandidatesPage } from '../pages/admin/CandidatesPage';
 import { ClientDetailPage as AdminClientDetailPage } from '../pages/admin/ClientDetailPage';
@@ -146,6 +147,7 @@ const router = createBrowserRouter([
           { path: 'candidates/import', element: <AdminCandidateCsvImportPage /> },
           { path: 'candidates/new', element: <AddCandidatePage /> },
           { path: 'candidates/:id', element: <AdminCandidateDetailPage /> },
+          { path: 'candidate-approvals', element: <CandidateApprovalsPage /> },
           { path: 'clients', element: <AdminClientsPage /> },
           { path: 'clients/:id', element: <AdminClientDetailPage /> },
           { path: 'deployments', element: <AdminDeploymentsPage /> },

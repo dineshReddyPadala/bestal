@@ -1,7 +1,8 @@
-import { getClientSearchRecords } from '@bestal/mock-data';
+import { getClientSearchRecordsLive } from '../../lib/client-search-overrides';
+import { subscribeApprovalChanges } from '../../lib/candidate-approval-overrides';
 import { EmptyState, PageHeader, Select } from '@bestal/ui';
 import { Grid3X3, List, Users } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ToptalCandidateCard } from '../../components/client/ToptalCandidateCard';
 import { PremiumSearchFilters } from '../../components/client/PremiumSearchFilters';
@@ -34,7 +35,11 @@ export function CandidateSearchPage() {
   const [dialogCandidate, setDialogCandidate] = useState<{ name: string } | null>(null);
   const [dialogType, setDialogType] = useState<'interview' | 'trial' | null>(null);
 
-  const allRecords = useMemo(() => getClientSearchRecords(), []);
+  const [approvalTick, setApprovalTick] = useState(0);
+
+  useEffect(() => subscribeApprovalChanges(() => setApprovalTick((t) => t + 1)), []);
+
+  const allRecords = useMemo(() => getClientSearchRecordsLive(), [approvalTick]);
 
   const filtered = useMemo(() => {
     const rows = filterClientSearchRecords(allRecords, filters);

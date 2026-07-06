@@ -1,4 +1,4 @@
-import { candidates, evaluationRecommendations, evaluationTypes } from '@bestal/mock-data';
+import { candidates, evaluationEvaluators, evaluationRecommendations, evaluationTypes, schemaUsers } from '@bestal/mock-data';
 import { Button, FileUpload, Input, Select } from '@bestal/ui';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm, type Resolver } from 'react-hook-form';
@@ -14,6 +14,7 @@ const optionalScore = z.preprocess(
 
 const evaluationFormSchema = z.object({
   candidateName: z.string().min(1, 'Select a candidate'),
+  evaluatorName: z.string().min(1, 'Select an evaluator'),
   evaluationType: z.enum(['TECHNICAL', 'BEHAVIORAL', 'ARCHITECTURE', 'FULL_STACK', 'SECURITY']),
   evaluatedDate: z.string().min(1, 'Date is required'),
   technicalScore: optionalScore,
@@ -45,6 +46,15 @@ export function EvaluationForm({
   formId = 'evaluation-form',
   uploadOnly = false,
 }: EvaluationFormProps) {
+  const evaluatorOptions = [
+    ...new Set([
+      ...evaluationEvaluators,
+      ...schemaUsers
+        .filter((u) => u.role === 'ADMIN' || u.role === 'RECRUITER')
+        .map((u) => `${u.firstName} ${u.lastName}`),
+    ]),
+  ].sort();
+
   const {
     register,
     handleSubmit,
@@ -80,6 +90,21 @@ export function EvaluationForm({
             </Select>
             {errors.candidateName && (
               <p className="text-xs text-red-600">{errors.candidateName.message}</p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="evaluatorName">Evaluator *</Label>
+            <Select id="evaluatorName" {...register('evaluatorName')}>
+              <option value="">— Select —</option>
+              {evaluatorOptions.map((name) => (
+                <option key={name} value={name}>
+                  {name}
+                </option>
+              ))}
+            </Select>
+            {errors.evaluatorName && (
+              <p className="text-xs text-red-600">{errors.evaluatorName.message}</p>
             )}
           </div>
 
@@ -193,7 +218,7 @@ export function EvaluationForm({
 
       {!uploadOnly && (
         <p className="text-xs text-muted-foreground">
-          Evaluator and status are assigned automatically when you save.
+          Status and audit timestamps are set automatically when you save.
         </p>
       )}
 

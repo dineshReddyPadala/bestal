@@ -1,11 +1,16 @@
-import { candidates, shortlists } from '@bestal/mock-data';
+import { shortlists } from '@bestal/mock-data';
 import { EmptyState, PageHeader, SearchInput, TalentCard } from '@bestal/ui';
 import { Users } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { subscribeApprovalChanges } from '../../lib/candidate-approval-overrides';
+import { getClientVisibleCandidates } from '../../lib/client-candidates';
 import { DEMO_CLIENT_ID } from '../../lib/demo-client';
 
 export function CandidatesPage() {
   const [query, setQuery] = useState('');
+  const [approvalTick, setApprovalTick] = useState(0);
+
+  useEffect(() => subscribeApprovalChanges(() => setApprovalTick((t) => t + 1)), []);
 
   const shortlistedIds = useMemo(() => {
     const ids = new Set<number>();
@@ -17,13 +22,8 @@ export function CandidatesPage() {
 
   const publishedCandidates = useMemo(
     () =>
-      candidates.filter(
-        (c) =>
-          c.visibility === 'PUBLISHED' &&
-          c.approvalStatus === 'APPROVED' &&
-          shortlistedIds.has(c.id),
-      ),
-    [shortlistedIds],
+      getClientVisibleCandidates().filter((c) => shortlistedIds.has(c.id)),
+    [shortlistedIds, approvalTick],
   );
 
   const filtered = useMemo(() => {

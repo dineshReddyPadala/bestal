@@ -71,6 +71,7 @@ export function buildClientPayload(
 
 export type EvaluationFormValues = {
   candidateName: string;
+  evaluatorName: string;
   evaluationType: 'TECHNICAL' | 'BEHAVIORAL' | 'ARCHITECTURE' | 'FULL_STACK' | 'SECURITY';
   evaluatedDate: string;
   technicalScore?: number;
@@ -107,8 +108,8 @@ export function buildEvaluationPayload(
     id: existing?.id,
     candidateId: existing?.candidateId ?? 1,
     organizationId: existing?.organizationId ?? 1,
-    evaluatorId: existing?.evaluatorId ?? 1,
-    evaluatorName: existing?.evaluatorName ?? 'Current User',
+    evaluatorId: existing?.evaluatorId ?? demoDocId(form.evaluatorName),
+    evaluatorName: form.evaluatorName,
     status: existing?.status ?? 'DRAFT',
     hasRecording: !!(form.recordingFileName ?? existing?.hasRecording),
     hasPdf: !!(form.pdfFileName ?? existing?.hasPdf),

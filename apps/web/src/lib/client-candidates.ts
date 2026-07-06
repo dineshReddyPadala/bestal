@@ -1,5 +1,6 @@
 import { candidates, getBestalScore } from '@bestal/mock-data';
 import type { MockCandidate } from '@bestal/mock-data';
+import { getEffectiveCandidate, isClientVisible } from './candidate-approval-overrides';
 
 export type CandidateFilters = {
   query: string;
@@ -20,9 +21,9 @@ export const DEFAULT_FILTERS: CandidateFilters = {
 };
 
 export function getClientVisibleCandidates(): MockCandidate[] {
-  return candidates.filter(
-    (c) => c.visibility === 'PUBLISHED' && c.approvalStatus === 'APPROVED',
-  );
+  return candidates
+    .map(getEffectiveCandidate)
+    .filter((c) => isClientVisible(c.id));
 }
 
 export function getPrimaryCommunity(candidate: MockCandidate): string {

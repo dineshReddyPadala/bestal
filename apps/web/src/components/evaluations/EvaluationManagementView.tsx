@@ -206,13 +206,12 @@ export function EvaluationManagementView({
 
   const handleFormSubmit = useCallback(
     (values: EvaluationFormValues) => {
-      const payload = buildEvaluationPayload(
+      buildEvaluationPayload(
         values,
         activeRecord
           ? {
               id: activeRecord.id,
               candidateId: activeRecord.candidateId,
-              evaluatorName: activeRecord.evaluatorName,
               status: activeRecord.status,
               hasRecording: activeRecord.hasRecording,
               hasPdf: activeRecord.hasPdf,
@@ -246,7 +245,7 @@ export function EvaluationManagementView({
             id: nextId,
             candidateId: candidateIdByName(values.candidateName),
             candidateName: values.candidateName,
-            evaluatorName: payload.evaluatorName,
+            evaluatorName: values.evaluatorName,
             evaluatedDate: evaluatedDateIso,
             evaluationType: values.evaluationType,
             technicalScore: values.technicalScore ?? null,
@@ -270,6 +269,7 @@ export function EvaluationManagementView({
               ? {
                   ...row,
                   candidateName: values.candidateName,
+                  evaluatorName: values.evaluatorName,
                   evaluationType: values.evaluationType,
                   evaluatedDate: evaluatedDateIso,
                   technicalScore: values.technicalScore ?? null,
@@ -513,7 +513,7 @@ export function EvaluationManagementView({
         }
         description={
           formOpen === 'add'
-            ? 'Schedule a new evaluation. Evaluator, status, and audit fields are set automatically.'
+            ? 'Schedule a new evaluation. Select the evaluator who will conduct the assessment. Status and audit fields are set automatically.'
             : 'Upload files or update scores. Evaluator, status, and audit fields are set automatically.'
         }
         className="max-w-2xl"
@@ -532,6 +532,7 @@ export function EvaluationManagementView({
             activeRecord
               ? {
                   candidateName: activeRecord.candidateName,
+                  evaluatorName: activeRecord.evaluatorName,
                   evaluationType: activeRecord.evaluationType,
                   evaluatedDate: activeRecord.evaluatedDate?.slice(0, 10) ?? '',
                   technicalScore: activeRecord.technicalScore ?? undefined,
