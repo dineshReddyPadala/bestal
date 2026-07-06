@@ -11,6 +11,8 @@ export type DialogProps = {
   children: ReactNode;
   footer?: ReactNode;
   className?: string;
+  /** Scroll long form content inside the dialog instead of overflowing the viewport. */
+  scrollable?: boolean;
 };
 
 export function Dialog({
@@ -21,6 +23,7 @@ export function Dialog({
   children,
   footer,
   className,
+  scrollable = false,
 }: DialogProps) {
   useEffect(() => {
     if (!open) return;
@@ -45,12 +48,13 @@ export function Dialog({
         aria-modal
         aria-labelledby="dialog-title"
         className={cn(
-          'relative z-10 w-full max-w-lg rounded-xl border border-border bg-background shadow-elevated',
+          'relative z-10 flex w-full max-w-lg flex-col rounded-xl border border-border bg-background shadow-elevated',
+          scrollable && 'max-h-[min(90vh,840px)]',
           className,
         )}
       >
-        <div className="flex items-start justify-between border-b border-border px-6 py-4">
-          <div>
+        <div className="flex shrink-0 items-start justify-between border-b border-border px-6 py-4">
+          <div className="min-w-0 pr-4">
             <h2 id="dialog-title" className="text-lg font-semibold text-foreground">
               {title}
             </h2>
@@ -62,9 +66,18 @@ export function Dialog({
             <X className="h-4 w-4" />
           </Button>
         </div>
-        <div className="px-6 py-4">{children}</div>
+        <div
+          className={cn(
+            'px-6 py-4',
+            scrollable && 'min-h-0 flex-1 overflow-y-auto',
+          )}
+        >
+          {children}
+        </div>
         {footer && (
-          <div className="flex justify-end gap-2 border-t border-border px-6 py-4">{footer}</div>
+          <div className="flex shrink-0 justify-end gap-2 border-t border-border px-6 py-4">
+            {footer}
+          </div>
         )}
       </div>
     </div>

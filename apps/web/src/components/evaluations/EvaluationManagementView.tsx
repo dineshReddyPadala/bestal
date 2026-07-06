@@ -508,18 +508,40 @@ export function EvaluationManagementView({
           formOpen === 'add'
             ? 'Add evaluation'
             : formOpen === 'upload'
-              ? 'Upload evaluation documents'
+              ? 'Upload documents'
               : 'Edit evaluation'
         }
-        description={
-          formOpen === 'add'
-            ? 'Schedule a new evaluation. Select the evaluator who will conduct the assessment. Status and audit fields are set automatically.'
-            : 'Upload files or update scores. Evaluator, status, and audit fields are set automatically.'
+        scrollable
+        className="max-w-3xl"
+        footer={
+          <>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setFormOpen(null);
+                setActiveRecord(null);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              form="evaluation-mgmt-form"
+            >
+              {formOpen === 'add'
+                ? 'Create evaluation'
+                : formOpen === 'upload'
+                  ? 'Upload documents'
+                  : 'Save evaluation'}
+            </Button>
+          </>
         }
-        className="max-w-2xl"
       >
         <EvaluationForm
           key={activeRecord?.id ?? formOpen ?? 'new'}
+          formId="evaluation-mgmt-form"
+          showActions={false}
           uploadOnly={formOpen === 'upload'}
           submitLabel={
             formOpen === 'add'
