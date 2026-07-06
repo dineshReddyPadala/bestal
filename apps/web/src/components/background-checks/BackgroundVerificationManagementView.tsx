@@ -211,6 +211,13 @@ export function BackgroundVerificationManagementView({
           nextId,
         );
       }
+      if (values.reportFileName) {
+        buildDocumentPayload(
+          { fileName: values.reportFileName, kind: 'REPORT' },
+          'background_check',
+          nextId,
+        );
+      }
 
       setRecords((prev) => [
         ...prev,
@@ -226,7 +233,7 @@ export function BackgroundVerificationManagementView({
           address: payload.address as BgvCheckStatus,
           criminal: payload.criminal as BgvCheckStatus,
           completedAt: null,
-          hasReport: false,
+          hasReport: !!values.reportFileName,
         },
       ]);
 
@@ -419,13 +426,32 @@ export function BackgroundVerificationManagementView({
           setUploadRecord(null);
         }}
         title="Upload BGV document"
-        description={`Upload report or consent form for ${uploadRecord?.candidateName ?? 'candidate'}`}
+        scrollable
         className="max-w-lg"
+        footer={
+          <>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setUploadOpen(false);
+                setUploadRecord(null);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" form="bgv-upload-form">
+              Upload document
+            </Button>
+          </>
+        }
       >
         <DocumentUploadForm
+          formId="bgv-upload-form"
+          showActions={false}
           kind="BGV_FORM"
           accept=".pdf,.doc,.docx"
-          hint="PDF or Word — upload file, not a URL"
+          label="BGV document"
           submitLabel="Upload document"
           onSubmit={(values) => {
             buildDocumentPayload(values, 'background_check', uploadRecord?.id ?? 0);
@@ -451,10 +477,22 @@ export function BackgroundVerificationManagementView({
         open={requestOpen}
         onClose={() => setRequestOpen(false)}
         title="Request background verification"
-        description="Select candidate, vendor, and check type. Status and check results are updated automatically."
-        className="max-w-2xl"
+        scrollable
+        className="max-w-3xl"
+        footer={
+          <>
+            <Button type="button" variant="outline" onClick={() => setRequestOpen(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" form="bgv-request-mgmt-form">
+              Request BGV
+            </Button>
+          </>
+        }
       >
         <BgvRequestForm
+          formId="bgv-request-mgmt-form"
+          showActions={false}
           onSubmit={handleRequestSubmit}
           onCancel={() => setRequestOpen(false)}
         />

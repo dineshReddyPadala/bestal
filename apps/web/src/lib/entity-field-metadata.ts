@@ -263,12 +263,21 @@ export type BgvCheckType =
   | 'IDENTITY'
   | 'CREDIT';
 
+export type BgvCheckRequestStatus = 'NOT_STARTED' | 'PENDING';
+
 export type BgvRequestFormValues = {
   candidateName: string;
   vendor: string;
+  requestedByName: string;
   checkType: BgvCheckType;
+  employment: BgvCheckRequestStatus;
+  education: BgvCheckRequestStatus;
+  reference: BgvCheckRequestStatus;
+  address: BgvCheckRequestStatus;
+  criminal: BgvCheckRequestStatus;
   notes?: string;
   consentFileName?: string;
+  reportFileName?: string;
 };
 
 export type BgvPayload = BgvRequestFormValues & {
@@ -334,6 +343,31 @@ function initialCheckStatuses(checkType: BgvCheckType): {
   }
 }
 
+export function getBgvChecksForType(
+  checkType: BgvCheckType,
+): Pick<
+  BgvRequestFormValues,
+  'employment' | 'education' | 'reference' | 'address' | 'criminal'
+> {
+  const checks = initialCheckStatuses(checkType);
+  return {
+    employment: checks.employment as BgvCheckRequestStatus,
+    education: checks.education as BgvCheckRequestStatus,
+    reference: checks.reference as BgvCheckRequestStatus,
+    address: checks.address as BgvCheckRequestStatus,
+    criminal: checks.criminal as BgvCheckRequestStatus,
+  };
+}
+
+function deriveOverallStatus(form: Pick<
+  BgvRequestFormValues,
+  'employment' | 'education' | 'reference' | 'address' | 'criminal'
+>): BgvPayload['status'] {
+  const vals = [form.employment, form.education, form.reference, form.address, form.criminal];
+  if (vals.every((v) => v === 'NOT_STARTED')) return 'NOT_STARTED';
+  return 'PENDING';
+}
+
 export function buildBgvPayload(
   form: BgvRequestFormValues,
   candidateId: number,
@@ -349,7 +383,14 @@ export function buildBgvPayload(
         address: existing.address ?? 'NOT_STARTED',
         criminal: existing.criminal ?? 'NOT_STARTED',
       }
-    : initialCheckStatuses(form.checkType);
+    : {
+        status: deriveOverallStatus(form),
+        employment: form.employment,
+        education: form.education,
+        reference: form.reference,
+        address: form.address,
+        criminal: form.criminal,
+      };
 
   return {
     ...form,
@@ -357,10 +398,10 @@ export function buildBgvPayload(
     candidateId: existing?.candidateId ?? candidateId,
     organizationId: existing?.organizationId ?? 1,
     requestedById: existing?.requestedById ?? 1,
-    requestedByName: existing?.requestedByName ?? 'Current User',
+    requestedByName: form.requestedByName,
     ...checks,
     completedAt: existing?.completedAt ?? null,
-    hasReport: existing?.hasReport ?? false,
+    hasReport: !!(form.reportFileName ?? existing?.hasReport),
     initiatedAt: existing?.initiatedAt ?? ts,
     createdAt: existing?.createdAt ?? ts,
     updatedAt: ts,
