@@ -1,4 +1,5 @@
 import {
+  candidates,
   evaluationCandidates,
   evaluationEvaluators,
   evaluationManagementRecords,
@@ -14,12 +15,12 @@ import {
   Download,
   Edit,
   MoreHorizontal,
+  Plus,
   Sparkles,
   Upload,
   Video,
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
 import { EvaluationForm } from '../forms/EvaluationForm';
 import { buildDocumentPayload, buildEvaluationPayload, type EvaluationFormValues } from '../../lib/entity-field-metadata';
 import { useDemoToast } from '../../lib/use-demo-toast';
@@ -35,7 +36,6 @@ type EvaluationManagementViewProps = {
   title?: string;
   description?: string;
   candidateDetailPath?: (candidateId: number) => string;
-  candidateBasePath?: '/admin/candidates' | '/recruiter/candidates';
 };
 
 const defaultFilters = {
@@ -48,6 +48,11 @@ const defaultFilters = {
 };
 
 const TODAY = new Date('2026-06-30');
+
+function candidateIdByName(name: string): number {
+  const match = candidates.find((c) => `${c.firstName} ${c.lastName}` === name);
+  return match?.id ?? 0;
+}
 
 function ScoreCell({ value }: { value: number | null }) {
   if (value == null) {
@@ -132,15 +137,17 @@ function EvaluationRowActions({
 export function EvaluationManagementView({
   title = 'Evaluation Management',
   description = 'Technical and behavioral assessments — scores, recordings, and recommendations',
-  candidateBasePath = '/recruiter/candidates',
 }: EvaluationManagementViewProps) {
   const { message, show } = useDemoToast();
+  const [records, setRecords] = useState<EvaluationManagementRecord[]>(() => [
+    ...evaluationManagementRecords,
+  ]);
   const [filters, setFilters] = useState(defaultFilters);
-  const [formOpen, setFormOpen] = useState<'upload' | 'edit' | null>(null);
+  const [formOpen, setFormOpen] = useState<'add' | 'upload' | 'edit' | null>(null);
   const [activeRecord, setActiveRecord] = useState<EvaluationManagementRecord | null>(null);
 
   const filteredData = useMemo(() => {
-    let rows: EvaluationManagementRecord[] = [...evaluationManagementRecords];
+    let rows: EvaluationManagementRecord[] = [...records];
 
     if (filters.status !== 'all') {
       rows = rows.filter((r) => r.status === filters.status);
@@ -178,7 +185,7 @@ export function EvaluationManagementView({
     });
 
     return rows;
-  }, [filters]);
+  }, [records, filters]);
 
   const handleAction = useCallback(
     (record: EvaluationManagementRecord, action: EvaluationAction) => {
@@ -199,7 +206,7 @@ export function EvaluationManagementView({
 
   const handleFormSubmit = useCallback(
     (values: EvaluationFormValues) => {
-      buildEvaluationPayload(
+      const payload = buildEvaluationPayload(
         values,
         activeRecord
           ? {
@@ -212,6 +219,7 @@ export function EvaluationManagementView({
             }
           : undefined,
       );
+
       if (values.pdfFileName) {
         buildDocumentPayload(
           { fileName: values.pdfFileName, kind: 'EVALUATION_FORM' },
@@ -219,13 +227,71 @@ export function EvaluationManagementView({
           activeRecord?.id ?? 0,
         );
       }
-      show(
-        `${formOpen === 'upload' ? 'Documents uploaded' : 'Evaluation updated'} — ${values.candidateName || activeRecord?.candidateName} (demo)`,
-      );
+      if (values.recordingFileName) {
+        buildDocumentPayload(
+          { fileName: values.recordingFileName, kind: 'RECORDING' },
+          'evaluation',
+          activeRecord?.id ?? 0,
+        );
+      }
+
+      if (formOpen === 'add') {
+        const nextId = Math.max(0, ...records.map((r) => r.id)) + 1;
+        const evaluatedDateIso = values.evaluatedDate
+          ? new Date(`${values.evaluatedDate}T12:00:00`).toISOString()
+          : null;
+        setRecords((prev) => [
+          ...prev,
+          {
+            id: nextId,
+            candidateId: candidateIdByName(values.candidateName),
+            candidateName: values.candidateName,
+            evaluatorName: payload.evaluatorName,
+            evaluatedDate: evaluatedDateIso,
+            evaluationType: values.evaluationType,
+            technicalScore: values.technicalScore ?? null,
+            communicationScore: values.communicationScore ?? null,
+            architectureScore: values.architectureScore ?? null,
+            problemSolvingScore: values.problemSolvingScore ?? null,
+            recommendation: values.recommendation ?? null,
+            status: 'DRAFT',
+            hasRecording: !!values.recordingFileName,
+            hasPdf: !!values.pdfFileName,
+          },
+        ]);
+        show(`Evaluation created — ${values.candidateName} (demo)`);
+      } else if (formOpen === 'edit' && activeRecord) {
+        const evaluatedDateIso = values.evaluatedDate
+          ? new Date(`${values.evaluatedDate}T12:00:00`).toISOString()
+          : activeRecord.evaluatedDate;
+        setRecords((prev) =>
+          prev.map((row) =>
+            row.id === activeRecord.id
+              ? {
+                  ...row,
+                  candidateName: values.candidateName,
+                  evaluationType: values.evaluationType,
+                  evaluatedDate: evaluatedDateIso,
+                  technicalScore: values.technicalScore ?? null,
+                  communicationScore: values.communicationScore ?? null,
+                  architectureScore: values.architectureScore ?? null,
+                  problemSolvingScore: values.problemSolvingScore ?? null,
+                  recommendation: values.recommendation ?? null,
+                  hasRecording: row.hasRecording || !!values.recordingFileName,
+                  hasPdf: row.hasPdf || !!values.pdfFileName,
+                }
+              : row,
+          ),
+        );
+        show(`Evaluation updated — ${values.candidateName} (demo)`);
+      } else {
+        show(`Documents uploaded — ${values.candidateName || activeRecord?.candidateName} (demo)`);
+      }
+
       setFormOpen(null);
       setActiveRecord(null);
     },
-    [activeRecord, formOpen, show],
+    [activeRecord, formOpen, records, show],
   );
 
   const columns = useMemo<ColumnDef<EvaluationManagementRecord>[]>(
@@ -233,14 +299,7 @@ export function EvaluationManagementView({
       {
         accessorKey: 'candidateName',
         header: 'Candidate',
-        cell: ({ row }) => (
-          <Link
-            to={`${candidateBasePath}/${row.original.candidateId}/workflow`}
-            className="font-medium text-brand hover:underline"
-          >
-            {row.original.candidateName}
-          </Link>
-        ),
+        cell: ({ getValue }) => <span className="font-medium">{getValue() as string}</span>,
       },
       {
         accessorKey: 'evaluatorName',
@@ -310,7 +369,7 @@ export function EvaluationManagementView({
         ),
       },
     ],
-    [handleAction, candidateBasePath],
+    [handleAction],
   );
 
   const updateFilter = (key: keyof typeof defaultFilters, value: string) => {
@@ -319,7 +378,21 @@ export function EvaluationManagementView({
 
   return (
     <div className="min-h-full bg-muted/10">
-      <PageHeader title={title} description={description} />
+      <PageHeader
+        title={title}
+        description={description}
+        actions={
+          <Button
+            onClick={() => {
+              setActiveRecord(null);
+              setFormOpen('add');
+            }}
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            Add evaluation
+          </Button>
+        }
+      />
 
       {message && (
         <div className="mx-6 mt-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
@@ -431,14 +504,30 @@ export function EvaluationManagementView({
           setFormOpen(null);
           setActiveRecord(null);
         }}
-        title={formOpen === 'upload' ? 'Upload evaluation documents' : 'Edit evaluation'}
-        description="Upload files or update scores. Evaluator, status, and audit fields are set automatically."
+        title={
+          formOpen === 'add'
+            ? 'Add evaluation'
+            : formOpen === 'upload'
+              ? 'Upload evaluation documents'
+              : 'Edit evaluation'
+        }
+        description={
+          formOpen === 'add'
+            ? 'Schedule a new evaluation. Evaluator, status, and audit fields are set automatically.'
+            : 'Upload files or update scores. Evaluator, status, and audit fields are set automatically.'
+        }
         className="max-w-2xl"
       >
         <EvaluationForm
-          key={activeRecord?.id ?? 'new'}
+          key={activeRecord?.id ?? formOpen ?? 'new'}
           uploadOnly={formOpen === 'upload'}
-          submitLabel={formOpen === 'upload' ? 'Upload documents' : 'Save evaluation'}
+          submitLabel={
+            formOpen === 'add'
+              ? 'Create evaluation'
+              : formOpen === 'upload'
+                ? 'Upload documents'
+                : 'Save evaluation'
+          }
           defaultValues={
             activeRecord
               ? {

@@ -3,6 +3,7 @@ import {
   bgvCandidates,
   bgvOverallStatuses,
   bgvVendors,
+  candidates,
   type BackgroundVerificationRecord,
   type BgvCheckStatus,
 } from '@bestal/mock-data';
@@ -13,13 +14,19 @@ import {
   Download,
   Eye,
   MoreHorizontal,
+  Plus,
   RefreshCw,
   Sparkles,
   Upload,
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { BgvRequestForm } from '../forms/BgvRequestForm';
 import { DocumentUploadForm } from '../forms/DocumentUploadForm';
-import { buildDocumentPayload } from '../../lib/entity-field-metadata';
+import {
+  buildBgvPayload,
+  buildDocumentPayload,
+  type BgvRequestFormValues,
+} from '../../lib/entity-field-metadata';
 import { useDemoToast } from '../../lib/use-demo-toast';
 
 type BgvAction = 'Upload' | 'View' | 'AI Summary' | 'Download' | 'Reprocess';
@@ -36,6 +43,11 @@ const defaultFilters = {
   completed: 'all',
   criminal: 'all',
 };
+
+function candidateIdByName(name: string): number {
+  const match = candidates.find((c) => `${c.firstName} ${c.lastName}` === name);
+  return match?.id ?? 0;
+}
 
 function CheckStatusBadge({ status }: { status: BgvCheckStatus }) {
   return <StatusBadge status={status} className="text-[11px]" />;
@@ -123,6 +135,7 @@ export function BackgroundVerificationManagementView({
     ...backgroundVerificationRecords,
   ]);
   const [filters, setFilters] = useState(defaultFilters);
+  const [requestOpen, setRequestOpen] = useState(false);
   const [uploadOpen, setUploadOpen] = useState(false);
   const [uploadRecord, setUploadRecord] = useState<BackgroundVerificationRecord | null>(null);
 
@@ -183,6 +196,44 @@ export function BackgroundVerificationManagementView({
       show(`${action} — ${record.candidateName} (${record.vendor}) (demo)`);
     },
     [show],
+  );
+
+  const handleRequestSubmit = useCallback(
+    (values: BgvRequestFormValues) => {
+      const candidateId = candidateIdByName(values.candidateName);
+      const nextId = Math.max(0, ...records.map((r) => r.id)) + 1;
+      const payload = buildBgvPayload(values, candidateId);
+
+      if (values.consentFileName) {
+        buildDocumentPayload(
+          { fileName: values.consentFileName, kind: 'BGV_FORM' },
+          'background_check',
+          nextId,
+        );
+      }
+
+      setRecords((prev) => [
+        ...prev,
+        {
+          id: nextId,
+          candidateId: payload.candidateId,
+          candidateName: values.candidateName,
+          vendor: values.vendor,
+          status: payload.status,
+          employment: payload.employment as BgvCheckStatus,
+          education: payload.education as BgvCheckStatus,
+          reference: payload.reference as BgvCheckStatus,
+          address: payload.address as BgvCheckStatus,
+          criminal: payload.criminal as BgvCheckStatus,
+          completedAt: null,
+          hasReport: false,
+        },
+      ]);
+
+      show(`BGV requested — ${values.candidateName} via ${values.vendor} (demo)`);
+      setRequestOpen(false);
+    },
+    [records, show],
   );
 
   const columns = useMemo<ColumnDef<BackgroundVerificationRecord>[]>(
@@ -263,7 +314,8 @@ export function BackgroundVerificationManagementView({
         title={title}
         description={description}
         actions={
-          <Button onClick={() => show('BGV requests are initiated by recruiters — select a row to upload documents')}>
+          <Button onClick={() => setRequestOpen(true)}>
+            <Plus className="mr-2 h-4 w-4" />
             Request BGV
           </Button>
         }
@@ -377,6 +429,13 @@ export function BackgroundVerificationManagementView({
           submitLabel="Upload document"
           onSubmit={(values) => {
             buildDocumentPayload(values, 'background_check', uploadRecord?.id ?? 0);
+            if (uploadRecord) {
+              setRecords((prev) =>
+                prev.map((row) =>
+                  row.id === uploadRecord.id ? { ...row, hasReport: true } : row,
+                ),
+              );
+            }
             show(`Document uploaded — ${uploadRecord?.candidateName} (demo)`);
             setUploadOpen(false);
             setUploadRecord(null);
@@ -385,6 +444,19 @@ export function BackgroundVerificationManagementView({
             setUploadOpen(false);
             setUploadRecord(null);
           }}
+        />
+      </Dialog>
+
+      <Dialog
+        open={requestOpen}
+        onClose={() => setRequestOpen(false)}
+        title="Request background verification"
+        description="Select candidate, vendor, and check type. Status and check results are updated automatically."
+        className="max-w-2xl"
+      >
+        <BgvRequestForm
+          onSubmit={handleRequestSubmit}
+          onCancel={() => setRequestOpen(false)}
         />
       </Dialog>
     </div>

@@ -1,11 +1,10 @@
-import { EvaluationsPage as SharedEvaluationsPage } from '../shared/EvaluationsPage';
+import { EvaluationManagementView } from '../../components/evaluations/EvaluationManagementView';
 
 export function EvaluationsPage() {
   return (
-    <SharedEvaluationsPage
-      candidateBasePath="/admin/candidates"
+    <EvaluationManagementView
       title="Evaluation Management"
-      description="Review scores, recordings, and hiring recommendations across all candidates"
+      description="Technical and behavioral assessments across the talent pool"
     />
   );
 }

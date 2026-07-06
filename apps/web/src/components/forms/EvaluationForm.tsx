@@ -1,8 +1,4 @@
-import {
-  evaluationCandidates,
-  evaluationRecommendations,
-  evaluationTypes,
-} from '@bestal/mock-data';
+import { candidates, evaluationRecommendations, evaluationTypes } from '@bestal/mock-data';
 import { Button, FileUpload, Input, Select } from '@bestal/ui';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm, type Resolver } from 'react-hook-form';
@@ -73,11 +69,14 @@ export function EvaluationForm({
             <Label htmlFor="candidateName">Candidate *</Label>
             <Select id="candidateName" {...register('candidateName')}>
               <option value="">— Select —</option>
-              {evaluationCandidates.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
+              {candidates.map((c) => {
+                const name = `${c.firstName} ${c.lastName}`;
+                return (
+                  <option key={c.id} value={name}>
+                    {name}
+                  </option>
+                );
+              })}
             </Select>
             {errors.candidateName && (
               <p className="text-xs text-red-600">{errors.candidateName.message}</p>

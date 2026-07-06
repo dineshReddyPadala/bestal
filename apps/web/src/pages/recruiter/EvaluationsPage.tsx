@@ -1,9 +1,8 @@
-import { EvaluationsPage as SharedEvaluationsPage } from '../shared/EvaluationsPage';
+import { EvaluationManagementView } from '../../components/evaluations/EvaluationManagementView';
 
 export function EvaluationsPage() {
   return (
-    <SharedEvaluationsPage
-      candidateBasePath="/recruiter/candidates"
+    <EvaluationManagementView
       title="Evaluation Management"
       description="Review scores, recordings, and hiring recommendations for your candidates"
     />

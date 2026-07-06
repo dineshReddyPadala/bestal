@@ -251,6 +251,122 @@ export function buildOrganizationPayload(
   };
 }
 
+// ─── Background verification ──────────────────────────────────────────────────
+
+export type BgvCheckType =
+  | 'COMPREHENSIVE'
+  | 'CRIMINAL'
+  | 'EMPLOYMENT'
+  | 'EDUCATION'
+  | 'REFERENCE'
+  | 'IDENTITY'
+  | 'CREDIT';
+
+export type BgvRequestFormValues = {
+  candidateName: string;
+  vendor: string;
+  checkType: BgvCheckType;
+  notes?: string;
+  consentFileName?: string;
+};
+
+export type BgvPayload = BgvRequestFormValues & {
+  id?: number;
+  candidateId: number;
+  organizationId: number;
+  requestedById: number;
+  requestedByName: string;
+  status: 'NOT_STARTED' | 'PENDING' | 'IN_PROGRESS' | 'CLEAR' | 'CONSIDER' | 'FAILED';
+  employment: string;
+  education: string;
+  reference: string;
+  address: string;
+  criminal: string;
+  completedAt: string | null;
+  hasReport: boolean;
+  initiatedAt: string;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt: string | null;
+};
+
+function initialCheckStatuses(checkType: BgvCheckType): {
+  status: BgvPayload['status'];
+  employment: string;
+  education: string;
+  reference: string;
+  address: string;
+  criminal: string;
+} {
+  const base = {
+    employment: 'NOT_STARTED',
+    education: 'NOT_STARTED',
+    reference: 'NOT_STARTED',
+    address: 'NOT_STARTED',
+    criminal: 'NOT_STARTED',
+  } as const;
+
+  switch (checkType) {
+    case 'COMPREHENSIVE':
+      return {
+        status: 'PENDING',
+        employment: 'PENDING',
+        education: 'PENDING',
+        reference: 'NOT_STARTED',
+        address: 'NOT_STARTED',
+        criminal: 'PENDING',
+      };
+    case 'CRIMINAL':
+      return { status: 'PENDING', ...base, criminal: 'PENDING' };
+    case 'EMPLOYMENT':
+      return { status: 'PENDING', ...base, employment: 'PENDING' };
+    case 'EDUCATION':
+      return { status: 'PENDING', ...base, education: 'PENDING' };
+    case 'REFERENCE':
+      return { status: 'PENDING', ...base, reference: 'PENDING' };
+    case 'IDENTITY':
+      return { status: 'PENDING', ...base, address: 'PENDING' };
+    case 'CREDIT':
+      return { status: 'PENDING', ...base, address: 'PENDING' };
+    default:
+      return { status: 'PENDING', ...base };
+  }
+}
+
+export function buildBgvPayload(
+  form: BgvRequestFormValues,
+  candidateId: number,
+  existing?: Partial<BgvPayload>,
+): BgvPayload {
+  const ts = now();
+  const checks = existing?.status
+    ? {
+        status: existing.status,
+        employment: existing.employment ?? 'NOT_STARTED',
+        education: existing.education ?? 'NOT_STARTED',
+        reference: existing.reference ?? 'NOT_STARTED',
+        address: existing.address ?? 'NOT_STARTED',
+        criminal: existing.criminal ?? 'NOT_STARTED',
+      }
+    : initialCheckStatuses(form.checkType);
+
+  return {
+    ...form,
+    id: existing?.id,
+    candidateId: existing?.candidateId ?? candidateId,
+    organizationId: existing?.organizationId ?? 1,
+    requestedById: existing?.requestedById ?? 1,
+    requestedByName: existing?.requestedByName ?? 'Current User',
+    ...checks,
+    completedAt: existing?.completedAt ?? null,
+    hasReport: existing?.hasReport ?? false,
+    initiatedAt: existing?.initiatedAt ?? ts,
+    createdAt: existing?.createdAt ?? ts,
+    updatedAt: ts,
+    deletedAt: existing?.deletedAt ?? null,
+  };
+}
+
 // ─── Document upload (BGV, evaluation, etc.) ──────────────────────────────────
 
 export type DocumentUploadFormValues = {
