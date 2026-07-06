@@ -9,8 +9,8 @@ import {
   TanStackDataTable,
 } from '@bestal/ui';
 import { type ColumnDef } from '@tanstack/react-table';
-import { CheckCircle, EyeOff, Globe, XCircle } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { CheckCircle, EyeOff, Globe, MoreHorizontal, XCircle } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   canApprove,
@@ -40,10 +40,101 @@ type CandidateApprovalQueueViewProps = {
   candidateDetailBasePath?: string;
 };
 
-function GateHint({ blockers }: { blockers: readonly string[] }) {
-  if (blockers.length === 0) return null;
+type ApprovalAction = 'Approve' | 'Reject' | 'Publish' | 'Unpublish';
+
+function ApprovalRowActions({
+  record,
+  onAction,
+}: {
+  record: ApprovalQueueRecord;
+  onAction: (action: ApprovalAction) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const close = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', close);
+    return () => document.removeEventListener('mousedown', close);
+  }, [open]);
+
+  const approveGate = canApprove({
+    evaluationStatus: record.evaluationStatus,
+    bgvStatus: record.bgvStatus,
+    approvalStatus: record.effectiveApprovalStatus,
+    visibility: record.effectiveVisibility,
+  });
+  const publishGate = canPublish({
+    evaluationStatus: record.evaluationStatus,
+    bgvStatus: record.bgvStatus,
+    approvalStatus: record.effectiveApprovalStatus,
+    visibility: record.effectiveVisibility,
+  });
+
+  const actions: {
+    label: ApprovalAction;
+    icon: React.ReactNode;
+    disabled?: boolean;
+    variant?: 'danger';
+  }[] = [
+    {
+      label: 'Approve',
+      icon: <CheckCircle className="h-3.5 w-3.5" />,
+      disabled: !approveGate.allowed,
+    },
+    {
+      label: 'Reject',
+      icon: <XCircle className="h-3.5 w-3.5" />,
+      disabled: record.effectiveApprovalStatus !== 'PENDING',
+      variant: 'danger',
+    },
+    {
+      label: 'Publish',
+      icon: <Globe className="h-3.5 w-3.5" />,
+      disabled: !publishGate.allowed,
+    },
+    {
+      label: 'Unpublish',
+      icon: <EyeOff className="h-3.5 w-3.5" />,
+      disabled: record.effectiveVisibility !== 'PUBLISHED',
+    },
+  ];
+
   return (
-    <p className="mt-1 text-[11px] text-amber-700">{blockers.join(' · ')}</p>
+    <div className="relative" ref={ref} onClick={(e) => e.stopPropagation()}>
+      <button
+        type="button"
+        className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
+        onClick={() => setOpen((v) => !v)}
+        aria-label="Approval actions"
+      >
+        <MoreHorizontal className="h-4 w-4" />
+      </button>
+      {open && (
+        <div className="absolute right-0 top-full z-20 mt-1 min-w-[160px] rounded-lg border border-border bg-background py-1 shadow-elevated">
+          {actions.map(({ label, icon, disabled, variant }) => (
+            <button
+              key={label}
+              type="button"
+              disabled={disabled}
+              className={`flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-muted disabled:cursor-not-allowed disabled:opacity-40 ${
+                variant === 'danger' ? 'text-destructive' : 'text-foreground'
+              }`}
+              onClick={() => {
+                if (!disabled) onAction(label);
+                setOpen(false);
+              }}
+            >
+              {icon}
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -172,6 +263,26 @@ export function CandidateApprovalQueueView({
     refresh();
   };
 
+  const handleRowAction = useCallback(
+    (record: ApprovalQueueRecord, action: ApprovalAction) => {
+      switch (action) {
+        case 'Approve':
+          handleApprove(record);
+          break;
+        case 'Reject':
+          openReject(record);
+          break;
+        case 'Publish':
+          handlePublish(record);
+          break;
+        case 'Unpublish':
+          handleUnpublish(record);
+          break;
+      }
+    },
+    [handleApprove, handlePublish, handleUnpublish],
+  );
+
   const columns = useMemo<ColumnDef<ApprovalQueueRecord>[]>(
     () => [
       {
@@ -228,85 +339,21 @@ export function CandidateApprovalQueueView({
       },
       {
         id: 'actions',
-        header: 'Actions',
-        cell: ({ row }) => {
-          const r = row.original;
-          const approveGate = canApprove({
-            evaluationStatus: r.evaluationStatus,
-            bgvStatus: r.bgvStatus,
-            approvalStatus: r.effectiveApprovalStatus,
-            visibility: r.effectiveVisibility,
-          });
-          const publishGate = canPublish({
-            evaluationStatus: r.evaluationStatus,
-            bgvStatus: r.bgvStatus,
-            approvalStatus: r.effectiveApprovalStatus,
-            visibility: r.effectiveVisibility,
-          });
-
-          return (
-            <div className="flex min-w-[220px] flex-col gap-1">
-              <div className="flex flex-wrap gap-1">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  disabled={!approveGate.allowed}
-                  onClick={() => handleApprove(r)}
-                >
-                  <CheckCircle className="mr-1 h-3.5 w-3.5" />
-                  Approve
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  disabled={r.effectiveApprovalStatus !== 'PENDING'}
-                  className="text-destructive hover:text-destructive"
-                  onClick={() => openReject(r)}
-                >
-                  <XCircle className="mr-1 h-3.5 w-3.5" />
-                  Reject
-                </Button>
-                <Button
-                  size="sm"
-                  disabled={!publishGate.allowed}
-                  onClick={() => handlePublish(r)}
-                >
-                  <Globe className="mr-1 h-3.5 w-3.5" />
-                  Publish
-                </Button>
-                {r.effectiveVisibility === 'PUBLISHED' && (
-                  <Button size="sm" variant="outline" onClick={() => handleUnpublish(r)}>
-                    <EyeOff className="mr-1 h-3.5 w-3.5" />
-                    Unpublish
-                  </Button>
-                )}
-              </div>
-              {!approveGate.allowed && r.effectiveApprovalStatus === 'PENDING' && (
-                <GateHint blockers={approveGate.blockers} />
-              )}
-              {r.effectiveApprovalStatus === 'APPROVED' && !publishGate.allowed && (
-                <GateHint blockers={publishGate.blockers} />
-              )}
-            </div>
-          );
-        },
+        header: '',
+        cell: ({ row }) => (
+          <ApprovalRowActions
+            record={row.original}
+            onAction={(action) => handleRowAction(row.original, action)}
+          />
+        ),
       },
     ],
-    [candidateDetailBasePath, handleApprove, handlePublish, handleUnpublish],
+    [candidateDetailBasePath, handleRowAction],
   );
 
   return (
     <div className="min-h-full bg-muted/10">
-      <PageHeader
-        title="Candidate Approvals & Publish"
-        description="Review vetted candidates — approve after evaluation & BGV, then publish to the client portal"
-      />
-
-      <div className="mx-6 mb-4 rounded-xl border border-border/80 bg-muted/20 px-4 py-3 text-sm text-muted-foreground">
-        <strong className="text-foreground">Workflow:</strong> Evaluation completed → BGV requested
-        (not failed) → <strong>Approve</strong> → BGV clear → <strong>Publish</strong> → visible on
-        client search.
-      </div>
+      <PageHeader title="Candidate Approvals & Publish" />
 
       {message && (
         <div className="mx-6 mb-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
@@ -388,11 +435,6 @@ export function CandidateApprovalQueueView({
         open={rejectOpen}
         onClose={() => setRejectOpen(false)}
         title="Reject candidate"
-        description={
-          rejectTarget
-            ? `Reject ${rejectTarget.fullName} — they will remain internal only.`
-            : undefined
-        }
         className="max-w-md"
         footer={
           <>
