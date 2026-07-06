@@ -13,6 +13,7 @@ import { ClientsPage as AdminClientsPage } from '../pages/admin/ClientsPage';
 import { DashboardPage as AdminDashboardPage } from '../pages/admin/DashboardPage';
 import { DeploymentsPage as AdminDeploymentsPage } from '../pages/admin/DeploymentsPage';
 import { EvaluationsPage as AdminEvaluationsPage } from '../pages/admin/EvaluationsPage';
+import { AdminApprovalsPage } from '../pages/admin/ApprovalsPage';
 import { LoginPage as AdminLoginPage } from '../pages/admin/LoginPage';
 import { MarginReportPage as AdminMarginReportPage } from '../pages/admin/MarginReportPage';
 import { SettingsPage } from '../pages/admin/SettingsPage';
@@ -42,6 +43,7 @@ import { AddCandidatePage } from '../pages/recruiter/AddCandidatePage';
 import { BackgroundChecksPage } from '../pages/recruiter/BackgroundChecksPage';
 import { CandidateCsvImportPage as RecruiterCandidateCsvImportPage } from '../pages/recruiter/CandidateCsvImportPage';
 import { CandidateDetailPage } from '../pages/recruiter/CandidateDetailPage';
+import { CandidateWorkflowPage } from '../pages/shared/CandidateWorkflowPage';
 import { CandidatesPage as RecruiterCandidatesPage } from '../pages/recruiter/CandidatesPage';
 import { ClientsPage as RecruiterClientsPage } from '../pages/recruiter/ClientsPage';
 import { DashboardPage as RecruiterDashboardPage } from '../pages/recruiter/DashboardPage';
@@ -146,6 +148,8 @@ const router = createBrowserRouter([
           { path: 'candidates/import', element: <AdminCandidateCsvImportPage /> },
           { path: 'candidates/new', element: <AddCandidatePage /> },
           { path: 'candidates/:id', element: <AdminCandidateDetailPage /> },
+          { path: 'candidates/:id/workflow', element: <CandidateWorkflowPage basePath="/admin/candidates" /> },
+          { path: 'approvals', element: <AdminApprovalsPage /> },
           { path: 'clients', element: <AdminClientsPage /> },
           { path: 'clients/:id', element: <AdminClientDetailPage /> },
           { path: 'deployments', element: <AdminDeploymentsPage /> },
@@ -177,6 +181,7 @@ const router = createBrowserRouter([
           { path: 'candidates/import', element: <RecruiterCandidateCsvImportPage /> },
           { path: 'candidates/new', element: <AddCandidatePage /> },
           { path: 'candidates/:id', element: <CandidateDetailPage /> },
+          { path: 'candidates/:id/workflow', element: <CandidateWorkflowPage basePath="/recruiter/candidates" /> },
           { path: 'evaluations', element: <EvaluationsPage /> },
           { path: 'shortlists', element: <RecruiterShortlistsPage /> },
           { path: 'interviews', element: <RecruiterInterviewsPage /> },

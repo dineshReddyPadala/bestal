@@ -36,6 +36,7 @@ import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { DetailPageShell } from './DetailPageShell';
 import { SchemaFieldGrid, type SchemaFieldDef } from './SchemaFieldGrid';
+import { CandidateEvaluationWorkflowView } from '../evaluations/CandidateEvaluationWorkflowView';
 import { useDemoToast } from '../../lib/use-demo-toast';
 
 type CandidateDetailViewProps = {
@@ -424,6 +425,17 @@ export function CandidateDetailView({ candidateId, basePath }: CandidateDetailVi
                   />
                 </SectionCard>
               </div>
+            ),
+          },
+          {
+            id: 'workflow',
+            label: 'Workflow',
+            content: (
+              <CandidateEvaluationWorkflowView
+                candidateId={candidateId}
+                basePath={basePath}
+                compact
+              />
             ),
           },
           {

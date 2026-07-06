@@ -19,6 +19,7 @@ import {
   Video,
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { EvaluationForm } from '../forms/EvaluationForm';
 import { buildDocumentPayload, buildEvaluationPayload, type EvaluationFormValues } from '../../lib/entity-field-metadata';
 import { useDemoToast } from '../../lib/use-demo-toast';
@@ -34,6 +35,7 @@ type EvaluationManagementViewProps = {
   title?: string;
   description?: string;
   candidateDetailPath?: (candidateId: number) => string;
+  candidateBasePath?: '/admin/candidates' | '/recruiter/candidates';
 };
 
 const defaultFilters = {
@@ -130,6 +132,7 @@ function EvaluationRowActions({
 export function EvaluationManagementView({
   title = 'Evaluation Management',
   description = 'Technical and behavioral assessments — scores, recordings, and recommendations',
+  candidateBasePath = '/recruiter/candidates',
 }: EvaluationManagementViewProps) {
   const { message, show } = useDemoToast();
   const [filters, setFilters] = useState(defaultFilters);
@@ -230,7 +233,14 @@ export function EvaluationManagementView({
       {
         accessorKey: 'candidateName',
         header: 'Candidate',
-        cell: ({ getValue }) => <span className="font-medium">{getValue() as string}</span>,
+        cell: ({ row }) => (
+          <Link
+            to={`${candidateBasePath}/${row.original.candidateId}/workflow`}
+            className="font-medium text-brand hover:underline"
+          >
+            {row.original.candidateName}
+          </Link>
+        ),
       },
       {
         accessorKey: 'evaluatorName',
@@ -300,7 +310,7 @@ export function EvaluationManagementView({
         ),
       },
     ],
-    [handleAction],
+    [handleAction, candidateBasePath],
   );
 
   const updateFilter = (key: keyof typeof defaultFilters, value: string) => {

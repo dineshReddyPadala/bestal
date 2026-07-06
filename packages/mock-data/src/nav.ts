@@ -20,6 +20,7 @@ export const adminNav = [
   { id: 'skill-communities', label: 'Skill Communities', href: '/admin/skill-communities', icon: 'layers' },
   { id: 'audit-logs', label: 'Audit Logs', href: '/admin/audit-logs', icon: 'scroll-text' },
   { id: 'evaluations', label: 'Evaluations', href: '/admin/evaluations', icon: 'clipboard-check', badge: 2 },
+  { id: 'approvals', label: 'Approvals', href: '/admin/approvals', icon: 'check-circle', badge: 2 },
   { id: 'background-checks', label: 'Background Checks', href: '/admin/background-checks', icon: 'shield-check', badge: 3 },
   { id: 'settings', label: 'Settings', href: '/admin/settings', icon: 'settings' },
 ] as const satisfies readonly NavItem[];

@@ -138,6 +138,16 @@ export {
   type EvaluationManagementStatus,
   type EvaluationType,
 } from './evaluationManagement.js';
+export {
+  EVALUATION_WORKFLOW_STEP_DEFS,
+  getEvaluationWorkflowForCandidate,
+  getEvaluationPipeline,
+  getWorkflowProgressPercent,
+  type EvaluationWorkflowStep,
+  type EvaluationWorkflowStepId,
+  type EvaluationWorkflowStepStatus,
+  type PipelineBucket,
+} from './candidateEvaluationWorkflow.js';
 export { interviews, type Interviews } from './interviews.js';
 export { backgroundChecks, type BackgroundChecks } from './backgroundChecks.js';
 export {
