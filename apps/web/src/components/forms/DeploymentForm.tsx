@@ -6,18 +6,24 @@ import { z } from 'zod';
 import type { DeploymentFormValues } from '../../lib/entity-field-metadata';
 import { Label } from '../ui/label';
 
+const PLACEMENT_TYPES: { value: DeploymentFormValues['placementType']; label: string }[] = [
+  { value: 'CONTRACT', label: 'Contract' },
+  { value: 'PERMANENT', label: 'Permanent' },
+  { value: 'TEMP_TO_PERM', label: 'Temp to perm' },
+  { value: 'FREELANCE', label: 'Freelance' },
+];
+
 const deploymentFormSchema = z.object({
   clientName: z.string().min(1, 'Select a client'),
   candidateName: z.string().min(1, 'Select a candidate'),
-  roleTitle: z.string().min(1, 'Role title is required').max(200),
+  placementType: z.enum(['CONTRACT', 'PERMANENT', 'TEMP_TO_PERM', 'FREELANCE']),
+  roleTitle: z.string().min(1, 'Role title is required').max(255),
   startDate: z.string().min(1, 'Start date is required'),
   endDate: z.string().optional(),
-  billRate: z.coerce.number().positive('Must be greater than 0'),
-  payRate: z.coerce.number().positive('Must be greater than 0'),
+  billingRate: z.coerce.number().positive('Must be greater than 0'),
   currency: z.string().length(3),
-  hoursPerWeek: z.number().int().min(1).max(168),
-  timezone: z.string().min(1, 'Timezone is required'),
-  notes: z.string().max(2000).optional(),
+  workLocation: z.string().max(255).optional(),
+  notes: z.string().max(5000).optional(),
 });
 
 type DeploymentFormProps = {
@@ -26,6 +32,7 @@ type DeploymentFormProps = {
   onCancel: () => void;
   submitLabel?: string;
   formId?: string;
+  showActions?: boolean;
 };
 
 export function DeploymentForm({
@@ -34,6 +41,7 @@ export function DeploymentForm({
   onCancel,
   submitLabel = 'Create deployment',
   formId = 'deployment-form',
+  showActions = true,
 }: DeploymentFormProps) {
   const {
     register,
@@ -42,9 +50,8 @@ export function DeploymentForm({
   } = useForm<DeploymentFormValues>({
     resolver: zodResolver(deploymentFormSchema) as Resolver<DeploymentFormValues>,
     defaultValues: {
+      placementType: 'CONTRACT',
       currency: 'USD',
-      hoursPerWeek: 40,
-      timezone: 'America/New_York',
       ...defaultValues,
     },
   });
@@ -87,6 +94,31 @@ export function DeploymentForm({
         </div>
 
         <div className="space-y-2">
+          <Label htmlFor="placementType">Placement type *</Label>
+          <Select id="placementType" {...register('placementType')}>
+            {PLACEMENT_TYPES.map(({ value, label }) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
+          </Select>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="billingRate">Billing rate ($/hr) *</Label>
+          <Input
+            id="billingRate"
+            type="number"
+            min={0}
+            step={0.01}
+            {...register('billingRate', { valueAsNumber: true })}
+          />
+          {errors.billingRate && (
+            <p className="text-xs text-red-600">{errors.billingRate.message}</p>
+          )}
+        </div>
+
+        <div className="space-y-2">
           <Label htmlFor="startDate">Start date *</Label>
           <Input id="startDate" type="date" {...register('startDate')} />
           {errors.startDate && <p className="text-xs text-red-600">{errors.startDate.message}</p>}
@@ -98,48 +130,13 @@ export function DeploymentForm({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="billRate">Bill rate ($/hr) *</Label>
-          <Input
-            id="billRate"
-            type="number"
-            min={0}
-            step={0.01}
-            {...register('billRate', { valueAsNumber: true })}
-          />
-          {errors.billRate && <p className="text-xs text-red-600">{errors.billRate.message}</p>}
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="payRate">Pay rate ($/hr) *</Label>
-          <Input
-            id="payRate"
-            type="number"
-            min={0}
-            step={0.01}
-            {...register('payRate', { valueAsNumber: true })}
-          />
-          {errors.payRate && <p className="text-xs text-red-600">{errors.payRate.message}</p>}
-        </div>
-
-        <div className="space-y-2">
           <Label htmlFor="currency">Currency</Label>
           <Input id="currency" maxLength={3} {...register('currency')} />
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="hoursPerWeek">Hours per week</Label>
-          <Input
-            id="hoursPerWeek"
-            type="number"
-            min={1}
-            max={168}
-            {...register('hoursPerWeek', { valueAsNumber: true })}
-          />
-        </div>
-
         <div className="space-y-2 sm:col-span-2">
-          <Label htmlFor="timezone">Timezone *</Label>
-          <Input id="timezone" {...register('timezone')} placeholder="America/New_York" />
+          <Label htmlFor="workLocation">Work location</Label>
+          <Input id="workLocation" {...register('workLocation')} placeholder="Remote, hybrid, or office city" />
         </div>
 
         <div className="space-y-2 sm:col-span-2">
@@ -153,12 +150,14 @@ export function DeploymentForm({
         </div>
       </div>
 
-      <div className="flex justify-end gap-2 border-t border-border pt-4">
-        <Button type="button" variant="outline" onClick={onCancel}>
-          Cancel
-        </Button>
-        <Button type="submit">{submitLabel}</Button>
-      </div>
+      {showActions && (
+        <div className="flex justify-end gap-2 border-t border-border pt-4">
+          <Button type="button" variant="outline" onClick={onCancel}>
+            Cancel
+          </Button>
+          <Button type="submit">{submitLabel}</Button>
+        </div>
+      )}
     </form>
   );
 }

@@ -4,6 +4,7 @@ export const salesNav = [
   { id: 'dashboard', label: 'Dashboard', href: '/sales', icon: 'layout-dashboard' },
   { id: 'clients', label: 'Client Accounts', href: '/sales/clients', icon: 'briefcase' },
   { id: 'trials', label: 'Trial Requests', href: '/sales/trials', icon: 'flask-conical', badge: 3 },
+  { id: 'interviews', label: 'Interview Requests', href: '/sales/interviews', icon: 'calendar', badge: 2 },
   { id: 'deployments', label: 'Deployments', href: '/sales/deployments', icon: 'rocket' },
   { id: 'margin', label: 'Margin Report', href: '/sales/margin', icon: 'trending-up' },
 ] as const satisfies readonly NavItem[];

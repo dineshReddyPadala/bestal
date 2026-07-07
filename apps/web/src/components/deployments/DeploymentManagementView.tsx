@@ -257,6 +257,7 @@ export function DeploymentManagementView({
     (values: DeploymentFormValues) => {
       const payload = buildDeploymentPayload(values);
       const nextId = Math.max(0, ...records.map((r) => r.id)) + 1;
+      const payEstimate = Math.round(payload.billingRate * 0.72);
       setRecords((prev) => [
         ...prev,
         {
@@ -268,13 +269,16 @@ export function DeploymentManagementView({
           roleTitle: values.roleTitle,
           startDate: values.startDate,
           endDate: values.endDate ?? null,
-          billRate: values.billRate,
-          payRate: values.payRate,
-          marginPercent: payload.marginPercent,
+          billRate: payload.billingRate,
+          payRate: payEstimate,
+          marginPercent:
+            payload.billingRate > 0
+              ? Math.round(((payload.billingRate - payEstimate) / payload.billingRate) * 1000) / 10
+              : 0,
           currency: values.currency,
-          hoursPerWeek: values.hoursPerWeek,
-          timezone: values.timezone,
-          manager: payload.manager,
+          hoursPerWeek: 40,
+          timezone: values.workLocation ?? 'Remote',
+          manager: 'Unassigned',
           status: 'PENDING',
         },
       ]);
@@ -476,9 +480,22 @@ export function DeploymentManagementView({
         open={createOpen}
         onClose={() => setCreateOpen(false)}
         title="New deployment"
+        scrollable
         className="max-w-2xl"
+        footer={
+          <>
+            <Button type="button" variant="outline" onClick={() => setCreateOpen(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" form="deployment-form">
+              Create deployment
+            </Button>
+          </>
+        }
       >
         <DeploymentForm
+          formId="deployment-form"
+          showActions={false}
           onSubmit={handleCreateSubmit}
           onCancel={() => setCreateOpen(false)}
         />

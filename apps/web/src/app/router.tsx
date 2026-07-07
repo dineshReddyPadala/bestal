@@ -59,6 +59,7 @@ import { DeploymentsPage as SalesDeploymentsPage } from '../pages/sales/Deployme
 import { LoginPage as SalesLoginPage } from '../pages/sales/LoginPage';
 import { MarginReportPage as SalesMarginReportPage } from '../pages/sales/MarginReportPage';
 import { TrialsPage as SalesTrialsPage } from '../pages/sales/TrialsPage';
+import { InterviewRequestsPage as SalesInterviewRequestsPage } from '../pages/sales/InterviewRequestsPage';
 
 const marketingNav = publicNav.map(({ label, href }) => ({ label, href }));
 
@@ -223,6 +224,7 @@ const router = createBrowserRouter([
           { path: 'clients', element: <SalesClientsPage /> },
           { path: 'clients/:id', element: <SalesClientDetailPage /> },
           { path: 'trials', element: <SalesTrialsPage /> },
+          { path: 'interviews', element: <SalesInterviewRequestsPage /> },
           { path: 'deployments', element: <SalesDeploymentsPage /> },
           { path: 'margin', element: <SalesMarginReportPage /> },
         ],

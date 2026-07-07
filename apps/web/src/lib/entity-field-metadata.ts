@@ -126,18 +126,17 @@ export function buildEvaluationPayload(
 export type DeploymentFormValues = {
   clientName: string;
   candidateName: string;
+  placementType: 'CONTRACT' | 'PERMANENT' | 'TEMP_TO_PERM' | 'FREELANCE';
   roleTitle: string;
   startDate: string;
   endDate?: string;
-  billRate: number;
-  payRate: number;
+  billingRate: number;
   currency: string;
-  hoursPerWeek: number;
-  timezone: string;
+  workLocation?: string;
   notes?: string;
 };
 
-export type DeploymentPayload = DeploymentFormValues & {
+export type DeploymentPayload = {
   id?: number;
   clientId: number;
   candidateId: number;
@@ -145,8 +144,14 @@ export type DeploymentPayload = DeploymentFormValues & {
   createdById: number;
   createdByName: string;
   status: 'PENDING' | 'ACTIVE' | 'COMPLETED' | 'TERMINATED' | 'ON_HOLD';
-  marginPercent: number;
-  manager: string;
+  placementType: DeploymentFormValues['placementType'];
+  roleTitle: string;
+  startDate: string;
+  endDate: string | null;
+  billingRate: number;
+  currency: string;
+  workLocation: string | null;
+  notes: string | null;
   createdAt: string;
   updatedAt: string;
   deletedAt: string | null;
@@ -157,12 +162,7 @@ export function buildDeploymentPayload(
   existing?: Partial<DeploymentPayload>,
 ): DeploymentPayload {
   const ts = now();
-  const margin =
-    form.billRate > 0
-      ? Math.round(((form.billRate - form.payRate) / form.billRate) * 1000) / 10
-      : 0;
   return {
-    ...form,
     id: existing?.id,
     clientId: existing?.clientId ?? 1,
     candidateId: existing?.candidateId ?? 1,
@@ -170,8 +170,14 @@ export function buildDeploymentPayload(
     createdById: existing?.createdById ?? 1,
     createdByName: existing?.createdByName ?? 'Current User',
     status: existing?.status ?? 'PENDING',
-    marginPercent: margin,
-    manager: existing?.manager ?? 'Unassigned',
+    placementType: form.placementType,
+    roleTitle: form.roleTitle.trim(),
+    startDate: form.startDate,
+    endDate: form.endDate?.trim() || null,
+    billingRate: form.billingRate,
+    currency: form.currency,
+    workLocation: form.workLocation?.trim() || null,
+    notes: form.notes?.trim() || null,
     createdAt: existing?.createdAt ?? ts,
     updatedAt: ts,
     deletedAt: existing?.deletedAt ?? null,
@@ -623,5 +629,52 @@ export function buildTrialRequestPayload(
     createdAt: existing?.createdAt ?? ts,
     updatedAt: ts,
     deletedAt: existing?.deletedAt ?? null,
+  };
+}
+
+// ─── Trial workflow (sales review / complete) ─────────────────────────────────
+
+export type TrialRejectFormValues = {
+  reason?: string;
+};
+
+export type TrialCompleteFormValues = {
+  outcome: string;
+  feedback?: string;
+};
+
+// ─── Interview confirm (recruiter) ────────────────────────────────────────────
+
+export type InterviewConfirmFormValues = {
+  scheduledDate: string;
+  scheduledTime: string;
+  durationMinutes: number;
+  timezone?: string;
+  location?: string;
+  meetingLink?: string;
+};
+
+export type InterviewCancelFormValues = {
+  cancelReason?: string;
+};
+
+export function buildInterviewConfirmUpdate(
+  form: InterviewConfirmFormValues,
+  interviewType: InterviewRequestType,
+): {
+  status: 'SCHEDULED' | 'CONFIRMED';
+  scheduledAt: string | null;
+  durationMinutes: number;
+  timezone: string | null;
+  location: string | null;
+  meetingLink: string | null;
+} {
+  return {
+    status: 'CONFIRMED',
+    scheduledAt: combineDateAndTime(form.scheduledDate, form.scheduledTime),
+    durationMinutes: form.durationMinutes,
+    timezone: form.timezone?.trim() || null,
+    location: interviewType === 'IN_PERSON' ? form.location?.trim() || null : null,
+    meetingLink: form.meetingLink?.trim() || null,
   };
 }

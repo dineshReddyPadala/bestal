@@ -7,10 +7,20 @@ import {
   type TrialRequestStatus,
 } from '@bestal/mock-data';
 import { formatDate } from '@bestal/shared-utils';
-import { Badge, Button, PageHeader, Select, StatusBadge, TanStackDataTable } from '@bestal/ui';
+import { Button, Dialog, PageHeader, Select, StatusBadge, TanStackDataTable } from '@bestal/ui';
 import { type ColumnDef } from '@tanstack/react-table';
-import { CheckCircle2, Star, XCircle } from 'lucide-react';
-import { useCallback, useMemo, useState } from 'react';
+import { CheckCircle2, MoreHorizontal } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { DeploymentForm } from '../forms/DeploymentForm';
+import { TrialCompleteForm } from '../forms/TrialCompleteForm';
+import { TrialRejectForm } from '../forms/TrialRejectForm';
+import {
+  buildDeploymentPayload,
+  type DeploymentFormValues,
+  type TrialCompleteFormValues,
+  type TrialRejectFormValues,
+} from '../../lib/entity-field-metadata';
+import { mergeClientTrialsIntoRecords } from '../../lib/client-engagement-sync';
 import { useDemoToast } from '../../lib/use-demo-toast';
 
 type TrialAction = 'Approve' | 'Reject' | 'Start' | 'Complete' | 'Convert';
@@ -25,16 +35,13 @@ const defaultFilters = {
   date: 'all',
   client: 'all',
   candidate: 'all',
-  rating: 'all',
 };
 
 const TODAY = new Date('2026-06-30');
 
 function isActivePeriod(start: string | null, end: string | null): boolean {
   if (!start || !end) return false;
-  const s = new Date(start);
-  const e = new Date(end);
-  return s <= TODAY && e >= TODAY;
+  return new Date(start) <= TODAY && new Date(end) >= TODAY;
 }
 
 function isUpcoming(start: string | null): boolean {
@@ -47,75 +54,82 @@ function isPast(end: string | null): boolean {
   return new Date(end) < TODAY;
 }
 
-function RatingDisplay({ rating }: { rating: number | null }) {
-  if (rating == null) {
-    return <span className="text-muted-foreground">—</span>;
-  }
-  return (
-    <span className="inline-flex items-center gap-1.5 tabular-nums">
-      <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
-      <span className="font-medium">{rating}</span>
-      <span className="text-muted-foreground">/ 5</span>
-    </span>
-  );
-}
-
-function TrialRequestActions({
+function TrialRowActions({
   record,
   onAction,
 }: {
   record: TrialRequestRecord;
   onAction: (action: TrialAction) => void;
 }) {
-  const stop = (e: React.MouseEvent) => e.stopPropagation();
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
 
-  switch (record.status) {
-    case 'REQUESTED':
-      return (
-        <div className="flex flex-wrap gap-1.5" onClick={stop}>
-          <Button size="sm" onClick={() => onAction('Approve')}>
-            Approve
-          </Button>
-          <Button size="sm" variant="outline" onClick={() => onAction('Reject')}>
-            Reject
-          </Button>
-        </div>
-      );
-    case 'APPROVED':
-      return (
-        <div onClick={stop}>
-          <Button size="sm" onClick={() => onAction('Start')}>
-            Start
-          </Button>
-        </div>
-      );
-    case 'IN_PROGRESS':
-      return (
-        <div onClick={stop}>
-          <Button size="sm" onClick={() => onAction('Complete')}>
-            Complete
-          </Button>
-        </div>
-      );
-    case 'COMPLETED':
-      if (record.converted) {
-        return (
-          <Badge variant="success" className="gap-1">
-            <CheckCircle2 className="h-3 w-3" />
-            Converted
-          </Badge>
-        );
-      }
-      return (
-        <div onClick={stop}>
-          <Button size="sm" onClick={() => onAction('Convert')}>
-            Convert
-          </Button>
-        </div>
-      );
-    default:
-      return <span className="text-muted-foreground">—</span>;
+  useEffect(() => {
+    if (!open) return;
+    const close = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', close);
+    return () => document.removeEventListener('mousedown', close);
+  }, [open]);
+
+  const actions: TrialAction[] = (() => {
+    switch (record.status) {
+      case 'REQUESTED':
+        return ['Approve', 'Reject'];
+      case 'APPROVED':
+        return ['Start'];
+      case 'IN_PROGRESS':
+        return ['Complete'];
+      case 'COMPLETED':
+        return record.converted ? [] : ['Convert'];
+      default:
+        return [];
+    }
+  })();
+
+  if (actions.length === 0) {
+    return record.converted ? (
+      <span className="inline-flex items-center gap-1 text-sm font-medium text-emerald-700">
+        <CheckCircle2 className="h-4 w-4" />
+        Deployed
+      </span>
+    ) : (
+      <span className="text-muted-foreground">—</span>
+    );
   }
+
+  return (
+    <div className="relative flex justify-end" ref={ref} onClick={(e) => e.stopPropagation()}>
+      <button
+        type="button"
+        className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
+        onClick={() => setOpen((v) => !v)}
+        aria-label="Trial actions"
+      >
+        <MoreHorizontal className="h-4 w-4" />
+      </button>
+      {open && (
+        <div className="absolute right-0 top-full z-20 mt-1 min-w-[140px] rounded-lg border border-border bg-background py-1 shadow-elevated">
+          {actions.map((label) => (
+            <button
+              key={label}
+              type="button"
+              className={`flex w-full px-3 py-2 text-left text-sm hover:bg-muted ${
+                label === 'Reject' ? 'text-destructive' : 'text-foreground'
+              }`}
+              onClick={() => {
+                onAction(label);
+                setOpen(false);
+              }}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }
 
 export function TrialRequestManagementView({
@@ -123,8 +137,13 @@ export function TrialRequestManagementView({
   description = 'Review, approve, and track client trial pilots through conversion',
 }: TrialRequestManagementViewProps) {
   const { message, show } = useDemoToast();
-  const [records, setRecords] = useState<TrialRequestRecord[]>(() => [...trialRequestRecords]);
+  const [records, setRecords] = useState<TrialRequestRecord[]>(() =>
+    mergeClientTrialsIntoRecords([...trialRequestRecords]),
+  );
   const [filters, setFilters] = useState(defaultFilters);
+  const [rejectTarget, setRejectTarget] = useState<TrialRequestRecord | null>(null);
+  const [completeTarget, setCompleteTarget] = useState<TrialRequestRecord | null>(null);
+  const [convertTarget, setConvertTarget] = useState<TrialRequestRecord | null>(null);
 
   const filteredData = useMemo(() => {
     let rows = [...records];
@@ -137,17 +156,6 @@ export function TrialRequestManagementView({
     }
     if (filters.candidate !== 'all') {
       rows = rows.filter((r) => r.candidateName === filters.candidate);
-    }
-    if (filters.rating !== 'all') {
-      if (filters.rating === 'unrated') {
-        rows = rows.filter((r) => r.rating == null);
-      } else if (filters.rating === '4plus') {
-        rows = rows.filter((r) => r.rating != null && r.rating >= 4);
-      } else if (filters.rating === '3plus') {
-        rows = rows.filter((r) => r.rating != null && r.rating >= 3);
-      } else if (filters.rating === 'below3') {
-        rows = rows.filter((r) => r.rating != null && r.rating < 3);
-      }
     }
     if (filters.date !== 'all') {
       if (filters.date === 'upcoming') {
@@ -169,32 +177,72 @@ export function TrialRequestManagementView({
   }, [records, filters]);
 
   const handleAction = useCallback((record: TrialRequestRecord, action: TrialAction) => {
+    if (action === 'Reject') {
+      setRejectTarget(record);
+      return;
+    }
+    if (action === 'Complete') {
+      setCompleteTarget(record);
+      return;
+    }
+    if (action === 'Convert') {
+      setConvertTarget(record);
+      return;
+    }
+
     setRecords((prev) =>
       prev.map((row) => {
         if (row.id !== record.id) return row;
-
-        switch (action) {
-          case 'Approve':
-            return { ...row, status: 'APPROVED' as TrialRequestStatus };
-          case 'Reject':
-            return { ...row, status: 'REJECTED' as TrialRequestStatus };
-          case 'Start':
-            return { ...row, status: 'IN_PROGRESS' as TrialRequestStatus };
-          case 'Complete':
-            return {
-              ...row,
-              status: 'COMPLETED' as TrialRequestStatus,
-              rating: row.rating ?? 4,
-            };
-          case 'Convert':
-            return { ...row, converted: true };
-          default:
-            return row;
-        }
+        if (action === 'Approve') return { ...row, status: 'APPROVED' as TrialRequestStatus };
+        if (action === 'Start') return { ...row, status: 'IN_PROGRESS' as TrialRequestStatus };
+        return row;
       }),
     );
     show(`${action} — ${record.candidateName} @ ${record.clientName} (demo)`);
   }, [show]);
+
+  const confirmReject = (values: TrialRejectFormValues) => {
+    if (!rejectTarget) return;
+    setRecords((prev) =>
+      prev.map((row) =>
+        row.id === rejectTarget.id
+          ? { ...row, status: 'REJECTED' as TrialRequestStatus, rejectReason: values.reason?.trim() || null }
+          : row,
+      ),
+    );
+    show(`Rejected — ${rejectTarget.candidateName} (demo)`);
+    setRejectTarget(null);
+  };
+
+  const confirmComplete = (values: TrialCompleteFormValues) => {
+    if (!completeTarget) return;
+    setRecords((prev) =>
+      prev.map((row) =>
+        row.id === completeTarget.id
+          ? {
+              ...row,
+              status: 'COMPLETED' as TrialRequestStatus,
+              outcome: values.outcome.trim(),
+              feedback: values.feedback?.trim() || row.feedback,
+            }
+          : row,
+      ),
+    );
+    show(`Completed — ${completeTarget.candidateName} (demo)`);
+    setCompleteTarget(null);
+  };
+
+  const confirmConvert = (values: DeploymentFormValues) => {
+    if (!convertTarget) return;
+    buildDeploymentPayload(values);
+    setRecords((prev) =>
+      prev.map((row) =>
+        row.id === convertTarget.id ? { ...row, converted: true } : row,
+      ),
+    );
+    show(`Deployment created from trial — ${convertTarget.candidateName} (demo)`);
+    setConvertTarget(null);
+  };
 
   const columns = useMemo<ColumnDef<TrialRequestRecord>[]>(
     () => [
@@ -209,11 +257,22 @@ export function TrialRequestManagementView({
         cell: ({ getValue }) => <span className="font-medium">{getValue() as string}</span>,
       },
       {
-        accessorKey: 'trialHours',
-        header: 'Trial Hours',
+        accessorKey: 'roleTitle',
+        header: 'Role',
         cell: ({ getValue }) => (
-          <span className="tabular-nums">{getValue() as number} hrs</span>
+          <span className="max-w-[200px] truncate text-sm text-muted-foreground">
+            {getValue() as string}
+          </span>
         ),
+      },
+      {
+        accessorKey: 'durationDays',
+        header: () => <span className="block text-right">Days</span>,
+        meta: { headerClassName: 'text-right', cellClassName: 'text-right' },
+        cell: ({ getValue }) => {
+          const val = getValue() as number | null;
+          return <span className="tabular-nums">{val ?? '—'}</span>;
+        },
       },
       {
         accessorKey: 'startDate',
@@ -245,33 +304,23 @@ export function TrialRequestManagementView({
         cell: ({ getValue }) => <StatusBadge status={getValue() as string} />,
       },
       {
-        accessorKey: 'rating',
-        header: 'Rating',
-        cell: ({ getValue }) => <RatingDisplay rating={getValue() as number | null} />,
-      },
-      {
-        accessorKey: 'converted',
-        header: 'Converted',
+        accessorKey: 'outcome',
+        header: 'Outcome',
         cell: ({ getValue }) => {
-          const converted = getValue() as boolean;
-          return converted ? (
-            <span className="inline-flex items-center gap-1 text-sm font-medium text-emerald-700">
-              <CheckCircle2 className="h-4 w-4" />
-              Yes
-            </span>
+          const val = getValue() as string | null;
+          return val ? (
+            <span className="max-w-[180px] truncate text-sm">{val}</span>
           ) : (
-            <span className="inline-flex items-center gap-1 text-sm text-muted-foreground">
-              <XCircle className="h-4 w-4" />
-              No
-            </span>
+            <span className="text-muted-foreground">—</span>
           );
         },
       },
       {
         id: 'actions',
-        header: 'Actions',
+        header: '',
+        meta: { headerClassName: 'w-12 text-right', cellClassName: 'w-12 text-right' },
         cell: ({ row }) => (
-          <TrialRequestActions
+          <TrialRowActions
             record={row.original}
             onAction={(action) => handleAction(row.original, action)}
           />
@@ -307,7 +356,7 @@ export function TrialRequestManagementView({
               <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                 Filters
               </p>
-              <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
+              <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-4">
                 <FilterSelect
                   label="Status"
                   value={filters.status}
@@ -350,18 +399,6 @@ export function TrialRequestManagementView({
                     ...trialRequestCandidates.map((c) => ({ value: c, label: c })),
                   ]}
                 />
-                <FilterSelect
-                  label="Rating"
-                  value={filters.rating}
-                  onChange={(v) => updateFilter('rating', v)}
-                  options={[
-                    { value: 'all', label: 'All ratings' },
-                    { value: 'unrated', label: 'Unrated' },
-                    { value: '4plus', label: '4+ stars' },
-                    { value: '3plus', label: '3+ stars' },
-                    { value: 'below3', label: 'Below 3' },
-                  ]}
-                />
               </div>
               <div className="mt-3 flex justify-end">
                 <Button variant="ghost" size="sm" onClick={() => setFilters(defaultFilters)}>
@@ -374,12 +411,96 @@ export function TrialRequestManagementView({
             const q = String(filterValue).toLowerCase().trim();
             if (!q) return true;
             const r = row.original;
-            return [r.clientName, r.candidateName, r.roleTitle].some((field) =>
+            return [r.clientName, r.candidateName, r.roleTitle, r.outcome ?? ''].some((field) =>
               field.toLowerCase().includes(q),
             );
           }}
         />
       </div>
+
+      <Dialog
+        open={rejectTarget !== null}
+        onClose={() => setRejectTarget(null)}
+        title="Reject trial request"
+        scrollable
+        className="max-w-md"
+        footer={
+          <>
+            <Button variant="outline" onClick={() => setRejectTarget(null)}>
+              Cancel
+            </Button>
+            <Button type="submit" form="trial-reject-form">
+              Confirm reject
+            </Button>
+          </>
+        }
+      >
+        <TrialRejectForm
+          formId="trial-reject-form"
+          showActions={false}
+          onSubmit={confirmReject}
+          onCancel={() => setRejectTarget(null)}
+        />
+      </Dialog>
+
+      <Dialog
+        open={completeTarget !== null}
+        onClose={() => setCompleteTarget(null)}
+        title="Complete trial"
+        scrollable
+        className="max-w-md"
+        footer={
+          <>
+            <Button variant="outline" onClick={() => setCompleteTarget(null)}>
+              Cancel
+            </Button>
+            <Button type="submit" form="trial-complete-form">
+              Mark completed
+            </Button>
+          </>
+        }
+      >
+        <TrialCompleteForm
+          formId="trial-complete-form"
+          showActions={false}
+          onSubmit={confirmComplete}
+          onCancel={() => setCompleteTarget(null)}
+        />
+      </Dialog>
+
+      <Dialog
+        open={convertTarget !== null}
+        onClose={() => setConvertTarget(null)}
+        title="Convert trial to deployment"
+        scrollable
+        className="max-w-2xl"
+        footer={
+          <>
+            <Button variant="outline" onClick={() => setConvertTarget(null)}>
+              Cancel
+            </Button>
+            <Button type="submit" form="trial-convert-deployment-form">
+              Create deployment
+            </Button>
+          </>
+        }
+      >
+        {convertTarget && (
+          <DeploymentForm
+            formId="trial-convert-deployment-form"
+            showActions={false}
+            defaultValues={{
+              clientName: convertTarget.clientName,
+              candidateName: convertTarget.candidateName,
+              roleTitle: convertTarget.roleTitle,
+              startDate: convertTarget.startDate ?? '',
+              endDate: convertTarget.endDate ?? undefined,
+            }}
+            onSubmit={confirmConvert}
+            onCancel={() => setConvertTarget(null)}
+          />
+        )}
+      </Dialog>
     </div>
   );
 }

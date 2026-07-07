@@ -17,21 +17,24 @@ export type TrialRequestRecord = {
   readonly candidateId: number;
   readonly candidateName: string;
   readonly roleTitle: string;
-  readonly trialHours: number;
+  readonly durationDays: number | null;
   readonly startDate: string | null;
   readonly endDate: string | null;
   readonly status: TrialRequestStatus;
-  readonly rating: number | null;
+  readonly outcome: string | null;
+  readonly feedback: string | null;
+  readonly rejectReason: string | null;
   readonly converted: boolean;
   readonly requestedAt: string;
 };
 
-const PILOT_HOURS: Record<MockTrial['pilotType'], number> = {
-  '20_HOUR': 20,
-  '32_HOUR': 32,
-  '40_HOUR': 40,
-  CUSTOM: 40,
-};
+function durationDaysInclusive(start: string | null, end: string | null): number | null {
+  if (!start || !end) return null;
+  const s = new Date(start);
+  const e = new Date(end);
+  if (Number.isNaN(s.getTime()) || Number.isNaN(e.getTime()) || e < s) return null;
+  return Math.floor((e.getTime() - s.getTime()) / 86_400_000) + 1;
+}
 
 function mapTrialStatus(status: MockTrial['status']): TrialRequestStatus {
   switch (status) {
@@ -51,12 +54,14 @@ function mapTrialStatus(status: MockTrial['status']): TrialRequestStatus {
   }
 }
 
-function inferRating(trial: MockTrial): number | null {
+function inferOutcome(trial: MockTrial): string | null {
   if (trial.status !== 'COMPLETED') return null;
   const feedback = trial.feedback?.toLowerCase() ?? '';
-  if (feedback.includes('excellent') || feedback.includes('successful')) return 5;
-  if (feedback.includes('strong')) return 4;
-  return 4;
+  if (feedback.includes('failed') || feedback.includes('unsuccessful')) return 'Unsuccessful';
+  if (feedback.includes('excellent') || feedback.includes('successful')) {
+    return 'Successful — recommend conversion';
+  }
+  return 'Completed';
 }
 
 function inferConverted(trial: MockTrial): boolean {
@@ -73,11 +78,13 @@ function fromMockTrial(trial: MockTrial, requestedAt: string): TrialRequestRecor
     candidateId: trial.candidateId,
     candidateName: trial.candidateName,
     roleTitle: trial.title,
-    trialHours: PILOT_HOURS[trial.pilotType],
+    durationDays: durationDaysInclusive(trial.startDate, trial.endDate),
     startDate: trial.startDate,
     endDate: trial.endDate,
     status: mapTrialStatus(trial.status),
-    rating: inferRating(trial),
+    outcome: inferOutcome(trial),
+    feedback: trial.feedback || null,
+    rejectReason: null,
     converted: inferConverted(trial),
     requestedAt,
   };
@@ -95,11 +102,13 @@ const supplementalRecords: TrialRequestRecord[] = [
     candidateId: 3,
     candidateName: 'Priya Sharma',
     roleTitle: 'Senior Backend Engineer — Commerce API',
-    trialHours: 20,
+    durationDays: 14,
     startDate: '2026-07-01',
     endDate: '2026-07-14',
     status: 'REJECTED',
-    rating: null,
+    outcome: null,
+    feedback: null,
+    rejectReason: 'Role requirements changed',
     converted: false,
     requestedAt: '2026-06-25T14:30:00Z',
   },
@@ -110,11 +119,13 @@ const supplementalRecords: TrialRequestRecord[] = [
     candidateId: 7,
     candidateName: 'Elena Volkov',
     roleTitle: 'ML Engineer — Recommendations',
-    trialHours: 40,
+    durationDays: 15,
     startDate: '2026-05-01',
     endDate: '2026-05-15',
     status: 'FAILED',
-    rating: 2,
+    outcome: 'Unsuccessful — skill gap on production ML pipeline',
+    feedback: 'Candidate struggled with latency requirements.',
+    rejectReason: null,
     converted: false,
     requestedAt: '2026-04-20T09:00:00Z',
   },
@@ -125,11 +136,13 @@ const supplementalRecords: TrialRequestRecord[] = [
     candidateId: 10,
     candidateName: 'Marcus Chen',
     roleTitle: 'Staff Platform Engineer',
-    trialHours: 32,
+    durationDays: null,
     startDate: null,
     endDate: null,
     status: 'REQUESTED',
-    rating: null,
+    outcome: null,
+    feedback: null,
+    rejectReason: null,
     converted: false,
     requestedAt: '2026-06-28T16:45:00Z',
   },
@@ -161,3 +174,5 @@ export const trialRequestStatuses: readonly TrialRequestStatus[] = [
 export function getTrialRequestById(id: number): TrialRequestRecord | undefined {
   return trialRequestRecords.find((r) => r.id === id);
 }
+
+export { durationDaysInclusive as trialDurationDaysInclusive };

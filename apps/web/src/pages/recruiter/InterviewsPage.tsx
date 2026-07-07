@@ -1,27 +1,64 @@
-import { interviews } from '@bestal/mock-data';
+import { type MockInterview } from '@bestal/mock-data';
 import { formatDate } from '@bestal/shared-utils';
-import {
-  Badge,
-  Card,
-  CardContent,
-  PageHeader,
-  StatusBadge,
-} from '@bestal/ui';
+import { Badge, Button, Card, CardContent, Dialog, PageHeader, StatusBadge } from '@bestal/ui';
 import { Calendar, Clock, Video } from 'lucide-react';
+import { useCallback, useState } from 'react';
+import { InterviewConfirmForm } from '../../components/forms/InterviewConfirmForm';
+import {
+  buildInterviewConfirmUpdate,
+  type InterviewConfirmFormValues,
+  type InterviewRequestType,
+} from '../../lib/entity-field-metadata';
+import { allInterviewsForWorkflow } from '../../lib/client-engagement-sync';
+import { useDemoToast } from '../../lib/use-demo-toast';
 
 export function InterviewsPage() {
-  const sorted = [...interviews].sort((a, b) => {
+  const { message, show } = useDemoToast();
+  const [records, setRecords] = useState<MockInterview[]>(() => allInterviewsForWorkflow());
+  const [confirmTarget, setConfirmTarget] = useState<MockInterview | null>(null);
+
+  const sorted = [...records].sort((a, b) => {
     if (!a.scheduledAt) return 1;
     if (!b.scheduledAt) return -1;
     return new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime();
   });
 
+  const handleConfirm = useCallback(
+    (values: InterviewConfirmFormValues) => {
+      if (!confirmTarget) return;
+      const update = buildInterviewConfirmUpdate(
+        values,
+        confirmTarget.type as InterviewRequestType,
+      );
+      setRecords((prev) =>
+        prev.map((row) =>
+          row.id === confirmTarget.id
+            ? {
+                ...row,
+                status: update.status,
+                scheduledAt: update.scheduledAt,
+                durationMinutes: update.durationMinutes,
+                meetingUrl: update.meetingLink,
+                notes: row.notes || 'Confirmed by recruiter',
+              }
+            : row,
+        ),
+      );
+      show(`Interview confirmed — ${confirmTarget.candidateName} (demo)`);
+      setConfirmTarget(null);
+    },
+    [confirmTarget, show],
+  );
+
   return (
     <div>
-      <PageHeader
-        title="Interviews"
-        description="Scheduled and completed interview sessions"
-      />
+      <PageHeader title="Interviews" description="Schedule and confirm client interview requests" />
+
+      {message && (
+        <div className="mx-6 mb-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+          {message}
+        </div>
+      )}
 
       <div className="space-y-3 p-6">
         {sorted.map((interview) => (
@@ -31,24 +68,24 @@ export function InterviewsPage() {
                 <div className="flex flex-wrap items-center gap-2">
                   <h3 className="font-semibold text-foreground">{interview.candidateName}</h3>
                   <StatusBadge status={interview.status} />
-                  <Badge variant="outline">{interview.type}</Badge>
+                  <Badge variant="outline">{interview.type.replace(/_/g, ' ')}</Badge>
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  {interview.clientName} · Interviewer: {interview.interviewer}
+                  {interview.clientName} · {interview.interviewer}
                 </p>
                 {interview.notes && (
                   <p className="text-sm text-muted-foreground">{interview.notes}</p>
                 )}
               </div>
 
-              <div className="flex shrink-0 flex-col gap-2 text-sm text-muted-foreground sm:items-end">
+              <div className="flex shrink-0 flex-col items-start gap-2 sm:items-end">
                 {interview.scheduledAt && (
-                  <span className="inline-flex items-center gap-1.5">
+                  <span className="inline-flex items-center gap-1.5 text-sm text-muted-foreground">
                     <Calendar className="h-4 w-4" />
                     {formatDate(interview.scheduledAt)}
                   </span>
                 )}
-                <span className="inline-flex items-center gap-1.5">
+                <span className="inline-flex items-center gap-1.5 text-sm text-muted-foreground">
                   <Clock className="h-4 w-4" />
                   {interview.durationMinutes} min
                 </span>
@@ -57,17 +94,50 @@ export function InterviewsPage() {
                     href={interview.meetingUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 font-medium text-brand hover:underline"
+                    className="inline-flex items-center gap-1.5 text-sm font-medium text-brand hover:underline"
                   >
                     <Video className="h-4 w-4" />
                     Join meeting
                   </a>
+                )}
+                {interview.status === 'REQUESTED' && (
+                  <Button size="sm" onClick={() => setConfirmTarget(interview)}>
+                    Confirm schedule
+                  </Button>
                 )}
               </div>
             </CardContent>
           </Card>
         ))}
       </div>
+
+      <Dialog
+        open={confirmTarget !== null}
+        onClose={() => setConfirmTarget(null)}
+        title={confirmTarget ? `Confirm interview — ${confirmTarget.candidateName}` : 'Confirm interview'}
+        scrollable
+        className="max-w-lg"
+        footer={
+          <>
+            <Button variant="outline" onClick={() => setConfirmTarget(null)}>
+              Cancel
+            </Button>
+            <Button type="submit" form="interview-confirm-form">
+              Confirm interview
+            </Button>
+          </>
+        }
+      >
+        {confirmTarget && (
+          <InterviewConfirmForm
+            interviewType={confirmTarget.type as InterviewRequestType}
+            formId="interview-confirm-form"
+            showActions={false}
+            onSubmit={handleConfirm}
+            onCancel={() => setConfirmTarget(null)}
+          />
+        )}
+      </Dialog>
     </div>
   );
 }
