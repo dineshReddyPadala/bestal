@@ -10,8 +10,8 @@ import {
 import { formatCurrency, formatDate } from '@bestal/shared-utils';
 import { Button, Dialog, PageHeader, Select, StatusBadge, TanStackDataTable } from '@bestal/ui';
 import { type ColumnDef } from '@tanstack/react-table';
-import { Download, Plus } from 'lucide-react';
-import { useCallback, useMemo, useState } from 'react';
+import { Download, MoreHorizontal, Plus } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { DeploymentForm } from '../forms/DeploymentForm';
 import { buildDeploymentPayload, type DeploymentFormValues } from '../../lib/entity-field-metadata';
 import { useDemoToast } from '../../lib/use-demo-toast';
@@ -61,7 +61,6 @@ function exportDeploymentsCsv(rows: DeploymentManagementRecord[]) {
     'Margin %',
     'Hours',
     'Timezone',
-    'Manager',
     'Status',
   ];
   const escape = (v: string | number) => `"${String(v).replace(/"/g, '""')}"`;
@@ -76,7 +75,6 @@ function exportDeploymentsCsv(rows: DeploymentManagementRecord[]) {
       r.marginPercent,
       r.hoursPerWeek,
       r.timezone,
-      r.manager,
       r.status,
     ]
       .map(escape)
@@ -92,67 +90,94 @@ function exportDeploymentsCsv(rows: DeploymentManagementRecord[]) {
   URL.revokeObjectURL(url);
 }
 
-function DeploymentActions({
+function DeploymentRowActions({
   record,
   onAction,
 }: {
   record: DeploymentManagementRecord;
   onAction: (action: DeploymentAction) => void;
 }) {
-  const stop = (e: React.MouseEvent) => e.stopPropagation();
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
 
-  const btn = (
-    label: DeploymentAction,
-    variant: 'primary' | 'outline' = 'primary',
-    className?: string,
-  ) => (
-    <Button
-      key={label}
-      size="sm"
-      variant={variant}
-      className={className}
-      onClick={() => onAction(label)}
-    >
-      {label}
-    </Button>
-  );
+  useEffect(() => {
+    if (!open) return;
+    const close = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', close);
+    return () => document.removeEventListener('mousedown', close);
+  }, [open]);
 
-  switch (record.status) {
-    case 'ACTIVE':
-      return (
-        <div className="flex flex-wrap gap-1.5" onClick={stop}>
-          {btn('Pause', 'outline')}
-          {btn('Terminate', 'outline', 'text-destructive hover:text-destructive')}
-          {btn('Complete')}
-          {btn('Replace', 'outline')}
-        </div>
-      );
-    case 'PENDING':
-      return (
-        <div className="flex flex-wrap gap-1.5" onClick={stop}>
-          {btn('Pause', 'outline')}
-          {btn('Terminate', 'outline', 'text-destructive hover:text-destructive')}
-          {btn('Replace', 'outline')}
-        </div>
-      );
-    case 'ON_HOLD':
-      return (
-        <div className="flex flex-wrap gap-1.5" onClick={stop}>
-          {btn('Terminate', 'outline', 'text-destructive hover:text-destructive')}
-          {btn('Complete')}
-          {btn('Replace', 'outline')}
-        </div>
-      );
-    case 'COMPLETED':
-    case 'TERMINATED':
-      return (
-        <div className="flex flex-wrap gap-1.5" onClick={stop}>
-          {btn('Replace', 'outline')}
-        </div>
-      );
-    default:
-      return <span className="text-muted-foreground">—</span>;
+  const actions: {
+    label: DeploymentAction;
+    disabled?: boolean;
+    variant?: 'danger';
+  }[] = (() => {
+    switch (record.status) {
+      case 'ACTIVE':
+        return [
+          { label: 'Pause' },
+          { label: 'Terminate', variant: 'danger' },
+          { label: 'Complete' },
+          { label: 'Replace' },
+        ];
+      case 'PENDING':
+        return [
+          { label: 'Pause' },
+          { label: 'Terminate', variant: 'danger' },
+          { label: 'Replace' },
+        ];
+      case 'ON_HOLD':
+        return [
+          { label: 'Terminate', variant: 'danger' },
+          { label: 'Complete' },
+          { label: 'Replace' },
+        ];
+      case 'COMPLETED':
+      case 'TERMINATED':
+        return [{ label: 'Replace' }];
+      default:
+        return [];
+    }
+  })();
+
+  if (actions.length === 0) {
+    return <span className="text-muted-foreground">—</span>;
   }
+
+  return (
+    <div className="relative" ref={ref} onClick={(e) => e.stopPropagation()}>
+      <button
+        type="button"
+        className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
+        onClick={() => setOpen((v) => !v)}
+        aria-label="Deployment actions"
+      >
+        <MoreHorizontal className="h-4 w-4" />
+      </button>
+      {open && (
+        <div className="absolute right-0 top-full z-20 mt-1 min-w-[160px] rounded-lg border border-border bg-background py-1 shadow-elevated">
+          {actions.map(({ label, disabled, variant }) => (
+            <button
+              key={label}
+              type="button"
+              disabled={disabled}
+              className={`flex w-full items-center px-3 py-2 text-left text-sm hover:bg-muted disabled:cursor-not-allowed disabled:opacity-40 ${
+                variant === 'danger' ? 'text-destructive' : 'text-foreground'
+              }`}
+              onClick={() => {
+                if (!disabled) onAction(label);
+                setOpen(false);
+              }}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }
 
 export function DeploymentManagementView({
@@ -322,20 +347,15 @@ export function DeploymentManagementView({
         ),
       },
       {
-        accessorKey: 'manager',
-        header: 'Manager',
-        cell: ({ getValue }) => <span>{getValue() as string}</span>,
-      },
-      {
         accessorKey: 'status',
         header: 'Status',
         cell: ({ getValue }) => <StatusBadge status={getValue() as string} />,
       },
       {
         id: 'actions',
-        header: 'Actions',
+        header: '',
         cell: ({ row }) => (
-          <DeploymentActions
+          <DeploymentRowActions
             record={row.original}
             onAction={(action) => handleAction(row.original, action)}
           />
@@ -378,7 +398,7 @@ export function DeploymentManagementView({
         <TanStackDataTable
           columns={columns}
           data={filteredData}
-          searchPlaceholder="Search by client, candidate, manager, or timezone…"
+          searchPlaceholder="Search by client, candidate, or timezone…"
           pageSize={10}
           stickyHeader
           filters={
@@ -445,7 +465,6 @@ export function DeploymentManagementView({
               r.clientName,
               r.candidateName,
               r.roleTitle,
-              r.manager,
               r.timezone,
               formatDeploymentTimezone(r.timezone),
             ].some((field) => field.toLowerCase().includes(q));

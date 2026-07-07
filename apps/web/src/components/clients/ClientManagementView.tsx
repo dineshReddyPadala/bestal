@@ -4,10 +4,8 @@ import {
   clientManagers,
   clientStatuses,
   companyLogoUrl,
-  formatPaymentTerms,
   type ClientManagementRecord,
   type ClientManagementStatus,
-  type PaymentTerms,
 } from '@bestal/mock-data';
 import { formatCurrency } from '@bestal/shared-utils';
 import { Avatar, Button, Dialog, PageHeader, Select, StatusBadge, TanStackDataTable } from '@bestal/ui';
@@ -238,13 +236,6 @@ export function ClientManagementView({
         header: 'Phone',
         cell: ({ getValue }) => (
           <span className="text-sm text-muted-foreground tabular-nums">{getValue() as string}</span>
-        ),
-      },
-      {
-        accessorKey: 'paymentTerms',
-        header: 'Payment Terms',
-        cell: ({ getValue }) => (
-          <span className="text-sm">{formatPaymentTerms(getValue() as PaymentTerms)}</span>
         ),
       },
       {
