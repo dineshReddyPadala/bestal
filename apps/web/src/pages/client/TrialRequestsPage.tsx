@@ -13,11 +13,13 @@ import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { PickCandidateDialog } from '../../components/client/PickCandidateDialog';
 import { RequestTrialDialog } from '../../components/client/RequestTrialDialog';
-import { useClientTrialRequests } from '../../hooks/useClientEngagementRequests';
+import { useClientTrialRequests, trialDurationDays } from '../../hooks/useClientEngagementRequests';
 import { useClientShortlist } from '../../hooks/useClientShortlist';
 import { useDemoToast } from '../../lib/use-demo-toast';
 
 function TrialCard({ trial }: { trial: ReturnType<typeof useClientTrialRequests>['trials'][number] }) {
+  const durationDays = trialDurationDays(trial.startDate, trial.endDate);
+
   return (
     <Card>
       <CardContent className="p-4 sm:p-6">
@@ -36,8 +38,11 @@ function TrialCard({ trial }: { trial: ReturnType<typeof useClientTrialRequests>
               {trial.rate > 0 && (
                 <span>{formatCurrency(trial.rate, trial.currency)}/hr</span>
               )}
-              <span>{trial.hoursPerWeek} hrs/week</span>
-              <span>Recruiter: {trial.recruiter}</span>
+              {durationDays != null && trial.hoursPerWeek === 0 && (
+                <span>{durationDays} day{durationDays === 1 ? '' : 's'}</span>
+              )}
+              {trial.hoursPerWeek > 0 && <span>{trial.hoursPerWeek} hrs/week</span>}
+              {trial.recruiter && <span>Recruiter: {trial.recruiter}</span>}
             </div>
             {trial.feedback && (
               <p className="rounded-lg bg-muted/50 p-3 text-sm text-muted-foreground">
@@ -153,9 +158,10 @@ export function TrialRequestsPage() {
           open
           onClose={() => setSelected(null)}
           candidateName={selected.name}
-          onSubmitted={() => {
-            addRequest(selected.id, selected.name);
+          onSubmit={(values) => {
+            addRequest(selected.id, selected.name, values);
             show(`Trial requested — ${selected.name} (demo)`);
+            setSelected(null);
           }}
         />
       )}

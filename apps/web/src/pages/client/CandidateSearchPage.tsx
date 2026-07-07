@@ -8,6 +8,7 @@ import { ToptalCandidateCard } from '../../components/client/ToptalCandidateCard
 import { PremiumSearchFilters } from '../../components/client/PremiumSearchFilters';
 import { RequestInterviewDialog } from '../../components/client/RequestInterviewDialog';
 import { RequestTrialDialog } from '../../components/client/RequestTrialDialog';
+import { useClientInterviewRequests, useClientTrialRequests } from '../../hooks/useClientEngagementRequests';
 import { useClientShortlist } from '../../hooks/useClientShortlist';
 import {
   countActiveFilters,
@@ -23,8 +24,10 @@ import { cn } from '@bestal/shared-utils';
 export function CandidateSearchPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { message } = useDemoToast();
+  const { message, show } = useDemoToast();
   const { isShortlisted, toggleShortlist } = useClientShortlist();
+  const { addRequest: addInterviewRequest } = useClientInterviewRequests();
+  const { addRequest: addTrialRequest } = useClientTrialRequests();
 
   const [filters, setFilters] = useState<ClientSearchFilters>(() => ({
     ...DEFAULT_CLIENT_SEARCH_FILTERS,
@@ -32,7 +35,7 @@ export function CandidateSearchPage() {
   }));
   const [sort, setSort] = useState<ClientSearchSort>('best-match');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const [dialogCandidate, setDialogCandidate] = useState<{ name: string } | null>(null);
+  const [dialogCandidate, setDialogCandidate] = useState<{ id: number; name: string } | null>(null);
   const [dialogType, setDialogType] = useState<'interview' | 'trial' | null>(null);
 
   const [approvalTick, setApprovalTick] = useState(0);
@@ -129,11 +132,11 @@ export function CandidateSearchPage() {
                 onView={() => navigate(`/client/candidates/${record.id}`)}
                 onShortlist={() => toggleShortlist(record.id)}
                 onInterview={() => {
-                  setDialogCandidate({ name: record.fullName });
+                  setDialogCandidate({ id: record.id, name: record.fullName });
                   setDialogType('interview');
                 }}
                 onPilot={() => {
-                  setDialogCandidate({ name: record.fullName });
+                  setDialogCandidate({ id: record.id, name: record.fullName });
                   setDialogType('trial');
                 }}
               />
@@ -150,11 +153,11 @@ export function CandidateSearchPage() {
                 onView={() => navigate(`/client/candidates/${record.id}`)}
                 onShortlist={() => toggleShortlist(record.id)}
                 onInterview={() => {
-                  setDialogCandidate({ name: record.fullName });
+                  setDialogCandidate({ id: record.id, name: record.fullName });
                   setDialogType('interview');
                 }}
                 onPilot={() => {
-                  setDialogCandidate({ name: record.fullName });
+                  setDialogCandidate({ id: record.id, name: record.fullName });
                   setDialogType('trial');
                 }}
               />
@@ -169,11 +172,21 @@ export function CandidateSearchPage() {
             open={dialogType === 'interview'}
             onClose={() => setDialogType(null)}
             candidateName={dialogCandidate.name}
+            onSubmit={(values) => {
+              addInterviewRequest(dialogCandidate.id, dialogCandidate.name, values);
+              show(`Interview requested — ${dialogCandidate.name} (demo)`);
+              setDialogType(null);
+            }}
           />
           <RequestTrialDialog
             open={dialogType === 'trial'}
             onClose={() => setDialogType(null)}
             candidateName={dialogCandidate.name}
+            onSubmit={(values) => {
+              addTrialRequest(dialogCandidate.id, dialogCandidate.name, values);
+              show(`Trial requested — ${dialogCandidate.name} (demo)`);
+              setDialogType(null);
+            }}
           />
         </>
       )}

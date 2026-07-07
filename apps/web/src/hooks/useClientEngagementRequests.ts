@@ -2,6 +2,12 @@ import { interviews, trials, type MockInterview } from '@bestal/mock-data';
 import type { MockTrial } from '@bestal/mock-data';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { DEMO_CLIENT_ID, DEMO_USER } from '../lib/demo-client';
+import {
+  buildInterviewRequestPayload,
+  buildTrialRequestPayload,
+  type InterviewRequestFormValues,
+  type TrialRequestFormValues,
+} from '../lib/entity-field-metadata';
 
 const INTERVIEW_KEY = `bestal-client-interviews-${DEMO_CLIENT_ID}`;
 const TRIAL_KEY = `bestal-client-trials-${DEMO_CLIENT_ID}`;
@@ -33,7 +39,8 @@ export function useClientInterviewRequests() {
   }, [extra]);
 
   const addRequest = useCallback(
-    (candidateId: number, candidateName: string) => {
+    (candidateId: number, candidateName: string, form: InterviewRequestFormValues) => {
+      const payload = buildInterviewRequestPayload(form, candidateId, DEMO_CLIENT_ID);
       setExtra((prev) => {
         const all = [...interviews.filter((i) => i.clientId === DEMO_CLIENT_ID), ...prev];
         const entry: MockInterview = {
@@ -42,13 +49,13 @@ export function useClientInterviewRequests() {
           candidateName,
           clientId: DEMO_CLIENT_ID,
           clientName: DEMO_USER.company,
-          type: 'VIDEO',
+          type: payload.type,
           status: 'REQUESTED',
-          scheduledAt: null,
-          durationMinutes: 60,
-          interviewer: 'BesTal Recruiting',
+          scheduledAt: payload.scheduledAt,
+          durationMinutes: payload.durationMinutes,
+          interviewer: 'Pending assignment',
           meetingUrl: null,
-          notes: 'Submitted via client portal',
+          notes: payload.notes ?? '',
         };
         return [...prev, entry];
       });
@@ -71,34 +78,43 @@ export function useClientTrialRequests() {
     return [...seeded, ...extra];
   }, [extra]);
 
-  const addRequest = useCallback((candidateId: number, candidateName: string) => {
-    setExtra((prev) => {
-      const all = [...trials.filter((t) => t.clientId === DEMO_CLIENT_ID), ...prev];
-      const start = new Date();
-      const end = new Date(start);
-      end.setDate(end.getDate() + 14);
-      const entry: MockTrial = {
-        id: nextId(all),
-        candidateId,
-        candidateName,
-        clientId: DEMO_CLIENT_ID,
-        clientName: DEMO_USER.company,
-        title: `Pilot — ${candidateName}`,
-        status: 'REQUESTED',
-        startDate: start.toISOString().slice(0, 10),
-        endDate: end.toISOString().slice(0, 10),
-        rate: 0,
-        payRate: 0,
-        billRate: 0,
-        currency: 'USD',
-        hoursPerWeek: 20,
-        pilotType: '20_HOUR',
-        feedback: '',
-        recruiter: 'BesTal Account Team',
-      };
-      return [...prev, entry];
-    });
-  }, []);
+  const addRequest = useCallback(
+    (candidateId: number, candidateName: string, form: TrialRequestFormValues) => {
+      const payload = buildTrialRequestPayload(form, candidateId, DEMO_CLIENT_ID);
+      setExtra((prev) => {
+        const all = [...trials.filter((t) => t.clientId === DEMO_CLIENT_ID), ...prev];
+        const entry: MockTrial = {
+          id: nextId(all),
+          candidateId,
+          candidateName,
+          clientId: DEMO_CLIENT_ID,
+          clientName: DEMO_USER.company,
+          title: payload.roleTitle,
+          status: 'REQUESTED',
+          startDate: payload.startDate,
+          endDate: payload.endDate,
+          rate: 0,
+          payRate: 0,
+          billRate: 0,
+          currency: 'USD',
+          hoursPerWeek: 0,
+          pilotType: '20_HOUR',
+          feedback: payload.feedback ?? '',
+          recruiter: '',
+        };
+        return [...prev, entry];
+      });
+    },
+    [],
+  );
 
   return { trials: records, addRequest };
+}
+
+export function trialDurationDays(startDate: string, endDate: string): number | null {
+  if (!startDate || !endDate) return null;
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || end < start) return null;
+  return Math.floor((end.getTime() - start.getTime()) / 86_400_000) + 1;
 }

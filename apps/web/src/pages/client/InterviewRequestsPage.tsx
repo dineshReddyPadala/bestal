@@ -189,9 +189,10 @@ export function InterviewRequestsPage() {
           open
           onClose={() => setSelected(null)}
           candidateName={selected.name}
-          onSubmitted={() => {
-            addRequest(selected.id, selected.name);
+          onSubmit={(values) => {
+            addRequest(selected.id, selected.name, values);
             show(`Interview requested — ${selected.name} (demo)`);
+            setSelected(null);
           }}
         />
       )}

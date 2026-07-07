@@ -469,3 +469,159 @@ export function buildDocumentPayload(
     deletedAt: null,
   };
 }
+
+// ─── Client interview request (InterviewRequest model / POST /trials-style API) ─
+
+export type InterviewRequestType =
+  | 'PHONE'
+  | 'VIDEO'
+  | 'IN_PERSON'
+  | 'TECHNICAL'
+  | 'PANEL'
+  | 'FINAL'
+  | 'HR';
+
+export type InterviewRequestFormValues = {
+  type: InterviewRequestType;
+  preferredDate: string;
+  preferredTime: string;
+  durationMinutes: number;
+  timezone?: string;
+  location?: string;
+  notes?: string;
+};
+
+export type InterviewRequestPayload = {
+  id?: number;
+  organizationId: number;
+  candidateId: number;
+  clientId: number;
+  shortlistId: number | null;
+  requestedById: number;
+  type: InterviewRequestType;
+  status: 'REQUESTED';
+  scheduledAt: string | null;
+  durationMinutes: number;
+  timezone: string | null;
+  location: string | null;
+  notes: string | null;
+  assignedToId: number | null;
+  meetingLink: string | null;
+  feedback: string | null;
+  completedAt: string | null;
+  cancelledAt: string | null;
+  cancelReason: string | null;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt: string | null;
+};
+
+function combineDateAndTime(date: string, time: string): string | null {
+  if (!date) return null;
+  const t = time || '10:00';
+  const parsed = new Date(`${date}T${t}:00`);
+  return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString();
+}
+
+export function buildInterviewRequestPayload(
+  form: InterviewRequestFormValues,
+  candidateId: number,
+  clientId: number,
+  existing?: Partial<InterviewRequestPayload>,
+): InterviewRequestPayload {
+  const ts = now();
+  return {
+    id: existing?.id,
+    organizationId: existing?.organizationId ?? 1,
+    candidateId,
+    clientId,
+    shortlistId: existing?.shortlistId ?? null,
+    requestedById: existing?.requestedById ?? 1,
+    type: form.type,
+    status: 'REQUESTED',
+    scheduledAt: combineDateAndTime(form.preferredDate, form.preferredTime),
+    durationMinutes: form.durationMinutes,
+    timezone: form.timezone?.trim() || null,
+    location: form.type === 'IN_PERSON' ? form.location?.trim() || null : null,
+    notes: form.notes?.trim() || null,
+    assignedToId: existing?.assignedToId ?? null,
+    meetingLink: existing?.meetingLink ?? null,
+    feedback: existing?.feedback ?? null,
+    completedAt: existing?.completedAt ?? null,
+    cancelledAt: existing?.cancelledAt ?? null,
+    cancelReason: existing?.cancelReason ?? null,
+    createdAt: existing?.createdAt ?? ts,
+    updatedAt: ts,
+    deletedAt: existing?.deletedAt ?? null,
+  };
+}
+
+// ─── Client trial request (createTrialBodySchema) ─────────────────────────────
+
+export type TrialRequestFormValues = {
+  roleTitle: string;
+  startDate: string;
+  endDate: string;
+  feedback?: string;
+};
+
+export type TrialRequestPayload = {
+  id?: number;
+  organizationId: number;
+  candidateId: number;
+  clientId: number;
+  deploymentId: number | null;
+  requestedById: number;
+  status: 'REQUESTED';
+  roleTitle: string;
+  startDate: string;
+  endDate: string;
+  durationDays: number | null;
+  feedback: string | null;
+  outcome: string | null;
+  approvedAt: string | null;
+  rejectedAt: string | null;
+  rejectReason: string | null;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt: string | null;
+};
+
+function durationDaysInclusive(startDate: string, endDate: string): number | null {
+  if (!startDate || !endDate) return null;
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || end < start) return null;
+  const ms = end.getTime() - start.getTime();
+  return Math.floor(ms / 86_400_000) + 1;
+}
+
+export function buildTrialRequestPayload(
+  form: TrialRequestFormValues,
+  candidateId: number,
+  clientId: number,
+  existing?: Partial<TrialRequestPayload>,
+): TrialRequestPayload {
+  const ts = now();
+  return {
+    id: existing?.id,
+    organizationId: existing?.organizationId ?? 1,
+    candidateId,
+    clientId,
+    deploymentId: existing?.deploymentId ?? null,
+    requestedById: existing?.requestedById ?? 1,
+    status: 'REQUESTED',
+    roleTitle: form.roleTitle.trim(),
+    startDate: form.startDate,
+    endDate: form.endDate,
+    durationDays: durationDaysInclusive(form.startDate, form.endDate),
+    feedback: form.feedback?.trim() || null,
+    outcome: existing?.outcome ?? null,
+    approvedAt: existing?.approvedAt ?? null,
+    rejectedAt: existing?.rejectedAt ?? null,
+    rejectReason: existing?.rejectReason ?? null,
+    createdAt: existing?.createdAt ?? ts,
+    updatedAt: ts,
+    deletedAt: existing?.deletedAt ?? null,
+  };
+}
