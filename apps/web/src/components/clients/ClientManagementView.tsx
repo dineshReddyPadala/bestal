@@ -10,9 +10,9 @@ import {
 import { formatCurrency } from '@bestal/shared-utils';
 import { Avatar, Button, Dialog, PageHeader, Select, StatusBadge, TanStackDataTable } from '@bestal/ui';
 import { type ColumnDef } from '@tanstack/react-table';
-import { Edit, Eye, Plus, UserCog, UserX } from 'lucide-react';
-import { useCallback, useMemo, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Edit, Eye, MoreHorizontal, Plus, UserCog, UserX } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ClientForm } from '../forms/ClientForm';
 import { buildClientPayload, type ClientFormValues } from '../../lib/entity-field-metadata';
 import { useDemoToast } from '../../lib/use-demo-toast';
@@ -40,44 +40,74 @@ function ClientRowActions({
   detailPath?: string;
   onAction: (action: ClientAction) => void;
 }) {
-  const stop = (e: React.MouseEvent) => e.stopPropagation();
+  const navigate = useNavigate();
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
   const deactivated = record.status === 'INACTIVE' || record.status === 'SUSPENDED';
 
+  useEffect(() => {
+    if (!open) return;
+    const close = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', close);
+    return () => document.removeEventListener('mousedown', close);
+  }, [open]);
+
+  const actions: {
+    label: ClientAction;
+    icon: React.ReactNode;
+    disabled?: boolean;
+    variant?: 'danger';
+  }[] = [
+    { label: 'View', icon: <Eye className="h-3.5 w-3.5" /> },
+    { label: 'Edit', icon: <Edit className="h-3.5 w-3.5" /> },
+    {
+      label: 'Deactivate',
+      icon: <UserX className="h-3.5 w-3.5" />,
+      disabled: deactivated,
+      variant: 'danger',
+    },
+    { label: 'Assign Manager', icon: <UserCog className="h-3.5 w-3.5" /> },
+  ];
+
   return (
-    <div className="flex flex-wrap items-center gap-1" onClick={stop}>
-      {detailPath ? (
-        <Link
-          to={`${detailPath}/${record.id}`}
-          className="inline-flex h-8 items-center gap-1 rounded-md border border-border px-2.5 text-sm font-medium hover:bg-muted"
-          title="View"
-        >
-          <Eye className="h-3.5 w-3.5" />
-          View
-        </Link>
-      ) : (
-        <Button size="sm" variant="outline" onClick={() => onAction('View')}>
-          <Eye className="mr-1 h-3.5 w-3.5" />
-          View
-        </Button>
-      )}
-      <Button size="sm" variant="outline" onClick={() => onAction('Edit')}>
-        <Edit className="mr-1 h-3.5 w-3.5" />
-        Edit
-      </Button>
-      <Button
-        size="sm"
-        variant="outline"
-        disabled={deactivated}
-        className="text-destructive hover:text-destructive"
-        onClick={() => onAction('Deactivate')}
+    <div className="relative flex justify-end" ref={ref} onClick={(e) => e.stopPropagation()}>
+      <button
+        type="button"
+        className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
+        onClick={() => setOpen((v) => !v)}
+        aria-label="Client actions"
       >
-        <UserX className="mr-1 h-3.5 w-3.5" />
-        Deactivate
-      </Button>
-      <Button size="sm" variant="outline" onClick={() => onAction('Assign Manager')}>
-        <UserCog className="mr-1 h-3.5 w-3.5" />
-        Assign Manager
-      </Button>
+        <MoreHorizontal className="h-4 w-4" />
+      </button>
+      {open && (
+        <div className="absolute right-0 top-full z-20 mt-1 min-w-[168px] rounded-lg border border-border bg-background py-1 shadow-elevated">
+          {actions.map(({ label, icon, disabled, variant }) => (
+            <button
+              key={label}
+              type="button"
+              disabled={disabled}
+              className={`flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-muted disabled:cursor-not-allowed disabled:opacity-40 ${
+                variant === 'danger' ? 'text-destructive' : 'text-foreground'
+              }`}
+              onClick={() => {
+                if (disabled) return;
+                if (label === 'View' && detailPath) {
+                  navigate(`${detailPath}/${record.id}`);
+                  setOpen(false);
+                  return;
+                }
+                onAction(label);
+                setOpen(false);
+              }}
+            >
+              {icon}
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -250,30 +280,34 @@ export function ClientManagementView({
       },
       {
         accessorKey: 'candidateCount',
-        header: 'Candidates',
+        header: () => <span className="block text-right">Candidates</span>,
+        meta: { headerClassName: 'text-right', cellClassName: 'text-right' },
         cell: ({ getValue }) => (
-          <span className="font-medium tabular-nums">{getValue() as number}</span>
+          <span className="block font-medium tabular-nums">{getValue() as number}</span>
         ),
       },
       {
         accessorKey: 'deploymentCount',
-        header: 'Deployments',
+        header: () => <span className="block text-right">Deployments</span>,
+        meta: { headerClassName: 'text-right', cellClassName: 'text-right' },
         cell: ({ getValue }) => (
-          <span className="font-medium tabular-nums">{getValue() as number}</span>
+          <span className="block font-medium tabular-nums">{getValue() as number}</span>
         ),
       },
       {
         accessorKey: 'revenue',
-        header: 'Revenue',
+        header: () => <span className="block text-right">Revenue</span>,
+        meta: { headerClassName: 'text-right', cellClassName: 'text-right' },
         cell: ({ row }) => (
-          <span className="font-semibold tabular-nums">
+          <span className="block font-semibold tabular-nums">
             {formatCurrency(row.original.revenue, row.original.currency)}
           </span>
         ),
       },
       {
         id: 'actions',
-        header: 'Actions',
+        header: '',
+        meta: { headerClassName: 'w-12 text-right', cellClassName: 'w-12 text-right' },
         cell: ({ row }) => (
           <ClientRowActions
             record={row.original}

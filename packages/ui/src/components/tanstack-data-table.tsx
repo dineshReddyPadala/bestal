@@ -24,6 +24,11 @@ import {
 import { EmptyState } from './empty-state.js';
 import { SearchInput } from './search-input.js';
 
+export type TanStackColumnMeta = {
+  headerClassName?: string;
+  cellClassName?: string;
+};
+
 export type TanStackDataTableProps<TData> = {
   columns: ColumnDef<TData, unknown>[];
   data: TData[];
@@ -114,8 +119,10 @@ export function TanStackDataTable<TData>({
           <DataTableHeader className={cn(stickyHeader && 'sticky top-0 z-10')}>
             {table.getHeaderGroups().map((headerGroup) => (
               <DataTableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
-                  <DataTableHead key={header.id} className="whitespace-nowrap">
+                {headerGroup.headers.map((header) => {
+                  const meta = header.column.columnDef.meta as TanStackColumnMeta | undefined;
+                  return (
+                  <DataTableHead key={header.id} className={cn('whitespace-nowrap', meta?.headerClassName)}>
                     {header.isPlaceholder ? null : header.column.getCanSort() ? (
                       <button
                         type="button"
@@ -135,7 +142,8 @@ export function TanStackDataTable<TData>({
                       flexRender(header.column.columnDef.header, header.getContext())
                     )}
                   </DataTableHead>
-                ))}
+                  );
+                })}
               </DataTableRow>
             ))}
           </DataTableHeader>
@@ -147,11 +155,14 @@ export function TanStackDataTable<TData>({
                 onClick={() => onRowClick?.(row.original)}
                 data-state={row.getIsSelected() ? 'selected' : undefined}
               >
-                {row.getVisibleCells().map((cell) => (
-                  <DataTableCell key={cell.id} className="whitespace-nowrap">
+                {row.getVisibleCells().map((cell) => {
+                  const meta = cell.column.columnDef.meta as TanStackColumnMeta | undefined;
+                  return (
+                  <DataTableCell key={cell.id} className={cn('whitespace-nowrap', meta?.cellClassName)}>
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
                   </DataTableCell>
-                ))}
+                  );
+                })}
               </DataTableRow>
             ))}
           </DataTableBody>
