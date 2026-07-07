@@ -87,6 +87,7 @@ export {
   type AvailabilityCategory,
 } from './candidateListing.js';
 export { clients, type Clients } from './clients.js';
+export { companyLogoUrl } from './company-logos.js';
 export {
   clientManagementRecords,
   clientIndustries,

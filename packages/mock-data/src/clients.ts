@@ -1,4 +1,5 @@
 import type { MockClient } from './types.js';
+import { companyLogoUrl } from './company-logos.js';
 
 export const clients = [
   {
@@ -6,7 +7,7 @@ export const clients = [
     name: 'Stripe',
     industry: 'Fintech',
     website: 'https://stripe.com',
-    logoUrl: 'https://logo.clearbit.com/stripe.com',
+    logoUrl: companyLogoUrl('Stripe'),
     status: 'ACTIVE',
     accountManager: 'Rachel Kim',
     location: 'San Francisco, CA',
@@ -20,7 +21,7 @@ export const clients = [
     name: 'Shopify',
     industry: 'E-commerce',
     website: 'https://shopify.com',
-    logoUrl: 'https://logo.clearbit.com/shopify.com',
+    logoUrl: companyLogoUrl('Shopify'),
     status: 'ACTIVE',
     accountManager: 'Tom Bradley',
     location: 'Ottawa, Canada',
@@ -34,7 +35,7 @@ export const clients = [
     name: 'JPMorgan Chase',
     industry: 'Financial Services',
     website: 'https://jpmorganchase.com',
-    logoUrl: 'https://logo.clearbit.com/jpmorganchase.com',
+    logoUrl: companyLogoUrl('JPMorgan Chase'),
     status: 'ACTIVE',
     accountManager: 'Angela Torres',
     location: 'New York, NY',
@@ -48,7 +49,7 @@ export const clients = [
     name: 'Spotify',
     industry: 'Media & Entertainment',
     website: 'https://spotify.com',
-    logoUrl: 'https://logo.clearbit.com/spotify.com',
+    logoUrl: companyLogoUrl('Spotify'),
     status: 'ACTIVE',
     accountManager: 'Rachel Kim',
     location: 'Stockholm, Sweden',
@@ -62,7 +63,7 @@ export const clients = [
     name: 'Airbnb',
     industry: 'Travel & Hospitality',
     website: 'https://airbnb.com',
-    logoUrl: 'https://logo.clearbit.com/airbnb.com',
+    logoUrl: companyLogoUrl('Airbnb'),
     status: 'ACTIVE',
     accountManager: 'Tom Bradley',
     location: 'San Francisco, CA',
@@ -76,7 +77,7 @@ export const clients = [
     name: 'Palantir',
     industry: 'Enterprise Software',
     website: 'https://palantir.com',
-    logoUrl: 'https://logo.clearbit.com/palantir.com',
+    logoUrl: companyLogoUrl('Palantir'),
     status: 'PROSPECT',
     accountManager: 'Angela Torres',
     location: 'Denver, CO',
@@ -90,7 +91,7 @@ export const clients = [
     name: 'Coinbase',
     industry: 'Cryptocurrency',
     website: 'https://coinbase.com',
-    logoUrl: 'https://logo.clearbit.com/coinbase.com',
+    logoUrl: companyLogoUrl('Coinbase'),
     status: 'ACTIVE',
     accountManager: 'Rachel Kim',
     location: 'Remote-first',

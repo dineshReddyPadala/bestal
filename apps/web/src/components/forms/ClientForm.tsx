@@ -14,6 +14,7 @@ const clientFormSchema = z.object({
   phone: z.string().max(30).default(''),
   accountManager: z.string().min(1, 'Account manager is required'),
   logoFileName: z.string().optional(),
+  logoPreviewUrl: z.string().optional(),
 });
 
 type ClientFormProps = {
@@ -102,7 +103,10 @@ export function ClientForm({
         <FileUpload
           label="Company logo"
           accept=".jpg,.jpeg,.png,.webp,.svg"
-          onFileSelect={(file) => setValue('logoFileName', file.name, { shouldValidate: true })}
+          onFileSelect={(file) => {
+            setValue('logoFileName', file.name, { shouldValidate: true });
+            setValue('logoPreviewUrl', URL.createObjectURL(file));
+          }}
         />
         {watch('logoFileName') && (
           <p className="mt-2 text-xs text-muted-foreground">{watch('logoFileName')}</p>

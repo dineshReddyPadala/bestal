@@ -27,6 +27,7 @@ export type ClientFormValues = {
   phone: string;
   accountManager: string;
   logoFileName?: string;
+  logoPreviewUrl?: string;
 };
 
 export type ClientPayload = ClientFormValues & {
@@ -61,7 +62,7 @@ export function buildClientPayload(
     deploymentCount: existing?.deploymentCount ?? 0,
     revenue: existing?.revenue ?? 0,
     currency: existing?.currency ?? 'USD',
-    logoUrl: form.logoFileName ? `/uploads/logos/${form.logoFileName}` : (existing?.logoUrl ?? null),
+    logoUrl: form.logoPreviewUrl ?? existing?.logoUrl ?? null,
     createdAt: existing?.createdAt ?? ts,
     updatedAt: ts,
     deletedAt: existing?.deletedAt ?? null,

@@ -3,6 +3,7 @@ import {
   clientManagementRecords,
   clientManagers,
   clientStatuses,
+  companyLogoUrl,
   formatPaymentTerms,
   type ClientManagementRecord,
   type ClientManagementStatus,
@@ -160,6 +161,7 @@ export function ClientManagementView({
                   phone: values.phone ?? row.phone,
                   paymentTerms: payload.paymentTerms,
                   accountManager: values.accountManager,
+                  logoUrl: payload.logoUrl ?? row.logoUrl,
                 }
               : row,
           ),
@@ -183,7 +185,7 @@ export function ClientManagementView({
             deploymentCount: 0,
             revenue: 0,
             currency: 'USD',
-            logoUrl: values.logoFileName ? `/uploads/logos/${values.logoFileName}` : '',
+            logoUrl: payload.logoUrl ?? companyLogoUrl(values.company),
           },
         ]);
         show(`Client created — ${values.company} (demo)`);

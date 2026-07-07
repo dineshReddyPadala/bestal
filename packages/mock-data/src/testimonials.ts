@@ -1,4 +1,5 @@
 import type { Testimonial } from './types.js';
+import { companyLogoUrl } from './company-logos.js';
 
 export const testimonials = [
   {
@@ -8,7 +9,7 @@ export const testimonials = [
     authorName: 'Sarah Chen',
     authorTitle: 'VP of Engineering',
     company: 'Stripe',
-    companyLogoUrl: 'https://logo.clearbit.com/stripe.com',
+    companyLogoUrl: companyLogoUrl('Stripe'),
     rating: 5,
     featured: true,
   },
@@ -19,7 +20,7 @@ export const testimonials = [
     authorName: 'Marcus Webb',
     authorTitle: 'CTO',
     company: 'Shopify',
-    companyLogoUrl: 'https://logo.clearbit.com/shopify.com',
+    companyLogoUrl: companyLogoUrl('Shopify'),
     rating: 5,
     featured: true,
   },
@@ -30,7 +31,7 @@ export const testimonials = [
     authorName: 'Elena Rodriguez',
     authorTitle: 'Director of Cloud Infrastructure',
     company: 'JPMorgan Chase',
-    companyLogoUrl: 'https://logo.clearbit.com/jpmorganchase.com',
+    companyLogoUrl: companyLogoUrl('JPMorgan Chase'),
     rating: 5,
     featured: true,
   },
@@ -41,7 +42,7 @@ export const testimonials = [
     authorName: 'David Okonkwo',
     authorTitle: 'Head of AI',
     company: 'Spotify',
-    companyLogoUrl: 'https://logo.clearbit.com/spotify.com',
+    companyLogoUrl: companyLogoUrl('Spotify'),
     rating: 5,
     featured: false,
   },
@@ -52,7 +53,7 @@ export const testimonials = [
     authorName: 'Jennifer Walsh',
     authorTitle: 'Chief People Officer',
     company: 'Airbnb',
-    companyLogoUrl: 'https://logo.clearbit.com/airbnb.com',
+    companyLogoUrl: companyLogoUrl('Airbnb'),
     rating: 4,
     featured: false,
   },
