@@ -5,7 +5,6 @@ import { useForm, type Resolver } from 'react-hook-form';
 import { z } from 'zod';
 import type { DeploymentFormValues } from '../../lib/entity-field-metadata';
 import { Label } from '../ui/label';
-import { FormSystemNote } from './FormSystemNote';
 
 const deploymentFormSchema = z.object({
   clientName: z.string().min(1, 'Select a client'),
@@ -52,8 +51,6 @@ export function DeploymentForm({
 
   return (
     <form id={formId} onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-      <FormSystemNote />
-
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="clientName">Client *</Label>
@@ -155,10 +152,6 @@ export function DeploymentForm({
           />
         </div>
       </div>
-
-      <p className="text-xs text-muted-foreground">
-        Margin, manager, and deployment status are calculated automatically.
-      </p>
 
       <div className="flex justify-end gap-2 border-t border-border pt-4">
         <Button type="button" variant="outline" onClick={onCancel}>

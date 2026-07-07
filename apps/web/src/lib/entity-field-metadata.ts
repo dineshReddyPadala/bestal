@@ -25,13 +25,13 @@ export type ClientFormValues = {
   primaryContact: string;
   email: string;
   phone: string;
-  paymentTerms: 'NET_15' | 'NET_30' | 'NET_45' | 'NET_60' | 'PREPAID';
   accountManager: string;
   logoFileName?: string;
 };
 
 export type ClientPayload = ClientFormValues & {
   id?: number;
+  paymentTerms: 'NET_15' | 'NET_30' | 'NET_45' | 'NET_60' | 'PREPAID';
   status: 'PROSPECT' | 'ACTIVE' | 'INACTIVE' | 'SUSPENDED';
   organizationId: number;
   slug: string;
@@ -53,6 +53,7 @@ export function buildClientPayload(
   return {
     ...form,
     id: existing?.id,
+    paymentTerms: existing?.paymentTerms ?? 'NET_30',
     status: existing?.status ?? 'PROSPECT',
     organizationId: existing?.organizationId ?? 1,
     slug: slugify(form.company),

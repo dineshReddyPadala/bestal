@@ -146,7 +146,7 @@ export function ClientManagementView({
 
   const handleFormSubmit = useCallback(
     (values: ClientFormValues) => {
-      buildClientPayload(values, editingRecord ?? undefined);
+      const payload = buildClientPayload(values, editingRecord ?? undefined);
       if (formOpen === 'edit' && editingRecord) {
         setRecords((prev) =>
           prev.map((row) =>
@@ -158,7 +158,7 @@ export function ClientManagementView({
                   primaryContact: values.primaryContact,
                   email: values.email,
                   phone: values.phone ?? row.phone,
-                  paymentTerms: values.paymentTerms,
+                  paymentTerms: payload.paymentTerms,
                   accountManager: values.accountManager,
                 }
               : row,
@@ -176,7 +176,7 @@ export function ClientManagementView({
             primaryContact: values.primaryContact,
             email: values.email,
             phone: values.phone ?? '',
-            paymentTerms: values.paymentTerms,
+            paymentTerms: payload.paymentTerms,
             status: 'PROSPECT',
             accountManager: values.accountManager,
             candidateCount: 0,
@@ -400,7 +400,6 @@ export function ClientManagementView({
           setEditingRecord(null);
         }}
         title={formOpen === 'edit' ? 'Edit client' : 'Add client'}
-        description="Enter company and contact details. Status and metrics are managed by the system."
         className="max-w-2xl"
       >
         <ClientForm
@@ -415,7 +414,6 @@ export function ClientManagementView({
                   primaryContact: editingRecord.primaryContact,
                   email: editingRecord.email,
                   phone: editingRecord.phone,
-                  paymentTerms: editingRecord.paymentTerms,
                   accountManager: editingRecord.accountManager,
                 }
               : undefined

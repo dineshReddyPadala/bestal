@@ -5,7 +5,6 @@ import { useForm, type Resolver } from 'react-hook-form';
 import { z } from 'zod';
 import type { ClientFormValues } from '../../lib/entity-field-metadata';
 import { Label } from '../ui/label';
-import { FormSystemNote } from './FormSystemNote';
 
 const clientFormSchema = z.object({
   company: z.string().min(1, 'Company name is required').max(200),
@@ -13,7 +12,6 @@ const clientFormSchema = z.object({
   primaryContact: z.string().min(1, 'Primary contact is required').max(100),
   email: z.string().email('Invalid email').max(255),
   phone: z.string().max(30).default(''),
-  paymentTerms: z.enum(['NET_15', 'NET_30', 'NET_45', 'NET_60', 'PREPAID']),
   accountManager: z.string().min(1, 'Account manager is required'),
   logoFileName: z.string().optional(),
 });
@@ -42,7 +40,6 @@ export function ClientForm({
   } = useForm<ClientFormValues>({
     resolver: zodResolver(clientFormSchema) as Resolver<ClientFormValues>,
     defaultValues: {
-      paymentTerms: 'NET_30',
       accountManager: clientManagers[0],
       ...defaultValues,
     },
@@ -50,8 +47,6 @@ export function ClientForm({
 
   return (
     <form id={formId} onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-      <FormSystemNote />
-
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2 sm:col-span-2">
           <Label htmlFor="company">Company name *</Label>
@@ -101,28 +96,16 @@ export function ClientForm({
           <Label htmlFor="phone">Phone</Label>
           <Input id="phone" {...register('phone')} placeholder="+1 (415) 555-0100" />
         </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="paymentTerms">Payment terms *</Label>
-          <Select id="paymentTerms" {...register('paymentTerms')}>
-            <option value="NET_15">Net 15</option>
-            <option value="NET_30">Net 30</option>
-            <option value="NET_45">Net 45</option>
-            <option value="NET_60">Net 60</option>
-            <option value="PREPAID">Prepaid</option>
-          </Select>
-        </div>
       </div>
 
       <div className="border-t border-border pt-4">
         <FileUpload
           label="Company logo"
           accept=".jpg,.jpeg,.png,.webp,.svg"
-          hint="JPEG, PNG, or SVG — no URL needed"
           onFileSelect={(file) => setValue('logoFileName', file.name, { shouldValidate: true })}
         />
         {watch('logoFileName') && (
-          <p className="mt-2 text-sm text-emerald-700">Selected: {watch('logoFileName')}</p>
+          <p className="mt-2 text-xs text-muted-foreground">{watch('logoFileName')}</p>
         )}
       </div>
 

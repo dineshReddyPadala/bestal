@@ -457,7 +457,6 @@ export function DeploymentManagementView({
         open={createOpen}
         onClose={() => setCreateOpen(false)}
         title="New deployment"
-        description="Place a candidate at a client. Status, margin, and manager are set automatically."
         className="max-w-2xl"
       >
         <DeploymentForm
