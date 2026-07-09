@@ -7,6 +7,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useMemo,
   useRef,
   useState,
   type MutableRefObject,
@@ -30,6 +31,7 @@ import {
   REVIEW_FIELD_KEYS,
   USER_FIELD_LABELS,
   WIZARD_STEPS,
+  type CandidateEntryMethod,
   type CandidateWizardFormValues,
   type CandidateWizardUploads,
   type CandidateWizardValues,
@@ -37,8 +39,11 @@ import {
 } from './candidate-wizard-schema';
 
 type CandidateWizardProps = {
+  entryMethod: CandidateEntryMethod;
+  initialStepIndex?: number;
   onSubmit: (values: CandidateWizardValues, uploads: CandidateWizardUploads) => void | Promise<void>;
   onCancel: () => void;
+  onChangeEntryMethod?: () => void;
   onToast: (message: string) => void;
 };
 
@@ -593,8 +598,15 @@ function StepContent({
   }
 }
 
-export function CandidateWizard({ onSubmit, onCancel, onToast }: CandidateWizardProps) {
-  const [stepIndex, setStepIndex] = useState(0);
+export function CandidateWizard({
+  entryMethod,
+  initialStepIndex = 0,
+  onSubmit,
+  onCancel,
+  onChangeEntryMethod,
+  onToast,
+}: CandidateWizardProps) {
+  const [stepIndex, setStepIndex] = useState(initialStepIndex);
   const pendingUploads = useRef<CandidateWizardUploads>({});
   const currentStep = WIZARD_STEPS[stepIndex]!;
   const {
@@ -622,6 +634,25 @@ export function CandidateWizard({ onSubmit, onCancel, onToast }: CandidateWizard
       /* ignore corrupt draft */
     }
   }, [reset]);
+
+  useEffect(() => {
+    if (entryMethod === 'oorwin') {
+      setValue('source', 'AGENCY');
+    }
+  }, [entryMethod, setValue]);
+
+  const entryMethodHint = useMemo(() => {
+    if (entryMethod === 'resume' && currentStep.id === 'upload') {
+      return 'Upload a resume to auto-extract candidate details. You can edit every field before creating the record.';
+    }
+    if (entryMethod === 'oorwin' && currentStep.id === 'personal') {
+      return 'Enter the Oorwin candidate ID to link this profile. Fill in or adjust the remaining personal details as needed.';
+    }
+    if (entryMethod === 'manual' && currentStep.id === 'personal') {
+      return 'Enter candidate details manually. All steps remain available before you submit.';
+    }
+    return null;
+  }, [currentStep.id, entryMethod]);
 
   const saveDraft = useCallback(() => {
     localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(getValues()));
@@ -696,11 +727,21 @@ export function CandidateWizard({ onSubmit, onCancel, onToast }: CandidateWizard
         </div>
 
         <div className="min-h-[320px] rounded-xl border border-border/80 bg-gradient-to-br from-background to-muted/10 p-6">
+          {entryMethodHint && (
+            <p className="mb-4 rounded-lg border border-brand/20 bg-brand/5 px-3 py-2 text-sm text-muted-foreground">
+              {entryMethodHint}
+            </p>
+          )}
           <StepContent stepId={currentStep.id} onToast={onToast} pendingUploads={pendingUploads} />
         </div>
 
         <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4">
           <div className="flex flex-wrap gap-2">
+            {onChangeEntryMethod && (
+              <Button type="button" variant="ghost" size="sm" onClick={onChangeEntryMethod}>
+                Change method
+              </Button>
+            )}
             <Button type="button" variant="outline" size="sm" onClick={saveDraft}>
               Save Draft
             </Button>

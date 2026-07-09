@@ -1,6 +1,6 @@
 import { Avatar, Button, StatusBadge, TanStackDataTable } from '@bestal/ui';
 import { type ColumnDef } from '@tanstack/react-table';
-import { Plus, Upload } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCandidatesList } from '../../hooks/api/useCandidates';
@@ -135,16 +135,10 @@ export function CandidateListingView({
       loadingLabel="Loading candidates…"
       error={isError ? (error instanceof Error ? error.message : 'Failed to load candidates') : null}
       actions={
-        <>
-          <Button variant="outline" size="sm" to={`${basePath}/import`}>
-            <Upload className="mr-1.5 h-3.5 w-3.5" />
-            Import CSV
-          </Button>
-          <Button size="sm" to={addCandidatePath}>
-            <Plus className="mr-1.5 h-3.5 w-3.5" />
-            Add Candidate
-          </Button>
-        </>
+        <Button size="sm" to={addCandidatePath}>
+          <Plus className="mr-1.5 h-3.5 w-3.5" />
+          Add Candidate
+        </Button>
       }
     >
       <TanStackDataTable

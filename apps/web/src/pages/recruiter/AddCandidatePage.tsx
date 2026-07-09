@@ -3,12 +3,18 @@ import { Card, CardContent, PageHeader } from '@bestal/ui';
 import { ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useState } from 'react';
+import { CsvImportScreen } from '../../components/import/CsvImportScreen';
+import { CandidateEntryMethodChooser } from '../../components/forms/CandidateEntryMethodChooser';
 import { CandidateWizard } from '../../components/forms/CandidateWizard';
 import type {
   CandidateWizardUploads,
   CandidateWizardValues,
 } from '../../components/forms/candidate-wizard-schema';
-import { mapWizardToApiCreateBody } from '../../components/forms/candidate-wizard-schema';
+import {
+  getInitialStepIndexForEntryMethod,
+  mapWizardToApiCreateBody,
+  type CandidateEntryMethod,
+} from '../../components/forms/candidate-wizard-schema';
 import { useDemoToast } from '../../lib/use-demo-toast';
 import { useCandidateMutations } from '../../hooks/api/useCandidates';
 import { uploadCandidateFile } from '../../lib/api/candidates';
@@ -25,6 +31,7 @@ export function AddCandidatePage() {
   const { message, show } = useDemoToast();
   const { create } = useCandidateMutations();
   const [submittedId, setSubmittedId] = useState<number | null>(null);
+  const [entryMethod, setEntryMethod] = useState<CandidateEntryMethod | null>(null);
 
   async function handleSubmit(values: CandidateWizardValues, uploads: CandidateWizardUploads) {
     try {
@@ -83,12 +90,37 @@ export function AddCandidatePage() {
               <p className="mt-2 text-sm text-muted-foreground">Redirecting to candidate profile…</p>
             </CardContent>
           </Card>
+        ) : entryMethod === null ? (
+          <Card className="mx-auto max-w-4xl">
+            <CardContent className="p-6">
+              <CandidateEntryMethodChooser
+                onSelect={setEntryMethod}
+                onCancel={() => navigate(`${basePath}/candidates`)}
+              />
+            </CardContent>
+          </Card>
+        ) : entryMethod === 'csv' ? (
+          <Card className="mx-auto max-w-6xl">
+            <CardContent className="p-6">
+              <CsvImportScreen
+                embedded
+                cancelPath={`${basePath}/candidates`}
+                title="Import CSV"
+                description="Upload a spreadsheet, validate rows, and bulk import candidates into your pipeline."
+                onBack={() => setEntryMethod(null)}
+              />
+            </CardContent>
+          </Card>
         ) : (
           <Card className="mx-auto max-w-4xl">
             <CardContent className="p-6">
               <CandidateWizard
+                key={entryMethod}
+                entryMethod={entryMethod}
+                initialStepIndex={getInitialStepIndexForEntryMethod(entryMethod)}
                 onSubmit={handleSubmit}
                 onCancel={() => navigate(`${basePath}/candidates`)}
+                onChangeEntryMethod={() => setEntryMethod(null)}
                 onToast={show}
               />
             </CardContent>

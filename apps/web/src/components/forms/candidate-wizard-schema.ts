@@ -254,6 +254,16 @@ export const WIZARD_STEPS = [
 
 export type WizardStepId = (typeof WIZARD_STEPS)[number]['id'];
 
+export type CandidateEntryMethod = 'resume' | 'oorwin' | 'manual' | 'csv';
+
+export function getInitialStepIndexForEntryMethod(method: CandidateEntryMethod): number {
+  if (method === 'resume') {
+    const index = WIZARD_STEPS.findIndex((step) => step.id === 'upload');
+    return index >= 0 ? index : 0;
+  }
+  return 0;
+}
+
 export const DRAFT_STORAGE_KEY = 'bestal-candidate-wizard-draft';
 
 export const USER_FIELD_LABELS: Record<keyof CandidateWizardFormValues, string> = {

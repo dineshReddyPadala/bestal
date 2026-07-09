@@ -49,6 +49,9 @@ type CsvImportScreenProps = {
   cancelPath: string;
   title?: string;
   description?: string;
+  /** When true, renders without page chrome — for use inside Add Candidate flow. */
+  embedded?: boolean;
+  onBack?: () => void;
 };
 
 function logLevelClass(level: LogLevel): string {
@@ -96,6 +99,8 @@ export function CsvImportScreen({
   cancelPath,
   title = 'CSV Import',
   description = 'Bulk import candidates — upload, validate, review duplicates, and import',
+  embedded = false,
+  onBack,
 }: CsvImportScreenProps) {
   const navigate = useNavigate();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -226,29 +231,28 @@ export function CsvImportScreen({
 
   const previewRows = validation?.rows ?? [];
 
-  return (
-    <div className="min-h-full bg-muted/10">
-      <PageHeader
-        title={title}
-        description={description}
-        breadcrumbs={
-          <Link
-            to={cancelPath}
-            className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
-          >
-            <ArrowLeft className="h-3.5 w-3.5" />
-            Back to candidates
-          </Link>
-        }
-        actions={
-          <Button variant="outline" to={cancelPath}>
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to candidates
-          </Button>
-        }
-      />
+  const handleBack = () => {
+    if (onBack) {
+      onBack();
+      return;
+    }
+    navigate(cancelPath);
+  };
 
-      <div className="space-y-6 p-4 sm:p-6">
+  const content = (
+    <div className={embedded ? 'space-y-6' : 'space-y-6 p-4 sm:p-6'}>
+      {embedded && (
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h2 className="text-lg font-semibold">{title}</h2>
+            <p className="mt-1 text-sm text-muted-foreground">{description}</p>
+          </div>
+          <Button type="button" variant="ghost" size="sm" onClick={handleBack}>
+            Change method
+          </Button>
+        </div>
+      )}
+
         {/* Upload */}
         <Card>
           <CardHeader>
@@ -425,10 +429,12 @@ export function CsvImportScreen({
           >
             {importing ? 'Importing…' : 'Import'}
           </Button>
-          <Button variant="outline" onClick={() => navigate(cancelPath)}>
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to candidates
-          </Button>
+          {!embedded && (
+            <Button variant="outline" onClick={handleBack}>
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back to candidates
+            </Button>
+          )}
         </div>
 
         {/* Logs */}
@@ -459,6 +465,34 @@ export function CsvImportScreen({
           </CardContent>
         </Card>
       </div>
+  );
+
+  if (embedded) {
+    return content;
+  }
+
+  return (
+    <div className="min-h-full bg-muted/10">
+      <PageHeader
+        title={title}
+        description={description}
+        breadcrumbs={
+          <Link
+            to={cancelPath}
+            className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
+          >
+            <ArrowLeft className="h-3.5 w-3.5" />
+            Back to candidates
+          </Link>
+        }
+        actions={
+          <Button variant="outline" to={cancelPath}>
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to candidates
+          </Button>
+        }
+      />
+      {content}
     </div>
   );
 }
