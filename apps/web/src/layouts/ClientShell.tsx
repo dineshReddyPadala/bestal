@@ -1,10 +1,11 @@
 import { DashboardLayout } from '@bestal/ui';
 import { Outlet, useLocation } from 'react-router-dom';
 import { clientNavItems } from '../lib/nav';
-import { DEMO_USER } from '../lib/demo-client';
+import { useDashboardUser } from '../hooks/useDashboardUser';
 
 export function ClientShell() {
   const { pathname } = useLocation();
+  const { user, handleLogout } = useDashboardUser();
   const currentPath = pathname.startsWith('/client/candidates')
     ? '/client/search'
     : pathname;
@@ -13,8 +14,9 @@ export function ClientShell() {
     <DashboardLayout
       navItems={clientNavItems}
       portalName="Client Portal"
-      user={DEMO_USER}
+      user={user}
       currentPath={currentPath}
+      onLogout={handleLogout}
     >
       <Outlet />
     </DashboardLayout>

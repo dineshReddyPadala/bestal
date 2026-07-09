@@ -15,7 +15,13 @@ export interface TrialDto {
   startDate: string | null;
   endDate: string | null;
   durationDays: number | null;
+  trialType: string | null;
+  maxTrialHours: number | null;
+  taskDescription: string | null;
+  successCriteria: string | null;
   feedback: string | null;
+  clientRating: number | null;
+  convertedToPaid: boolean;
   outcome: string | null;
   approvedAt: string | null;
   rejectedAt: string | null;
@@ -56,6 +62,10 @@ export interface CreateTrialInput {
   startDate?: string;
   endDate?: string;
   durationDays?: number;
+  trialType?: string;
+  maxTrialHours?: number;
+  taskDescription?: string;
+  successCriteria?: string;
   feedback?: string;
 }
 
@@ -68,7 +78,13 @@ export interface UpdateTrialInput {
   startDate?: string | null;
   endDate?: string | null;
   durationDays?: number | null;
+  trialType?: string;
+  maxTrialHours?: number;
+  taskDescription?: string;
+  successCriteria?: string;
   feedback?: string;
+  clientRating?: number;
+  convertedToPaid?: boolean;
   outcome?: string;
 }
 

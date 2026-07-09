@@ -1,8 +1,9 @@
 import { schemaAuditLogs } from '@bestal/mock-data';
-import { PageHeader, StatusBadge, TanStackDataTable } from '@bestal/ui';
+import { StatusBadge, TanStackDataTable } from '@bestal/ui';
 import { type ColumnDef } from '@tanstack/react-table';
 import { useMemo } from 'react';
 import type { SchemaAuditLog } from '@bestal/mock-data';
+import { ListingPageShell } from '../../components/layout/ListingPageShell';
 
 export function AuditLogsPage() {
   const columns = useMemo<ColumnDef<SchemaAuditLog>[]>(
@@ -27,15 +28,17 @@ export function AuditLogsPage() {
   );
 
   return (
-    <div>
-      <PageHeader title="Audit Logs" description="Append-only compliance trail — all schema fields" />
-      <div className="p-6">
-        <TanStackDataTable
-          columns={columns}
-          data={[...schemaAuditLogs]}
-          searchPlaceholder="Search audit logs…"
-        />
-      </div>
-    </div>
+    <ListingPageShell title="Audit Logs">
+      <TanStackDataTable
+        columns={columns}
+        data={[...schemaAuditLogs]}
+        searchPlaceholder="Search audit logs…"
+        pageSize={12}
+        stickyHeader
+        fillHeight
+        dense
+        filtersInline
+      />
+    </ListingPageShell>
   );
 }

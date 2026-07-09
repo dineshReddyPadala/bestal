@@ -1,22 +1,22 @@
-import {
-  deploymentCandidates,
-  deploymentClients,
-  deploymentManagementRecords,
-  deploymentStatuses,
-  formatDeploymentTimezone,
-  type DeploymentManagementRecord,
-  type DeploymentStatus,
-} from '@bestal/mock-data';
 import { formatCurrency, formatDate } from '@bestal/shared-utils';
-import { Button, Dialog, PageHeader, Select, StatusBadge, TanStackDataTable } from '@bestal/ui';
+import { Button, Dialog, StatusBadge, TanStackDataTable } from '@bestal/ui';
 import { type ColumnDef } from '@tanstack/react-table';
 import { Download, MoreHorizontal, Plus } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { DeploymentForm } from '../forms/DeploymentForm';
-import { buildDeploymentPayload, type DeploymentFormValues } from '../../lib/entity-field-metadata';
+import { useCandidatesList } from '../../hooks/api/useCandidates';
+import { useClientsList } from '../../hooks/api/useClients';
+import { useDeploymentMutations, useDeploymentsList } from '../../hooks/api/useDeployments';
+import type { DeploymentListItem } from '../../lib/api/types';
 import { useDemoToast } from '../../lib/use-demo-toast';
+import { DeploymentForm } from '../forms/DeploymentForm';
+import type { DeploymentFormValues } from '../../lib/entity-field-metadata';
+import {
+  ListingFilterSelect,
+  ListingFiltersRow,
+  ListingPageShell,
+} from '../layout/ListingPageShell';
 
-type DeploymentAction = 'Pause' | 'Terminate' | 'Complete' | 'Replace';
+type DeploymentAction = 'Activate' | 'Terminate';
 
 type DeploymentManagementViewProps = {
   title?: string;
@@ -25,57 +25,34 @@ type DeploymentManagementViewProps = {
 
 const defaultFilters = {
   status: 'all',
-  date: 'all',
   client: 'all',
   candidate: 'all',
 };
 
-const TODAY = new Date('2026-06-30');
-
-function isActivePeriod(start: string, end: string | null): boolean {
-  const s = new Date(start);
-  if (end) {
-    const e = new Date(end);
-    return s <= TODAY && e >= TODAY;
-  }
-  return s <= TODAY;
-}
-
-function isUpcoming(start: string): boolean {
-  return new Date(start) > TODAY;
-}
-
-function isPast(end: string | null): boolean {
-  if (!end) return false;
-  return new Date(end) < TODAY;
-}
-
-function exportDeploymentsCsv(rows: DeploymentManagementRecord[]) {
+function exportDeploymentsCsv(rows: DeploymentListItem[]) {
   const headers = [
     'Client',
     'Candidate',
+    'Role',
     'Start',
     'End',
     'Bill Rate',
-    'Pay Rate',
-    'Margin %',
-    'Hours',
-    'Timezone',
+    'Currency',
     'Status',
+    'Placement Type',
   ];
   const escape = (v: string | number) => `"${String(v).replace(/"/g, '""')}"`;
   const lines = rows.map((r) =>
     [
       r.clientName,
       r.candidateName,
-      r.startDate,
+      r.roleTitle,
+      r.startDate ?? '',
       r.endDate ?? '',
-      r.billRate,
-      r.payRate,
-      r.marginPercent,
-      r.hoursPerWeek,
-      r.timezone,
+      r.billingRate ?? '',
+      r.currency ?? '',
       r.status,
+      r.placementType,
     ]
       .map(escape)
       .join(','),
@@ -94,7 +71,7 @@ function DeploymentRowActions({
   record,
   onAction,
 }: {
-  record: DeploymentManagementRecord;
+  record: DeploymentListItem;
   onAction: (action: DeploymentAction) => void;
 }) {
   const [open, setOpen] = useState(false);
@@ -109,38 +86,13 @@ function DeploymentRowActions({
     return () => document.removeEventListener('mousedown', close);
   }, [open]);
 
-  const actions: {
-    label: DeploymentAction;
-    disabled?: boolean;
-    variant?: 'danger';
-  }[] = (() => {
-    switch (record.status) {
-      case 'ACTIVE':
-        return [
-          { label: 'Pause' },
-          { label: 'Terminate', variant: 'danger' },
-          { label: 'Complete' },
-          { label: 'Replace' },
-        ];
-      case 'PENDING':
-        return [
-          { label: 'Pause' },
-          { label: 'Terminate', variant: 'danger' },
-          { label: 'Replace' },
-        ];
-      case 'ON_HOLD':
-        return [
-          { label: 'Terminate', variant: 'danger' },
-          { label: 'Complete' },
-          { label: 'Replace' },
-        ];
-      case 'COMPLETED':
-      case 'TERMINATED':
-        return [{ label: 'Replace' }];
-      default:
-        return [];
-    }
-  })();
+  const actions: { label: DeploymentAction; disabled?: boolean; variant?: 'danger' }[] = [];
+  if (record.status === 'PENDING') {
+    actions.push({ label: 'Activate' });
+    actions.push({ label: 'Terminate', variant: 'danger' });
+  } else if (record.status === 'ACTIVE' || record.status === 'ON_HOLD') {
+    actions.push({ label: 'Terminate', variant: 'danger' });
+  }
 
   if (actions.length === 0) {
     return <span className="text-muted-foreground">—</span>;
@@ -182,14 +134,45 @@ function DeploymentRowActions({
 
 export function DeploymentManagementView({
   title = 'Deployment Management',
-  description = 'Manage active placements — rates, margins, and lifecycle actions',
 }: DeploymentManagementViewProps) {
   const { message, show } = useDemoToast();
-  const [records, setRecords] = useState<DeploymentManagementRecord[]>(() => [
-    ...deploymentManagementRecords,
-  ]);
+  const { data, isLoading, isError, error } = useDeploymentsList({ limit: 100, sort: '-startDate' });
+  const { data: clientsData } = useClientsList({ limit: 100 });
+  const { data: candidatesData } = useCandidatesList({ limit: 100 });
+  const mutations = useDeploymentMutations();
   const [filters, setFilters] = useState(defaultFilters);
   const [createOpen, setCreateOpen] = useState(false);
+
+  const records = useMemo(() => data?.data ?? [], [data]);
+
+  const clientOptions = useMemo(
+    () => (clientsData?.data ?? []).map((c) => ({ id: c.id, name: c.name })),
+    [clientsData],
+  );
+
+  const candidateOptions = useMemo(
+    () =>
+      (candidatesData?.data ?? []).map((c) => ({
+        id: c.id,
+        name: `${c.firstName} ${c.lastName}`.trim(),
+      })),
+    [candidatesData],
+  );
+
+  const statusOptions = useMemo(
+    () => [...new Set(records.map((r) => r.status))].sort(),
+    [records],
+  );
+
+  const clientNames = useMemo(
+    () => [...new Set(records.map((r) => r.clientName))].sort(),
+    [records],
+  );
+
+  const candidateNames = useMemo(
+    () => [...new Set(records.map((r) => r.candidateName))].sort(),
+    [records],
+  );
 
   const filteredData = useMemo(() => {
     let rows = [...records];
@@ -203,92 +186,76 @@ export function DeploymentManagementView({
     if (filters.candidate !== 'all') {
       rows = rows.filter((r) => r.candidateName === filters.candidate);
     }
-    if (filters.date !== 'all') {
-      if (filters.date === 'upcoming') {
-        rows = rows.filter((r) => isUpcoming(r.startDate));
-      } else if (filters.date === 'active') {
-        rows = rows.filter((r) => isActivePeriod(r.startDate, r.endDate));
-      } else if (filters.date === 'past') {
-        rows = rows.filter((r) => isPast(r.endDate));
-      } else if (filters.date === 'ongoing') {
-        rows = rows.filter((r) => !r.endDate);
-      }
-    }
 
-    rows.sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime());
+    rows.sort((a, b) => {
+      const aTime = a.startDate ? new Date(a.startDate).getTime() : 0;
+      const bTime = b.startDate ? new Date(b.startDate).getTime() : 0;
+      return bTime - aTime;
+    });
 
     return rows;
   }, [records, filters]);
 
   const handleExport = useCallback(() => {
     exportDeploymentsCsv(filteredData);
-    show(`Exported ${filteredData.length} deployment(s) to CSV (demo)`);
+    show(`Exported ${filteredData.length} deployment(s) to CSV`);
   }, [filteredData, show]);
 
   const handleAction = useCallback(
-    (record: DeploymentManagementRecord, action: DeploymentAction) => {
-      if (action === 'Replace') {
-        show(`Replace — ${record.candidateName} @ ${record.clientName} (demo)`);
-        return;
+    async (record: DeploymentListItem, action: DeploymentAction) => {
+      try {
+        if (action === 'Activate') {
+          await mutations.activate.mutateAsync(record.id);
+          show(`Activated — ${record.candidateName} @ ${record.clientName}`);
+        } else {
+          await mutations.terminate.mutateAsync({ id: record.id });
+          show(`Terminated — ${record.candidateName} @ ${record.clientName}`);
+        }
+      } catch (err) {
+        show(err instanceof Error ? err.message : `${action} failed`);
       }
-
-      setRecords((prev) =>
-        prev.map((row) => {
-          if (row.id !== record.id) return row;
-
-          switch (action) {
-            case 'Pause':
-              return { ...row, status: 'ON_HOLD' as DeploymentStatus };
-            case 'Terminate':
-              return { ...row, status: 'TERMINATED' as DeploymentStatus };
-            case 'Complete':
-              return { ...row, status: 'COMPLETED' as DeploymentStatus };
-            default:
-              return row;
-          }
-        }),
-      );
-      show(`${action} — ${record.candidateName} @ ${record.clientName} (demo)`);
     },
-    [show],
+    [mutations.activate, mutations.terminate, show],
   );
 
   const handleCreateSubmit = useCallback(
-    (values: DeploymentFormValues) => {
-      const payload = buildDeploymentPayload(values);
-      const nextId = Math.max(0, ...records.map((r) => r.id)) + 1;
-      const payEstimate = Math.round(payload.billingRate * 0.72);
-      setRecords((prev) => [
-        ...prev,
-        {
-          id: nextId,
-          clientId: payload.clientId,
-          clientName: values.clientName,
-          candidateId: payload.candidateId,
-          candidateName: values.candidateName,
+    async (values: DeploymentFormValues) => {
+      const client = clientOptions.find((c) => c.name === values.clientName);
+      const candidate = candidateOptions.find((c) => c.name === values.candidateName);
+      if (!client || !candidate) {
+        show('Select a valid client and candidate');
+        return;
+      }
+
+      try {
+        await mutations.create.mutateAsync({
+          clientId: client.id,
+          candidateId: candidate.id,
+          placementType: values.placementType,
           roleTitle: values.roleTitle,
           startDate: values.startDate,
-          endDate: values.endDate ?? null,
-          billRate: payload.billingRate,
-          payRate: payEstimate,
-          marginPercent:
-            payload.billingRate > 0
-              ? Math.round(((payload.billingRate - payEstimate) / payload.billingRate) * 1000) / 10
-              : 0,
+          endDate: values.endDate || undefined,
+          billingRate: values.billingRate,
+          candidatePayRate: values.candidatePayRate || undefined,
+          grossMarginPerHour: values.grossMarginPerHour ?? undefined,
+          expectedHoursPerWeek: values.expectedHoursPerWeek ?? undefined,
+          timezone: values.timezone || undefined,
+          reportingManagerName: values.reportingManagerName || undefined,
+          reportingManagerEmail: values.reportingManagerEmail || undefined,
           currency: values.currency,
-          hoursPerWeek: 40,
-          timezone: values.workLocation ?? 'Remote',
-          manager: 'Unassigned',
-          status: 'PENDING',
-        },
-      ]);
-      show(`Deployment created — ${values.candidateName} @ ${values.clientName} (demo)`);
-      setCreateOpen(false);
+          workLocation: values.workLocation || undefined,
+          notes: values.notes || undefined,
+        });
+        show(`Deployment created — ${values.candidateName} @ ${values.clientName}`);
+        setCreateOpen(false);
+      } catch (err) {
+        show(err instanceof Error ? err.message : 'Create failed');
+      }
     },
-    [records, show],
+    [candidateOptions, clientOptions, mutations.create, show],
   );
 
-  const columns = useMemo<ColumnDef<DeploymentManagementRecord>[]>(
+  const columns = useMemo<ColumnDef<DeploymentListItem>[]>(
     () => [
       {
         accessorKey: 'clientName',
@@ -301,11 +268,21 @@ export function DeploymentManagementView({
         cell: ({ getValue }) => <span className="font-medium">{getValue() as string}</span>,
       },
       {
+        accessorKey: 'roleTitle',
+        header: 'Role',
+        cell: ({ getValue }) => (
+          <span className="text-muted-foreground">{getValue() as string}</span>
+        ),
+      },
+      {
         accessorKey: 'startDate',
         header: 'Start',
-        cell: ({ getValue }) => (
-          <span className="text-muted-foreground">{formatDate(getValue() as string)}</span>
-        ),
+        cell: ({ getValue }) => {
+          const val = getValue() as string | null;
+          return (
+            <span className="text-muted-foreground">{val ? formatDate(val) : '—'}</span>
+          );
+        },
       },
       {
         accessorKey: 'endDate',
@@ -318,36 +295,19 @@ export function DeploymentManagementView({
         },
       },
       {
-        accessorKey: 'billRate',
+        accessorKey: 'billingRate',
         header: 'Bill Rate',
-        cell: ({ row }) =>
-          `${formatCurrency(row.original.billRate, row.original.currency)}/hr`,
+        cell: ({ row }) => {
+          const rate = row.original.billingRate;
+          if (rate == null) return <span className="text-muted-foreground">—</span>;
+          return `${formatCurrency(rate, row.original.currency ?? 'USD')}/hr`;
+        },
       },
       {
-        accessorKey: 'payRate',
-        header: 'Pay Rate',
-        cell: ({ row }) =>
-          `${formatCurrency(row.original.payRate, row.original.currency)}/hr`,
-      },
-      {
-        accessorKey: 'marginPercent',
-        header: 'Margin',
+        accessorKey: 'currency',
+        header: 'Currency',
         cell: ({ getValue }) => (
-          <span className="font-medium tabular-nums text-emerald-600">{getValue() as number}%</span>
-        ),
-      },
-      {
-        accessorKey: 'hoursPerWeek',
-        header: 'Hours',
-        cell: ({ getValue }) => <span className="tabular-nums">{getValue() as number}/wk</span>,
-      },
-      {
-        accessorKey: 'timezone',
-        header: 'Timezone',
-        cell: ({ getValue }) => (
-          <span className="text-sm text-muted-foreground">
-            {formatDeploymentTimezone(getValue() as string)}
-          </span>
+          <span className="text-muted-foreground">{(getValue() as string | null) ?? '—'}</span>
         ),
       },
       {
@@ -356,12 +316,17 @@ export function DeploymentManagementView({
         cell: ({ getValue }) => <StatusBadge status={getValue() as string} />,
       },
       {
+        accessorKey: 'placementType',
+        header: 'Placement',
+        cell: ({ getValue }) => <StatusBadge status={getValue() as string} />,
+      },
+      {
         id: 'actions',
         header: '',
         cell: ({ row }) => (
           <DeploymentRowActions
             record={row.original}
-            onAction={(action) => handleAction(row.original, action)}
+            onAction={(action) => void handleAction(row.original, action)}
           />
         ),
       },
@@ -373,108 +338,91 @@ export function DeploymentManagementView({
     setFilters((prev) => ({ ...prev, [key]: value }));
   };
 
+  const listError = isError
+    ? error instanceof Error
+      ? error.message
+      : 'Failed to load deployments'
+    : null;
+
   return (
-    <div className="min-h-full bg-muted/10">
-      <PageHeader
+    <>
+      <ListingPageShell
         title={title}
-        description={description}
+        message={message}
+        error={listError}
+        loading={isLoading}
+        loadingLabel="Loading deployments…"
         actions={
-          <div className="flex gap-2">
-            <Button onClick={() => setCreateOpen(true)}>
-              <Plus className="mr-2 h-4 w-4" />
+          <>
+            <Button size="sm" onClick={() => setCreateOpen(true)}>
+              <Plus className="mr-1.5 h-3.5 w-3.5" />
               New deployment
             </Button>
-            <Button variant="outline" onClick={handleExport} disabled={filteredData.length === 0}>
-              <Download className="mr-2 h-4 w-4" />
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleExport}
+              disabled={filteredData.length === 0}
+            >
+              <Download className="mr-1.5 h-3.5 w-3.5" />
               Export
             </Button>
-          </div>
+          </>
         }
-      />
-
-      {message && (
-        <div className="mx-6 mt-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
-          {message}
-        </div>
-      )}
-
-      <div className="p-4 sm:p-6">
+      >
         <TanStackDataTable
           columns={columns}
           data={filteredData}
-          searchPlaceholder="Search by client, candidate, or timezone…"
-          pageSize={10}
+          searchPlaceholder="Search by client, candidate, or role…"
+          pageSize={12}
           stickyHeader
+          fillHeight
+          dense
+          filtersInline
           filters={
-            <div className="rounded-xl border border-border/80 bg-gradient-to-br from-background to-muted/20 p-4 shadow-sm">
-              <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                Filters
-              </p>
-              <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-4">
-                <FilterSelect
-                  label="Status"
-                  value={filters.status}
-                  onChange={(v) => updateFilter('status', v)}
-                  options={[
-                    { value: 'all', label: 'All statuses' },
-                    ...deploymentStatuses.map((s) => ({
-                      value: s,
-                      label: s.replace(/_/g, ' '),
-                    })),
-                  ]}
-                />
-                <FilterSelect
-                  label="Date"
-                  value={filters.date}
-                  onChange={(v) => updateFilter('date', v)}
-                  options={[
-                    { value: 'all', label: 'All dates' },
-                    { value: 'upcoming', label: 'Upcoming starts' },
-                    { value: 'active', label: 'Active period' },
-                    { value: 'ongoing', label: 'Open-ended' },
-                    { value: 'past', label: 'Ended' },
-                  ]}
-                />
-                <FilterSelect
-                  label="Client"
-                  value={filters.client}
-                  onChange={(v) => updateFilter('client', v)}
-                  options={[
-                    { value: 'all', label: 'All clients' },
-                    ...deploymentClients.map((c) => ({ value: c, label: c })),
-                  ]}
-                />
-                <FilterSelect
-                  label="Candidate"
-                  value={filters.candidate}
-                  onChange={(v) => updateFilter('candidate', v)}
-                  options={[
-                    { value: 'all', label: 'All candidates' },
-                    ...deploymentCandidates.map((c) => ({ value: c, label: c })),
-                  ]}
-                />
-              </div>
-              <div className="mt-3 flex justify-end">
-                <Button variant="ghost" size="sm" onClick={() => setFilters(defaultFilters)}>
-                  Clear filters
-                </Button>
-              </div>
-            </div>
+            <ListingFiltersRow onClear={() => setFilters(defaultFilters)}>
+              <ListingFilterSelect
+                label="STATUS"
+                value={filters.status}
+                onChange={(v) => updateFilter('status', v)}
+                options={[
+                  { value: 'all', label: 'All statuses' },
+                  ...statusOptions.map((s) => ({
+                    value: s,
+                    label: s.replace(/_/g, ' '),
+                  })),
+                ]}
+              />
+              <ListingFilterSelect
+                label="CLIENT"
+                value={filters.client}
+                onChange={(v) => updateFilter('client', v)}
+                options={[
+                  { value: 'all', label: 'All clients' },
+                  ...clientNames.map((c) => ({ value: c, label: c })),
+                ]}
+              />
+              <ListingFilterSelect
+                label="CANDIDATE"
+                value={filters.candidate}
+                onChange={(v) => updateFilter('candidate', v)}
+                options={[
+                  { value: 'all', label: 'All candidates' },
+                  ...candidateNames.map((c) => ({ value: c, label: c })),
+                ]}
+              />
+            </ListingFiltersRow>
           }
           globalFilterFn={(row, _columnId, filterValue) => {
             const q = String(filterValue).toLowerCase().trim();
             if (!q) return true;
             const r = row.original;
-            return [
-              r.clientName,
-              r.candidateName,
-              r.roleTitle,
-              r.timezone,
-              formatDeploymentTimezone(r.timezone),
-            ].some((field) => field.toLowerCase().includes(q));
+            return [r.clientName, r.candidateName, r.roleTitle, r.status, r.placementType].some(
+              (field) => String(field).toLowerCase().includes(q),
+            );
           }}
         />
-      </div>
+      </ListingPageShell>
 
       <Dialog
         open={createOpen}
@@ -496,37 +444,12 @@ export function DeploymentManagementView({
         <DeploymentForm
           formId="deployment-form"
           showActions={false}
-          onSubmit={handleCreateSubmit}
+          clients={clientOptions}
+          candidates={candidateOptions}
+          onSubmit={(values) => void handleCreateSubmit(values)}
           onCancel={() => setCreateOpen(false)}
         />
       </Dialog>
-    </div>
-  );
-}
-
-function FilterSelect({
-  label,
-  value,
-  onChange,
-  options,
-}: {
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-  options: { value: string; label: string }[];
-}) {
-  return (
-    <label className="flex flex-col gap-1">
-      <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-        {label}
-      </span>
-      <Select value={value} onChange={(e) => onChange(e.target.value)} className="h-9 text-sm">
-        {options.map((opt) => (
-          <option key={opt.value} value={opt.value}>
-            {opt.label}
-          </option>
-        ))}
-      </Select>
-    </label>
+    </>
   );
 }

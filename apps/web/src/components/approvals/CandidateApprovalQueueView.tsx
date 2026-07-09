@@ -3,8 +3,6 @@ import {
   Button,
   Dialog,
   Input,
-  PageHeader,
-  Select,
   StatusBadge,
   TanStackDataTable,
 } from '@bestal/ui';
@@ -12,28 +10,19 @@ import { type ColumnDef } from '@tanstack/react-table';
 import { CheckCircle, EyeOff, Globe, MoreHorizontal, XCircle } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import {
-  canApprove,
-  canPublish,
-  readinessLabel,
-} from '../../lib/candidate-approval-gates';
-import {
-  approveCandidate,
-  getApprovalQueueRecords,
-  publishCandidate,
-  rejectCandidate,
-  subscribeApprovalChanges,
-  unpublishCandidate,
-  type ApprovalQueueRecord,
-} from '../../lib/candidate-approval-overrides';
+import { useCandidateMutations, useCandidatesList } from '../../hooks/api/useCandidates';
+import type { CandidateListItem } from '../../lib/api/types';
 import { useDemoToast } from '../../lib/use-demo-toast';
+import {
+  ListingFilterSelect,
+  ListingFiltersRow,
+  ListingPageShell,
+} from '../layout/ListingPageShell';
 
-type QueueFilter = 'all' | 'pending' | 'approved' | 'published' | 'rejected' | 'blocked';
+type QueueFilter = 'all' | 'pending' | 'approved' | 'published' | 'rejected';
 
 const defaultFilters = {
   queue: 'all' as QueueFilter,
-  evaluation: 'all',
-  bgv: 'all',
 };
 
 type CandidateApprovalQueueViewProps = {
@@ -42,11 +31,35 @@ type CandidateApprovalQueueViewProps = {
 
 type ApprovalAction = 'Approve' | 'Reject' | 'Publish' | 'Unpublish';
 
+type ApprovalRow = {
+  id: number;
+  fullName: string;
+  email: string;
+  role: string | null;
+  approvalStatus: string;
+  visibility: string;
+  evaluationStatus: 'NOT_STARTED';
+  bgvStatus: 'NOT_STARTED';
+};
+
+function toApprovalRow(candidate: CandidateListItem): ApprovalRow {
+  return {
+    id: candidate.id,
+    fullName: `${candidate.firstName} ${candidate.lastName}`.trim(),
+    email: candidate.email,
+    role: candidate.headline,
+    approvalStatus: candidate.approvalStatus,
+    visibility: candidate.visibility,
+    evaluationStatus: 'NOT_STARTED',
+    bgvStatus: 'NOT_STARTED',
+  };
+}
+
 function ApprovalRowActions({
   record,
   onAction,
 }: {
-  record: ApprovalQueueRecord;
+  record: ApprovalRow;
   onAction: (action: ApprovalAction) => void;
 }) {
   const [open, setOpen] = useState(false);
@@ -61,19 +74,6 @@ function ApprovalRowActions({
     return () => document.removeEventListener('mousedown', close);
   }, [open]);
 
-  const approveGate = canApprove({
-    evaluationStatus: record.evaluationStatus,
-    bgvStatus: record.bgvStatus,
-    approvalStatus: record.effectiveApprovalStatus,
-    visibility: record.effectiveVisibility,
-  });
-  const publishGate = canPublish({
-    evaluationStatus: record.evaluationStatus,
-    bgvStatus: record.bgvStatus,
-    approvalStatus: record.effectiveApprovalStatus,
-    visibility: record.effectiveVisibility,
-  });
-
   const actions: {
     label: ApprovalAction;
     icon: React.ReactNode;
@@ -83,23 +83,23 @@ function ApprovalRowActions({
     {
       label: 'Approve',
       icon: <CheckCircle className="h-3.5 w-3.5" />,
-      disabled: !approveGate.allowed,
+      disabled: record.approvalStatus !== 'PENDING',
     },
     {
       label: 'Reject',
       icon: <XCircle className="h-3.5 w-3.5" />,
-      disabled: record.effectiveApprovalStatus !== 'PENDING',
+      disabled: record.approvalStatus !== 'PENDING',
       variant: 'danger',
     },
     {
       label: 'Publish',
       icon: <Globe className="h-3.5 w-3.5" />,
-      disabled: !publishGate.allowed,
+      disabled: record.approvalStatus !== 'APPROVED' || record.visibility === 'PUBLISHED',
     },
     {
       label: 'Unpublish',
       icon: <EyeOff className="h-3.5 w-3.5" />,
-      disabled: record.effectiveVisibility !== 'PUBLISHED',
+      disabled: record.visibility !== 'PUBLISHED',
     },
   ];
 
@@ -142,57 +142,34 @@ export function CandidateApprovalQueueView({
   candidateDetailBasePath = '/admin/candidates',
 }: CandidateApprovalQueueViewProps) {
   const { message, show } = useDemoToast();
-  const [records, setRecords] = useState<ApprovalQueueRecord[]>(() => getApprovalQueueRecords());
+  const { data, isLoading, isError, error } = useCandidatesList({ limit: 100, sort: '-createdAt' });
+  const mutations = useCandidateMutations();
   const [filters, setFilters] = useState(defaultFilters);
   const [rejectOpen, setRejectOpen] = useState(false);
-  const [rejectTarget, setRejectTarget] = useState<ApprovalQueueRecord | null>(null);
+  const [rejectTarget, setRejectTarget] = useState<ApprovalRow | null>(null);
   const [rejectReason, setRejectReason] = useState('');
 
-  const refresh = useCallback(() => {
-    setRecords(getApprovalQueueRecords());
-  }, []);
-
-  useEffect(() => subscribeApprovalChanges(refresh), [refresh]);
+  const records = useMemo(() => (data?.data ?? []).map(toApprovalRow), [data]);
 
   const filteredData = useMemo(() => {
     let rows = [...records];
 
     if (filters.queue === 'pending') {
-      rows = rows.filter((r) => r.effectiveApprovalStatus === 'PENDING');
+      rows = rows.filter((r) => r.approvalStatus === 'PENDING');
     } else if (filters.queue === 'approved') {
       rows = rows.filter(
-        (r) => r.effectiveApprovalStatus === 'APPROVED' && r.effectiveVisibility !== 'PUBLISHED',
+        (r) => r.approvalStatus === 'APPROVED' && r.visibility !== 'PUBLISHED',
       );
     } else if (filters.queue === 'published') {
-      rows = rows.filter((r) => r.effectiveVisibility === 'PUBLISHED');
+      rows = rows.filter((r) => r.visibility === 'PUBLISHED');
     } else if (filters.queue === 'rejected') {
-      rows = rows.filter((r) => r.effectiveApprovalStatus === 'REJECTED');
-    } else if (filters.queue === 'blocked') {
-      rows = rows.filter(
-        (r) =>
-          r.effectiveApprovalStatus === 'PENDING' &&
-          !canApprove({
-            evaluationStatus: r.evaluationStatus,
-            bgvStatus: r.bgvStatus,
-            approvalStatus: r.effectiveApprovalStatus,
-            visibility: r.effectiveVisibility,
-          }).allowed,
-      );
-    }
-
-    if (filters.evaluation !== 'all') {
-      rows = rows.filter((r) => r.evaluationStatus === filters.evaluation);
-    }
-    if (filters.bgv !== 'all') {
-      rows = rows.filter((r) => r.bgvStatus === filters.bgv);
+      rows = rows.filter((r) => r.approvalStatus === 'REJECTED');
     }
 
     rows.sort((a, b) => {
-      const priority = (r: ApprovalQueueRecord) => {
-        if (r.effectiveApprovalStatus === 'PENDING') return 0;
-        if (r.effectiveApprovalStatus === 'APPROVED' && r.effectiveVisibility !== 'PUBLISHED') {
-          return 1;
-        }
+      const priority = (r: ApprovalRow) => {
+        if (r.approvalStatus === 'PENDING') return 0;
+        if (r.approvalStatus === 'APPROVED' && r.visibility !== 'PUBLISHED') return 1;
         return 2;
       };
       return priority(a) - priority(b) || a.fullName.localeCompare(b.fullName);
@@ -202,95 +179,90 @@ export function CandidateApprovalQueueView({
   }, [records, filters]);
 
   const handleApprove = useCallback(
-    (record: ApprovalQueueRecord) => {
-      const gate = canApprove({
-        evaluationStatus: record.evaluationStatus,
-        bgvStatus: record.bgvStatus,
-        approvalStatus: record.effectiveApprovalStatus,
-        visibility: record.effectiveVisibility,
-      });
-      if (!gate.allowed) {
-        show(`Cannot approve — ${gate.blockers.join(', ')}`);
-        return;
+    async (record: ApprovalRow) => {
+      try {
+        await mutations.approve.mutateAsync(record.id);
+        show(`Approved — ${record.fullName}`);
+      } catch (err) {
+        show(err instanceof Error ? err.message : 'Approve failed');
       }
-      approveCandidate(record.id);
-      show(`Approved — ${record.fullName} (demo)`);
-      refresh();
     },
-    [refresh, show],
+    [mutations.approve, show],
   );
 
   const handlePublish = useCallback(
-    (record: ApprovalQueueRecord) => {
-      const gate = canPublish({
-        evaluationStatus: record.evaluationStatus,
-        bgvStatus: record.bgvStatus,
-        approvalStatus: record.effectiveApprovalStatus,
-        visibility: record.effectiveVisibility,
-      });
-      if (!gate.allowed) {
-        show(`Cannot publish — ${gate.blockers.join(', ')}`);
-        return;
+    async (record: ApprovalRow) => {
+      try {
+        await mutations.publish.mutateAsync(record.id);
+        show(`Published — ${record.fullName} is now visible to clients`);
+      } catch (err) {
+        show(err instanceof Error ? err.message : 'Publish failed');
       }
-      publishCandidate(record.id);
-      show(`Published — ${record.fullName} is now visible to clients (demo)`);
-      refresh();
     },
-    [refresh, show],
+    [mutations.publish, show],
   );
 
   const handleUnpublish = useCallback(
-    (record: ApprovalQueueRecord) => {
-      unpublishCandidate(record.id);
-      show(`Unpublished — ${record.fullName} hidden from client portal (demo)`);
-      refresh();
+    async (record: ApprovalRow) => {
+      try {
+        await mutations.hide.mutateAsync(record.id);
+        show(`Unpublished — ${record.fullName} hidden from client portal`);
+      } catch (err) {
+        show(err instanceof Error ? err.message : 'Unpublish failed');
+      }
     },
-    [refresh, show],
+    [mutations.hide, show],
   );
 
-  const openReject = (record: ApprovalQueueRecord) => {
+  const openReject = (record: ApprovalRow) => {
     setRejectTarget(record);
     setRejectReason('');
     setRejectOpen(true);
   };
 
-  const confirmReject = () => {
+  const confirmReject = async () => {
     if (!rejectTarget) return;
-    rejectCandidate(rejectTarget.id, rejectReason);
-    show(`Rejected — ${rejectTarget.fullName} (demo)`);
-    setRejectOpen(false);
-    setRejectTarget(null);
-    refresh();
+    try {
+      await mutations.reject.mutateAsync({
+        id: rejectTarget.id,
+        reason: rejectReason || undefined,
+      });
+      show(`Rejected — ${rejectTarget.fullName}`);
+      setRejectOpen(false);
+      setRejectTarget(null);
+    } catch (err) {
+      show(err instanceof Error ? err.message : 'Reject failed');
+    }
   };
 
   const handleRowAction = useCallback(
-    (record: ApprovalQueueRecord, action: ApprovalAction) => {
+    (record: ApprovalRow, action: ApprovalAction) => {
       switch (action) {
         case 'Approve':
-          handleApprove(record);
+          void handleApprove(record);
           break;
         case 'Reject':
           openReject(record);
           break;
         case 'Publish':
-          handlePublish(record);
+          void handlePublish(record);
           break;
         case 'Unpublish':
-          handleUnpublish(record);
+          void handleUnpublish(record);
           break;
       }
     },
     [handleApprove, handlePublish, handleUnpublish],
   );
 
-  const columns = useMemo<ColumnDef<ApprovalQueueRecord>[]>(
+  const columns = useMemo<ColumnDef<ApprovalRow>[]>(
     () => [
       {
         accessorKey: 'fullName',
         header: 'Candidate',
         cell: ({ row }) => (
           <div className="flex items-center gap-3">
-            <Avatar name={row.original.fullName} src={row.original.photoUrl} size="sm" />
+            <Avatar name={row.original.fullName} size="sm" />
             <div>
               <Link
                 to={`${candidateDetailBasePath}/${row.original.id}`}
@@ -298,7 +270,7 @@ export function CandidateApprovalQueueView({
               >
                 {row.original.fullName}
               </Link>
-              <p className="text-xs text-muted-foreground">{row.original.role}</p>
+              <p className="text-xs text-muted-foreground">{row.original.role ?? '—'}</p>
             </div>
           </div>
         ),
@@ -316,26 +288,12 @@ export function CandidateApprovalQueueView({
       {
         id: 'approval',
         header: 'Approval',
-        cell: ({ row }) => <StatusBadge status={row.original.effectiveApprovalStatus} />,
+        cell: ({ row }) => <StatusBadge status={row.original.approvalStatus} />,
       },
       {
         id: 'visibility',
         header: 'Visibility',
-        cell: ({ row }) => <StatusBadge status={row.original.effectiveVisibility} />,
-      },
-      {
-        id: 'readiness',
-        header: 'Readiness',
-        cell: ({ row }) => {
-          const r = row.original;
-          const label = readinessLabel({
-            evaluationStatus: r.evaluationStatus,
-            bgvStatus: r.bgvStatus,
-            approvalStatus: r.effectiveApprovalStatus,
-            visibility: r.effectiveVisibility,
-          });
-          return <span className="text-sm text-muted-foreground">{label}</span>;
-        },
+        cell: ({ row }) => <StatusBadge status={row.original.visibility} />,
       },
       {
         id: 'actions',
@@ -351,85 +309,53 @@ export function CandidateApprovalQueueView({
     [candidateDetailBasePath, handleRowAction],
   );
 
+  const listError = isError ? (error instanceof Error ? error.message : 'Failed to load candidates') : null;
+
   return (
-    <div className="min-h-full bg-muted/10">
-      <PageHeader title="Candidate Approvals & Publish" />
-
-      {message && (
-        <div className="mx-6 mb-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
-          {message}
-        </div>
-      )}
-
-      <div className="p-4 sm:p-6">
+    <>
+      <ListingPageShell
+        title="Approvals"
+        message={message}
+        error={listError}
+        loading={isLoading}
+        loadingLabel="Loading candidates…"
+      >
         <TanStackDataTable
           columns={columns}
           data={filteredData}
           searchPlaceholder="Search by candidate name or role…"
-          pageSize={10}
+          pageSize={12}
           stickyHeader
+          fillHeight
+          dense
+          filtersInline
           filters={
-            <div className="rounded-xl border border-border/80 bg-gradient-to-br from-background to-muted/20 p-4 shadow-sm">
-              <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                Queue
-              </p>
-              <div className="grid gap-3 sm:grid-cols-3">
-                <FilterSelect
-                  label="Queue"
-                  value={filters.queue}
-                  onChange={(v) => setFilters((f) => ({ ...f, queue: v as QueueFilter }))}
-                  options={[
-                    { value: 'all', label: 'All candidates' },
-                    { value: 'pending', label: 'Pending approval' },
-                    { value: 'approved', label: 'Approved — ready to publish' },
-                    { value: 'published', label: 'Published to clients' },
-                    { value: 'rejected', label: 'Rejected' },
-                    { value: 'blocked', label: 'Blocked (missing eval/BGV)' },
-                  ]}
-                />
-                <FilterSelect
-                  label="Evaluation"
-                  value={filters.evaluation}
-                  onChange={(v) => setFilters((f) => ({ ...f, evaluation: v }))}
-                  options={[
-                    { value: 'all', label: 'All' },
-                    { value: 'COMPLETED', label: 'Completed' },
-                    { value: 'IN_PROGRESS', label: 'In progress' },
-                    { value: 'DRAFT', label: 'Draft' },
-                    { value: 'NOT_STARTED', label: 'Not started' },
-                  ]}
-                />
-                <FilterSelect
-                  label="BGV"
-                  value={filters.bgv}
-                  onChange={(v) => setFilters((f) => ({ ...f, bgv: v }))}
-                  options={[
-                    { value: 'all', label: 'All' },
-                    { value: 'CLEAR', label: 'Clear' },
-                    { value: 'IN_PROGRESS', label: 'In progress' },
-                    { value: 'PENDING', label: 'Pending' },
-                    { value: 'NOT_STARTED', label: 'Not started' },
-                    { value: 'FAILED', label: 'Failed' },
-                  ]}
-                />
-              </div>
-              <div className="mt-3 flex justify-end">
-                <Button variant="ghost" size="sm" onClick={() => setFilters(defaultFilters)}>
-                  Clear filters
-                </Button>
-              </div>
-            </div>
+            <ListingFiltersRow onClear={() => setFilters(defaultFilters)}>
+              <ListingFilterSelect
+                label="QUEUE"
+                value={filters.queue}
+                onChange={(v) => setFilters((f) => ({ ...f, queue: v as QueueFilter }))}
+                className="w-[200px] min-w-[160px]"
+                options={[
+                  { value: 'all', label: 'All candidates' },
+                  { value: 'pending', label: 'Pending approval' },
+                  { value: 'approved', label: 'Approved — ready to publish' },
+                  { value: 'published', label: 'Published to clients' },
+                  { value: 'rejected', label: 'Rejected' },
+                ]}
+              />
+            </ListingFiltersRow>
           }
           globalFilterFn={(row, _columnId, filterValue) => {
             const q = String(filterValue).toLowerCase().trim();
             if (!q) return true;
             const r = row.original;
-            return [r.fullName, r.role, r.community, r.email].some((field) =>
-              field.toLowerCase().includes(q),
+            return [r.fullName, r.role, r.email].some((field) =>
+              String(field ?? '').toLowerCase().includes(q),
             );
           }}
         />
-      </div>
+      </ListingPageShell>
 
       <Dialog
         open={rejectOpen}
@@ -441,7 +367,7 @@ export function CandidateApprovalQueueView({
             <Button variant="outline" onClick={() => setRejectOpen(false)}>
               Cancel
             </Button>
-            <Button variant="primary" onClick={confirmReject}>
+            <Button variant="primary" onClick={() => void confirmReject()}>
               Confirm reject
             </Button>
           </>
@@ -459,33 +385,6 @@ export function CandidateApprovalQueueView({
           />
         </div>
       </Dialog>
-    </div>
-  );
-}
-
-function FilterSelect({
-  label,
-  value,
-  onChange,
-  options,
-}: {
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-  options: { value: string; label: string }[];
-}) {
-  return (
-    <label className="flex flex-col gap-1">
-      <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-        {label}
-      </span>
-      <Select value={value} onChange={(e) => onChange(e.target.value)} className="h-9 text-sm">
-        {options.map((opt) => (
-          <option key={opt.value} value={opt.value}>
-            {opt.label}
-          </option>
-        ))}
-      </Select>
-    </label>
+    </>
   );
 }

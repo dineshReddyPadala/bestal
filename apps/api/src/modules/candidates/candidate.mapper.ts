@@ -1,4 +1,5 @@
 import type { AppConfig } from '../../config/index.js';
+import { mapCandidateExtendedDto } from './candidate-field-mapper.js';
 import type {
   CandidateDocumentDto,
   CandidateDto,
@@ -88,10 +89,14 @@ export async function mapCandidateToDtoAsync(
       id: bigintToNumber(skill.id),
       skillCommunityId: bigintToNumber(skill.skillCommunityId),
       skillCommunityName: skill.skillCommunity.name,
+      skillName: skill.skillName,
+      skillCategory: skill.skillCategory,
       proficiencyLevel: skill.proficiencyLevel,
       yearsExperience: skill.yearsExperience,
       isPrimary: skill.isPrimary,
+      notes: skill.notes,
     })),
+    ...mapCandidateExtendedDto(candidate),
     createdAt: candidate.createdAt.toISOString(),
     updatedAt: candidate.updatedAt.toISOString(),
   };

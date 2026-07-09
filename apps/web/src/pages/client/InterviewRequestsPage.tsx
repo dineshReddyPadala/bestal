@@ -1,4 +1,3 @@
-import type { MockInterview } from '@bestal/mock-data';
 import {
   Button,
   Card,
@@ -16,6 +15,9 @@ import { RequestInterviewDialog } from '../../components/client/RequestInterview
 import { useClientInterviewRequests } from '../../hooks/useClientEngagementRequests';
 import { useClientShortlist } from '../../hooks/useClientShortlist';
 import { useDemoToast } from '../../lib/use-demo-toast';
+import { toInterviewCard } from '../../hooks/api/useInterviews';
+
+type ClientInterview = ReturnType<typeof toInterviewCard>;
 
 function formatDateTime(iso: string) {
   return new Intl.DateTimeFormat('en-US', {
@@ -28,7 +30,7 @@ function formatDateTime(iso: string) {
   }).format(new Date(iso));
 }
 
-function InterviewCard({ interview }: { interview: MockInterview }) {
+function InterviewCard({ interview }: { interview: ClientInterview }) {
   return (
     <Card>
       <CardContent className="p-4 sm:p-6">

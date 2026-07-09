@@ -3,6 +3,8 @@ import type { FastifyInstance } from 'fastify';
 import { ROLES } from '../../constants/index.js';
 import type { AuthenticatedUser } from '../../types/index.js';
 import { StorageService } from '../../services/storage.service.js';
+import { getUploadCategoryConfig } from '../../services/storage/file-validation.js';
+import type { UploadCategory } from '../../services/storage/storage.constants.js';
 import {
   AuthorizationError,
   BadRequestError,
@@ -17,10 +19,13 @@ import {
 } from './candidate.mapper.js';
 import { CandidateRepository } from './candidate.repository.js';
 import type {
+  AssetUploadUrlDto,
   CandidateAssetKind,
   CandidateDto,
   CandidateListItemDto,
+  CompleteAssetUploadInput,
   CreateCandidateInput,
+  PrepareAssetUploadInput,
   RejectCandidateInput,
   UpdateCandidateInput,
   UploadAssetInput,
@@ -49,6 +54,12 @@ export class CandidateService {
 
     await this.validateSkillCommunity(organizationId, input.primarySkillCommunityId);
 
+    if (input.skills?.length) {
+      for (const skill of input.skills) {
+        await this.validateSkillCommunity(organizationId, skill.skillCommunityId);
+      }
+    }
+
     const existing = await this.candidateRepository.findByEmail(
       organizationId,
       input.email,
@@ -58,7 +69,10 @@ export class CandidateService {
       throw new ConflictError('A candidate with this email already exists');
     }
 
-    const candidate = await this.candidateRepository.create(organizationId, input);
+    const candidate = await this.candidateRepository.create(organizationId, {
+      ...input,
+      createdById: authUser.id,
+    });
     return this.toDto(candidate);
   }
 
@@ -146,6 +160,12 @@ export class CandidateService {
     kind: CandidateAssetKind,
     file: UploadAssetInput,
   ): Promise<CandidateDto> {
+    if (this.storageService.driver === 's3') {
+      throw new BadRequestError(
+        'Server-side file upload is disabled. Upload directly to S3 using the upload-url and complete endpoints.',
+      );
+    }
+
     const organizationId = this.requireOrganization(authUser);
     const candidate = await this.getCandidateOrThrow(organizationId, id);
 
@@ -157,8 +177,6 @@ export class CandidateService {
       size: file.size,
       originalName: file.originalName,
     });
-
-    const existingDocId = this.getExistingDocumentId(candidate, kind);
 
     const storageKey = this.storageService.buildCandidateAssetKey(
       organizationId,
@@ -182,6 +200,118 @@ export class CandidateService {
       },
     );
 
+    return this.registerCandidateAsset({
+      authUser,
+      organizationId,
+      candidate,
+      id,
+      kind,
+      documentKind,
+      uploadCategory,
+      storageKey,
+      bucket: uploadResult.bucket,
+      file,
+    });
+  }
+
+  async prepareAssetUpload(
+    authUser: AuthenticatedUser,
+    id: number,
+    kind: CandidateAssetKind,
+    input: PrepareAssetUploadInput,
+  ): Promise<AssetUploadUrlDto> {
+    if (this.storageService.driver !== 's3') {
+      throw new BadRequestError('Direct S3 uploads are only available when STORAGE_DRIVER=s3');
+    }
+
+    const organizationId = this.requireOrganization(authUser);
+    await this.getCandidateOrThrow(organizationId, id);
+
+    const documentKind = kind as DocumentKind;
+    const uploadCategory = this.storageService.uploadCategoryFromDocumentKind(documentKind);
+
+    this.storageService.validateFile(uploadCategory, input);
+
+    const storageKey = this.storageService.buildCandidateAssetKey(
+      organizationId,
+      id,
+      uploadCategory,
+      input.originalName,
+    );
+
+    const presigned = await this.storageService.generatePresignedUpload(
+      storageKey,
+      input.mimeType,
+    );
+
+    return presigned;
+  }
+
+  async completeAssetUpload(
+    authUser: AuthenticatedUser,
+    id: number,
+    kind: CandidateAssetKind,
+    input: CompleteAssetUploadInput,
+  ): Promise<CandidateDto> {
+    if (this.storageService.driver !== 's3') {
+      throw new BadRequestError('Direct S3 uploads are only available when STORAGE_DRIVER=s3');
+    }
+
+    const organizationId = this.requireOrganization(authUser);
+    const candidate = await this.getCandidateOrThrow(organizationId, id);
+
+    const documentKind = kind as DocumentKind;
+    const uploadCategory = this.storageService.uploadCategoryFromDocumentKind(documentKind);
+
+    this.storageService.validateFile(uploadCategory, input);
+    this.validateCandidateAssetKey(organizationId, id, uploadCategory, input.key);
+
+    const bucket = this.storageService.bucket;
+    const exists = await this.storageService.exists(input.key, bucket);
+    if (!exists) {
+      throw new BadRequestError('Uploaded file was not found in S3. Complete the PUT upload first.');
+    }
+
+    return this.registerCandidateAsset({
+      authUser,
+      organizationId,
+      candidate,
+      id,
+      kind,
+      documentKind,
+      uploadCategory,
+      storageKey: input.key,
+      bucket,
+      file: input,
+    });
+  }
+
+  private async registerCandidateAsset(params: {
+    authUser: AuthenticatedUser;
+    organizationId: number;
+    candidate: NonNullable<Awaited<ReturnType<CandidateRepository['findById']>>>;
+    id: number;
+    kind: CandidateAssetKind;
+    documentKind: DocumentKind;
+    uploadCategory: UploadCategory;
+    storageKey: string;
+    bucket: string;
+    file: Pick<UploadAssetInput, 'originalName' | 'mimeType' | 'size'>;
+  }): Promise<CandidateDto> {
+    const {
+      authUser,
+      organizationId,
+      candidate,
+      id,
+      kind,
+      documentKind,
+      storageKey,
+      bucket,
+      file,
+    } = params;
+
+    const existingDocId = this.getExistingDocumentId(candidate, kind);
+
     const document = await this.candidateRepository.createDocument({
       organizationId,
       uploadedById: authUser.id,
@@ -189,8 +319,8 @@ export class CandidateService {
       kind: documentKind,
       fileName: storageKey.split('/').pop() ?? file.originalName,
       originalName: file.originalName,
-      s3Key: uploadResult.key,
-      s3Bucket: uploadResult.bucket,
+      s3Key: storageKey,
+      s3Bucket: bucket,
       mimeType: file.mimeType,
       fileSize: file.size,
     });
@@ -211,6 +341,26 @@ export class CandidateService {
     );
 
     return this.toDto(updated);
+  }
+
+  private validateCandidateAssetKey(
+    organizationId: number,
+    candidateId: number,
+    category: UploadCategory,
+    key: string,
+  ): void {
+    const config = getUploadCategoryConfig(category);
+    const expectedPrefix = [
+      'organizations',
+      String(organizationId),
+      'candidates',
+      String(candidateId),
+      config.s3Prefix,
+    ].join('/');
+
+    if (!key.startsWith(`${expectedPrefix}/`)) {
+      throw new BadRequestError('Invalid storage key for this candidate upload');
+    }
   }
 
   async publish(authUser: AuthenticatedUser, id: number): Promise<CandidateDto> {

@@ -10,22 +10,22 @@ export type SearchInputProps = Omit<InputHTMLAttributes<HTMLInputElement>, 'type
 export const SearchInput = forwardRef<HTMLInputElement, SearchInputProps>(
   ({ className, value, onClear, ...props }, ref) => (
     <div className={cn('relative', className)}>
-      <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+      <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
       <Input
         ref={ref}
         type="search"
         value={value}
-        className="pl-9 pr-9"
+        className="h-9 pl-8 pr-8 text-xs placeholder:text-xs placeholder:text-muted-foreground/80"
         {...props}
       />
       {value && onClear && (
         <button
           type="button"
           onClick={onClear}
-          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
           aria-label="Clear search"
         >
-          <X className="h-4 w-4" />
+          <X className="h-3.5 w-3.5" />
         </button>
       )}
     </div>

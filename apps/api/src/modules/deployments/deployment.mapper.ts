@@ -29,8 +29,18 @@ export function mapDeploymentToDto(deployment: DeploymentRecord): DeploymentDto 
     startDate: deployment.startDate?.toISOString().slice(0, 10) ?? null,
     endDate: deployment.endDate?.toISOString().slice(0, 10) ?? null,
     billingRate: deployment.billingRate ? Number(deployment.billingRate) : null,
+    candidatePayRate: deployment.candidatePayRate
+      ? Number(deployment.candidatePayRate)
+      : null,
+    grossMarginPerHour: deployment.grossMarginPerHour
+      ? Number(deployment.grossMarginPerHour)
+      : null,
+    expectedHoursPerWeek: deployment.expectedHoursPerWeek,
     currency: deployment.currency,
     workLocation: deployment.workLocation,
+    timezone: deployment.timezone,
+    reportingManagerName: deployment.reportingManagerName,
+    reportingManagerEmail: deployment.reportingManagerEmail,
     notes: deployment.notes,
     terminatedAt: deployment.terminatedAt?.toISOString() ?? null,
     terminateReason: deployment.terminateReason,

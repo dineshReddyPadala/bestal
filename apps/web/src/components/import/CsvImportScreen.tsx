@@ -17,6 +17,7 @@ import {
 } from '@bestal/ui';
 import {
   AlertCircle,
+  ArrowLeft,
   CheckCircle2,
   Copy,
   Download,
@@ -25,6 +26,7 @@ import {
   Upload,
 } from 'lucide-react';
 import { useCallback, useRef, useState, type DragEvent } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   downloadTemplateCsv,
   simulateImport,
@@ -95,6 +97,7 @@ export function CsvImportScreen({
   title = 'CSV Import',
   description = 'Bulk import candidates — upload, validate, review duplicates, and import',
 }: CsvImportScreenProps) {
+  const navigate = useNavigate();
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragOver, setDragOver] = useState(false);
   const [fileName, setFileName] = useState<string | null>(null);
@@ -209,6 +212,11 @@ export function CsvImportScreen({
     if (importSummary.failed > 0) {
       appendLog('error', `${importSummary.failed} row(s) failed`);
     }
+
+    // After a successful demo import, return to the candidates list.
+    if (importSummary.imported > 0) {
+      setTimeout(() => navigate(cancelPath), 800);
+    }
   };
 
   const handleDownloadTemplate = () => {
@@ -220,7 +228,25 @@ export function CsvImportScreen({
 
   return (
     <div className="min-h-full bg-muted/10">
-      <PageHeader title={title} description={description} />
+      <PageHeader
+        title={title}
+        description={description}
+        breadcrumbs={
+          <Link
+            to={cancelPath}
+            className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
+          >
+            <ArrowLeft className="h-3.5 w-3.5" />
+            Back to candidates
+          </Link>
+        }
+        actions={
+          <Button variant="outline" to={cancelPath}>
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to candidates
+          </Button>
+        }
+      />
 
       <div className="space-y-6 p-4 sm:p-6">
         {/* Upload */}
@@ -399,8 +425,9 @@ export function CsvImportScreen({
           >
             {importing ? 'Importing…' : 'Import'}
           </Button>
-          <Button variant="ghost" to={cancelPath}>
-            Cancel
+          <Button variant="outline" onClick={() => navigate(cancelPath)}>
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to candidates
           </Button>
         </div>
 

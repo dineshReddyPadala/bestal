@@ -14,6 +14,7 @@ import {
   hashToken,
   parseDurationToMs,
 } from '../../utils/index.js';
+import { EmailService } from '../../services/email.service.js';
 import {
   getPermissionsForRole,
   type Permission,
@@ -35,15 +36,36 @@ import { AuthRepository, type UserWithMemberships } from './auth.repository.js';
 const FORGOT_PASSWORD_MESSAGE =
   'If an account with that email exists, a password reset link has been sent.';
 
+const PORTAL_RESET_PATH: Record<
+  typeof PORTALS.RECRUITER | typeof PORTALS.SALES | typeof PORTALS.CLIENT,
+  string
+> = {
+  [PORTALS.RECRUITER]: '/recruiter/reset-password',
+  [PORTALS.SALES]: '/sales/reset-password',
+  [PORTALS.CLIENT]: '/client/reset-password',
+};
+
+const PORTAL_LABEL: Record<
+  typeof PORTALS.RECRUITER | typeof PORTALS.SALES | typeof PORTALS.CLIENT,
+  string
+> = {
+  [PORTALS.RECRUITER]: 'Recruiter Portal',
+  [PORTALS.SALES]: 'Sales Portal',
+  [PORTALS.CLIENT]: 'Client Portal',
+};
+
 export class AuthService {
   private readonly authRepository: AuthRepository;
+  private readonly emailService: EmailService;
 
   constructor(
     private readonly fastify: FastifyInstance,
     authRepository?: AuthRepository,
+    emailService?: EmailService,
   ) {
     this.authRepository =
       authRepository ?? new AuthRepository(fastify.prisma);
+    this.emailService = emailService ?? new EmailService(fastify.config);
   }
 
   async login(input: LoginBody): Promise<AuthTokenResponse> {
@@ -132,9 +154,18 @@ export class AuthService {
   }
 
   async forgotPassword(input: ForgotPasswordBody): Promise<ForgotPasswordResult> {
-    const user = await this.authRepository.findUserByEmailIncludingInactive(input.email);
+    const user = await this.authRepository.findUserByEmailForPasswordReset(input.email);
 
     if (!user || !user.isActive) {
+      return { message: FORGOT_PASSWORD_MESSAGE };
+    }
+
+    const requiredRole = PORTAL_ROLE[input.portal];
+    const hasPortalAccess = user.memberships.some(
+      (membership) => membership.role === requiredRole,
+    );
+
+    if (!hasPortalAccess) {
       return { message: FORGOT_PASSWORD_MESSAGE };
     }
 
@@ -152,13 +183,23 @@ export class AuthService {
       expiresAt,
     });
 
+    const resetUrl = `${this.fastify.config.webAppUrl}${PORTAL_RESET_PATH[input.portal]}?token=${encodeURIComponent(rawToken)}`;
+
+    await this.emailService.sendPasswordResetEmail({
+      to: user.email,
+      firstName: user.firstName,
+      resetUrl,
+      portalLabel: PORTAL_LABEL[input.portal],
+      expiresIn: this.fastify.config.passwordResetExpiry,
+    });
+
     this.fastify.log.info(
-      { userId: user.id.toString(), email: user.email },
+      { userId: user.id.toString(), email: user.email, portal: input.portal },
       'Password reset token created',
     );
 
     if (this.fastify.config.isDevelopment) {
-      this.fastify.log.debug({ resetToken: rawToken }, 'Dev password reset token');
+      this.fastify.log.debug({ resetToken: rawToken, resetUrl }, 'Dev password reset token');
     }
 
     return {
@@ -228,6 +269,19 @@ export class AuthService {
 
     const permissions = getPermissionsForRole(session.role);
 
+    let clientId: number | null = null;
+    let clientName: string | null = null;
+    if (session.role === 'CLIENT' && session.organizationId !== null) {
+      const client = await this.authRepository.findClientByContactEmail(
+        session.organizationId,
+        user.email,
+      );
+      if (client) {
+        clientId = bigintToNumber(client.id);
+        clientName = client.name;
+      }
+    }
+
     return {
       id: session.id,
       email: user.email,
@@ -236,6 +290,8 @@ export class AuthService {
       phone: user.phone,
       organizationId: session.organizationId,
       organizationName: membership?.organization.name ?? null,
+      clientId,
+      clientName,
       role: session.role,
       portal: session.portal,
       permissions: [...permissions],

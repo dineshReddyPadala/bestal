@@ -6,8 +6,10 @@ import {
 } from '../../services/storage.service.js';
 import { CandidateService } from './candidate.service.js';
 import type {
+  CompleteAssetUploadBody,
   CreateCandidateBody,
   ListCandidatesQuery,
+  PrepareAssetUploadBody,
   RejectCandidateBody,
   UpdateCandidateBody,
 } from './candidate.validator.js';
@@ -74,6 +76,30 @@ export class CandidateController {
     return this.handleUpload(request, reply, 'INTRO_VIDEO');
   };
 
+  prepareResumeUpload = async (request: FastifyRequest, reply: FastifyReply) => {
+    return this.handlePrepareUpload(request, reply, 'RESUME');
+  };
+
+  prepareProfileImageUpload = async (request: FastifyRequest, reply: FastifyReply) => {
+    return this.handlePrepareUpload(request, reply, 'PROFILE_IMAGE');
+  };
+
+  prepareIntroVideoUpload = async (request: FastifyRequest, reply: FastifyReply) => {
+    return this.handlePrepareUpload(request, reply, 'INTRO_VIDEO');
+  };
+
+  completeResumeUpload = async (request: FastifyRequest, reply: FastifyReply) => {
+    return this.handleCompleteUpload(request, reply, 'RESUME');
+  };
+
+  completeProfileImageUpload = async (request: FastifyRequest, reply: FastifyReply) => {
+    return this.handleCompleteUpload(request, reply, 'PROFILE_IMAGE');
+  };
+
+  completeIntroVideoUpload = async (request: FastifyRequest, reply: FastifyReply) => {
+    return this.handleCompleteUpload(request, reply, 'INTRO_VIDEO');
+  };
+
   publish = async (request: FastifyRequest, reply: FastifyReply) => {
     const { id } = request.params as { id: number };
     const data = await this.candidateService.publish(request.authUser!, id);
@@ -135,6 +161,38 @@ export class CandidateController {
       },
     );
 
+    return reply.status(200).send({ data });
+  }
+
+  private async handlePrepareUpload(
+    request: FastifyRequest,
+    reply: FastifyReply,
+    kind: CandidateAssetKind,
+  ) {
+    const { id } = request.params as { id: number };
+    const body = request.body as PrepareAssetUploadBody;
+    const data = await this.candidateService.prepareAssetUpload(
+      request.authUser!,
+      id,
+      kind,
+      body,
+    );
+    return reply.status(200).send({ data });
+  }
+
+  private async handleCompleteUpload(
+    request: FastifyRequest,
+    reply: FastifyReply,
+    kind: CandidateAssetKind,
+  ) {
+    const { id } = request.params as { id: number };
+    const body = request.body as CompleteAssetUploadBody;
+    const data = await this.candidateService.completeAssetUpload(
+      request.authUser!,
+      id,
+      kind,
+      body,
+    );
     return reply.status(200).send({ data });
   }
 }

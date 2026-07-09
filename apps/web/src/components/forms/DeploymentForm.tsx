@@ -1,4 +1,3 @@
-import { deploymentCandidates, deploymentClients } from '@bestal/mock-data';
 import { Button, Input, Select } from '@bestal/ui';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm, type Resolver } from 'react-hook-form';
@@ -21,10 +20,18 @@ const deploymentFormSchema = z.object({
   startDate: z.string().min(1, 'Start date is required'),
   endDate: z.string().optional(),
   billingRate: z.coerce.number().positive('Must be greater than 0'),
+  candidatePayRate: z.coerce.number().positive().optional(),
+  grossMarginPerHour: z.coerce.number().optional(),
+  expectedHoursPerWeek: z.coerce.number().int().positive().optional(),
+  timezone: z.string().max(100).optional(),
+  reportingManagerName: z.string().max(150).optional(),
+  reportingManagerEmail: z.string().email().max(255).optional().or(z.literal('')),
   currency: z.string().length(3),
   workLocation: z.string().max(255).optional(),
   notes: z.string().max(5000).optional(),
 });
+
+type DeploymentSelectOption = { id: number; name: string };
 
 type DeploymentFormProps = {
   defaultValues?: Partial<DeploymentFormValues>;
@@ -33,6 +40,8 @@ type DeploymentFormProps = {
   submitLabel?: string;
   formId?: string;
   showActions?: boolean;
+  clients?: DeploymentSelectOption[];
+  candidates?: DeploymentSelectOption[];
 };
 
 export function DeploymentForm({
@@ -42,6 +51,8 @@ export function DeploymentForm({
   submitLabel = 'Create deployment',
   formId = 'deployment-form',
   showActions = true,
+  clients = [],
+  candidates = [],
 }: DeploymentFormProps) {
   const {
     register,
@@ -63,9 +74,9 @@ export function DeploymentForm({
           <Label htmlFor="clientName">Client *</Label>
           <Select id="clientName" {...register('clientName')}>
             <option value="">— Select —</option>
-            {deploymentClients.map((c) => (
-              <option key={c} value={c}>
-                {c}
+            {clients.map((c) => (
+              <option key={c.id} value={c.name}>
+                {c.name}
               </option>
             ))}
           </Select>
@@ -76,9 +87,9 @@ export function DeploymentForm({
           <Label htmlFor="candidateName">Candidate *</Label>
           <Select id="candidateName" {...register('candidateName')}>
             <option value="">— Select —</option>
-            {deploymentCandidates.map((c) => (
-              <option key={c} value={c}>
-                {c}
+            {candidates.map((c) => (
+              <option key={c.id} value={c.name}>
+                {c.name}
               </option>
             ))}
           </Select>
@@ -137,6 +148,53 @@ export function DeploymentForm({
         <div className="space-y-2 sm:col-span-2">
           <Label htmlFor="workLocation">Work location</Label>
           <Input id="workLocation" {...register('workLocation')} placeholder="Remote, hybrid, or office city" />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="candidatePayRate">Candidate pay rate ($/hr)</Label>
+          <Input
+            id="candidatePayRate"
+            type="number"
+            min={0}
+            step={0.01}
+            {...register('candidatePayRate', { valueAsNumber: true })}
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="grossMarginPerHour">Gross margin ($/hr)</Label>
+          <Input
+            id="grossMarginPerHour"
+            type="number"
+            step={0.01}
+            {...register('grossMarginPerHour', { valueAsNumber: true })}
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="expectedHoursPerWeek">Expected hours / week</Label>
+          <Input
+            id="expectedHoursPerWeek"
+            type="number"
+            min={1}
+            max={168}
+            {...register('expectedHoursPerWeek', { valueAsNumber: true })}
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="timezone">Timezone</Label>
+          <Input id="timezone" {...register('timezone')} placeholder="America/New_York" />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="reportingManagerName">Reporting manager</Label>
+          <Input id="reportingManagerName" {...register('reportingManagerName')} />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="reportingManagerEmail">Manager email</Label>
+          <Input id="reportingManagerEmail" type="email" {...register('reportingManagerEmail')} />
         </div>
 
         <div className="space-y-2 sm:col-span-2">

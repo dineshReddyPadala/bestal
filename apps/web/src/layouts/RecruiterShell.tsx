@@ -1,15 +1,11 @@
 import { DashboardLayout } from '@bestal/ui';
 import { Outlet, useLocation } from 'react-router-dom';
 import { recruiterNavItems, resolveActiveNavPath } from '../lib/nav';
-
-const recruiterUser = {
-  name: 'Rachel Kim',
-  email: 'rachel.kim@bestal.com',
-  role: 'Senior Recruiter',
-};
+import { useDashboardUser } from '../hooks/useDashboardUser';
 
 export function RecruiterShell() {
   const { pathname } = useLocation();
+  const { user, handleLogout } = useDashboardUser();
   const currentPath = pathname.startsWith('/recruiter/candidates')
     ? '/recruiter/candidates'
     : resolveActiveNavPath(pathname, '/recruiter');
@@ -18,8 +14,9 @@ export function RecruiterShell() {
     <DashboardLayout
       navItems={recruiterNavItems}
       portalName="Recruiter Portal"
-      user={recruiterUser}
+      user={user}
       currentPath={currentPath}
+      onLogout={handleLogout}
     >
       <Outlet />
     </DashboardLayout>

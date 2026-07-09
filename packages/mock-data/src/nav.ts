@@ -12,7 +12,7 @@ export const salesNav = [
 export const adminNav = [
   { id: 'dashboard', label: 'Dashboard', href: '/admin', icon: 'layout-dashboard' },
   { id: 'candidates', label: 'Candidates', href: '/admin/candidates', icon: 'user-check' },
-  { id: 'candidate-approvals', label: 'Approvals & Publish', href: '/admin/candidate-approvals', icon: 'check-square', badge: 4 },
+  { id: 'candidate-approvals', label: 'Approvals & Publish', href: '/admin/candidate-approvals', icon: 'check-square' },
   { id: 'clients', label: 'Clients', href: '/admin/clients', icon: 'briefcase' },
   { id: 'deployments', label: 'Deployments', href: '/admin/deployments', icon: 'rocket' },
   { id: 'trials', label: 'Trial Requests', href: '/admin/trials', icon: 'flask-conical', badge: 4 },
@@ -53,7 +53,6 @@ export const publicNav = [
   { id: 'skill-communities', label: 'Skill Communities', href: '/communities' },
   { id: 'enterprise', label: 'Enterprise', href: '/enterprise' },
   { id: 'about', label: 'About', href: '/about' },
-  { id: 'login', label: 'Sign In', href: '/login' },
 ] as const satisfies readonly NavItem[];
 
 export type SalesNav = typeof salesNav;

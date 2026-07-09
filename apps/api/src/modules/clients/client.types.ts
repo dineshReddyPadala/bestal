@@ -9,9 +9,13 @@ export interface ClientDto {
   slug: string;
   status: ClientStatus;
   industry: string | null;
+  companySize: string | null;
   website: string | null;
+  headquarters: string | null;
+  contactName: string | null;
   contactEmail: string | null;
   contactPhone: string | null;
+  paymentTerms: string | null;
   addressLine1: string | null;
   addressLine2: string | null;
   city: string | null;
@@ -51,9 +55,13 @@ export interface CreateClientInput {
   accountManagerId?: number;
   status?: ClientStatus;
   industry?: string;
+  companySize?: string;
   website?: string;
+  headquarters?: string;
+  contactName?: string;
   contactEmail?: string;
   contactPhone?: string;
+  paymentTerms?: string;
   addressLine1?: string;
   addressLine2?: string;
   city?: string;

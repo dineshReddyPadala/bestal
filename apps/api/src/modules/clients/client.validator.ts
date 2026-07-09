@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { paginationMetaSchema } from '../../validators/api-responses.validator.js';
+import { optionalTextField, optionalUrlField } from '../../validators/optional-fields.js';
 
 const clientStatusEnum = z.enum(['PROSPECT', 'ACTIVE', 'INACTIVE', 'SUSPENDED']);
 
@@ -8,16 +9,20 @@ export const createClientBodySchema = z.object({
   accountManagerId: z.coerce.number().int().positive().optional(),
   status: clientStatusEnum.optional(),
   industry: z.string().max(100).optional(),
-  website: z.string().url().max(255).optional(),
+  companySize: z.string().max(50).optional(),
+  website: optionalUrlField,
+  headquarters: z.string().max(255).optional(),
+  contactName: z.string().max(150).optional(),
   contactEmail: z.string().email().max(255).optional(),
   contactPhone: z.string().max(30).optional(),
+  paymentTerms: z.string().max(100).optional(),
   addressLine1: z.string().max(255).optional(),
   addressLine2: z.string().max(255).optional(),
   city: z.string().max(100).optional(),
   state: z.string().max(100).optional(),
   postalCode: z.string().max(20).optional(),
   country: z.string().length(2).optional(),
-  notes: z.string().max(5000).optional(),
+  notes: optionalTextField(),
 });
 
 export const updateClientBodySchema = createClientBodySchema.partial();
@@ -54,9 +59,13 @@ const clientDtoSchema = z.object({
   slug: z.string(),
   status: z.string(),
   industry: z.string().nullable(),
+  companySize: z.string().nullable(),
   website: z.string().nullable(),
+  headquarters: z.string().nullable(),
+  contactName: z.string().nullable(),
   contactEmail: z.string().nullable(),
   contactPhone: z.string().nullable(),
+  paymentTerms: z.string().nullable(),
   addressLine1: z.string().nullable(),
   addressLine2: z.string().nullable(),
   city: z.string().nullable(),

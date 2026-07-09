@@ -8,7 +8,7 @@ function toNavItems(
     label: item.label,
     href: item.href,
     icon: item.icon,
-    badge: 'badge' in item ? item.badge : undefined,
+    // Live badges should come from API counts — omit static mock badges.
   }));
 }
 

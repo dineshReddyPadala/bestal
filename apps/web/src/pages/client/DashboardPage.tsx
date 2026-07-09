@@ -1,44 +1,36 @@
-import { getClientDashboard } from '@bestal/mock-data';
 import { formatDate } from '@bestal/shared-utils';
-import { Avatar, PageHeader, SearchInput, StatusBadge } from '@bestal/ui';
+import { PageHeader, SearchInput, StatusBadge } from '@bestal/ui';
 import {
-  Briefcase,
   Calendar,
-  ChevronRight,
   FlaskConical,
   Heart,
-  Mail,
-  Phone,
   Rocket,
   Sparkles,
   Users,
 } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { PremiumStatCard } from '../../components/admin/PremiumStatCard';
-import { RecommendedCandidatesCarousel } from '../../components/client/RecommendedCandidatesCarousel';
-import { DEMO_CLIENT_ID, DEMO_USER } from '../../lib/demo-client';
-
-const statIcons: Record<string, React.ReactNode> = {
-  recommended: <Sparkles className="h-5 w-5" />,
-  shortlisted: <Heart className="h-5 w-5" />,
-  interviews: <Calendar className="h-5 w-5" />,
-  trials: <FlaskConical className="h-5 w-5" />,
-  deployments: <Rocket className="h-5 w-5" />,
-};
-
-const statAccents: Record<string, 'brand' | 'emerald' | 'amber' | 'violet' | 'rose' | 'sky'> = {
-  recommended: 'violet',
-  shortlisted: 'rose',
-  interviews: 'sky',
-  trials: 'amber',
-  deployments: 'emerald',
-};
+import { useCandidatesList } from '../../hooks/api/useCandidates';
+import { useDeploymentsList } from '../../hooks/api/useDeployments';
+import { useInterviewsList } from '../../hooks/api/useInterviews';
+import { useTrialsList } from '../../hooks/api/useTrials';
+import { useDashboardUser } from '../../hooks/useDashboardUser';
 
 export function DashboardPage() {
   const navigate = useNavigate();
+  const { user, authUser } = useDashboardUser();
   const [searchQuery, setSearchQuery] = useState('');
-  const dashboard = useMemo(() => getClientDashboard(DEMO_CLIENT_ID), []);
+
+  const candidates = useCandidatesList({ limit: 20, sort: '-createdAt' });
+  const interviews = useInterviewsList({ limit: 20, sort: '-createdAt' });
+  const trials = useTrialsList({ limit: 20 });
+  const deployments = useDeploymentsList({ limit: 20 });
+
+  const candidateRows = candidates.data?.data ?? [];
+  const interviewRows = interviews.data?.data ?? [];
+  const trialRows = trials.data?.data ?? [];
+  const deploymentRows = deployments.data?.data ?? [];
 
   function handleQuickSearch(e: React.FormEvent) {
     e.preventDefault();
@@ -46,227 +38,130 @@ export function DashboardPage() {
     navigate(q ? `/client/search?q=${encodeURIComponent(q)}` : '/client/search');
   }
 
+  const firstName = user.name.split(' ')[0] || 'there';
+
   return (
     <div className="min-h-full bg-muted/10">
       <PageHeader
-        title={`Welcome back, ${DEMO_USER.name.split(' ')[0]}`}
-        description={`${DEMO_USER.company} — your talent engagement hub`}
+        title={`Welcome back, ${firstName}`}
+        description={
+          authUser?.clientName
+            ? `${authUser.clientName} — your talent engagement hub`
+            : 'Your talent engagement hub'
+        }
       />
 
       <div className="space-y-8 p-4 sm:p-6">
-        {/* Stat cards */}
         <section>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-            {dashboard.stats.map((stat) => (
-              <PremiumStatCard
-                key={stat.id}
-                label={stat.label}
-                value={stat.value}
-                change={stat.change}
-                changeLabel={stat.changeLabel}
-                icon={statIcons[stat.id]}
-                accent={statAccents[stat.id] ?? 'brand'}
-              />
-            ))}
-          </div>
-        </section>
-
-        {/* Quick search */}
-        <section className="rounded-xl border border-border/80 bg-gradient-to-br from-brand/5 to-background p-5 shadow-sm">
-          <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-            <Users className="h-4 w-4 text-brand" />
-            Quick Search
-          </h2>
-          <form onSubmit={handleQuickSearch} className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <form onSubmit={handleQuickSearch} className="mb-6 max-w-xl">
             <SearchInput
-              placeholder="Search by skill, role, or candidate name…"
+              placeholder="Search published talent…"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onClear={() => setSearchQuery('')}
-              className="max-w-xl flex-1"
             />
-            <Link
-              to="/client/search"
-              className="inline-flex h-10 items-center justify-center rounded-md bg-brand px-4 text-sm font-medium text-white hover:bg-brand-hover"
-            >
-              Browse all talent
-            </Link>
           </form>
+
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+            <PremiumStatCard
+              label="Available talent"
+              value={candidateRows.length}
+              icon={<Sparkles className="h-5 w-5" />}
+              accent="violet"
+            />
+            <PremiumStatCard
+              label="Interviews"
+              value={interviewRows.length}
+              icon={<Calendar className="h-5 w-5" />}
+              accent="sky"
+            />
+            <PremiumStatCard
+              label="Trials"
+              value={trialRows.length}
+              icon={<FlaskConical className="h-5 w-5" />}
+              accent="amber"
+            />
+            <PremiumStatCard
+              label="Deployments"
+              value={deploymentRows.length}
+              icon={<Rocket className="h-5 w-5" />}
+              accent="emerald"
+            />
+            <PremiumStatCard
+              label="Shortlisted"
+              value="—"
+              icon={<Heart className="h-5 w-5" />}
+              accent="rose"
+            />
+          </div>
         </section>
 
-        <div className="grid gap-6 xl:grid-cols-3">
-          {/* Recommended carousel — spans 2 cols */}
-          <section className="xl:col-span-2">
-            <div className="rounded-xl border border-border/80 bg-gradient-to-br from-background to-muted/20 p-5 shadow-sm">
-              <div className="mb-4 flex items-center justify-between">
-                <h2 className="text-lg font-semibold">Recommended Candidates</h2>
-                <Link
-                  to="/client/search"
-                  className="inline-flex items-center gap-1 text-sm font-medium text-brand hover:underline"
-                >
-                  View all
-                  <ChevronRight className="h-4 w-4" />
-                </Link>
-              </div>
-              <RecommendedCandidatesCarousel items={dashboard.recommendedCandidates} />
-            </div>
-          </section>
-
-          {/* Account manager */}
-          <section>
-            <div className="rounded-xl border border-border/80 bg-gradient-to-br from-navy/5 to-brand/5 p-5 shadow-sm">
-              <h2 className="mb-4 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-                <Briefcase className="h-4 w-4" />
-                Account Manager
-              </h2>
-              <div className="flex flex-col items-center text-center">
-                <Avatar
-                  name={dashboard.accountManager.name}
-                  src={dashboard.accountManager.photoUrl}
-                  size="lg"
-                  className="h-20 w-20"
-                />
-                <p className="mt-3 text-lg font-semibold">{dashboard.accountManager.name}</p>
-                <p className="text-sm text-muted-foreground">{dashboard.accountManager.title}</p>
-                <div className="mt-4 w-full space-y-2 text-left text-sm">
-                  <a
-                    href={`mailto:${dashboard.accountManager.email}`}
-                    className="flex items-center gap-2 text-muted-foreground hover:text-brand"
-                  >
-                    <Mail className="h-4 w-4 shrink-0" />
-                    {dashboard.accountManager.email}
-                  </a>
-                  <p className="flex items-center gap-2 text-muted-foreground">
-                    <Phone className="h-4 w-4 shrink-0" />
-                    {dashboard.accountManager.phone}
-                  </p>
-                </div>
-                <Link
-                  to="/client/search"
-                  className="mt-4 inline-flex h-9 w-full items-center justify-center rounded-md border border-border text-sm font-medium hover:bg-muted"
-                >
-                  Request talent briefing
-                </Link>
-              </div>
-            </div>
-          </section>
-        </div>
-
-        <div className="grid gap-6 lg:grid-cols-2">
-          {/* Recent interviews */}
-          <section className="rounded-xl border border-border/80 bg-gradient-to-br from-background to-muted/20 shadow-sm">
-            <div className="flex items-center justify-between border-b border-border/60 px-4 py-3">
-              <h2 className="flex items-center gap-2 font-semibold">
-                <Calendar className="h-4 w-4 text-brand" />
-                Recent Interviews
-              </h2>
-              <Link to="/client/interviews" className="text-xs font-medium text-brand hover:underline">
-                View all
+        <section className="grid gap-6 lg:grid-cols-2">
+          <div className="rounded-xl border border-border bg-background p-5">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-lg font-semibold">Recent talent</h2>
+              <Link to="/client/search" className="text-sm font-medium text-brand hover:underline">
+                Browse all
               </Link>
             </div>
-            <ul className="divide-y divide-border/60">
-              {dashboard.recentInterviews.map((interview) => (
-                <li key={interview.id} className="px-4 py-3 hover:bg-muted/20">
-                  <div className="flex items-start justify-between gap-2">
+            <div className="space-y-3">
+              {candidateRows.slice(0, 6).map((c) => (
+                <Link
+                  key={c.id}
+                  to={`/client/candidates/${c.id}`}
+                  className="flex items-center justify-between rounded-lg border border-border/70 px-3 py-2 hover:bg-muted/40"
+                >
+                  <div className="flex items-center gap-3">
+                    <Users className="h-4 w-4 text-muted-foreground" />
                     <div>
-                      <Link
-                        to={`/client/candidates/${interview.candidateId}`}
-                        className="font-medium hover:text-brand"
-                      >
-                        {interview.candidateName}
-                      </Link>
+                      <p className="text-sm font-medium">
+                        {c.firstName} {c.lastName}
+                      </p>
                       <p className="text-xs text-muted-foreground">
-                        {interview.type.replace('_', ' ')} · {interview.interviewer}
-                      </p>
-                      <p className="mt-1 text-xs text-muted-foreground">
-                        {interview.scheduledAt ? formatDate(interview.scheduledAt) : 'Scheduling TBD'}
+                        {c.headline || c.primarySkillCommunityName || c.email}
                       </p>
                     </div>
-                    <StatusBadge status={interview.status} className="shrink-0 text-[10px]" />
                   </div>
-                </li>
+                  <StatusBadge status={c.visibility} />
+                </Link>
               ))}
-            </ul>
-          </section>
+              {candidateRows.length === 0 && (
+                <p className="text-sm text-muted-foreground">No published candidates yet.</p>
+              )}
+            </div>
+          </div>
 
-          {/* Recent pilots */}
-          <section className="rounded-xl border border-border/80 bg-gradient-to-br from-background to-muted/20 shadow-sm">
-            <div className="flex items-center justify-between border-b border-border/60 px-4 py-3">
-              <h2 className="flex items-center gap-2 font-semibold">
-                <FlaskConical className="h-4 w-4 text-brand" />
-                Recent Pilots
-              </h2>
-              <Link to="/client/trials" className="text-xs font-medium text-brand hover:underline">
+          <div className="rounded-xl border border-border bg-background p-5">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-lg font-semibold">Your interviews</h2>
+              <Link
+                to="/client/interviews"
+                className="text-sm font-medium text-brand hover:underline"
+              >
                 View all
               </Link>
             </div>
-            <ul className="divide-y divide-border/60">
-              {dashboard.recentPilots.map((pilot) => (
-                <li key={pilot.id} className="px-4 py-3 hover:bg-muted/20">
-                  <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <Link
-                        to={`/client/candidates/${pilot.candidateId}`}
-                        className="font-medium hover:text-brand"
-                      >
-                        {pilot.candidateName}
-                      </Link>
-                      <p className="line-clamp-1 text-xs text-muted-foreground">{pilot.title}</p>
-                      <p className="mt-1 text-xs text-muted-foreground">
-                        {formatDate(pilot.startDate)} – {formatDate(pilot.endDate)} · {pilot.pilotType.replace('_', ' ')}
-                      </p>
-                    </div>
-                    <StatusBadge status={pilot.status} className="shrink-0 text-[10px]" />
+            <div className="space-y-3">
+              {interviewRows.slice(0, 6).map((i) => (
+                <div
+                  key={i.id}
+                  className="flex items-center justify-between rounded-lg border border-border/70 px-3 py-2"
+                >
+                  <div>
+                    <p className="text-sm font-medium">{i.candidateName}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {i.scheduledAt ? formatDate(i.scheduledAt) : 'Unscheduled'}
+                    </p>
                   </div>
-                </li>
+                  <StatusBadge status={i.status} />
+                </div>
               ))}
-            </ul>
-          </section>
-        </div>
-
-        <div className="grid gap-6 lg:grid-cols-2">
-          {/* Recent activity */}
-          <section className="rounded-xl border border-border/80 bg-gradient-to-br from-background to-muted/20 shadow-sm">
-            <div className="border-b border-border/60 px-4 py-3">
-              <h2 className="font-semibold">Recent Activity</h2>
+              {interviewRows.length === 0 && (
+                <p className="text-sm text-muted-foreground">No interview requests yet.</p>
+              )}
             </div>
-            <ul className="divide-y divide-border/60">
-              {dashboard.recentActivity.map((item) => (
-                <li key={item.id} className="px-4 py-3 hover:bg-muted/20">
-                  <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <p className="text-sm font-medium">{item.title}</p>
-                      <p className="text-xs text-muted-foreground">{item.subtitle}</p>
-                      <p className="mt-1 text-[11px] text-muted-foreground">{formatDate(item.timestamp)}</p>
-                    </div>
-                    <StatusBadge status={item.status} className="shrink-0 text-[10px]" />
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </section>
-
-          {/* Recent notifications */}
-          <section className="rounded-xl border border-border/80 bg-gradient-to-br from-background to-muted/20 shadow-sm">
-            <div className="border-b border-border/60 px-4 py-3">
-              <h2 className="font-semibold">Recent Notifications</h2>
-            </div>
-            <ul className="divide-y divide-border/60">
-              {dashboard.notifications.map((n) => (
-                <li key={n.id} className="px-4 py-3 hover:bg-muted/20">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <p className="text-sm font-medium">{n.title}</p>
-                    <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium uppercase text-muted-foreground">
-                      {n.type}
-                    </span>
-                  </div>
-                  <p className="mt-0.5 text-sm text-muted-foreground">{n.message}</p>
-                  <p className="mt-1 text-xs text-muted-foreground">{formatDate(n.createdAt)}</p>
-                </li>
-              ))}
-            </ul>
-          </section>
-        </div>
+          </div>
+        </section>
       </div>
     </div>
   );

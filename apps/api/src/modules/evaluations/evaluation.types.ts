@@ -17,6 +17,16 @@ export interface EvaluationDto {
   overallScore: number | null;
   technicalScore: number | null;
   softSkillScore: number | null;
+  communicationScore: number | null;
+  problemSolvingScore: number | null;
+  architectureScore: number | null;
+  clientReadinessScore: number | null;
+  evaluatorCompany: string | null;
+  evaluationType: string | null;
+  evaluatorComments: string | null;
+  aiEvaluationSummary: string | null;
+  recordingUrl: string | null;
+  evaluationFileUrl: string | null;
   summary: string | null;
   strengths: string | null;
   weaknesses: string | null;
@@ -60,6 +70,18 @@ export interface CreateEvaluationInput {
   summary?: string;
   strengths?: string;
   weaknesses?: string;
+  evaluatorName?: string;
+  evaluatorCompany?: string;
+  evaluationType?: string;
+  technicalScore?: number;
+  communicationScore?: number;
+  problemSolvingScore?: number;
+  architectureScore?: number;
+  clientReadinessScore?: number;
+  evaluatorComments?: string;
+  aiEvaluationSummary?: string;
+  recordingUrl?: string;
+  evaluationFileUrl?: string;
 }
 
 export interface UpdateEvaluationInput {
@@ -70,9 +92,20 @@ export interface UpdateEvaluationInput {
   overallScore?: number;
   technicalScore?: number;
   softSkillScore?: number;
+  communicationScore?: number;
+  problemSolvingScore?: number;
+  architectureScore?: number;
+  clientReadinessScore?: number;
   summary?: string;
   strengths?: string;
   weaknesses?: string;
+  evaluatorName?: string;
+  evaluatorCompany?: string;
+  evaluationType?: string;
+  evaluatorComments?: string;
+  aiEvaluationSummary?: string;
+  recordingUrl?: string;
+  evaluationFileUrl?: string;
 }
 
 export interface CompleteEvaluationInput {

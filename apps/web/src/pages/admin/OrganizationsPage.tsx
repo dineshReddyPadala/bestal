@@ -1,10 +1,11 @@
 import { schemaOrganizations } from '@bestal/mock-data';
-import { Button, Dialog, PageHeader, StatusBadge, TanStackDataTable } from '@bestal/ui';
+import { Button, Dialog, StatusBadge, TanStackDataTable } from '@bestal/ui';
 import { type ColumnDef } from '@tanstack/react-table';
 import { Plus } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import type { SchemaOrganization } from '@bestal/mock-data';
 import { OrganizationForm } from '../../components/forms/OrganizationForm';
+import { ListingPageShell } from '../../components/layout/ListingPageShell';
 import { buildOrganizationPayload, type OrganizationFormValues } from '../../lib/entity-field-metadata';
 import { useDemoToast } from '../../lib/use-demo-toast';
 
@@ -37,29 +38,28 @@ export function OrganizationsPage() {
   }
 
   return (
-    <div>
-      <PageHeader
+    <>
+      <ListingPageShell
         title="Organizations"
-        description="Platform organizations — name only; slug and counts are automatic"
+        message={message}
         actions={
-          <Button onClick={() => setCreateOpen(true)}>
-            <Plus className="mr-2 h-4 w-4" />
+          <Button size="sm" onClick={() => setCreateOpen(true)}>
+            <Plus className="mr-1.5 h-3.5 w-3.5" />
             Add organization
           </Button>
         }
-      />
-      {message && (
-        <div className="mx-6 mt-4 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
-          {message}
-        </div>
-      )}
-      <div className="p-6">
+      >
         <TanStackDataTable
           columns={columns}
           data={[...schemaOrganizations]}
           searchPlaceholder="Search organizations…"
+          pageSize={12}
+          stickyHeader
+          fillHeight
+          dense
+          filtersInline
         />
-      </div>
+      </ListingPageShell>
 
       <Dialog
         open={createOpen}
@@ -70,6 +70,6 @@ export function OrganizationsPage() {
       >
         <OrganizationForm onSubmit={handleCreate} onCancel={() => setCreateOpen(false)} />
       </Dialog>
-    </div>
+    </>
   );
 }

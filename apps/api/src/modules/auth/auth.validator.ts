@@ -31,6 +31,7 @@ export const logoutBodySchema = z.object({
 
 export const forgotPasswordBodySchema = z.object({
   email: z.string().email().max(255),
+  portal: z.enum([PORTALS.RECRUITER, PORTALS.SALES, PORTALS.CLIENT]),
 });
 
 export const resetPasswordBodySchema = z.object({
@@ -79,6 +80,8 @@ export const meResponseSchema = z.object({
     phone: z.string().nullable(),
     organizationId: z.number().nullable(),
     organizationName: z.string().nullable(),
+    clientId: z.number().nullable(),
+    clientName: z.string().nullable(),
     role: z.string(),
     portal: z.string(),
     permissions: z.array(z.string()),

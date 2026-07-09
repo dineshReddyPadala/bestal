@@ -1,4 +1,4 @@
-import { Button, Input } from '@bestal/ui';
+import { Button, Input, Select } from '@bestal/ui';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm, type Resolver } from 'react-hook-form';
 import { z } from 'zod';
@@ -10,6 +10,10 @@ const trialRequestFormSchema = z
     roleTitle: z.string().min(1, 'Role title is required').max(255),
     startDate: z.string().min(1, 'Start date is required'),
     endDate: z.string().min(1, 'End date is required'),
+    trialType: z.string().max(100).optional(),
+    maxTrialHours: z.coerce.number().int().positive().optional(),
+    taskDescription: z.string().max(5000).optional(),
+    successCriteria: z.string().max(5000).optional(),
     feedback: z.string().max(5000).optional(),
   })
   .superRefine((data, ctx) => {
@@ -65,6 +69,49 @@ export function TrialRequestForm({
           <Input id="endDate" type="date" {...register('endDate')} />
           {errors.endDate && <p className="text-xs text-red-600">{errors.endDate.message}</p>}
         </div>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div className="space-y-2">
+          <Label htmlFor="trialType">Trial type</Label>
+          <Select id="trialType" {...register('trialType')}>
+            <option value="">— Select —</option>
+            <option value="PAID_PILOT">Paid pilot</option>
+            <option value="UNPAID_PILOT">Unpaid pilot</option>
+            <option value="SKILL_ASSESSMENT">Skill assessment</option>
+            <option value="PROBATION">Probation</option>
+          </Select>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="maxTrialHours">Max trial hours</Label>
+          <Input
+            id="maxTrialHours"
+            type="number"
+            min={1}
+            {...register('maxTrialHours', { valueAsNumber: true })}
+          />
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="taskDescription">Task description</Label>
+        <textarea
+          id="taskDescription"
+          rows={3}
+          className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          {...register('taskDescription')}
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="successCriteria">Success criteria</Label>
+        <textarea
+          id="successCriteria"
+          rows={2}
+          className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          {...register('successCriteria')}
+        />
       </div>
 
       <div className="space-y-2">

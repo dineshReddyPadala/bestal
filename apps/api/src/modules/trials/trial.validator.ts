@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { paginationMetaSchema } from '../../validators/api-responses.validator.js';
+import { optionalIntField, optionalTextField } from '../../validators/optional-fields.js';
 
 const trialRequestStatusEnum = z.enum([
   'REQUESTED',
@@ -19,7 +20,11 @@ export const createTrialBodySchema = z.object({
   startDate: z.string().date().optional(),
   endDate: z.string().date().optional(),
   durationDays: z.coerce.number().int().positive().optional(),
-  feedback: z.string().max(5000).optional(),
+  trialType: z.string().max(100).optional(),
+  maxTrialHours: optionalIntField,
+  taskDescription: optionalTextField(),
+  successCriteria: optionalTextField(),
+  feedback: optionalTextField(),
 });
 
 export const updateTrialBodySchema = z.object({
@@ -31,8 +36,14 @@ export const updateTrialBodySchema = z.object({
   startDate: z.string().date().nullable().optional(),
   endDate: z.string().date().nullable().optional(),
   durationDays: z.coerce.number().int().positive().nullable().optional(),
-  feedback: z.string().max(5000).optional(),
+  trialType: z.string().max(100).optional(),
+  maxTrialHours: optionalIntField,
+  taskDescription: optionalTextField(),
+  successCriteria: optionalTextField(),
+  feedback: optionalTextField(),
   outcome: z.string().max(500).optional(),
+  clientRating: z.coerce.number().int().min(1).max(5).optional(),
+  convertedToPaid: z.boolean().optional(),
 });
 
 export const rejectTrialBodySchema = z.object({

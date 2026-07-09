@@ -69,6 +69,25 @@ export class AuthRepository extends BaseRepository {
     });
   }
 
+  findUserByEmailForPasswordReset(email: string): Promise<UserWithMemberships | null> {
+    return this.prisma.user.findFirst({
+      where: {
+        email: email.toLowerCase(),
+        deletedAt: null,
+      },
+      include: {
+        memberships: {
+          where: { isActive: true },
+          include: {
+            organization: {
+              select: { id: true, name: true, slug: true },
+            },
+          },
+        },
+      },
+    });
+  }
+
   updatePassword(userId: number, passwordHash: string): Promise<User> {
     return this.prisma.user.update({
       where: { id: BigInt(userId) },
@@ -169,6 +188,20 @@ export class AuthRepository extends BaseRepository {
     return this.prisma.passwordResetToken.update({
       where: { id: BigInt(id) },
       data: { usedAt: new Date() },
+    });
+  }
+
+  findClientByContactEmail(
+    organizationId: number,
+    email: string,
+  ): Promise<{ id: bigint; name: string } | null> {
+    return this.prisma.client.findFirst({
+      where: {
+        organizationId: BigInt(organizationId),
+        contactEmail: email.toLowerCase(),
+        deletedAt: null,
+      },
+      select: { id: true, name: true },
     });
   }
 }

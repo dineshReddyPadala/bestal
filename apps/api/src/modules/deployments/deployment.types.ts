@@ -15,8 +15,14 @@ export interface DeploymentDto {
   startDate: string | null;
   endDate: string | null;
   billingRate: number | null;
+  candidatePayRate: number | null;
+  grossMarginPerHour: number | null;
+  expectedHoursPerWeek: number | null;
   currency: string | null;
   workLocation: string | null;
+  timezone: string | null;
+  reportingManagerName: string | null;
+  reportingManagerEmail: string | null;
   notes: string | null;
   terminatedAt: string | null;
   terminateReason: string | null;
@@ -58,8 +64,14 @@ export interface CreateDeploymentInput {
   startDate?: string;
   endDate?: string;
   billingRate?: number;
+  candidatePayRate?: number;
+  grossMarginPerHour?: number;
+  expectedHoursPerWeek?: number;
   currency?: string;
   workLocation?: string;
+  timezone?: string;
+  reportingManagerName?: string;
+  reportingManagerEmail?: string;
   notes?: string;
 }
 
@@ -72,8 +84,14 @@ export interface UpdateDeploymentInput {
   startDate?: string | null;
   endDate?: string | null;
   billingRate?: number | null;
+  candidatePayRate?: number | null;
+  grossMarginPerHour?: number | null;
+  expectedHoursPerWeek?: number | null;
   currency?: string;
   workLocation?: string;
+  timezone?: string;
+  reportingManagerName?: string;
+  reportingManagerEmail?: string;
   notes?: string;
 }
 

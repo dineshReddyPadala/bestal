@@ -6,7 +6,6 @@ export function CandidatesPage() {
       basePath="/admin/candidates"
       addCandidatePath="/admin/candidates/new"
       title="Candidates"
-      description="Primary talent pool — search, filter, bulk manage, and take action on profiles"
     />
   );
 }

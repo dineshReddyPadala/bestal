@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { paginationMetaSchema } from '../../validators/api-responses.validator.js';
+import { optionalIntField, optionalRateField, optionalTextField } from '../../validators/optional-fields.js';
 
 const deploymentStatusEnum = z.enum([
   'PENDING',
@@ -23,10 +24,16 @@ export const createDeploymentBodySchema = z.object({
   roleTitle: z.string().min(1).max(255),
   startDate: z.string().date().optional(),
   endDate: z.string().date().optional(),
-  billingRate: z.coerce.number().positive().optional(),
+  billingRate: optionalRateField,
+  candidatePayRate: optionalRateField,
+  grossMarginPerHour: optionalRateField,
+  expectedHoursPerWeek: optionalIntField,
   currency: z.string().length(3).optional(),
   workLocation: z.string().max(255).optional(),
-  notes: z.string().max(5000).optional(),
+  timezone: z.string().max(50).optional(),
+  reportingManagerName: z.string().max(150).optional(),
+  reportingManagerEmail: z.string().email().max(255).optional(),
+  notes: optionalTextField(),
 });
 
 export const updateDeploymentBodySchema = z.object({
@@ -38,9 +45,15 @@ export const updateDeploymentBodySchema = z.object({
   startDate: z.string().date().nullable().optional(),
   endDate: z.string().date().nullable().optional(),
   billingRate: z.coerce.number().positive().nullable().optional(),
+  candidatePayRate: z.coerce.number().positive().nullable().optional(),
+  grossMarginPerHour: z.coerce.number().positive().nullable().optional(),
+  expectedHoursPerWeek: optionalIntField,
   currency: z.string().length(3).optional(),
   workLocation: z.string().max(255).optional(),
-  notes: z.string().max(5000).optional(),
+  timezone: z.string().max(50).optional(),
+  reportingManagerName: z.string().max(150).optional(),
+  reportingManagerEmail: z.string().email().max(255).optional(),
+  notes: optionalTextField(),
 });
 
 export const terminateDeploymentBodySchema = z.object({

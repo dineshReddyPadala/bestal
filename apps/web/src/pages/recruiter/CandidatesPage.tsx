@@ -6,7 +6,6 @@ export function CandidatesPage() {
       basePath="/recruiter/candidates"
       addCandidatePath="/recruiter/candidates/new"
       title="Candidates"
-      description="Search and manage vetted talent in your recruiting pipeline"
     />
   );
 }

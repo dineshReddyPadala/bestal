@@ -1,23 +1,24 @@
-import {
-  clientIndustries,
-  clientManagementRecords,
-  clientManagers,
-  clientStatuses,
-  companyLogoUrl,
-  type ClientManagementRecord,
-  type ClientManagementStatus,
-} from '@bestal/mock-data';
-import { formatCurrency } from '@bestal/shared-utils';
-import { Avatar, Button, Dialog, PageHeader, Select, StatusBadge, TanStackDataTable } from '@bestal/ui';
+import { formatDate } from '@bestal/shared-utils';
+import { Avatar, Button, Dialog, StatusBadge, TanStackDataTable } from '@bestal/ui';
 import { type ColumnDef } from '@tanstack/react-table';
-import { Edit, Eye, MoreHorizontal, Plus, UserCog, UserX } from 'lucide-react';
+import { Edit, Eye, MoreHorizontal, Plus, UserX } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { ClientForm } from '../forms/ClientForm';
-import { buildClientPayload, type ClientFormValues } from '../../lib/entity-field-metadata';
+import type { ClientFormValues } from '../../lib/entity-field-metadata';
 import { useDemoToast } from '../../lib/use-demo-toast';
+import { useClientMutations, useClientsList } from '../../hooks/api/useClients';
+import { clientsApi } from '../../lib/api/clients';
+import { queryKeys } from '../../hooks/api/query-keys';
+import type { ClientListItem } from '../../lib/api/types';
+import {
+  ListingFilterSelect,
+  ListingFiltersRow,
+  ListingPageShell,
+} from '../layout/ListingPageShell';
 
-type ClientAction = 'View' | 'Edit' | 'Deactivate' | 'Assign Manager';
+type ClientAction = 'View' | 'Edit' | 'Deactivate';
 
 type ClientManagementViewProps = {
   title?: string;
@@ -28,15 +29,23 @@ type ClientManagementViewProps = {
 const defaultFilters = {
   industry: 'all',
   status: 'all',
-  manager: 'all',
 };
+
+function slugify(value: string): string {
+  return value
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '')
+    .slice(0, 80);
+}
 
 function ClientRowActions({
   record,
   detailPath,
   onAction,
 }: {
-  record: ClientManagementRecord;
+  record: ClientListItem;
   detailPath?: string;
   onAction: (action: ClientAction) => void;
 }) {
@@ -68,7 +77,6 @@ function ClientRowActions({
       disabled: deactivated,
       variant: 'danger',
     },
-    { label: 'Assign Manager', icon: <UserCog className="h-3.5 w-3.5" /> },
   ];
 
   return (
@@ -114,125 +122,125 @@ function ClientRowActions({
 
 export function ClientManagementView({
   title = 'Client Management',
-  description = 'Enterprise accounts, contacts, commercial terms, and engagement metrics',
   clientDetailBasePath,
 }: ClientManagementViewProps) {
   const navigate = useNavigate();
   const { message, show } = useDemoToast();
-  const [records, setRecords] = useState<ClientManagementRecord[]>(() => [
-    ...clientManagementRecords,
-  ]);
   const [filters, setFilters] = useState(defaultFilters);
   const [formOpen, setFormOpen] = useState<'add' | 'edit' | null>(null);
-  const [editingRecord, setEditingRecord] = useState<ClientManagementRecord | null>(null);
+  const [editingRecord, setEditingRecord] = useState<ClientListItem | null>(null);
+  const mutations = useClientMutations();
+
+  const { data: editingClient } = useQuery({
+    queryKey: queryKeys.clients.detail(editingRecord?.id ?? 0),
+    queryFn: () => clientsApi.get(editingRecord!.id),
+    enabled: formOpen === 'edit' && editingRecord != null,
+  });
+
+  const listParams = useMemo(
+    () => ({
+      limit: 100,
+      sort: '-createdAt',
+      status: filters.status === 'all' ? undefined : filters.status,
+    }),
+    [filters.status],
+  );
+
+  const { data, isLoading, isError, error } = useClientsList(listParams);
 
   const filteredData = useMemo(() => {
-    let rows = [...records];
-
+    let rows = [...(data?.data ?? [])];
     if (filters.industry !== 'all') {
-      rows = rows.filter((r) => r.industry === filters.industry);
+      rows = rows.filter((r) => (r.industry ?? '') === filters.industry);
     }
-    if (filters.status !== 'all') {
-      rows = rows.filter((r) => r.status === filters.status);
-    }
-    if (filters.manager !== 'all') {
-      rows = rows.filter((r) => r.accountManager === filters.manager);
-    }
-
-    rows.sort((a, b) => b.revenue - a.revenue);
-
     return rows;
-  }, [records, filters]);
+  }, [data, filters.industry]);
+
+  const industries = useMemo(() => {
+    const set = new Set<string>();
+    for (const row of data?.data ?? []) {
+      if (row.industry) set.add(row.industry);
+    }
+    return [...set].sort();
+  }, [data]);
 
   const handleAction = useCallback(
-    (record: ClientManagementRecord, action: ClientAction) => {
+    (record: ClientListItem, action: ClientAction) => {
       if (action === 'Edit') {
         setEditingRecord(record);
         setFormOpen('edit');
         return;
       }
       if (action === 'Deactivate') {
-        setRecords((prev) =>
-          prev.map((row) =>
-            row.id === record.id ? { ...row, status: 'INACTIVE' as ClientManagementStatus } : row,
-          ),
-        );
+        void (async () => {
+          try {
+            await mutations.update.mutateAsync({ id: record.id, body: { status: 'INACTIVE' } });
+            show(`Deactivated — ${record.name}`);
+          } catch (err) {
+            show(err instanceof Error ? err.message : 'Failed to deactivate client');
+          }
+        })();
+        return;
       }
-      if (action === 'Assign Manager') {
-        setRecords((prev) =>
-          prev.map((row) => {
-            if (row.id !== record.id) return row;
-            const idx = clientManagers.indexOf(row.accountManager as (typeof clientManagers)[number]);
-            const next = clientManagers[(idx + 1) % clientManagers.length]!;
-            return { ...row, accountManager: next };
-          }),
-        );
-      }
-      show(`${action} — ${record.company} (demo)`);
+      show(`${action} — ${record.name}`);
     },
-    [show],
+    [mutations.update, show],
   );
 
   const handleFormSubmit = useCallback(
     (values: ClientFormValues) => {
-      const payload = buildClientPayload(values, editingRecord ?? undefined);
-      if (formOpen === 'edit' && editingRecord) {
-        setRecords((prev) =>
-          prev.map((row) =>
-            row.id === editingRecord.id
-              ? {
-                  ...row,
-                  company: values.company,
-                  industry: values.industry,
-                  primaryContact: values.primaryContact,
-                  email: values.email,
-                  phone: values.phone ?? row.phone,
-                  paymentTerms: payload.paymentTerms,
-                  accountManager: values.accountManager,
-                  logoUrl: payload.logoUrl ?? row.logoUrl,
-                }
-              : row,
-          ),
-        );
-        show(`Client updated — ${values.company} (demo)`);
-      } else {
-        const nextId = Math.max(0, ...records.map((r) => r.id)) + 1;
-        setRecords((prev) => [
-          ...prev,
-          {
-            id: nextId,
-            company: values.company,
-            industry: values.industry,
-            primaryContact: values.primaryContact,
-            email: values.email,
-            phone: values.phone ?? '',
-            paymentTerms: payload.paymentTerms,
-            status: 'PROSPECT',
-            accountManager: values.accountManager,
-            candidateCount: 0,
-            deploymentCount: 0,
-            revenue: 0,
-            currency: 'USD',
-            logoUrl: payload.logoUrl ?? companyLogoUrl(values.company),
-          },
-        ]);
-        show(`Client created — ${values.company} (demo)`);
-      }
-      setFormOpen(null);
-      setEditingRecord(null);
+      void (async () => {
+        try {
+          if (formOpen === 'edit' && editingRecord) {
+            await mutations.update.mutateAsync({
+              id: editingRecord.id,
+              body: {
+                name: values.company,
+                industry: values.industry || undefined,
+                contactEmail: values.email || undefined,
+                contactPhone: values.phone || undefined,
+                contactName: values.primaryContact || undefined,
+                companySize: values.companySize || undefined,
+                headquarters: values.headquarters || undefined,
+                website: values.website || undefined,
+                paymentTerms: values.paymentTerms || undefined,
+              },
+            });
+            show(`Client updated — ${values.company}`);
+          } else {
+            await mutations.create.mutateAsync({
+              name: values.company,
+              slug: slugify(values.company),
+              industry: values.industry || undefined,
+              contactEmail: values.email || undefined,
+              contactPhone: values.phone || undefined,
+              contactName: values.primaryContact || undefined,
+              companySize: values.companySize || undefined,
+              headquarters: values.headquarters || undefined,
+              website: values.website || undefined,
+              paymentTerms: values.paymentTerms || undefined,
+            });
+            show(`Client created — ${values.company}`);
+          }
+          setFormOpen(null);
+          setEditingRecord(null);
+        } catch (err) {
+          show(err instanceof Error ? err.message : 'Failed to save client');
+        }
+      })();
     },
-    [editingRecord, formOpen, records, show],
+    [editingRecord, formOpen, mutations.create, mutations.update, show],
   );
 
-  const columns = useMemo<ColumnDef<ClientManagementRecord>[]>(
+  const columns = useMemo<ColumnDef<ClientListItem>[]>(
     () => [
       {
-        accessorKey: 'company',
+        accessorKey: 'name',
         header: 'Company',
         cell: ({ row }) => (
           <div className="flex items-center gap-3">
-            <Avatar name={row.original.company} src={row.original.logoUrl} size="sm" />
-            <span className="font-medium">{row.original.company}</span>
+            <Avatar name={row.original.name} size="sm" />
+            <span className="font-medium">{row.original.name}</span>
           </div>
         ),
       },
@@ -240,33 +248,25 @@ export function ClientManagementView({
         accessorKey: 'industry',
         header: 'Industry',
         cell: ({ getValue }) => (
-          <span className="text-muted-foreground">{getValue() as string}</span>
+          <span className="text-muted-foreground">{(getValue() as string | null) || '—'}</span>
         ),
       },
       {
-        accessorKey: 'primaryContact',
-        header: 'Primary Contact',
-        cell: ({ getValue }) => <span>{getValue() as string}</span>,
-      },
-      {
-        accessorKey: 'email',
+        accessorKey: 'contactEmail',
         header: 'Email',
-        cell: ({ getValue }) => (
-          <a
-            href={`mailto:${getValue() as string}`}
-            className="text-sm text-brand hover:underline"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {getValue() as string}
-          </a>
-        ),
-      },
-      {
-        accessorKey: 'phone',
-        header: 'Phone',
-        cell: ({ getValue }) => (
-          <span className="text-sm text-muted-foreground tabular-nums">{getValue() as string}</span>
-        ),
+        cell: ({ getValue }) => {
+          const email = getValue() as string | null;
+          if (!email) return '—';
+          return (
+            <a
+              href={`mailto:${email}`}
+              className="text-sm text-brand hover:underline"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {email}
+            </a>
+          );
+        },
       },
       {
         accessorKey: 'status',
@@ -274,35 +274,14 @@ export function ClientManagementView({
         cell: ({ getValue }) => <StatusBadge status={getValue() as string} />,
       },
       {
-        accessorKey: 'accountManager',
+        accessorKey: 'accountManagerName',
         header: 'Account Manager',
-        cell: ({ getValue }) => <span>{getValue() as string}</span>,
+        cell: ({ getValue }) => (getValue() as string | null) || '—',
       },
       {
-        accessorKey: 'candidateCount',
-        header: () => <span className="block text-right">Candidates</span>,
-        meta: { headerClassName: 'text-right', cellClassName: 'text-right' },
-        cell: ({ getValue }) => (
-          <span className="block font-medium tabular-nums">{getValue() as number}</span>
-        ),
-      },
-      {
-        accessorKey: 'deploymentCount',
-        header: () => <span className="block text-right">Deployments</span>,
-        meta: { headerClassName: 'text-right', cellClassName: 'text-right' },
-        cell: ({ getValue }) => (
-          <span className="block font-medium tabular-nums">{getValue() as number}</span>
-        ),
-      },
-      {
-        accessorKey: 'revenue',
-        header: () => <span className="block text-right">Revenue</span>,
-        meta: { headerClassName: 'text-right', cellClassName: 'text-right' },
-        cell: ({ row }) => (
-          <span className="block font-semibold tabular-nums">
-            {formatCurrency(row.original.revenue, row.original.currency)}
-          </span>
-        ),
+        accessorKey: 'createdAt',
+        header: 'Created',
+        cell: ({ getValue }) => formatDate(String(getValue())),
       },
       {
         id: 'actions',
@@ -320,105 +299,79 @@ export function ClientManagementView({
     [clientDetailBasePath, handleAction],
   );
 
-  const updateFilter = (key: keyof typeof defaultFilters, value: string) => {
-    setFilters((prev) => ({ ...prev, [key]: value }));
-  };
-
   return (
-    <div className="min-h-full bg-muted/10">
-      <PageHeader
+    <>
+      <ListingPageShell
         title={title}
-        description={description}
+        message={message}
+        loading={isLoading}
+        loadingLabel="Loading clients…"
+        error={isError ? (error instanceof Error ? error.message : 'Failed to load clients') : null}
         actions={
           <Button
+            size="sm"
             onClick={() => {
               setEditingRecord(null);
               setFormOpen('add');
             }}
           >
-            <Plus className="mr-2 h-4 w-4" />
+            <Plus className="mr-1.5 h-3.5 w-3.5" />
             Add client
           </Button>
         }
-      />
-
-      {message && (
-        <div className="mx-6 mt-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
-          {message}
-        </div>
-      )}
-
-      <div className="p-4 sm:p-6">
+      >
         <TanStackDataTable
           columns={columns}
           data={filteredData}
-          searchPlaceholder="Search by company, contact, email, or manager…"
-          pageSize={10}
+          searchPlaceholder="Search by company, email, or manager…"
+          pageSize={12}
           stickyHeader
+          fillHeight
+          dense
+          filtersInline
+          emptyTitle="No clients yet"
+          emptyDescription="Create a client to start engagement workflows."
           onRowClick={
             clientDetailBasePath
               ? (row) => navigate(`${clientDetailBasePath}/${row.id}`)
               : undefined
           }
           filters={
-            <div className="rounded-xl border border-border/80 bg-gradient-to-br from-background to-muted/20 p-4 shadow-sm">
-              <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                Filters
-              </p>
-              <div className="grid gap-3 sm:grid-cols-3">
-                <FilterSelect
-                  label="Industry"
-                  value={filters.industry}
-                  onChange={(v) => updateFilter('industry', v)}
-                  options={[
-                    { value: 'all', label: 'All industries' },
-                    ...clientIndustries.map((i) => ({ value: i, label: i })),
-                  ]}
-                />
-                <FilterSelect
-                  label="Status"
-                  value={filters.status}
-                  onChange={(v) => updateFilter('status', v)}
-                  options={[
-                    { value: 'all', label: 'All statuses' },
-                    ...clientStatuses.map((s) => ({
-                      value: s,
-                      label: s.charAt(0) + s.slice(1).toLowerCase(),
-                    })),
-                  ]}
-                />
-                <FilterSelect
-                  label="Manager"
-                  value={filters.manager}
-                  onChange={(v) => updateFilter('manager', v)}
-                  options={[
-                    { value: 'all', label: 'All managers' },
-                    ...clientManagers.map((m) => ({ value: m, label: m })),
-                  ]}
-                />
-              </div>
-              <div className="mt-3 flex justify-end">
-                <Button variant="ghost" size="sm" onClick={() => setFilters(defaultFilters)}>
-                  Clear filters
-                </Button>
-              </div>
-            </div>
+            <ListingFiltersRow onClear={() => setFilters(defaultFilters)}>
+              <ListingFilterSelect
+                label="INDUSTRY"
+                value={filters.industry}
+                onChange={(v) => setFilters((prev) => ({ ...prev, industry: v }))}
+                options={[
+                  { value: 'all', label: 'All industries' },
+                  ...industries.map((i) => ({ value: i, label: i })),
+                ]}
+              />
+              <ListingFilterSelect
+                label="STATUS"
+                value={filters.status}
+                onChange={(v) => setFilters((prev) => ({ ...prev, status: v }))}
+                options={[
+                  { value: 'all', label: 'All statuses' },
+                  { value: 'PROSPECT', label: 'Prospect' },
+                  { value: 'ACTIVE', label: 'Active' },
+                  { value: 'INACTIVE', label: 'Inactive' },
+                  { value: 'SUSPENDED', label: 'Suspended' },
+                ]}
+              />
+            </ListingFiltersRow>
           }
           globalFilterFn={(row, _columnId, filterValue) => {
             const q = String(filterValue).toLowerCase().trim();
             if (!q) return true;
             const r = row.original;
-            return [
-              r.company,
-              r.industry,
-              r.primaryContact,
-              r.email,
-              r.phone,
-              r.accountManager,
-            ].some((field) => field.toLowerCase().includes(q));
+            return [r.name, r.industry ?? '', r.contactEmail ?? '', r.accountManagerName ?? '']
+              .join(' ')
+              .toLowerCase()
+              .includes(q);
           }}
         />
-      </div>
+      </ListingPageShell>
 
       <Dialog
         open={formOpen !== null}
@@ -434,16 +387,29 @@ export function ClientManagementView({
           formId="client-mgmt-form"
           submitLabel={formOpen === 'edit' ? 'Save changes' : 'Create client'}
           defaultValues={
-            editingRecord
+            editingRecord && editingClient
               ? {
-                  company: editingRecord.company,
-                  industry: editingRecord.industry,
-                  primaryContact: editingRecord.primaryContact,
-                  email: editingRecord.email,
-                  phone: editingRecord.phone,
-                  accountManager: editingRecord.accountManager,
+                  company: editingClient.name,
+                  industry: editingClient.industry ?? '',
+                  primaryContact: editingClient.contactName ?? '',
+                  email: editingClient.contactEmail ?? '',
+                  phone: editingClient.contactPhone ?? '',
+                  accountManager: editingRecord.accountManagerName ?? '',
+                  companySize: editingClient.companySize ?? '',
+                  headquarters: editingClient.headquarters ?? '',
+                  website: editingClient.website ?? '',
+                  paymentTerms: editingClient.paymentTerms ?? '',
                 }
-              : undefined
+              : editingRecord
+                ? {
+                    company: editingRecord.name,
+                    industry: editingRecord.industry ?? '',
+                    primaryContact: '',
+                    email: editingRecord.contactEmail ?? '',
+                    phone: '',
+                    accountManager: editingRecord.accountManagerName ?? '',
+                  }
+                : undefined
           }
           onSubmit={handleFormSubmit}
           onCancel={() => {
@@ -452,33 +418,6 @@ export function ClientManagementView({
           }}
         />
       </Dialog>
-    </div>
-  );
-}
-
-function FilterSelect({
-  label,
-  value,
-  onChange,
-  options,
-}: {
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-  options: { value: string; label: string }[];
-}) {
-  return (
-    <label className="flex flex-col gap-1">
-      <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-        {label}
-      </span>
-      <Select value={value} onChange={(e) => onChange(e.target.value)} className="h-9 text-sm">
-        {options.map((opt) => (
-          <option key={opt.value} value={opt.value}>
-            {opt.label}
-          </option>
-        ))}
-      </Select>
-    </label>
+    </>
   );
 }

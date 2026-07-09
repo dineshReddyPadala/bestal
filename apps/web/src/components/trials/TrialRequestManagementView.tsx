@@ -1,13 +1,5 @@
-import {
-  trialRequestCandidates,
-  trialRequestClients,
-  trialRequestRecords,
-  trialRequestStatuses,
-  type TrialRequestRecord,
-  type TrialRequestStatus,
-} from '@bestal/mock-data';
 import { formatDate } from '@bestal/shared-utils';
-import { Button, Dialog, PageHeader, Select, StatusBadge, TanStackDataTable } from '@bestal/ui';
+import { Button, Dialog, StatusBadge, TanStackDataTable } from '@bestal/ui';
 import { type ColumnDef } from '@tanstack/react-table';
 import { CheckCircle2, MoreHorizontal } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -20,10 +12,40 @@ import {
   type TrialCompleteFormValues,
   type TrialRejectFormValues,
 } from '../../lib/entity-field-metadata';
-import { mergeClientTrialsIntoRecords } from '../../lib/client-engagement-sync';
 import { useDemoToast } from '../../lib/use-demo-toast';
+import {
+  toTrialRow,
+  useTrialMutations,
+  useTrialsList,
+  type TrialManagementRow,
+} from '../../hooks/api/useTrials';
+import { useDeploymentMutations } from '../../hooks/api/useDeployments';
+import {
+  ListingFilterSelect,
+  ListingFiltersRow,
+  ListingPageShell,
+} from '../layout/ListingPageShell';
 
 type TrialAction = 'Approve' | 'Reject' | 'Start' | 'Complete' | 'Convert';
+
+type TrialRequestStatus =
+  | 'REQUESTED'
+  | 'APPROVED'
+  | 'REJECTED'
+  | 'IN_PROGRESS'
+  | 'COMPLETED'
+  | 'FAILED'
+  | 'CANCELLED';
+
+const trialRequestStatuses: TrialRequestStatus[] = [
+  'REQUESTED',
+  'APPROVED',
+  'REJECTED',
+  'IN_PROGRESS',
+  'COMPLETED',
+  'FAILED',
+  'CANCELLED',
+];
 
 type TrialRequestManagementViewProps = {
   title?: string;
@@ -58,7 +80,7 @@ function TrialRowActions({
   record,
   onAction,
 }: {
-  record: TrialRequestRecord;
+  record: TrialManagementRow;
   onAction: (action: TrialAction) => void;
 }) {
   const [open, setOpen] = useState(false);
@@ -134,16 +156,29 @@ function TrialRowActions({
 
 export function TrialRequestManagementView({
   title = 'Trial Request Management',
-  description = 'Review, approve, and track client trial pilots through conversion',
 }: TrialRequestManagementViewProps) {
   const { message, show } = useDemoToast();
-  const [records, setRecords] = useState<TrialRequestRecord[]>(() =>
-    mergeClientTrialsIntoRecords([...trialRequestRecords]),
-  );
+  const { data, isLoading, isError, error } = useTrialsList({ limit: 100 });
+  const { approve, reject, update } = useTrialMutations();
+  const { create: createDeployment } = useDeploymentMutations();
   const [filters, setFilters] = useState(defaultFilters);
-  const [rejectTarget, setRejectTarget] = useState<TrialRequestRecord | null>(null);
-  const [completeTarget, setCompleteTarget] = useState<TrialRequestRecord | null>(null);
-  const [convertTarget, setConvertTarget] = useState<TrialRequestRecord | null>(null);
+  const [rejectTarget, setRejectTarget] = useState<TrialManagementRow | null>(null);
+  const [completeTarget, setCompleteTarget] = useState<TrialManagementRow | null>(null);
+  const [convertTarget, setConvertTarget] = useState<TrialManagementRow | null>(null);
+
+  const records = useMemo(
+    () => (data?.data ?? []).map((item) => toTrialRow(item)),
+    [data],
+  );
+
+  const trialRequestClients = useMemo(
+    () => [...new Set(records.map((r) => r.clientName))].sort(),
+    [records],
+  );
+  const trialRequestCandidates = useMemo(
+    () => [...new Set(records.map((r) => r.candidateName))].sort(),
+    [records],
+  );
 
   const filteredData = useMemo(() => {
     let rows = [...records];
@@ -176,75 +211,81 @@ export function TrialRequestManagementView({
     return rows;
   }, [records, filters]);
 
-  const handleAction = useCallback((record: TrialRequestRecord, action: TrialAction) => {
-    if (action === 'Reject') {
-      setRejectTarget(record);
-      return;
-    }
-    if (action === 'Complete') {
-      setCompleteTarget(record);
-      return;
-    }
-    if (action === 'Convert') {
-      setConvertTarget(record);
-      return;
-    }
+  const handleAction = useCallback(
+    async (record: TrialManagementRow, action: TrialAction) => {
+      if (action === 'Reject') {
+        setRejectTarget(record);
+        return;
+      }
+      if (action === 'Complete') {
+        setCompleteTarget(record);
+        return;
+      }
+      if (action === 'Convert') {
+        setConvertTarget(record);
+        return;
+      }
 
-    setRecords((prev) =>
-      prev.map((row) => {
-        if (row.id !== record.id) return row;
-        if (action === 'Approve') return { ...row, status: 'APPROVED' as TrialRequestStatus };
-        if (action === 'Start') return { ...row, status: 'IN_PROGRESS' as TrialRequestStatus };
-        return row;
-      }),
-    );
-    show(`${action} — ${record.candidateName} @ ${record.clientName} (demo)`);
-  }, [show]);
+      try {
+        if (action === 'Approve') {
+          await approve.mutateAsync(record.id);
+        } else if (action === 'Start') {
+          await update.mutateAsync({ id: record.id, body: { status: 'IN_PROGRESS' } });
+        }
+        show(`${action} — ${record.candidateName} @ ${record.clientName}`);
+      } catch (err) {
+        show(err instanceof Error ? err.message : 'Action failed');
+      }
+    },
+    [approve, update, show],
+  );
 
-  const confirmReject = (values: TrialRejectFormValues) => {
+  const confirmReject = async (values: TrialRejectFormValues) => {
     if (!rejectTarget) return;
-    setRecords((prev) =>
-      prev.map((row) =>
-        row.id === rejectTarget.id
-          ? { ...row, status: 'REJECTED' as TrialRequestStatus, rejectReason: values.reason?.trim() || null }
-          : row,
-      ),
-    );
-    show(`Rejected — ${rejectTarget.candidateName} (demo)`);
-    setRejectTarget(null);
+    try {
+      await reject.mutateAsync({ id: rejectTarget.id, reason: values.reason });
+      show(`Rejected — ${rejectTarget.candidateName}`);
+      setRejectTarget(null);
+    } catch (err) {
+      show(err instanceof Error ? err.message : 'Reject failed');
+    }
   };
 
-  const confirmComplete = (values: TrialCompleteFormValues) => {
+  const confirmComplete = async (values: TrialCompleteFormValues) => {
     if (!completeTarget) return;
-    setRecords((prev) =>
-      prev.map((row) =>
-        row.id === completeTarget.id
-          ? {
-              ...row,
-              status: 'COMPLETED' as TrialRequestStatus,
-              outcome: values.outcome.trim(),
-              feedback: values.feedback?.trim() || row.feedback,
-            }
-          : row,
-      ),
-    );
-    show(`Completed — ${completeTarget.candidateName} (demo)`);
-    setCompleteTarget(null);
+    try {
+      await update.mutateAsync({
+        id: completeTarget.id,
+        body: {
+          status: 'COMPLETED',
+          outcome: values.outcome.trim(),
+          feedback: values.feedback?.trim(),
+        },
+      });
+      show(`Completed — ${completeTarget.candidateName}`);
+      setCompleteTarget(null);
+    } catch (err) {
+      show(err instanceof Error ? err.message : 'Complete failed');
+    }
   };
 
-  const confirmConvert = (values: DeploymentFormValues) => {
+  const confirmConvert = async (values: DeploymentFormValues) => {
     if (!convertTarget) return;
-    buildDeploymentPayload(values);
-    setRecords((prev) =>
-      prev.map((row) =>
-        row.id === convertTarget.id ? { ...row, converted: true } : row,
-      ),
-    );
-    show(`Deployment created from trial — ${convertTarget.candidateName} (demo)`);
-    setConvertTarget(null);
+    try {
+      const payload = buildDeploymentPayload(values);
+      await createDeployment.mutateAsync(payload as unknown as Record<string, unknown>);
+      await update.mutateAsync({
+        id: convertTarget.id,
+        body: { status: 'COMPLETED' },
+      });
+      show(`Deployment created from trial — ${convertTarget.candidateName}`);
+      setConvertTarget(null);
+    } catch (err) {
+      show(err instanceof Error ? err.message : 'Convert failed');
+    }
   };
 
-  const columns = useMemo<ColumnDef<TrialRequestRecord>[]>(
+  const columns = useMemo<ColumnDef<TrialManagementRow>[]>(
     () => [
       {
         accessorKey: 'clientName',
@@ -335,77 +376,68 @@ export function TrialRequestManagementView({
   };
 
   return (
-    <div className="min-h-full bg-muted/10">
-      <PageHeader title={title} description={description} />
-
-      {message && (
-        <div className="mx-6 mt-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
-          {message}
-        </div>
-      )}
-
-      <div className="p-4 sm:p-6">
+    <>
+      <ListingPageShell
+        title={title}
+        message={message}
+        loading={isLoading}
+        loadingLabel="Loading trial requests…"
+        error={isError ? (error instanceof Error ? error.message : 'Failed to load trials') : null}
+      >
         <TanStackDataTable
           columns={columns}
           data={filteredData}
           searchPlaceholder="Search by client, candidate, or role…"
-          pageSize={10}
+          pageSize={12}
           stickyHeader
+          fillHeight
+          dense
+          filtersInline
           filters={
-            <div className="rounded-xl border border-border/80 bg-gradient-to-br from-background to-muted/20 p-4 shadow-sm">
-              <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                Filters
-              </p>
-              <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-4">
-                <FilterSelect
-                  label="Status"
-                  value={filters.status}
-                  onChange={(v) => updateFilter('status', v)}
-                  options={[
-                    { value: 'all', label: 'All statuses' },
-                    ...trialRequestStatuses.map((s) => ({
-                      value: s,
-                      label: s.replace(/_/g, ' '),
-                    })),
-                  ]}
-                />
-                <FilterSelect
-                  label="Date"
-                  value={filters.date}
-                  onChange={(v) => updateFilter('date', v)}
-                  options={[
-                    { value: 'all', label: 'All dates' },
-                    { value: 'upcoming', label: 'Upcoming' },
-                    { value: 'active', label: 'Active now' },
-                    { value: 'past', label: 'Past' },
-                    { value: 'no-dates', label: 'Not scheduled' },
-                  ]}
-                />
-                <FilterSelect
-                  label="Client"
-                  value={filters.client}
-                  onChange={(v) => updateFilter('client', v)}
-                  options={[
-                    { value: 'all', label: 'All clients' },
-                    ...trialRequestClients.map((c) => ({ value: c, label: c })),
-                  ]}
-                />
-                <FilterSelect
-                  label="Candidate"
-                  value={filters.candidate}
-                  onChange={(v) => updateFilter('candidate', v)}
-                  options={[
-                    { value: 'all', label: 'All candidates' },
-                    ...trialRequestCandidates.map((c) => ({ value: c, label: c })),
-                  ]}
-                />
-              </div>
-              <div className="mt-3 flex justify-end">
-                <Button variant="ghost" size="sm" onClick={() => setFilters(defaultFilters)}>
-                  Clear filters
-                </Button>
-              </div>
-            </div>
+            <ListingFiltersRow onClear={() => setFilters(defaultFilters)}>
+              <ListingFilterSelect
+                label="STATUS"
+                value={filters.status}
+                onChange={(v) => updateFilter('status', v)}
+                options={[
+                  { value: 'all', label: 'All statuses' },
+                  ...trialRequestStatuses.map((s) => ({
+                    value: s,
+                    label: s.replace(/_/g, ' '),
+                  })),
+                ]}
+              />
+              <ListingFilterSelect
+                label="DATE"
+                value={filters.date}
+                onChange={(v) => updateFilter('date', v)}
+                options={[
+                  { value: 'all', label: 'All dates' },
+                  { value: 'upcoming', label: 'Upcoming' },
+                  { value: 'active', label: 'Active now' },
+                  { value: 'past', label: 'Past' },
+                  { value: 'no-dates', label: 'Not scheduled' },
+                ]}
+              />
+              <ListingFilterSelect
+                label="CLIENT"
+                value={filters.client}
+                onChange={(v) => updateFilter('client', v)}
+                options={[
+                  { value: 'all', label: 'All clients' },
+                  ...trialRequestClients.map((c) => ({ value: c, label: c })),
+                ]}
+              />
+              <ListingFilterSelect
+                label="CANDIDATE"
+                value={filters.candidate}
+                onChange={(v) => updateFilter('candidate', v)}
+                options={[
+                  { value: 'all', label: 'All candidates' },
+                  ...trialRequestCandidates.map((c) => ({ value: c, label: c })),
+                ]}
+              />
+            </ListingFiltersRow>
           }
           globalFilterFn={(row, _columnId, filterValue) => {
             const q = String(filterValue).toLowerCase().trim();
@@ -416,7 +448,7 @@ export function TrialRequestManagementView({
             );
           }}
         />
-      </div>
+      </ListingPageShell>
 
       <Dialog
         open={rejectTarget !== null}
@@ -501,33 +533,6 @@ export function TrialRequestManagementView({
           />
         )}
       </Dialog>
-    </div>
-  );
-}
-
-function FilterSelect({
-  label,
-  value,
-  onChange,
-  options,
-}: {
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-  options: { value: string; label: string }[];
-}) {
-  return (
-    <label className="flex flex-col gap-1">
-      <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-        {label}
-      </span>
-      <Select value={value} onChange={(e) => onChange(e.target.value)} className="h-9 text-sm">
-        {options.map((opt) => (
-          <option key={opt.value} value={opt.value}>
-            {opt.label}
-          </option>
-        ))}
-      </Select>
-    </label>
+    </>
   );
 }

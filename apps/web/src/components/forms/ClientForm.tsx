@@ -13,6 +13,10 @@ const clientFormSchema = z.object({
   email: z.string().email('Invalid email').max(255),
   phone: z.string().max(30).default(''),
   accountManager: z.string().min(1, 'Account manager is required'),
+  companySize: z.string().max(50).optional(),
+  headquarters: z.string().max(255).optional(),
+  website: z.string().max(500).optional(),
+  paymentTerms: z.string().max(100).optional(),
   logoFileName: z.string().optional(),
   logoPreviewUrl: z.string().optional(),
 });
@@ -96,6 +100,39 @@ export function ClientForm({
         <div className="space-y-2">
           <Label htmlFor="phone">Phone</Label>
           <Input id="phone" {...register('phone')} placeholder="+1 (415) 555-0100" />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="companySize">Company size</Label>
+          <Select id="companySize" {...register('companySize')}>
+            <option value="">— Select —</option>
+            <option value="1-50">1–50</option>
+            <option value="51-200">51–200</option>
+            <option value="201-1000">201–1,000</option>
+            <option value="1000+">1,000+</option>
+          </Select>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="headquarters">Headquarters</Label>
+          <Input id="headquarters" {...register('headquarters')} placeholder="San Francisco, CA" />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="website">Website</Label>
+          <Input id="website" {...register('website')} placeholder="https://example.com" />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="paymentTerms">Payment terms</Label>
+          <Select id="paymentTerms" {...register('paymentTerms')}>
+            <option value="">— Select —</option>
+            <option value="NET_15">Net 15</option>
+            <option value="NET_30">Net 30</option>
+            <option value="NET_45">Net 45</option>
+            <option value="NET_60">Net 60</option>
+            <option value="PREPAID">Prepaid</option>
+          </Select>
         </div>
       </div>
 

@@ -1,4 +1,10 @@
 import { z } from 'zod';
+import {
+  optionalIntField,
+  optionalRateField,
+  optionalTextField,
+  optionalUrlField,
+} from '../../validators/optional-fields.js';
 
 const candidateStatusEnum = z.enum([
   'NEW',
@@ -22,6 +28,50 @@ const candidateSourceEnum = z.enum([
   'OTHER',
 ]);
 
+const proficiencyLevelEnum = z.enum(['BEGINNER', 'INTERMEDIATE', 'ADVANCED', 'EXPERT']);
+
+export const candidateSkillBodySchema = z.object({
+  skillCommunityId: z.coerce.number().int().positive(),
+  skillName: z.string().max(150).optional(),
+  skillCategory: z.string().max(100).optional(),
+  proficiencyLevel: proficiencyLevelEnum.optional(),
+  yearsExperience: z.coerce.number().int().min(0).max(60).optional(),
+  isPrimary: z.boolean().optional(),
+  notes: optionalTextField(),
+});
+
+const candidateExtendedFieldsSchema = {
+  oorwinCandidateId: z.string().max(100).optional(),
+  displayName: z.string().max(200).optional(),
+  primaryRole: z.string().max(150).optional(),
+  currentCompany: z.string().max(255).optional(),
+  education: optionalTextField(10000),
+  githubUrl: optionalUrlField,
+  naukriUrl: optionalUrlField,
+  clientBillRate: optionalRateField,
+  candidatePayRate: optionalRateField,
+  grossMargin: optionalRateField,
+  availabilityStatus: z.string().max(50).optional(),
+  timezoneOverlap: z.string().max(100).optional(),
+  preferredShift: z.string().max(50).optional(),
+  minHoursPerWeek: optionalIntField,
+  maxHoursPerWeek: optionalIntField,
+  aiSummary: optionalTextField(),
+  clientProfileSummary: optionalTextField(),
+  strengths: optionalTextField(),
+  weaknesses: optionalTextField(),
+  riskFlags: optionalTextField(),
+  bestalScore: z.coerce.number().int().min(0).max(100).optional(),
+  technicalScore: z.coerce.number().int().min(0).max(100).optional(),
+  communicationScore: z.coerce.number().int().min(0).max(100).optional(),
+  reliabilityScore: z.coerce.number().int().min(0).max(100).optional(),
+  evaluationStatus: z.string().max(50).optional(),
+  bgvStatus: z.string().max(50).optional(),
+  profileStatus: z.string().max(50).optional(),
+  deploymentStatus: z.string().max(50).optional(),
+  skills: z.array(candidateSkillBodySchema).optional(),
+};
+
 export const createCandidateBodySchema = z.object({
   firstName: z.string().min(1).max(100),
   lastName: z.string().min(1).max(100),
@@ -30,14 +80,15 @@ export const createCandidateBodySchema = z.object({
   status: candidateStatusEnum.optional(),
   source: candidateSourceEnum.optional(),
   headline: z.string().max(255).optional(),
-  summary: z.string().max(5000).optional(),
+  summary: optionalTextField(),
   location: z.string().max(255).optional(),
   yearsExperience: z.coerce.number().int().min(0).max(60).optional(),
   availableFrom: z.string().date().optional(),
-  expectedRate: z.coerce.number().positive().optional(),
+  expectedRate: optionalRateField,
   currency: z.string().length(3).optional(),
-  linkedinUrl: z.string().url().max(500).optional(),
+  linkedinUrl: optionalUrlField,
   primarySkillCommunityId: z.coerce.number().int().positive().optional(),
+  ...candidateExtendedFieldsSchema,
 });
 
 export const updateCandidateBodySchema = createCandidateBodySchema.partial();
@@ -64,6 +115,19 @@ export const listCandidatesQuerySchema = z.object({
 export const rejectCandidateBodySchema = z.object({
   reason: z.string().min(3).max(500),
 });
+
+export const prepareAssetUploadBodySchema = z.object({
+  originalName: z.string().min(1).max(255),
+  mimeType: z.string().min(1).max(255),
+  size: z.coerce.number().int().positive(),
+});
+
+export const completeAssetUploadBodySchema = prepareAssetUploadBodySchema.extend({
+  key: z.string().min(1).max(1024),
+});
+
+export type PrepareAssetUploadBody = z.infer<typeof prepareAssetUploadBodySchema>;
+export type CompleteAssetUploadBody = z.infer<typeof completeAssetUploadBodySchema>;
 
 export const candidateIdParamSchema = z.object({
   id: z.coerce.number().int().positive(),
@@ -165,6 +229,14 @@ export const candidateListResponseSchema = z.object({
 export const messageResponseSchema = z.object({
   data: z.object({
     message: z.string(),
+  }),
+});
+
+export const assetUploadUrlResponseSchema = z.object({
+  data: z.object({
+    uploadUrl: z.string().url(),
+    key: z.string(),
+    bucket: z.string(),
   }),
 });
 

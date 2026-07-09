@@ -1,15 +1,11 @@
 import { DashboardLayout } from '@bestal/ui';
 import { Outlet, useLocation } from 'react-router-dom';
 import { adminNavItems } from '../lib/nav';
-
-const adminUser = {
-  name: 'Jordan Hayes',
-  email: 'admin@bestal.com',
-  role: 'Platform Admin',
-};
+import { useDashboardUser } from '../hooks/useDashboardUser';
 
 export function AdminShell() {
   const { pathname } = useLocation();
+  const { user, handleLogout } = useDashboardUser();
   const currentPath = pathname.startsWith('/admin/candidate-approvals')
     ? '/admin/candidate-approvals'
     : pathname.startsWith('/admin/candidates')
@@ -22,8 +18,9 @@ export function AdminShell() {
     <DashboardLayout
       navItems={adminNavItems}
       portalName="Admin Portal"
-      user={adminUser}
+      user={user}
       currentPath={currentPath}
+      onLogout={handleLogout}
     >
       <Outlet />
     </DashboardLayout>

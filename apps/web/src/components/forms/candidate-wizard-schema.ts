@@ -9,7 +9,14 @@ const optionalNumber = z.preprocess(
 );
 
 export const skillEntrySchema = z.object({
-  skillCommunityId: z.preprocess((v) => Number(v), z.number().int().positive('Select a skill community')),
+  skillCommunityId: z.preprocess(
+    (value) => {
+      if (value === '' || value === null || value === undefined) return undefined;
+      const parsed = Number(value);
+      return Number.isNaN(parsed) ? undefined : parsed;
+    },
+    z.number().int().positive('Select a skill community'),
+  ),
   proficiencyLevel: z.enum(['BEGINNER', 'INTERMEDIATE', 'ADVANCED', 'EXPERT']),
   yearsExperience: optionalNumber,
   isPrimary: z.boolean(),
@@ -24,16 +31,30 @@ export const candidateWizardFormSchema = z.object({
   phone: z.string().max(30).optional().nullable(),
   location: z.string().max(255).optional().nullable(),
   linkedinUrl: z.string().max(500).optional().nullable(),
+  githubUrl: z.string().max(500).optional().nullable(),
+  naukriUrl: z.string().max(500).optional().nullable(),
+  displayName: z.string().max(200).optional().nullable(),
+  oorwinCandidateId: z.string().max(100).optional().nullable(),
   source: z.enum(['DIRECT', 'REFERRAL', 'JOB_BOARD', 'LINKEDIN', 'AGENCY', 'INTERNAL', 'OTHER']),
   headline: z.string().max(255).optional().nullable(),
+  primaryRole: z.string().max(255).optional().nullable(),
+  currentCompany: z.string().max(255).optional().nullable(),
+  education: z.string().max(500).optional().nullable(),
   summary: z.string().max(10000).optional().nullable(),
+  clientProfileSummary: z.string().max(10000).optional().nullable(),
+  strengths: z.string().max(5000).optional().nullable(),
+  weaknesses: z.string().max(5000).optional().nullable(),
   yearsExperience: optionalNumber,
   primarySkillCommunityId: optionalNumber,
   skills: z.array(skillEntrySchema).min(1, 'Add at least one skill'),
   availableFrom: z.string().min(1, 'Available from date is required'),
   timezone: z.string().max(100).optional().nullable(),
+  availabilityStatus: z.string().max(50).optional().nullable(),
+  preferredShift: z.string().max(50).optional().nullable(),
   noticePeriodDays: optionalNumber,
   hoursPerWeek: optionalNumber,
+  minHoursPerWeek: optionalNumber,
+  maxHoursPerWeek: optionalNumber,
   preferredEngagement: z
     .enum(['FULL_TIME', 'PART_TIME', 'CONTRACT', 'FREELANCE'])
     .optional()
@@ -53,6 +74,12 @@ export const candidateWizardFormSchema = z.object({
 export type CandidateWizardFormValues = z.infer<typeof candidateWizardFormSchema>;
 
 /** Full payload shape (includes system-managed fields set on submit). */
+export type CandidateWizardUploads = {
+  resume?: File;
+  profileImage?: File;
+  introVideo?: File;
+};
+
 export type CandidateWizardValues = CandidateWizardFormValues & {
   organizationId: number;
   photoUrl: string | null;
@@ -82,14 +109,24 @@ export const candidateWizardDefaults: CandidateWizardFormValues = {
   phone: '',
   location: '',
   linkedinUrl: '',
+  githubUrl: '',
+  naukriUrl: '',
+  displayName: '',
+  oorwinCandidateId: '',
   source: 'LINKEDIN',
   headline: '',
+  primaryRole: '',
+  currentCompany: '',
+  education: '',
   summary: '',
+  clientProfileSummary: '',
+  strengths: '',
+  weaknesses: '',
   yearsExperience: undefined,
   primarySkillCommunityId: undefined,
   skills: [
     {
-      skillCommunityId: 1,
+      skillCommunityId: '' as unknown as number,
       proficiencyLevel: 'INTERMEDIATE',
       yearsExperience: undefined,
       isPrimary: true,
@@ -98,8 +135,12 @@ export const candidateWizardDefaults: CandidateWizardFormValues = {
   ],
   availableFrom: '',
   timezone: 'America/New_York',
+  availabilityStatus: 'AVAILABLE',
+  preferredShift: '',
   noticePeriodDays: 14,
   hoursPerWeek: 40,
+  minHoursPerWeek: undefined,
+  maxHoursPerWeek: undefined,
   preferredEngagement: 'CONTRACT',
   blackoutDates: '',
   availabilityNotes: '',
@@ -159,13 +200,13 @@ export const WIZARD_STEPS = [
     id: 'personal',
     label: 'Personal',
     description: 'Name, contact details, and how you sourced this candidate',
-    fields: ['firstName', 'lastName', 'email', 'phone', 'location', 'linkedinUrl', 'source'] as const,
+    fields: ['firstName', 'lastName', 'email', 'phone', 'location', 'linkedinUrl', 'githubUrl', 'naukriUrl', 'displayName', 'oorwinCandidateId', 'source'] as const,
   },
   {
     id: 'professional',
     label: 'Professional',
     description: 'Role headline, experience, and profile summary',
-    fields: ['headline', 'summary', 'yearsExperience', 'primarySkillCommunityId'] as const,
+    fields: ['headline', 'primaryRole', 'currentCompany', 'education', 'summary', 'clientProfileSummary', 'strengths', 'weaknesses', 'yearsExperience', 'primarySkillCommunityId'] as const,
   },
   {
     id: 'skills',
@@ -180,8 +221,12 @@ export const WIZARD_STEPS = [
     fields: [
       'availableFrom',
       'timezone',
+      'availabilityStatus',
+      'preferredShift',
       'noticePeriodDays',
       'hoursPerWeek',
+      'minHoursPerWeek',
+      'maxHoursPerWeek',
       'preferredEngagement',
       'blackoutDates',
       'availabilityNotes',
@@ -218,16 +263,30 @@ export const USER_FIELD_LABELS: Record<keyof CandidateWizardFormValues, string> 
   phone: 'Phone',
   location: 'Location',
   linkedinUrl: 'LinkedIn',
+  githubUrl: 'GitHub',
+  naukriUrl: 'Naukri',
+  displayName: 'Display Name',
+  oorwinCandidateId: 'Oorwin ID',
   source: 'Source',
   headline: 'Headline',
+  primaryRole: 'Primary Role',
+  currentCompany: 'Current Company',
+  education: 'Education',
   summary: 'Summary',
+  clientProfileSummary: 'Client Profile Summary',
+  strengths: 'Strengths',
+  weaknesses: 'Weaknesses',
   yearsExperience: 'Years Experience',
   primarySkillCommunityId: 'Primary Skill Community',
   skills: 'Skills',
   availableFrom: 'Available From',
   timezone: 'Timezone',
+  availabilityStatus: 'Availability Status',
+  preferredShift: 'Preferred Shift',
   noticePeriodDays: 'Notice Period (days)',
   hoursPerWeek: 'Hours Per Week',
+  minHoursPerWeek: 'Min Hours / Week',
+  maxHoursPerWeek: 'Max Hours / Week',
   preferredEngagement: 'Preferred Engagement',
   blackoutDates: 'Blackout Dates',
   availabilityNotes: 'Availability Notes',
@@ -268,3 +327,51 @@ export const REVIEW_FIELD_KEYS: (keyof CandidateWizardFormValues)[] = [
   'profileImageFileName',
   'introVideoFileName',
 ];
+
+/** Map wizard form values to the API create-candidate request body. */
+export function mapWizardToApiCreateBody(form: CandidateWizardFormValues): Record<string, unknown> {
+  const grossMargin =
+    form.billRate != null && form.payRate != null ? form.billRate - form.payRate : undefined;
+
+  return {
+    firstName: form.firstName,
+    lastName: form.lastName,
+    email: form.email,
+    phone: form.phone ?? undefined,
+    source: form.source,
+    headline: form.headline ?? undefined,
+    summary: form.summary ?? undefined,
+    location: form.location ?? undefined,
+    yearsExperience: form.yearsExperience ?? undefined,
+    availableFrom: form.availableFrom,
+    expectedRate: form.expectedRate ?? undefined,
+    currency: form.currency ?? undefined,
+    linkedinUrl: form.linkedinUrl ?? undefined,
+    githubUrl: form.githubUrl ?? undefined,
+    naukriUrl: form.naukriUrl ?? undefined,
+    displayName: form.displayName ?? undefined,
+    oorwinCandidateId: form.oorwinCandidateId ?? undefined,
+    primaryRole: form.primaryRole ?? undefined,
+    currentCompany: form.currentCompany ?? undefined,
+    education: form.education ?? undefined,
+    clientProfileSummary: form.clientProfileSummary ?? undefined,
+    strengths: form.strengths ?? undefined,
+    weaknesses: form.weaknesses ?? undefined,
+    primarySkillCommunityId: form.primarySkillCommunityId ?? undefined,
+    clientBillRate: form.billRate ?? undefined,
+    candidatePayRate: form.payRate ?? undefined,
+    grossMargin,
+    timezoneOverlap: form.timezone ?? undefined,
+    availabilityStatus: form.availabilityStatus ?? undefined,
+    preferredShift: form.preferredShift ?? undefined,
+    minHoursPerWeek: form.minHoursPerWeek ?? form.hoursPerWeek ?? undefined,
+    maxHoursPerWeek: form.maxHoursPerWeek ?? form.hoursPerWeek ?? undefined,
+    skills: form.skills.map((skill) => ({
+      skillCommunityId: skill.skillCommunityId,
+      proficiencyLevel: skill.proficiencyLevel,
+      yearsExperience: skill.yearsExperience ?? undefined,
+      isPrimary: skill.isPrimary,
+      notes: skill.notes ?? undefined,
+    })),
+  };
+}

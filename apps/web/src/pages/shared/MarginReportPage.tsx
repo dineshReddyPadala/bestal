@@ -1,8 +1,9 @@
 import { deployments, trials, computeMarginPercent } from '@bestal/mock-data';
 import { formatCurrency } from '@bestal/shared-utils';
-import { ChartCard, PageHeader, RevenueAreaChart, StatCard, TanStackDataTable } from '@bestal/ui';
+import { ChartCard, RevenueAreaChart, StatCard, TanStackDataTable } from '@bestal/ui';
 import { type ColumnDef } from '@tanstack/react-table';
 import { useMemo } from 'react';
+import { ListingPageShell } from '../../components/layout/ListingPageShell';
 
 type MarginRow = {
   id: number;
@@ -102,27 +103,33 @@ export function MarginReportPage() {
   );
 
   return (
-    <div>
-      <PageHeader
-        title="Margin Report"
-        description="Bill rate, pay rate, and margin across trials and deployments"
-      />
+    <ListingPageShell title="Margin Report">
+      <div className="flex min-h-0 flex-1 flex-col gap-4">
+        <div className="shrink-0 grid gap-4 md:grid-cols-3">
+          <StatCard label="Avg margin" value={`${totals.avgMargin}%`} />
+          <StatCard label="Weekly margin (all)" value={formatCurrency(totals.weekly, 'USD')} />
+          <StatCard label="Active placements" value={String(rows.length)} />
+        </div>
 
-      <div className="grid gap-4 p-6 md:grid-cols-3">
-        <StatCard label="Avg margin" value={`${totals.avgMargin}%`} />
-        <StatCard label="Weekly margin (all)" value={formatCurrency(totals.weekly, 'USD')} />
-        <StatCard label="Active placements" value={String(rows.length)} />
-      </div>
+        <div className="shrink-0 grid gap-6 lg:grid-cols-2">
+          <ChartCard title="Weekly margin by placement">
+            <RevenueAreaChart data={chartData} />
+          </ChartCard>
+        </div>
 
-      <div className="grid gap-6 px-6 pb-6 lg:grid-cols-2">
-        <ChartCard title="Weekly margin by placement">
-          <RevenueAreaChart data={chartData} />
-        </ChartCard>
+        <div className="flex min-h-0 flex-1 flex-col">
+          <TanStackDataTable
+            columns={columns}
+            data={rows}
+            searchPlaceholder="Search placements…"
+            pageSize={12}
+            stickyHeader
+            fillHeight
+            dense
+            filtersInline
+          />
+        </div>
       </div>
-
-      <div className="px-6 pb-6">
-        <TanStackDataTable columns={columns} data={rows} searchPlaceholder="Search placements…" />
-      </div>
-    </div>
+    </ListingPageShell>
   );
 }

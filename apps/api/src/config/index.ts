@@ -30,6 +30,11 @@ export const envSchema = z
         .map((origin) => origin.trim())
         .filter(Boolean),
     ),
+    FROM_MAIL: z.string().email().optional(),
+    FROM_MAIL_PASSWORD: z.string().optional(),
+    SMTP_HOST: z.string().default('smtp.gmail.com'),
+    SMTP_PORT: z.coerce.number().int().positive().default(587),
+    WEB_APP_URL: z.string().url().default('http://localhost:5173'),
   })
   .superRefine((env, ctx) => {
     if (env.STORAGE_DRIVER === 's3') {
@@ -66,10 +71,19 @@ export interface StorageConfig {
   aws?: AwsS3Config;
 }
 
+export interface MailConfig {
+  from: string | null;
+  password: string | null;
+  host: string;
+  port: number;
+  enabled: boolean;
+}
+
 export interface AppConfig {
   nodeEnv: EnvSchema['NODE_ENV'];
   appName: string;
   appUrl: string;
+  webAppUrl: string;
   port: number;
   logLevel: EnvSchema['LOG_LEVEL'];
   databaseUrl: string;
@@ -82,15 +96,20 @@ export interface AppConfig {
   passwordResetExpiry: string;
   storage: StorageConfig;
   corsOrigins: string[];
+  mail: MailConfig;
   isProduction: boolean;
   isDevelopment: boolean;
 }
 
 function mapEnvToConfig(env: EnvSchema): AppConfig {
+  const mailFrom = env.FROM_MAIL ?? null;
+  const mailPassword = env.FROM_MAIL_PASSWORD ?? null;
+
   return {
     nodeEnv: env.NODE_ENV,
     appName: env.APP_NAME,
     appUrl: env.APP_URL,
+    webAppUrl: env.WEB_APP_URL,
     port: env.PORT,
     logLevel: env.LOG_LEVEL,
     databaseUrl: env.DATABASE_URL,
@@ -117,6 +136,13 @@ function mapEnvToConfig(env: EnvSchema): AppConfig {
         : {}),
     },
     corsOrigins: env.CORS_ORIGINS,
+    mail: {
+      from: mailFrom,
+      password: mailPassword,
+      host: env.SMTP_HOST,
+      port: env.SMTP_PORT,
+      enabled: Boolean(mailFrom && mailPassword),
+    },
     isProduction: env.NODE_ENV === 'production',
     isDevelopment: env.NODE_ENV === 'development',
   };

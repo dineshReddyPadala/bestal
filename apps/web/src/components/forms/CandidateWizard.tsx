@@ -1,9 +1,16 @@
-import { skillCommunities } from '@bestal/mock-data';
 import { cn } from '@bestal/shared-utils';
 import { Button, FileUpload, Input, Select } from '@bestal/ui';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+  type MutableRefObject,
+} from 'react';
 import {
   FormProvider,
   useFieldArray,
@@ -12,6 +19,8 @@ import {
   type FieldPath,
   type Resolver,
 } from 'react-hook-form';
+import { useSkillCommunitiesList } from '../../hooks/api/useSkillCommunities';
+import type { SkillCommunityListItem } from '../../lib/api/types';
 import { Label } from '../ui/label';
 import {
   buildCandidatePayload,
@@ -22,15 +31,44 @@ import {
   USER_FIELD_LABELS,
   WIZARD_STEPS,
   type CandidateWizardFormValues,
+  type CandidateWizardUploads,
   type CandidateWizardValues,
   type WizardStepId,
 } from './candidate-wizard-schema';
 
 type CandidateWizardProps = {
-  onSubmit: (values: CandidateWizardValues) => void;
+  onSubmit: (values: CandidateWizardValues, uploads: CandidateWizardUploads) => void | Promise<void>;
   onCancel: () => void;
   onToast: (message: string) => void;
 };
+
+const SkillCommunitiesContext = createContext<SkillCommunityListItem[]>([]);
+
+function useSkillCommunityOptions() {
+  return useContext(SkillCommunitiesContext);
+}
+
+function SkillCommunitySelectOptions() {
+  const skillCommunities = useSkillCommunityOptions();
+  return (
+    <>
+      <option value="">— Select —</option>
+      {skillCommunities.map((community) => (
+        <option key={community.id} value={community.id}>
+          {community.name}
+        </option>
+      ))}
+    </>
+  );
+}
+
+function skillCommunityName(
+  skillCommunities: SkillCommunityListItem[],
+  id: number | undefined,
+): string {
+  if (!id) return '—';
+  return skillCommunities.find((community) => community.id === id)?.name ?? String(id);
+}
 
 const textareaClass =
   'flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
@@ -140,6 +178,18 @@ function PersonalStep() {
           <Input id="linkedinUrl" {...register('linkedinUrl')} placeholder="https://linkedin.com/in/..." />
         </FormField>
       </div>
+      <FormField label="GitHub Profile" name="githubUrl">
+        <Input id="githubUrl" {...register('githubUrl')} placeholder="https://github.com/..." />
+      </FormField>
+      <FormField label="Naukri Profile" name="naukriUrl">
+        <Input id="naukriUrl" {...register('naukriUrl')} placeholder="https://naukri.com/..." />
+      </FormField>
+      <FormField label="Display Name" name="displayName">
+        <Input id="displayName" {...register('displayName')} placeholder="Optional public display name" />
+      </FormField>
+      <FormField label="Oorwin Candidate ID" name="oorwinCandidateId">
+        <Input id="oorwinCandidateId" {...register('oorwinCandidateId')} placeholder="External ATS ID" />
+      </FormField>
     </div>
   );
 }
@@ -152,6 +202,15 @@ function ProfessionalStep() {
       <FormField label="Headline" name="headline">
         <Input id="headline" {...register('headline')} placeholder="Senior Full-Stack Engineer" />
       </FormField>
+      <FormField label="Primary Role" name="primaryRole">
+        <Input id="primaryRole" {...register('primaryRole')} placeholder="Full-Stack Developer" />
+      </FormField>
+      <FormField label="Current Company" name="currentCompany">
+        <Input id="currentCompany" {...register('currentCompany')} />
+      </FormField>
+      <FormField label="Education" name="education">
+        <Input id="education" {...register('education')} placeholder="B.Tech Computer Science" />
+      </FormField>
       <FormField label="Years Experience" name="yearsExperience">
         <Input
           id="yearsExperience"
@@ -162,12 +221,7 @@ function ProfessionalStep() {
       </FormField>
       <FormField label="Primary Skill Community" name="primarySkillCommunityId">
         <Select id="primarySkillCommunityId" {...register('primarySkillCommunityId', { valueAsNumber: true })}>
-          <option value="">— Select —</option>
-          {skillCommunities.map((sc) => (
-            <option key={sc.id} value={sc.id}>
-              {sc.name}
-            </option>
-          ))}
+          <SkillCommunitySelectOptions />
         </Select>
       </FormField>
       <div className="sm:col-span-2">
@@ -175,6 +229,23 @@ function ProfessionalStep() {
           <textarea id="summary" rows={4} className={textareaClass} {...register('summary')} />
         </FormField>
       </div>
+      <div className="sm:col-span-2">
+        <FormField label="Client Profile Summary" name="clientProfileSummary">
+          <textarea
+            id="clientProfileSummary"
+            rows={3}
+            className={textareaClass}
+            {...register('clientProfileSummary')}
+            placeholder="Client-facing profile summary"
+          />
+        </FormField>
+      </div>
+      <FormField label="Strengths" name="strengths">
+        <textarea id="strengths" rows={2} className={textareaClass} {...register('strengths')} />
+      </FormField>
+      <FormField label="Weaknesses" name="weaknesses">
+        <textarea id="weaknesses" rows={2} className={textareaClass} {...register('weaknesses')} />
+      </FormField>
     </div>
   );
 }
@@ -186,6 +257,8 @@ function SkillsStep() {
     formState: { errors },
   } = useFormContext<CandidateWizardFormValues>();
   const { fields, append, remove } = useFieldArray({ control, name: 'skills' });
+  const skillCommunities = useSkillCommunityOptions();
+  const defaultSkillCommunityId = skillCommunities[0]?.id;
 
   return (
     <div className="space-y-4">
@@ -204,12 +277,8 @@ function SkillsStep() {
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <FormField label="Skill Community" name={`skills.${index}.skillCommunityId`} required>
-              <Select {...register(`skills.${index}.skillCommunityId`, { valueAsNumber: true })}>
-                {skillCommunities.map((sc) => (
-                  <option key={sc.id} value={sc.id}>
-                    {sc.name}
-                  </option>
-                ))}
+              <Select {...register(`skills.${index}.skillCommunityId`)}>
+                <SkillCommunitySelectOptions />
               </Select>
             </FormField>
             <FormField label="Proficiency Level" name={`skills.${index}.proficiencyLevel`} required>
@@ -247,13 +316,14 @@ function SkillsStep() {
         size="sm"
         onClick={() =>
           append({
-            skillCommunityId: 1,
+            skillCommunityId: defaultSkillCommunityId,
             proficiencyLevel: 'INTERMEDIATE',
             yearsExperience: undefined,
             isPrimary: false,
             notes: '',
           })
         }
+        disabled={!defaultSkillCommunityId}
       >
         Add skill
       </Button>
@@ -277,11 +347,34 @@ function AvailabilityStep() {
       <FormField label="Timezone" name="timezone">
         <Input id="timezone" {...register('timezone')} placeholder="America/New_York" />
       </FormField>
+      <FormField label="Availability Status" name="availabilityStatus">
+        <Select id="availabilityStatus" {...register('availabilityStatus')}>
+          <option value="AVAILABLE">Available</option>
+          <option value="PARTIALLY_AVAILABLE">Partially Available</option>
+          <option value="NOT_AVAILABLE">Not Available</option>
+          <option value="ON_NOTICE">On Notice</option>
+        </Select>
+      </FormField>
+      <FormField label="Preferred Shift" name="preferredShift">
+        <Select id="preferredShift" {...register('preferredShift')}>
+          <option value="">— Any —</option>
+          <option value="DAY">Day</option>
+          <option value="EVENING">Evening</option>
+          <option value="NIGHT">Night</option>
+          <option value="FLEXIBLE">Flexible</option>
+        </Select>
+      </FormField>
       <FormField label="Notice Period (days)" name="noticePeriodDays">
         <Input id="noticePeriodDays" type="number" min={0} {...register('noticePeriodDays', { valueAsNumber: true })} />
       </FormField>
       <FormField label="Hours Per Week" name="hoursPerWeek">
         <Input id="hoursPerWeek" type="number" min={1} max={168} {...register('hoursPerWeek', { valueAsNumber: true })} />
+      </FormField>
+      <FormField label="Min Hours / Week" name="minHoursPerWeek">
+        <Input id="minHoursPerWeek" type="number" min={1} max={168} {...register('minHoursPerWeek', { valueAsNumber: true })} />
+      </FormField>
+      <FormField label="Max Hours / Week" name="maxHoursPerWeek">
+        <Input id="maxHoursPerWeek" type="number" min={1} max={168} {...register('maxHoursPerWeek', { valueAsNumber: true })} />
       </FormField>
       <FormField label="Preferred Engagement" name="preferredEngagement">
         <Select id="preferredEngagement" {...register('preferredEngagement')}>
@@ -329,8 +422,43 @@ function PricingStep() {
   );
 }
 
-function DocumentsStep() {
+function DocumentsStep({
+  onToast,
+  pendingUploads,
+}: {
+  onToast?: (msg: string) => void;
+  pendingUploads: MutableRefObject<CandidateWizardUploads>;
+}) {
   const { setValue, watch } = useFormContext<CandidateWizardFormValues>();
+  const [extracting, setExtracting] = useState(false);
+
+  async function handleResumeSelect(file: File) {
+    pendingUploads.current.resume = file;
+    setValue('resumeFileName', file.name, { shouldValidate: true });
+    setExtracting(true);
+    try {
+      const { extractResume } = await import('../../lib/api/ai/resume-extraction.stub');
+      const result = await extractResume({
+        fileName: file.name,
+        mimeType: file.type,
+      });
+      const c = result.candidate;
+      if (c.firstName) setValue('firstName', c.firstName);
+      if (c.lastName) setValue('lastName', c.lastName);
+      if (c.email) setValue('email', c.email);
+      if (c.phone) setValue('phone', c.phone);
+      if (c.location) setValue('location', c.location);
+      if (c.linkedinUrl) setValue('linkedinUrl', c.linkedinUrl);
+      if (c.headline) setValue('headline', c.headline);
+      if (c.summary) setValue('summary', c.summary);
+      if (c.yearsExperience != null) setValue('yearsExperience', c.yearsExperience);
+      onToast?.(`Resume extracted (${Math.round(result.confidence * 100)}% confidence)`);
+    } catch {
+      onToast?.('Resume uploaded — extraction unavailable');
+    } finally {
+      setExtracting(false);
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -342,8 +470,11 @@ function DocumentsStep() {
         <FileUpload
           label="Resume (PDF / Word)"
           accept=".pdf,.doc,.docx"
-          onFileSelect={(file) => setValue('resumeFileName', file.name, { shouldValidate: true })}
+          onFileSelect={(file) => void handleResumeSelect(file)}
         />
+        {extracting && (
+          <p className="mt-2 text-sm text-muted-foreground">Extracting resume fields…</p>
+        )}
         {watch('resumeFileName') && (
           <p className="mt-2 text-sm text-emerald-700">Selected: {watch('resumeFileName')}</p>
         )}
@@ -354,7 +485,10 @@ function DocumentsStep() {
           label="Profile Photo"
           accept=".jpg,.jpeg,.png,.webp"
           hint="JPEG or PNG up to 5 MB"
-          onFileSelect={(file) => setValue('profileImageFileName', file.name, { shouldValidate: true })}
+          onFileSelect={(file) => {
+            pendingUploads.current.profileImage = file;
+            setValue('profileImageFileName', file.name, { shouldValidate: true });
+          }}
         />
         {watch('profileImageFileName') && (
           <p className="mt-2 text-sm text-emerald-700">Selected: {watch('profileImageFileName')}</p>
@@ -366,7 +500,10 @@ function DocumentsStep() {
           label="Intro Video (optional)"
           accept=".mp4,.webm,.mov"
           hint="MP4 or WebM up to 100 MB"
-          onFileSelect={(file) => setValue('introVideoFileName', file.name, { shouldValidate: true })}
+          onFileSelect={(file) => {
+            pendingUploads.current.introVideo = file;
+            setValue('introVideoFileName', file.name, { shouldValidate: true });
+          }}
         />
         {watch('introVideoFileName') && (
           <p className="mt-2 text-sm text-emerald-700">Selected: {watch('introVideoFileName')}</p>
@@ -379,6 +516,7 @@ function DocumentsStep() {
 function ReviewStep() {
   const { getValues } = useFormContext<CandidateWizardFormValues>();
   const values = getValues();
+  const skillCommunities = useSkillCommunityOptions();
 
   return (
     <div className="space-y-6">
@@ -393,7 +531,7 @@ function ReviewStep() {
           if (val === undefined || val === null || val === '') {
             display = '—';
           } else if (key === 'primarySkillCommunityId' && typeof val === 'number') {
-            display = skillCommunities.find((sc) => sc.id === val)?.name ?? String(val);
+            display = skillCommunityName(skillCommunities, val);
           } else {
             display = String(val);
           }
@@ -411,10 +549,10 @@ function ReviewStep() {
         <h4 className="mb-3 text-sm font-semibold">Skills ({values.skills.length})</h4>
         <div className="space-y-2">
           {values.skills.map((skill, i) => {
-            const community = skillCommunities.find((sc) => sc.id === skill.skillCommunityId);
+            const communityName = skillCommunityName(skillCommunities, skill.skillCommunityId);
             return (
               <div key={i} className="rounded-lg border border-border/60 bg-muted/20 px-3 py-2 text-sm">
-                {community?.name ?? skill.skillCommunityId} · {skill.proficiencyLevel} ·{' '}
+                {communityName} · {skill.proficiencyLevel} ·{' '}
                 {skill.yearsExperience ?? '—'} yrs · {skill.isPrimary ? 'Primary' : 'Secondary'}
                 {skill.notes && <span className="text-muted-foreground"> — {skill.notes}</span>}
               </div>
@@ -426,7 +564,15 @@ function ReviewStep() {
   );
 }
 
-function StepContent({ stepId }: { stepId: WizardStepId }) {
+function StepContent({
+  stepId,
+  onToast,
+  pendingUploads,
+}: {
+  stepId: WizardStepId;
+  onToast?: (msg: string) => void;
+  pendingUploads: MutableRefObject<CandidateWizardUploads>;
+}) {
   switch (stepId) {
     case 'personal':
       return <PersonalStep />;
@@ -439,7 +585,7 @@ function StepContent({ stepId }: { stepId: WizardStepId }) {
     case 'pricing':
       return <PricingStep />;
     case 'upload':
-      return <DocumentsStep />;
+      return <DocumentsStep onToast={onToast} pendingUploads={pendingUploads} />;
     case 'review':
       return <ReviewStep />;
     default:
@@ -449,7 +595,13 @@ function StepContent({ stepId }: { stepId: WizardStepId }) {
 
 export function CandidateWizard({ onSubmit, onCancel, onToast }: CandidateWizardProps) {
   const [stepIndex, setStepIndex] = useState(0);
+  const pendingUploads = useRef<CandidateWizardUploads>({});
   const currentStep = WIZARD_STEPS[stepIndex]!;
+  const {
+    data: skillCommunities = [],
+    isLoading: skillCommunitiesLoading,
+    isError: skillCommunitiesError,
+  } = useSkillCommunitiesList();
 
   const methods = useForm<CandidateWizardFormValues>({
     resolver: zodResolver(candidateWizardFormSchema) as Resolver<CandidateWizardFormValues>,
@@ -502,12 +654,38 @@ export function CandidateWizard({ onSubmit, onCancel, onToast }: CandidateWizard
   const isFirst = stepIndex === 0;
   const isLast = stepIndex === WIZARD_STEPS.length - 1;
 
+  if (skillCommunitiesLoading) {
+    return (
+      <div className="flex min-h-[320px] items-center justify-center text-sm text-muted-foreground">
+        Loading skill communities…
+      </div>
+    );
+  }
+
+  if (skillCommunitiesError || skillCommunities.length === 0) {
+    return (
+      <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-6 text-sm text-amber-900">
+        <p className="font-medium">Skill communities are not available.</p>
+        <p className="mt-2">
+          Ask an admin to seed skill communities, or run{' '}
+          <code className="rounded bg-white/80 px-1 py-0.5">npm run db:seed</code> in{' '}
+          <code className="rounded bg-white/80 px-1 py-0.5">apps/api</code>.
+        </p>
+        <Button type="button" variant="outline" size="sm" className="mt-4" onClick={onCancel}>
+          Back to candidates
+        </Button>
+      </div>
+    );
+  }
+
   return (
-    <FormProvider {...methods}>
+    <SkillCommunitiesContext.Provider value={skillCommunities}>
+      <FormProvider {...methods}>
       <form
         onSubmit={handleSubmit((formValues) => {
           localStorage.removeItem(DRAFT_STORAGE_KEY);
-          onSubmit(buildCandidatePayload(formValues));
+          void onSubmit(buildCandidatePayload(formValues), { ...pendingUploads.current });
+          pendingUploads.current = {};
         })}
       >
         <StepIndicator currentStep={stepIndex} />
@@ -518,7 +696,7 @@ export function CandidateWizard({ onSubmit, onCancel, onToast }: CandidateWizard
         </div>
 
         <div className="min-h-[320px] rounded-xl border border-border/80 bg-gradient-to-br from-background to-muted/10 p-6">
-          <StepContent stepId={currentStep.id} />
+          <StepContent stepId={currentStep.id} onToast={onToast} pendingUploads={pendingUploads} />
         </div>
 
         <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4">
@@ -555,6 +733,7 @@ export function CandidateWizard({ onSubmit, onCancel, onToast }: CandidateWizard
           </div>
         </div>
       </form>
-    </FormProvider>
+      </FormProvider>
+    </SkillCommunitiesContext.Provider>
   );
 }

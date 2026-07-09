@@ -14,6 +14,8 @@ export interface AuthUserProfile {
   phone: string | null;
   organizationId: number | null;
   organizationName: string | null;
+  clientId: number | null;
+  clientName: string | null;
   role: Role;
   portal: Portal;
   permissions: Permission[];

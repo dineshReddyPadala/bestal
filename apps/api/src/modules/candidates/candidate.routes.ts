@@ -6,12 +6,15 @@ import { PERMISSIONS } from '../auth/auth.permissions.js';
 import { CandidateController } from './candidate.controller.js';
 import { CandidateService } from './candidate.service.js';
 import {
+  assetUploadUrlResponseSchema,
   candidateIdParamSchema,
   candidateListResponseSchema,
   candidateResponseSchema,
+  completeAssetUploadBodySchema,
   createCandidateBodySchema,
   listCandidatesQuerySchema,
   messageResponseSchema,
+  prepareAssetUploadBodySchema,
   rejectCandidateBodySchema,
   updateCandidateBodySchema,
 } from './candidate.validator.js';
@@ -103,7 +106,7 @@ export async function candidateRoutes(fastify: FastifyInstance): Promise<void> {
       preHandler: [authenticate, requirePermission(PERMISSIONS.CANDIDATES_WRITE)],
       schema: {
         tags: ['Candidates'],
-        summary: 'Upload candidate resume (PDF, DOC, DOCX — max 10MB)',
+        summary: 'Upload candidate resume via API (local storage only)',
         security: [{ bearerAuth: [] }],
         params: candidateIdParamSchema,
         consumes: ['multipart/form-data'],
@@ -114,12 +117,44 @@ export async function candidateRoutes(fastify: FastifyInstance): Promise<void> {
   );
 
   app.post(
+    '/:id/resume/upload-url',
+    {
+      preHandler: [authenticate, requirePermission(PERMISSIONS.CANDIDATES_WRITE)],
+      schema: {
+        tags: ['Candidates'],
+        summary: 'Get presigned S3 URL for resume upload (browser uploads directly to S3)',
+        security: [{ bearerAuth: [] }],
+        params: candidateIdParamSchema,
+        body: prepareAssetUploadBodySchema,
+        response: { 200: assetUploadUrlResponseSchema },
+      },
+    },
+    candidateController.prepareResumeUpload,
+  );
+
+  app.post(
+    '/:id/resume/complete',
+    {
+      preHandler: [authenticate, requirePermission(PERMISSIONS.CANDIDATES_WRITE)],
+      schema: {
+        tags: ['Candidates'],
+        summary: 'Confirm resume upload after direct S3 PUT',
+        security: [{ bearerAuth: [] }],
+        params: candidateIdParamSchema,
+        body: completeAssetUploadBodySchema,
+        response: { 200: candidateResponseSchema },
+      },
+    },
+    candidateController.completeResumeUpload,
+  );
+
+  app.post(
     '/:id/profile-image',
     {
       preHandler: [authenticate, requirePermission(PERMISSIONS.CANDIDATES_WRITE)],
       schema: {
         tags: ['Candidates'],
-        summary: 'Upload candidate profile image (JPEG, PNG, WebP — max 5MB)',
+        summary: 'Upload candidate profile image via API (local storage only)',
         security: [{ bearerAuth: [] }],
         params: candidateIdParamSchema,
         consumes: ['multipart/form-data'],
@@ -130,12 +165,44 @@ export async function candidateRoutes(fastify: FastifyInstance): Promise<void> {
   );
 
   app.post(
+    '/:id/profile-image/upload-url',
+    {
+      preHandler: [authenticate, requirePermission(PERMISSIONS.CANDIDATES_WRITE)],
+      schema: {
+        tags: ['Candidates'],
+        summary: 'Get presigned S3 URL for profile image upload',
+        security: [{ bearerAuth: [] }],
+        params: candidateIdParamSchema,
+        body: prepareAssetUploadBodySchema,
+        response: { 200: assetUploadUrlResponseSchema },
+      },
+    },
+    candidateController.prepareProfileImageUpload,
+  );
+
+  app.post(
+    '/:id/profile-image/complete',
+    {
+      preHandler: [authenticate, requirePermission(PERMISSIONS.CANDIDATES_WRITE)],
+      schema: {
+        tags: ['Candidates'],
+        summary: 'Confirm profile image upload after direct S3 PUT',
+        security: [{ bearerAuth: [] }],
+        params: candidateIdParamSchema,
+        body: completeAssetUploadBodySchema,
+        response: { 200: candidateResponseSchema },
+      },
+    },
+    candidateController.completeProfileImageUpload,
+  );
+
+  app.post(
     '/:id/intro-video',
     {
       preHandler: [authenticate, requirePermission(PERMISSIONS.CANDIDATES_WRITE)],
       schema: {
         tags: ['Candidates'],
-        summary: 'Upload candidate intro video (MP4, WebM, MOV — max 100MB)',
+        summary: 'Upload candidate intro video via API (local storage only)',
         security: [{ bearerAuth: [] }],
         params: candidateIdParamSchema,
         consumes: ['multipart/form-data'],
@@ -143,6 +210,38 @@ export async function candidateRoutes(fastify: FastifyInstance): Promise<void> {
       },
     },
     candidateController.uploadIntroVideo,
+  );
+
+  app.post(
+    '/:id/intro-video/upload-url',
+    {
+      preHandler: [authenticate, requirePermission(PERMISSIONS.CANDIDATES_WRITE)],
+      schema: {
+        tags: ['Candidates'],
+        summary: 'Get presigned S3 URL for intro video upload',
+        security: [{ bearerAuth: [] }],
+        params: candidateIdParamSchema,
+        body: prepareAssetUploadBodySchema,
+        response: { 200: assetUploadUrlResponseSchema },
+      },
+    },
+    candidateController.prepareIntroVideoUpload,
+  );
+
+  app.post(
+    '/:id/intro-video/complete',
+    {
+      preHandler: [authenticate, requirePermission(PERMISSIONS.CANDIDATES_WRITE)],
+      schema: {
+        tags: ['Candidates'],
+        summary: 'Confirm intro video upload after direct S3 PUT',
+        security: [{ bearerAuth: [] }],
+        params: candidateIdParamSchema,
+        body: completeAssetUploadBodySchema,
+        response: { 200: candidateResponseSchema },
+      },
+    },
+    candidateController.completeIntroVideoUpload,
   );
 
   app.post(

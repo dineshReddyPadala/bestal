@@ -1,15 +1,11 @@
 import { DashboardLayout } from '@bestal/ui';
 import { Outlet, useLocation } from 'react-router-dom';
 import { salesNavItems } from '../lib/nav';
-
-const salesUser = {
-  name: 'Sarah Chen',
-  email: 'sales@bestal.com',
-  role: 'Account Executive',
-};
+import { useDashboardUser } from '../hooks/useDashboardUser';
 
 export function SalesShell() {
   const { pathname } = useLocation();
+  const { user, handleLogout } = useDashboardUser();
   const currentPath = pathname.startsWith('/sales/clients')
     ? '/sales/clients'
     : pathname;
@@ -18,8 +14,9 @@ export function SalesShell() {
     <DashboardLayout
       navItems={salesNavItems}
       portalName="Sales Portal"
-      user={salesUser}
+      user={user}
       currentPath={currentPath}
+      onLogout={handleLogout}
     >
       <Outlet />
     </DashboardLayout>

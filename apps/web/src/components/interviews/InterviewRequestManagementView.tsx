@@ -1,15 +1,19 @@
-import type { MockInterview } from '@bestal/mock-data';
 import { formatDate } from '@bestal/shared-utils';
-import { Button, Dialog, PageHeader, Select, StatusBadge, TanStackDataTable } from '@bestal/ui';
+import { Button, Dialog, StatusBadge, TanStackDataTable } from '@bestal/ui';
 import { type ColumnDef } from '@tanstack/react-table';
 import { MoreHorizontal } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { InterviewCancelForm } from '../forms/InterviewCancelForm';
-import { allInterviewsForWorkflow } from '../../lib/client-engagement-sync';
 import type { InterviewCancelFormValues } from '../../lib/entity-field-metadata';
 import { useDemoToast } from '../../lib/use-demo-toast';
+import { toInterviewCard, useInterviewMutations, useInterviewsList } from '../../hooks/api/useInterviews';
+import {
+  ListingFilterSelect,
+  ListingFiltersRow,
+  ListingPageShell,
+} from '../layout/ListingPageShell';
 
-type InterviewAction = 'Cancel';
+type InterviewCard = ReturnType<typeof toInterviewCard>;
 
 type InterviewRequestManagementViewProps = {
   title?: string;
@@ -23,10 +27,10 @@ const defaultFilters = {
 
 function InterviewRowActions({
   record,
-  onAction,
+  onCancel,
 }: {
-  record: MockInterview;
-  onAction: (action: InterviewAction) => void;
+  record: InterviewCard;
+  onCancel: () => void;
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -60,7 +64,7 @@ function InterviewRowActions({
             type="button"
             className="flex w-full px-3 py-2 text-left text-sm text-destructive hover:bg-muted"
             onClick={() => {
-              onAction('Cancel');
+              onCancel();
               setOpen(false);
             }}
           >
@@ -74,26 +78,19 @@ function InterviewRowActions({
 
 export function InterviewRequestManagementView({
   title = 'Interview Request Management',
-  description = 'Review client interview requests before recruiter scheduling',
 }: InterviewRequestManagementViewProps) {
   const { message, show } = useDemoToast();
-  const [records, setRecords] = useState<MockInterview[]>(() => allInterviewsForWorkflow());
+  const { data, isLoading, isError, error } = useInterviewsList({ limit: 100 });
+  const { cancel } = useInterviewMutations();
   const [filters, setFilters] = useState(defaultFilters);
-  const [cancelTarget, setCancelTarget] = useState<MockInterview | null>(null);
+  const [cancelTarget, setCancelTarget] = useState<InterviewCard | null>(null);
+
+  const records = useMemo(() => (data?.data ?? []).map(toInterviewCard), [data]);
 
   const filteredData = useMemo(() => {
     let rows = [...records];
-    if (filters.status !== 'all') {
-      rows = rows.filter((r) => r.status === filters.status);
-    }
-    if (filters.client !== 'all') {
-      rows = rows.filter((r) => r.clientName === filters.client);
-    }
-    rows.sort((a, b) => {
-      const aTime = a.scheduledAt ? new Date(a.scheduledAt).getTime() : 0;
-      const bTime = b.scheduledAt ? new Date(b.scheduledAt).getTime() : 0;
-      return bTime - aTime;
-    });
+    if (filters.status !== 'all') rows = rows.filter((r) => r.status === filters.status);
+    if (filters.client !== 'all') rows = rows.filter((r) => r.clientName === filters.client);
     return rows;
   }, [records, filters]);
 
@@ -102,26 +99,24 @@ export function InterviewRequestManagementView({
     [records],
   );
 
-  const handleCancel = useCallback((values: InterviewCancelFormValues) => {
-    if (!cancelTarget) return;
-    setRecords((prev) =>
-      prev.map((row) =>
-        row.id === cancelTarget.id
-          ? {
-              ...row,
-              status: 'CANCELLED',
-              notes: values.cancelReason?.trim()
-                ? `Cancelled: ${values.cancelReason.trim()}`
-                : 'Cancelled by sales',
-            }
-          : row,
-      ),
-    );
-    show(`Cancelled — ${cancelTarget.candidateName} (demo)`);
-    setCancelTarget(null);
-  }, [cancelTarget, show]);
+  const handleCancel = useCallback(
+    async (values: InterviewCancelFormValues) => {
+      if (!cancelTarget) return;
+      try {
+        await cancel.mutateAsync({
+          id: cancelTarget.id,
+          cancelReason: values.cancelReason,
+        });
+        show(`Cancelled — ${cancelTarget.candidateName}`);
+        setCancelTarget(null);
+      } catch (err) {
+        show(err instanceof Error ? err.message : 'Cancel failed');
+      }
+    },
+    [cancel, cancelTarget, show],
+  );
 
-  const columns = useMemo<ColumnDef<MockInterview>[]>(
+  const columns = useMemo<ColumnDef<InterviewCard>[]>(
     () => [
       {
         accessorKey: 'clientName',
@@ -158,9 +153,7 @@ export function InterviewRequestManagementView({
         accessorKey: 'durationMinutes',
         header: () => <span className="block text-right">Min</span>,
         meta: { headerClassName: 'text-right', cellClassName: 'text-right' },
-        cell: ({ getValue }) => (
-          <span className="tabular-nums">{getValue() as number}</span>
-        ),
+        cell: ({ getValue }) => <span className="tabular-nums">{getValue() as number}</span>,
       },
       {
         accessorKey: 'status',
@@ -172,10 +165,7 @@ export function InterviewRequestManagementView({
         header: '',
         meta: { headerClassName: 'w-12 text-right', cellClassName: 'w-12 text-right' },
         cell: ({ row }) => (
-          <InterviewRowActions
-            record={row.original}
-            onAction={() => setCancelTarget(row.original)}
-          />
+          <InterviewRowActions record={row.original} onCancel={() => setCancelTarget(row.original)} />
         ),
       },
     ],
@@ -183,46 +173,53 @@ export function InterviewRequestManagementView({
   );
 
   return (
-    <div>
-      <PageHeader title={title} description={description} />
-
-      {message && (
-        <div className="mx-6 mb-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
-          {message}
-        </div>
-      )}
-
-      <div className="space-y-4 p-6">
-        <div className="flex flex-wrap gap-3">
-          <Select
-            value={filters.status}
-            onChange={(e) => setFilters((f) => ({ ...f, status: e.target.value }))}
-            className="w-44"
-          >
-            <option value="all">All statuses</option>
-            <option value="REQUESTED">Requested</option>
-            <option value="CONFIRMED">Confirmed</option>
-            <option value="SCHEDULED">Scheduled</option>
-            <option value="COMPLETED">Completed</option>
-            <option value="CANCELLED">Cancelled</option>
-            <option value="RESCHEDULED">Rescheduled</option>
-          </Select>
-          <Select
-            value={filters.client}
-            onChange={(e) => setFilters((f) => ({ ...f, client: e.target.value }))}
-            className="w-48"
-          >
-            <option value="all">All clients</option>
-            {clients.map((c) => (
-              <option key={c} value={c}>
-                {c}
-              </option>
-            ))}
-          </Select>
-        </div>
-
-        <TanStackDataTable columns={columns} data={filteredData} />
-      </div>
+    <>
+      <ListingPageShell
+        title={title}
+        message={message}
+        loading={isLoading}
+        loadingLabel="Loading interview requests…"
+        error={isError ? (error instanceof Error ? error.message : 'Failed to load interviews') : null}
+      >
+        <TanStackDataTable
+          columns={columns}
+          data={filteredData}
+          searchPlaceholder="Search by client or candidate…"
+          pageSize={12}
+          stickyHeader
+          fillHeight
+          dense
+          filtersInline
+          filters={
+            <ListingFiltersRow onClear={() => setFilters(defaultFilters)}>
+              <ListingFilterSelect
+                label="STATUS"
+                value={filters.status}
+                onChange={(v) => setFilters((f) => ({ ...f, status: v }))}
+                options={[
+                  { value: 'all', label: 'All statuses' },
+                  { value: 'REQUESTED', label: 'Requested' },
+                  { value: 'CONFIRMED', label: 'Confirmed' },
+                  { value: 'SCHEDULED', label: 'Scheduled' },
+                  { value: 'COMPLETED', label: 'Completed' },
+                  { value: 'CANCELLED', label: 'Cancelled' },
+                  { value: 'RESCHEDULED', label: 'Rescheduled' },
+                ]}
+              />
+              <ListingFilterSelect
+                label="CLIENT"
+                value={filters.client}
+                onChange={(v) => setFilters((f) => ({ ...f, client: v }))}
+                className="w-[180px] min-w-[140px]"
+                options={[
+                  { value: 'all', label: 'All clients' },
+                  ...clients.map((c) => ({ value: c, label: c })),
+                ]}
+              />
+            </ListingFiltersRow>
+          }
+        />
+      </ListingPageShell>
 
       <Dialog
         open={cancelTarget !== null}
@@ -250,6 +247,6 @@ export function InterviewRequestManagementView({
           />
         )}
       </Dialog>
-    </div>
+    </>
   );
 }

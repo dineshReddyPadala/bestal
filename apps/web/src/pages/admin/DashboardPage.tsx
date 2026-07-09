@@ -1,275 +1,187 @@
+import { formatDate } from '@bestal/shared-utils';
 import {
-  adminDashboardStats,
-  candidatesByAvailability,
-  candidatesByCommunity,
-  candidatesByStatus,
-  dashboardNotifications,
-  latestAiScreenings,
-  latestBgvUpdates,
-  latestCandidateUploads,
-  latestClientRequests,
-  latestDeployments,
-  latestEvaluations,
-  latestTrialRequests,
-  monthlyDeployments,
-} from '@bestal/mock-data';
-import { formatCurrency } from '@bestal/shared-utils';
-import {
-  Button,
-  ChartCard,
-  DeploymentBarChart,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
   PageHeader,
-  PipelineBarChart,
-  StatusPieChart,
+  StatCard,
+  StatusBadge,
 } from '@bestal/ui';
 import {
-  Award,
   Building2,
+  Calendar,
   ClipboardCheck,
-  DollarSign,
-  Eye,
-  FileUp,
   FlaskConical,
-  Percent,
   Rocket,
-  ShieldCheck,
-  Sparkles,
-  UserPlus,
+  UserCheck,
   Users,
-  FileSpreadsheet,
-  CheckCircle,
-  Bell,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import type { AdminKpi } from '@bestal/mock-data';
-import { ActivityFeed } from '../../components/admin/ActivityFeed';
-import { PremiumStatCard } from '../../components/admin/PremiumStatCard';
-import { useDemoToast } from '../../lib/use-demo-toast';
-
-function formatStatValue(kpi: AdminKpi) {
-  if (kpi.id === 'avg-bestal-score') return String(kpi.value);
-  if (kpi.format === 'currency' && typeof kpi.value === 'number') {
-    return formatCurrency(kpi.value);
-  }
-  if (kpi.format === 'percent') return `${kpi.value}%`;
-  if (typeof kpi.value === 'number') return kpi.value.toLocaleString();
-  return String(kpi.value);
-}
-
-const statConfig: Record<
-  string,
-  { icon: React.ReactNode; accent: 'brand' | 'emerald' | 'amber' | 'violet' | 'rose' | 'sky' }
-> = {
-  'total-candidates': { icon: <Users className="h-5 w-5" />, accent: 'brand' },
-  'client-visible': { icon: <Eye className="h-5 w-5" />, accent: 'sky' },
-  'ai-screened': { icon: <Sparkles className="h-5 w-5" />, accent: 'violet' },
-  'evaluation-pending': { icon: <ClipboardCheck className="h-5 w-5" />, accent: 'amber' },
-  'bgv-pending': { icon: <ShieldCheck className="h-5 w-5" />, accent: 'rose' },
-  'active-clients': { icon: <Building2 className="h-5 w-5" />, accent: 'emerald' },
-  'trial-requests': { icon: <FlaskConical className="h-5 w-5" />, accent: 'amber' },
-  deployments: { icon: <Rocket className="h-5 w-5" />, accent: 'brand' },
-  'monthly-revenue': { icon: <DollarSign className="h-5 w-5" />, accent: 'emerald' },
-  'monthly-margin': { icon: <Percent className="h-5 w-5" />, accent: 'emerald' },
-  'avg-bestal-score': { icon: <Award className="h-5 w-5" />, accent: 'violet' },
-};
-
-const quickActions = [
-  { label: 'Add Candidate', href: '/admin/candidates/new', icon: UserPlus, primary: true },
-  { label: 'Import CSV', action: 'import-csv', icon: FileSpreadsheet },
-  { label: 'Manage Clients', href: '/admin/clients', icon: Building2 },
-  { label: 'Pending Approvals', href: '/admin/candidates', icon: CheckCircle },
-  { label: 'View Deployments', href: '/admin/deployments', icon: Rocket },
-];
+import { useCandidatesList } from '../../hooks/api/useCandidates';
+import { useClientsList } from '../../hooks/api/useClients';
+import { useDeploymentsList } from '../../hooks/api/useDeployments';
+import { useInterviewsList } from '../../hooks/api/useInterviews';
+import { useTrialsList } from '../../hooks/api/useTrials';
+import { useUsersList } from '../../hooks/api/useUsers';
 
 export function DashboardPage() {
-  const { message, show } = useDemoToast();
+  const candidates = useCandidatesList({ limit: 100, sort: '-createdAt' });
+  const clients = useClientsList({ limit: 100 });
+  const deployments = useDeploymentsList({ limit: 100 });
+  const trials = useTrialsList({ limit: 100 });
+  const interviews = useInterviewsList({ limit: 20, sort: '-createdAt' });
+  const users = useUsersList({ limit: 100 });
+
+  const candidateRows = candidates.data?.data ?? [];
+  const clientRows = clients.data?.data ?? [];
+  const deploymentRows = deployments.data?.data ?? [];
+  const trialRows = trials.data?.data ?? [];
+  const interviewRows = interviews.data?.data ?? [];
+
+  const pendingApprovals = candidateRows.filter((c) => c.approvalStatus === 'PENDING').length;
+  const published = candidateRows.filter((c) => c.visibility === 'PUBLISHED').length;
+  const openTrials = trialRows.filter((t) =>
+    ['REQUESTED', 'APPROVED', 'IN_PROGRESS', 'SCHEDULED'].includes(t.status),
+  ).length;
+  const activeDeployments = deploymentRows.filter((d) => d.status === 'ACTIVE').length;
+
+  const isLoading =
+    candidates.isLoading ||
+    clients.isLoading ||
+    deployments.isLoading ||
+    trials.isLoading ||
+    interviews.isLoading;
 
   return (
-    <div className="min-h-full bg-muted/20">
+    <div className="min-h-full bg-muted/10">
       <PageHeader
         title="Admin Dashboard"
-        description="Platform overview — talent pipeline, revenue, and real-time activity"
+        description="Live platform overview from your organization data"
+        actions={
+          <div className="flex flex-wrap gap-2">
+            <Link
+              to="/admin/candidates/new"
+              className="inline-flex h-9 items-center rounded-md bg-brand px-4 text-sm font-medium text-white hover:bg-brand-hover"
+            >
+              Add candidate
+            </Link>
+            <Link
+              to="/admin/users"
+              className="inline-flex h-9 items-center rounded-md border border-border bg-background px-4 text-sm font-medium hover:bg-muted"
+            >
+              Manage users
+            </Link>
+          </div>
+        }
       />
 
-      {message && (
-        <div className="mx-6 mt-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
-          {message}
-        </div>
-      )}
-
       <div className="space-y-8 p-4 sm:p-6">
-        {/* Top statistics */}
-        <section>
-          <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-            Top Statistics
-          </h2>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6">
-            {adminDashboardStats.map((kpi) => {
-              const cfg = statConfig[kpi.id] ?? { icon: null, accent: 'brand' as const };
-              return (
-                <PremiumStatCard
-                  key={kpi.id}
-                  label={kpi.label}
-                  value={formatStatValue(kpi)}
-                  change={kpi.change}
-                  changeLabel={kpi.changeLabel}
-                  icon={cfg.icon}
-                  accent={cfg.accent}
-                />
-              );
-            })}
-          </div>
-        </section>
-
-        {/* Charts */}
-        <section>
-          <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-            Analytics
-          </h2>
-          <div className="grid gap-6 lg:grid-cols-2">
-            <ChartCard title="Candidates by Community" description="Distribution across skill communities">
-              <PipelineBarChart data={candidatesByCommunity} />
-            </ChartCard>
-            <ChartCard title="Candidates by Availability" description="Ready-to-start timeline">
-              <StatusPieChart data={candidatesByAvailability} />
-            </ChartCard>
-            <ChartCard title="Candidates by Status" description="Pipeline health breakdown">
-              <StatusPieChart data={candidatesByStatus} />
-            </ChartCard>
-            <ChartCard title="Monthly Deployments" description="New placements per month">
-              <DeploymentBarChart
-                data={monthlyDeployments.map((d) => ({
-                  label: d.label,
-                  value: d.value2 ?? 0,
-                  value2: d.value,
-                }))}
-              />
-            </ChartCard>
-          </div>
-        </section>
-
-        {/* Recent activities */}
-        <section>
-          <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-            Recent Activities
-          </h2>
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
-            <ActivityFeed
-              title="Latest Candidate Uploads"
-              items={latestCandidateUploads}
-              viewAllHref="/admin/candidates"
+        {isLoading ? (
+          <p className="text-sm text-muted-foreground">Loading live metrics…</p>
+        ) : (
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <StatCard
+              label="Candidates"
+              value={candidateRows.length}
+              icon={<Users className="h-5 w-5" />}
             />
-            <ActivityFeed
-              title="Latest AI Screenings"
-              items={latestAiScreenings}
-              viewAllHref="/admin/candidates"
+            <StatCard
+              label="Pending approvals"
+              value={pendingApprovals}
+              icon={<ClipboardCheck className="h-5 w-5" />}
             />
-            <ActivityFeed
-              title="Latest Evaluations"
-              items={latestEvaluations}
-              viewAllHref="/admin/evaluations"
+            <StatCard
+              label="Published talent"
+              value={published}
+              icon={<UserCheck className="h-5 w-5" />}
             />
-            <ActivityFeed
-              title="Latest BGV Updates"
-              items={latestBgvUpdates}
-              viewAllHref="/admin/background-checks"
+            <StatCard
+              label="Active clients"
+              value={clientRows.filter((c) => c.status === 'ACTIVE').length}
+              icon={<Building2 className="h-5 w-5" />}
             />
-            <ActivityFeed
-              title="Latest Client Requests"
-              items={latestClientRequests}
-              viewAllHref="/admin/clients"
+            <StatCard
+              label="Open trials"
+              value={openTrials}
+              icon={<FlaskConical className="h-5 w-5" />}
             />
-            <ActivityFeed
-              title="Latest Trial Requests"
-              items={latestTrialRequests}
-              viewAllHref="/admin/trials"
+            <StatCard
+              label="Active deployments"
+              value={activeDeployments}
+              icon={<Rocket className="h-5 w-5" />}
             />
-            <ActivityFeed
-              title="Latest Deployments"
-              items={latestDeployments}
-              viewAllHref="/admin/deployments"
+            <StatCard
+              label="Recent interviews"
+              value={interviewRows.length}
+              icon={<Calendar className="h-5 w-5" />}
+            />
+            <StatCard
+              label="Team users"
+              value={users.data?.data.length ?? 0}
+              icon={<Users className="h-5 w-5" />}
             />
           </div>
-        </section>
+        )}
 
-        {/* Quick actions + notifications */}
-        <section className="grid gap-6 lg:grid-cols-3">
-          <div className="lg:col-span-1">
-            <div className="rounded-xl border border-border/80 bg-gradient-to-br from-navy/5 to-brand/5 p-5 shadow-sm">
-              <h2 className="mb-4 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-                <Rocket className="h-4 w-4" />
-                Quick Actions
-              </h2>
-              <div className="grid gap-2">
-                {quickActions.map(({ label, href, icon: Icon, primary }) =>
-                  href ? (
-                    <Button
-                      key={label}
-                      to={href}
-                      variant={primary ? 'primary' : 'outline'}
-                      className="w-full justify-start"
-                      size="sm"
-                    >
-                      <Icon className="mr-2 h-4 w-4" />
-                      {label}
-                    </Button>
-                  ) : (
-                    <Button
-                      key={label}
-                      variant="outline"
-                      className="w-full justify-start"
-                      size="sm"
-                      onClick={() => show(`${label} opened (demo)`)}
-                    >
-                      <Icon className="mr-2 h-4 w-4" />
-                      {label}
-                    </Button>
-                  ),
-                )}
-              </div>
-            </div>
-          </div>
-
-          <div className="lg:col-span-2">
-            <div className="rounded-xl border border-border/80 bg-gradient-to-br from-background to-muted/20 shadow-sm">
-              <div className="flex items-center justify-between border-b border-border/60 px-4 py-3">
-                <h2 className="flex items-center gap-2 text-sm font-semibold text-foreground">
-                  <Bell className="h-4 w-4 text-brand" />
-                  Recent Notifications
-                </h2>
-                <Link to="/admin/settings" className="text-xs font-medium text-brand hover:underline">
-                  Notification settings
+        <div className="grid gap-6 lg:grid-cols-2">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle>Recent candidates</CardTitle>
+              <Link to="/admin/candidates" className="text-sm font-medium text-brand hover:underline">
+                View all
+              </Link>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {candidateRows.slice(0, 6).map((c) => (
+                <Link
+                  key={c.id}
+                  to={`/admin/candidates/${c.id}`}
+                  className="flex items-center justify-between rounded-lg border border-border/70 px-3 py-2 hover:bg-muted/40"
+                >
+                  <div>
+                    <p className="text-sm font-medium">
+                      {c.firstName} {c.lastName}
+                    </p>
+                    <p className="text-xs text-muted-foreground">{c.email}</p>
+                  </div>
+                  <StatusBadge status={c.approvalStatus} />
                 </Link>
-              </div>
-              <ul className="divide-y divide-border/60">
-                {dashboardNotifications.map((n) => (
-                  <li key={n.id} className="flex gap-4 px-4 py-3 transition-colors hover:bg-muted/30">
-                    <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-brand/10 text-brand">
-                      {n.type === 'DOCUMENT' && <FileUp className="h-4 w-4" />}
-                      {n.type === 'TRIAL' && <FlaskConical className="h-4 w-4" />}
-                      {n.type === 'BACKGROUND_CHECK' && <ShieldCheck className="h-4 w-4" />}
-                      {n.type === 'DEPLOYMENT' && <Rocket className="h-4 w-4" />}
-                      {n.type === 'EVALUATION' && <ClipboardCheck className="h-4 w-4" />}
-                      {n.type === 'GENERAL' && <Bell className="h-4 w-4" />}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <p className="text-sm font-medium">{n.title}</p>
-                        <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium uppercase text-muted-foreground">
-                          {n.status}
-                        </span>
-                      </div>
-                      <p className="mt-0.5 text-sm text-muted-foreground">{n.message}</p>
-                      <p className="mt-1 text-xs text-muted-foreground">
-                        {new Date(n.createdAt).toLocaleString()}
-                      </p>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
-        </section>
+              ))}
+              {candidateRows.length === 0 && (
+                <p className="text-sm text-muted-foreground">No candidates yet.</p>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle>Recent interviews</CardTitle>
+              <Link to="/admin/trials" className="text-sm font-medium text-brand hover:underline">
+                View trials
+              </Link>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {interviewRows.slice(0, 6).map((i) => (
+                <div
+                  key={i.id}
+                  className="flex items-center justify-between rounded-lg border border-border/70 px-3 py-2"
+                >
+                  <div>
+                    <p className="text-sm font-medium">{i.candidateName}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {i.clientName} · {i.scheduledAt ? formatDate(i.scheduledAt) : 'Unscheduled'}
+                    </p>
+                  </div>
+                  <StatusBadge status={i.status} />
+                </div>
+              ))}
+              {interviewRows.length === 0 && (
+                <p className="text-sm text-muted-foreground">No interviews yet.</p>
+              )}
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   );

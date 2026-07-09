@@ -19,10 +19,12 @@ export function mapEvaluationToDto(evaluation: EvaluationRecord): EvaluationDto 
     clientId: evaluation.clientId ? bigintToNumber(evaluation.clientId) : null,
     clientName: evaluation.client?.name ?? null,
     evaluatorId: bigintToNumber(evaluation.evaluatorId),
-    evaluatorName: formatPersonName(
-      evaluation.evaluator.firstName,
-      evaluation.evaluator.lastName,
-    ),
+    evaluatorName:
+      evaluation.evaluatorName ??
+      formatPersonName(
+        evaluation.evaluator.firstName,
+        evaluation.evaluator.lastName,
+      ),
     status: evaluation.status,
     recommendation: evaluation.recommendation,
     overallScore: evaluation.overallScore ? Number(evaluation.overallScore) : null,
@@ -32,6 +34,24 @@ export function mapEvaluationToDto(evaluation: EvaluationRecord): EvaluationDto 
     softSkillScore: evaluation.softSkillScore
       ? Number(evaluation.softSkillScore)
       : null,
+    communicationScore: evaluation.communicationScore
+      ? Number(evaluation.communicationScore)
+      : null,
+    problemSolvingScore: evaluation.problemSolvingScore
+      ? Number(evaluation.problemSolvingScore)
+      : null,
+    architectureScore: evaluation.architectureScore
+      ? Number(evaluation.architectureScore)
+      : null,
+    clientReadinessScore: evaluation.clientReadinessScore
+      ? Number(evaluation.clientReadinessScore)
+      : null,
+    evaluatorCompany: evaluation.evaluatorCompany,
+    evaluationType: evaluation.evaluationType,
+    evaluatorComments: evaluation.evaluatorComments,
+    aiEvaluationSummary: evaluation.aiEvaluationSummary,
+    recordingUrl: evaluation.recordingUrl,
+    evaluationFileUrl: evaluation.evaluationFileUrl,
     summary: evaluation.summary,
     strengths: evaluation.strengths,
     weaknesses: evaluation.weaknesses,

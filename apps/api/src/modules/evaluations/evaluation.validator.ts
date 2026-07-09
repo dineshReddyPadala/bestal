@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { paginationMetaSchema } from '../../validators/api-responses.validator.js';
+import { optionalTextField, optionalUrlField } from '../../validators/optional-fields.js';
 
 const evaluationStatusEnum = z.enum(['DRAFT', 'IN_PROGRESS', 'COMPLETED', 'ARCHIVED']);
 
@@ -16,9 +17,21 @@ export const createEvaluationBodySchema = z.object({
   clientId: z.coerce.number().int().positive().optional(),
   evaluatorId: z.coerce.number().int().positive().optional(),
   status: evaluationStatusEnum.optional(),
-  summary: z.string().max(5000).optional(),
-  strengths: z.string().max(5000).optional(),
-  weaknesses: z.string().max(5000).optional(),
+  summary: optionalTextField(),
+  strengths: optionalTextField(),
+  weaknesses: optionalTextField(),
+  evaluatorName: z.string().max(150).optional(),
+  evaluatorCompany: z.string().max(255).optional(),
+  evaluationType: z.string().max(100).optional(),
+  technicalScore: z.coerce.number().min(0).max(100).optional(),
+  communicationScore: z.coerce.number().min(0).max(100).optional(),
+  problemSolvingScore: z.coerce.number().min(0).max(100).optional(),
+  architectureScore: z.coerce.number().min(0).max(100).optional(),
+  clientReadinessScore: z.coerce.number().min(0).max(100).optional(),
+  evaluatorComments: optionalTextField(),
+  aiEvaluationSummary: optionalTextField(),
+  recordingUrl: optionalUrlField,
+  evaluationFileUrl: optionalUrlField,
 });
 
 export const updateEvaluationBodySchema = z.object({
@@ -29,9 +42,20 @@ export const updateEvaluationBodySchema = z.object({
   overallScore: z.coerce.number().min(0).max(100).optional(),
   technicalScore: z.coerce.number().min(0).max(100).optional(),
   softSkillScore: z.coerce.number().min(0).max(100).optional(),
-  summary: z.string().max(5000).optional(),
-  strengths: z.string().max(5000).optional(),
-  weaknesses: z.string().max(5000).optional(),
+  communicationScore: z.coerce.number().min(0).max(100).optional(),
+  problemSolvingScore: z.coerce.number().min(0).max(100).optional(),
+  architectureScore: z.coerce.number().min(0).max(100).optional(),
+  clientReadinessScore: z.coerce.number().min(0).max(100).optional(),
+  summary: optionalTextField(),
+  strengths: optionalTextField(),
+  weaknesses: optionalTextField(),
+  evaluatorName: z.string().max(150).optional(),
+  evaluatorCompany: z.string().max(255).optional(),
+  evaluationType: z.string().max(100).optional(),
+  evaluatorComments: optionalTextField(),
+  aiEvaluationSummary: optionalTextField(),
+  recordingUrl: optionalUrlField,
+  evaluationFileUrl: optionalUrlField,
 });
 
 export const completeEvaluationBodySchema = z.object({

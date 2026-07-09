@@ -1,114 +1,152 @@
-import { interviews, trials, type MockInterview } from '@bestal/mock-data';
-import type { MockTrial } from '@bestal/mock-data';
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { DEMO_CLIENT_ID, DEMO_USER } from '../lib/demo-client';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useCallback } from 'react';
+import { useAuth } from '../contexts/AuthContext';
+import { interviewsApi, trialsApi } from '../lib/api';
 import {
   buildInterviewRequestPayload,
   buildTrialRequestPayload,
   type InterviewRequestFormValues,
   type TrialRequestFormValues,
 } from '../lib/entity-field-metadata';
-
-const INTERVIEW_KEY = `bestal-client-interviews-${DEMO_CLIENT_ID}`;
-const TRIAL_KEY = `bestal-client-trials-${DEMO_CLIENT_ID}`;
-
-function readExtra<T>(key: string): T[] {
-  try {
-    const raw = localStorage.getItem(key);
-    return raw ? (JSON.parse(raw) as T[]) : [];
-  } catch {
-    return [];
-  }
-}
-
-function nextId(existing: { id: number }[]): number {
-  const max = existing.reduce((m, r) => Math.max(m, r.id), 0);
-  return max + 1;
-}
+import { queryKeys } from './api/query-keys';
+import { toInterviewCard } from './api/useInterviews';
+import { toTrialRow } from './api/useTrials';
 
 export function useClientInterviewRequests() {
-  const [extra, setExtra] = useState<MockInterview[]>(() => readExtra(INTERVIEW_KEY));
+  const { user: authUser } = useAuth();
+  const clientId = authUser?.clientId ?? undefined;
 
-  useEffect(() => {
-    localStorage.setItem(INTERVIEW_KEY, JSON.stringify(extra));
-  }, [extra]);
+  const query = useQuery({
+    queryKey: queryKeys.interviews.list({ clientId }),
+    queryFn: () => interviewsApi.list({ clientId, limit: 100 }),
+    enabled: Boolean(clientId),
+  });
 
-  const records = useMemo(() => {
-    const seeded = interviews.filter((i) => i.clientId === DEMO_CLIENT_ID);
-    return [...seeded, ...extra];
-  }, [extra]);
+  const qc = useQueryClient();
+
+  const addMutation = useMutation({
+    mutationFn: async ({
+      candidateId,
+      form,
+    }: {
+      candidateId: number;
+      candidateName: string;
+      form: InterviewRequestFormValues;
+    }) => {
+      if (!clientId) throw new Error('Client account not linked');
+      const payload = buildInterviewRequestPayload(form, candidateId, clientId);
+      return interviewsApi.create({
+        candidateId: payload.candidateId,
+        clientId: payload.clientId,
+        type: payload.type,
+        scheduledAt: payload.scheduledAt ?? undefined,
+        durationMinutes: payload.durationMinutes,
+        timezone: payload.timezone ?? undefined,
+        location: payload.location ?? undefined,
+        notes: payload.notes ?? undefined,
+        shortlistId: payload.shortlistId ?? undefined,
+      });
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.interviews.all });
+    },
+  });
 
   const addRequest = useCallback(
     (candidateId: number, candidateName: string, form: InterviewRequestFormValues) => {
-      const payload = buildInterviewRequestPayload(form, candidateId, DEMO_CLIENT_ID);
-      setExtra((prev) => {
-        const all = [...interviews.filter((i) => i.clientId === DEMO_CLIENT_ID), ...prev];
-        const entry: MockInterview = {
-          id: nextId(all),
-          candidateId,
-          candidateName,
-          clientId: DEMO_CLIENT_ID,
-          clientName: DEMO_USER.company,
-          type: payload.type,
-          status: 'REQUESTED',
-          scheduledAt: payload.scheduledAt,
-          durationMinutes: payload.durationMinutes,
-          interviewer: 'Pending assignment',
-          meetingUrl: null,
-          notes: payload.notes ?? '',
-        };
-        return [...prev, entry];
-      });
+      addMutation.mutate({ candidateId, candidateName, form });
     },
-    [],
+    [addMutation],
   );
 
-  return { interviews: records, addRequest };
+  const interviews = (query.data?.data ?? []).map(toInterviewCard);
+
+  return {
+    interviews,
+    isLoading: query.isLoading,
+    addRequest,
+    isSubmitting: addMutation.isPending,
+  };
 }
 
 export function useClientTrialRequests() {
-  const [extra, setExtra] = useState<MockTrial[]>(() => readExtra(TRIAL_KEY));
+  const { user: authUser } = useAuth();
+  const clientId = authUser?.clientId ?? undefined;
 
-  useEffect(() => {
-    localStorage.setItem(TRIAL_KEY, JSON.stringify(extra));
-  }, [extra]);
+  const query = useQuery({
+    queryKey: queryKeys.trials.list({ clientId }),
+    queryFn: () => trialsApi.list({ clientId, limit: 100 }),
+    enabled: Boolean(clientId),
+  });
 
-  const records = useMemo(() => {
-    const seeded = trials.filter((t) => t.clientId === DEMO_CLIENT_ID);
-    return [...seeded, ...extra];
-  }, [extra]);
+  const qc = useQueryClient();
+
+  const addMutation = useMutation({
+    mutationFn: async ({
+      candidateId,
+      form,
+    }: {
+      candidateId: number;
+      candidateName: string;
+      form: TrialRequestFormValues;
+    }) => {
+      if (!clientId) throw new Error('Client account not linked');
+      const payload = buildTrialRequestPayload(form, candidateId, clientId);
+      return trialsApi.create({
+        candidateId: payload.candidateId,
+        clientId: payload.clientId,
+        roleTitle: payload.roleTitle,
+        startDate: payload.startDate,
+        endDate: payload.endDate,
+        durationDays: payload.durationDays ?? undefined,
+        trialType: form.trialType || undefined,
+        maxTrialHours: form.maxTrialHours ?? undefined,
+        taskDescription: form.taskDescription || undefined,
+        successCriteria: form.successCriteria || undefined,
+        feedback: payload.feedback ?? undefined,
+      });
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.trials.all });
+    },
+  });
 
   const addRequest = useCallback(
     (candidateId: number, candidateName: string, form: TrialRequestFormValues) => {
-      const payload = buildTrialRequestPayload(form, candidateId, DEMO_CLIENT_ID);
-      setExtra((prev) => {
-        const all = [...trials.filter((t) => t.clientId === DEMO_CLIENT_ID), ...prev];
-        const entry: MockTrial = {
-          id: nextId(all),
-          candidateId,
-          candidateName,
-          clientId: DEMO_CLIENT_ID,
-          clientName: DEMO_USER.company,
-          title: payload.roleTitle,
-          status: 'REQUESTED',
-          startDate: payload.startDate,
-          endDate: payload.endDate,
-          rate: 0,
-          payRate: 0,
-          billRate: 0,
-          currency: 'USD',
-          hoursPerWeek: 0,
-          pilotType: '20_HOUR',
-          feedback: payload.feedback ?? '',
-          recruiter: '',
-        };
-        return [...prev, entry];
-      });
+      addMutation.mutate({ candidateId, candidateName, form });
     },
-    [],
+    [addMutation],
   );
 
-  return { trials: records, addRequest };
+  const trials = (query.data?.data ?? []).map((item) => {
+    const row = toTrialRow(item);
+    return {
+      id: row.id,
+      candidateId: row.candidateId,
+      candidateName: row.candidateName,
+      clientId: row.clientId,
+      clientName: row.clientName,
+      title: row.roleTitle,
+      status: row.status,
+      startDate: row.startDate ?? '',
+      endDate: row.endDate ?? '',
+      rate: 0,
+      payRate: 0,
+      billRate: 0,
+      currency: 'USD',
+      hoursPerWeek: 0,
+      pilotType: '20_HOUR' as const,
+      feedback: row.feedback ?? '',
+      recruiter: '',
+    };
+  });
+
+  return {
+    trials,
+    isLoading: query.isLoading,
+    addRequest,
+    isSubmitting: addMutation.isPending,
+  };
 }
 
 export function trialDurationDays(startDate: string, endDate: string): number | null {

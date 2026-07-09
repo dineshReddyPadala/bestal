@@ -4,8 +4,14 @@ import { ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useState } from 'react';
 import { CandidateWizard } from '../../components/forms/CandidateWizard';
-import type { CandidateWizardValues } from '../../components/forms/candidate-wizard-schema';
+import type {
+  CandidateWizardUploads,
+  CandidateWizardValues,
+} from '../../components/forms/candidate-wizard-schema';
+import { mapWizardToApiCreateBody } from '../../components/forms/candidate-wizard-schema';
 import { useDemoToast } from '../../lib/use-demo-toast';
+import { useCandidateMutations } from '../../hooks/api/useCandidates';
+import { uploadCandidateFile } from '../../lib/api/candidates';
 
 function usePortalBasePath() {
   const { pathname } = useLocation();
@@ -17,12 +23,37 @@ export function AddCandidatePage() {
   const navigate = useNavigate();
   const basePath = usePortalBasePath();
   const { message, show } = useDemoToast();
-  const [submitted, setSubmitted] = useState(false);
+  const { create } = useCandidateMutations();
+  const [submittedId, setSubmittedId] = useState<number | null>(null);
 
-  function handleSubmit(_values: CandidateWizardValues) {
-    setSubmitted(true);
-    show('Candidate created successfully (demo)');
-    setTimeout(() => navigate(`${basePath}/candidates/6`), 1200);
+  async function handleSubmit(values: CandidateWizardValues, uploads: CandidateWizardUploads) {
+    try {
+      const created = await create.mutateAsync(mapWizardToApiCreateBody(values));
+
+      const uploadJobs: Promise<unknown>[] = [];
+      if (uploads.profileImage) {
+        uploadJobs.push(uploadCandidateFile(created.id, 'profile-image', uploads.profileImage));
+      }
+      if (uploads.resume) {
+        uploadJobs.push(uploadCandidateFile(created.id, 'resume', uploads.resume));
+      }
+      if (uploads.introVideo) {
+        uploadJobs.push(uploadCandidateFile(created.id, 'intro-video', uploads.introVideo));
+      }
+      if (uploadJobs.length > 0) {
+        await Promise.all(uploadJobs);
+      }
+
+      setSubmittedId(created.id);
+      show(
+        uploadJobs.length > 0
+          ? 'Candidate created and files uploaded to storage'
+          : 'Candidate created successfully',
+      );
+      setTimeout(() => navigate(`${basePath}/candidates/${created.id}`), 1200);
+    } catch (err) {
+      show(err instanceof Error ? err.message : 'Failed to create candidate');
+    }
   }
 
   return (
@@ -45,7 +76,7 @@ export function AddCandidatePage() {
       )}
 
       <div className="p-4 sm:p-6">
-        {submitted ? (
+        {submittedId !== null ? (
           <Card className="mx-auto max-w-2xl">
             <CardContent className="py-12 text-center">
               <p className="text-lg font-medium text-emerald-600">Candidate created successfully</p>

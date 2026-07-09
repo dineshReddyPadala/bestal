@@ -3,8 +3,8 @@ import type { MockOrganization } from './types.js';
 export const organizations = [
   {
     id: 1,
-    name: 'BesTal Global',
-    slug: 'bestal-global',
+    name: 'Amnet Digital',
+    slug: 'amnet-digital',
     isActive: true,
     memberCount: 48,
     clientCount: 7,
@@ -13,8 +13,8 @@ export const organizations = [
   },
   {
     id: 2,
-    name: 'BesTal EMEA',
-    slug: 'bestal-emea',
+    name: 'Amnet Digital EMEA',
+    slug: 'amnet-digital-emea',
     isActive: true,
     memberCount: 12,
     clientCount: 3,
@@ -23,8 +23,8 @@ export const organizations = [
   },
   {
     id: 3,
-    name: 'BesTal APAC',
-    slug: 'bestal-apac',
+    name: 'Amnet Digital APAC',
+    slug: 'amnet-digital-apac',
     isActive: true,
     memberCount: 8,
     clientCount: 2,

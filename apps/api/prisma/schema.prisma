@@ -263,6 +263,7 @@ model User {
   documentsUploaded        Document[]          @relation("DocumentUploader")
   candidatesApproved       Candidate[]         @relation("CandidateApprovedBy")
   candidatesRejected       Candidate[]         @relation("CandidateRejectedBy")
+  candidatesCreated        Candidate[]         @relation("CandidateCreatedBy")
   notifications            Notification[]
   auditLogs                AuditLog[]          @relation("AuditLogActor")
 
@@ -361,9 +362,13 @@ model Client {
   slug             String       @db.VarChar(100)
   status           ClientStatus @default(PROSPECT)
   industry         String?      @db.VarChar(100)
+  companySize      String?      @map("company_size") @db.VarChar(50)
   website          String?      @db.VarChar(255)
+  headquarters     String?      @db.VarChar(255)
+  contactName      String?      @map("primary_contact_name") @db.VarChar(150)
   contactEmail     String?      @map("contact_email") @db.VarChar(255)
   contactPhone     String?      @map("contact_phone") @db.VarChar(30)
+  paymentTerms     String?      @map("payment_terms") @db.VarChar(100)
   addressLine1     String?      @map("address_line1") @db.VarChar(255)
   addressLine2     String?      @map("address_line2") @db.VarChar(255)
   city             String?      @db.VarChar(100)
@@ -419,11 +424,14 @@ model Candidate {
   id                      BigInt                  @id @default(autoincrement())
   organizationId          BigInt                  @map("organization_id")
   primarySkillCommunityId BigInt?                 @map("primary_skill_community_id")
+  createdById             BigInt?                 @map("created_by_id")
+  oorwinCandidateId       String?                 @unique @map("oorwin_candidate_id") @db.VarChar(100)
   resumeDocumentId        BigInt?                 @unique @map("resume_document_id")
   profileImageDocumentId  BigInt?                 @unique @map("profile_image_document_id")
   introVideoDocumentId    BigInt?                 @unique @map("intro_video_document_id")
   firstName               String                  @map("first_name") @db.VarChar(100)
   lastName                String                  @map("last_name") @db.VarChar(100)
+  displayName             String?                 @map("display_name") @db.VarChar(200)
   email                   String                  @db.VarChar(255)
   phone                   String?                 @db.VarChar(30)
   status                  CandidateStatus         @default(NEW)
@@ -431,13 +439,39 @@ model Candidate {
   approvalStatus          CandidateApprovalStatus @default(PENDING) @map("approval_status")
   source                  CandidateSource         @default(DIRECT)
   headline                String?                 @db.VarChar(255)
+  primaryRole             String?                 @map("primary_role") @db.VarChar(150)
   summary                 String?                 @db.Text
   location                String?                 @db.VarChar(255)
   yearsExperience         Int?                    @map("years_experience")
+  currentCompany          String?                 @map("current_company") @db.VarChar(255)
+  education               String?                 @db.Text
   availableFrom           DateTime?               @map("available_from") @db.Date
+  availabilityStatus      String?                 @map("availability_status") @db.VarChar(50)
+  timezoneOverlap         String?                 @map("timezone_overlap") @db.VarChar(100)
+  preferredShift          String?                 @map("preferred_shift") @db.VarChar(50)
+  minHoursPerWeek         Int?                    @map("min_hours_per_week")
+  maxHoursPerWeek         Int?                    @map("max_hours_per_week")
   expectedRate            Decimal?                @map("expected_rate") @db.Decimal(12, 2)
+  clientBillRate          Decimal?                @map("client_bill_rate") @db.Decimal(12, 2)
+  candidatePayRate        Decimal?                @map("candidate_pay_rate") @db.Decimal(12, 2)
+  grossMargin             Decimal?                @map("gross_margin") @db.Decimal(12, 2)
   currency                String?                 @default("USD") @db.VarChar(3)
   linkedinUrl             String?                 @map("linkedin_url") @db.VarChar(500)
+  githubUrl               String?                 @map("github_url") @db.VarChar(500)
+  naukriUrl               String?                 @map("naukri_url") @db.VarChar(500)
+  aiSummary               String?                 @map("ai_summary") @db.Text
+  clientProfileSummary    String?                 @map("client_profile_summary") @db.Text
+  strengths               String?                 @db.Text
+  weaknesses              String?                 @db.Text
+  riskFlags               String?                 @map("risk_flags") @db.Text
+  bestalScore             Int?                    @map("bestal_score")
+  technicalScore          Int?                    @map("technical_score")
+  communicationScore      Int?                    @map("communication_score")
+  reliabilityScore        Int?                    @map("reliability_score")
+  evaluationStatus        String?                 @map("evaluation_status") @db.VarChar(50)
+  bgvStatus               String?                 @map("bgv_status") @db.VarChar(50)
+  profileStatus           String?                 @map("profile_status") @db.VarChar(50)
+  deploymentStatus        String?                 @map("deployment_status") @db.VarChar(50)
   publishedAt             DateTime?               @map("published_at")
   hiddenAt                DateTime?               @map("hidden_at")
   approvedAt              DateTime?               @map("approved_at")
@@ -451,6 +485,7 @@ model Candidate {
 
   organization          Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   primarySkillCommunity SkillCommunity?    @relation("CandidatePrimaryCommunity", fields: [primarySkillCommunityId], references: [id], onDelete: SetNull)
+  createdBy             User?              @relation("CandidateCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
   resumeDocument        Document?          @relation("CandidateResume", fields: [resumeDocumentId], references: [id], onDelete: SetNull)
   profileImageDocument  Document?          @relation("CandidateProfileImage", fields: [profileImageDocumentId], references: [id], onDelete: SetNull)
   introVideoDocument    Document?          @relation("CandidateIntroVideo", fields: [introVideoDocumentId], references: [id], onDelete: SetNull)
@@ -469,6 +504,7 @@ model Candidate {
   @@index([organizationId, visibility, approvalStatus, deletedAt])
   @@index([organizationId, lastName, firstName])
   @@index([primarySkillCommunityId])
+  @@index([createdById])
   @@index([organizationId, source])
   @@map("candidates")
 }
@@ -477,6 +513,8 @@ model CandidateSkill {
   id               BigInt           @id @default(autoincrement())
   candidateId      BigInt           @map("candidate_id")
   skillCommunityId BigInt           @map("skill_community_id")
+  skillName        String?          @map("skill_name") @db.VarChar(150)
+  skillCategory    String?          @map("skill_category") @db.VarChar(100)
   proficiencyLevel ProficiencyLevel @default(INTERMEDIATE) @map("proficiency_level")
   yearsExperience  Int?             @map("years_experience")
   isPrimary        Boolean          @default(false) @map("is_primary")
@@ -503,15 +541,26 @@ model Evaluation {
   organizationId BigInt                    @map("organization_id")
   candidateId    BigInt                    @map("candidate_id")
   clientId       BigInt?                   @map("client_id")
-  evaluatorId    BigInt                    @map("evaluator_id")
-  status         EvaluationStatus          @default(DRAFT)
-  recommendation EvaluationRecommendation?
-  overallScore   Decimal?                  @map("overall_score") @db.Decimal(5, 2)
-  technicalScore Decimal?                  @map("technical_score") @db.Decimal(5, 2)
-  softSkillScore Decimal?                  @map("soft_skill_score") @db.Decimal(5, 2)
-  summary        String?                   @db.Text
-  strengths      String?                   @db.Text
-  weaknesses     String?                   @db.Text
+  evaluatorId            BigInt                    @map("evaluator_id")
+  evaluatorName          String?                   @map("evaluator_name") @db.VarChar(150)
+  evaluatorCompany       String?                   @map("evaluator_company") @db.VarChar(255)
+  evaluationType         String?                   @map("evaluation_type") @db.VarChar(100)
+  status                 EvaluationStatus          @default(DRAFT)
+  recommendation         EvaluationRecommendation?
+  overallScore           Decimal?                  @map("overall_score") @db.Decimal(5, 2)
+  technicalScore         Decimal?                  @map("technical_score") @db.Decimal(5, 2)
+  communicationScore     Decimal?                  @map("communication_score") @db.Decimal(5, 2)
+  problemSolvingScore    Decimal?                  @map("problem_solving_score") @db.Decimal(5, 2)
+  architectureScore      Decimal?                  @map("architecture_score") @db.Decimal(5, 2)
+  clientReadinessScore   Decimal?                  @map("client_readiness_score") @db.Decimal(5, 2)
+  softSkillScore         Decimal?                  @map("soft_skill_score") @db.Decimal(5, 2)
+  summary                String?                   @db.Text
+  evaluatorComments      String?                   @map("evaluator_comments") @db.Text
+  aiEvaluationSummary    String?                   @map("ai_evaluation_summary") @db.Text
+  recordingUrl           String?                   @map("recording_url") @db.VarChar(500)
+  evaluationFileUrl      String?                   @map("evaluation_file_url") @db.VarChar(500)
+  strengths              String?                   @db.Text
+  weaknesses             String?                   @db.Text
   evaluatedAt    DateTime?                 @map("evaluated_at")
   createdAt      DateTime                  @default(now()) @map("created_at")
   updatedAt      DateTime                  @updatedAt @map("updated_at")
@@ -597,6 +646,7 @@ model ShortlistCandidate {
   candidateId  BigInt    @map("candidate_id")
   addedById    BigInt    @map("added_by_id")
   rank         Int       @default(0)
+  status       String?   @db.VarChar(50)
   notes        String?   @db.Text
   clientNotes  String?   @map("client_notes") @db.Text
   isApproved   Boolean?  @map("is_approved")
@@ -666,13 +716,19 @@ model TrialRequest {
   candidateId    BigInt             @map("candidate_id")
   clientId       BigInt             @map("client_id")
   deploymentId   BigInt?            @map("deployment_id")
-  requestedById  BigInt             @map("requested_by_id")
-  status         TrialRequestStatus @default(REQUESTED)
-  roleTitle      String?            @map("role_title") @db.VarChar(255)
+  requestedById    BigInt             @map("requested_by_id")
+  status           TrialRequestStatus @default(REQUESTED)
+  trialType        String?            @map("trial_type") @db.VarChar(100)
+  maxTrialHours    Int?               @default(20) @map("max_trial_hours")
+  taskDescription  String?            @map("task_description") @db.Text
+  successCriteria  String?            @map("success_criteria") @db.Text
+  roleTitle        String?            @map("role_title") @db.VarChar(255)
   startDate      DateTime?          @map("start_date") @db.Date
   endDate        DateTime?          @map("end_date") @db.Date
   durationDays   Int?               @map("duration_days")
   feedback       String?            @db.Text
+  clientRating   Int?               @map("client_rating")
+  convertedToPaid Boolean           @default(false) @map("converted_to_paid")
   outcome        String?            @db.VarChar(500)
   approvedAt     DateTime?          @map("approved_at")
   rejectedAt     DateTime?          @map("rejected_at")
@@ -709,12 +765,18 @@ model Deployment {
   status         DeploymentStatus @default(PENDING)
   placementType  PlacementType    @default(CONTRACT) @map("placement_type")
   roleTitle      String           @map("role_title") @db.VarChar(255)
-  startDate      DateTime?        @map("start_date") @db.Date
-  endDate        DateTime?        @map("end_date") @db.Date
-  billingRate    Decimal?         @map("billing_rate") @db.Decimal(12, 2)
-  currency       String?          @default("USD") @db.VarChar(3)
-  workLocation   String?          @map("work_location") @db.VarChar(255)
-  notes          String?          @db.Text
+  startDate             DateTime?        @map("start_date") @db.Date
+  endDate               DateTime?        @map("end_date") @db.Date
+  billingRate           Decimal?         @map("billing_rate") @db.Decimal(12, 2)
+  candidatePayRate      Decimal?         @map("candidate_pay_rate") @db.Decimal(12, 2)
+  grossMarginPerHour    Decimal?         @map("gross_margin_per_hour") @db.Decimal(12, 2)
+  expectedHoursPerWeek  Int?             @map("expected_hours_per_week")
+  currency              String?          @default("USD") @db.VarChar(3)
+  workLocation          String?          @map("work_location") @db.VarChar(255)
+  timezone              String?          @db.VarChar(50)
+  reportingManagerName  String?          @map("reporting_manager_name") @db.VarChar(150)
+  reportingManagerEmail String?          @map("reporting_manager_email") @db.VarChar(255)
+  notes                 String?          @db.Text
   terminatedAt   DateTime?        @map("terminated_at")
   terminateReason String?         @map("terminate_reason") @db.VarChar(500)
   createdAt      DateTime         @default(now()) @map("created_at")
@@ -747,6 +809,7 @@ model Document {
   entityType     DocumentEntityType @map("entity_type")
   entityId       BigInt             @map("entity_id")
   kind           DocumentKind       @default(GENERAL)
+  fileUrl        String?            @map("file_url") @db.VarChar(1000)
   fileName       String             @map("file_name") @db.VarChar(255)
   originalName   String             @map("original_name") @db.VarChar(255)
   s3Key          String             @map("s3_key") @db.VarChar(500)

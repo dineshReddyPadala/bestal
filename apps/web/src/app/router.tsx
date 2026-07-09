@@ -60,6 +60,43 @@ import { LoginPage as SalesLoginPage } from '../pages/sales/LoginPage';
 import { MarginReportPage as SalesMarginReportPage } from '../pages/sales/MarginReportPage';
 import { TrialsPage as SalesTrialsPage } from '../pages/sales/TrialsPage';
 import { InterviewRequestsPage as SalesInterviewRequestsPage } from '../pages/sales/InterviewRequestsPage';
+import { ProtectedRoute } from '../components/auth/ProtectedRoute';
+import { PortalAuthShell } from '../components/auth/PortalAuthShell';
+import { PORTAL_AUTH_CONFIG } from '../lib/auth-portal-config';
+import { PortalForgotPasswordPage } from '../pages/shared/PortalForgotPasswordPage';
+import { PortalResetPasswordPage } from '../pages/shared/PortalResetPasswordPage';
+
+function ProtectedAdminShell() {
+  return (
+    <ProtectedRoute portal="ADMIN">
+      <AdminShell />
+    </ProtectedRoute>
+  );
+}
+
+function ProtectedRecruiterShell() {
+  return (
+    <ProtectedRoute portal="RECRUITER">
+      <RecruiterShell />
+    </ProtectedRoute>
+  );
+}
+
+function ProtectedClientShell() {
+  return (
+    <ProtectedRoute portal="CLIENT">
+      <ClientShell />
+    </ProtectedRoute>
+  );
+}
+
+function ProtectedSalesShell() {
+  return (
+    <ProtectedRoute portal="SALES">
+      <SalesShell />
+    </ProtectedRoute>
+  );
+}
 
 const marketingNav = publicNav.map(({ label, href }) => ({ label, href }));
 
@@ -88,30 +125,15 @@ function AdminAuthShell() {
 }
 
 function RecruiterAuthShell() {
-  return (
-    <AuthLayout title="Recruiter Portal" subtitle="Sign in to manage your talent pipeline">
-      <Outlet />
-    </AuthLayout>
-  );
+  return <PortalAuthShell config={PORTAL_AUTH_CONFIG.RECRUITER} />;
 }
 
 function ClientAuthShell() {
-  return (
-    <AuthLayout
-      title="Client Portal"
-      subtitle="Sign in to review talent and manage your hiring pipeline"
-    >
-      <Outlet />
-    </AuthLayout>
-  );
+  return <PortalAuthShell config={PORTAL_AUTH_CONFIG.CLIENT} />;
 }
 
 function SalesAuthShell() {
-  return (
-    <AuthLayout title="Sales Portal" subtitle="Sign in to manage client accounts and revenue">
-      <Outlet />
-    </AuthLayout>
-  );
+  return <PortalAuthShell config={PORTAL_AUTH_CONFIG.SALES} />;
 }
 
 const router = createBrowserRouter([
@@ -141,7 +163,7 @@ const router = createBrowserRouter([
         children: [{ path: 'login', element: <AdminLoginPage /> }],
       },
       {
-        element: <AdminShell />,
+        element: <ProtectedAdminShell />,
         children: [
           { index: true, element: <AdminDashboardPage /> },
           { path: 'candidates', element: <AdminCandidatesPage /> },
@@ -170,10 +192,14 @@ const router = createBrowserRouter([
     children: [
       {
         element: <RecruiterAuthShell />,
-        children: [{ path: 'login', element: <RecruiterLoginPage /> }],
+        children: [
+          { path: 'login', element: <RecruiterLoginPage /> },
+          { path: 'forgot-password', element: <PortalForgotPasswordPage portal="RECRUITER" /> },
+          { path: 'reset-password', element: <PortalResetPasswordPage portal="RECRUITER" /> },
+        ],
       },
       {
-        element: <RecruiterShell />,
+        element: <ProtectedRecruiterShell />,
         children: [
           { index: true, element: <RecruiterDashboardPage /> },
           { path: 'candidates', element: <RecruiterCandidatesPage /> },
@@ -195,10 +221,14 @@ const router = createBrowserRouter([
     children: [
       {
         element: <ClientAuthShell />,
-        children: [{ path: 'login', element: <ClientLoginPage /> }],
+        children: [
+          { path: 'login', element: <ClientLoginPage /> },
+          { path: 'forgot-password', element: <PortalForgotPasswordPage portal="CLIENT" /> },
+          { path: 'reset-password', element: <PortalResetPasswordPage portal="CLIENT" /> },
+        ],
       },
       {
-        element: <ClientShell />,
+        element: <ProtectedClientShell />,
         children: [
           { index: true, element: <ClientDashboardPage /> },
           { path: 'search', element: <CandidateSearchPage /> },
@@ -215,10 +245,14 @@ const router = createBrowserRouter([
     children: [
       {
         element: <SalesAuthShell />,
-        children: [{ path: 'login', element: <SalesLoginPage /> }],
+        children: [
+          { path: 'login', element: <SalesLoginPage /> },
+          { path: 'forgot-password', element: <PortalForgotPasswordPage portal="SALES" /> },
+          { path: 'reset-password', element: <PortalResetPasswordPage portal="SALES" /> },
+        ],
       },
       {
-        element: <SalesShell />,
+        element: <ProtectedSalesShell />,
         children: [
           { index: true, element: <SalesDashboardPage /> },
           { path: 'clients', element: <SalesClientsPage /> },

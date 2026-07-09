@@ -38,6 +38,18 @@ export class EvaluationRepository extends BaseRepository {
         summary: data.summary,
         strengths: data.strengths,
         weaknesses: data.weaknesses,
+        evaluatorName: data.evaluatorName,
+        evaluatorCompany: data.evaluatorCompany,
+        evaluationType: data.evaluationType,
+        technicalScore: data.technicalScore,
+        communicationScore: data.communicationScore,
+        problemSolvingScore: data.problemSolvingScore,
+        architectureScore: data.architectureScore,
+        clientReadinessScore: data.clientReadinessScore,
+        evaluatorComments: data.evaluatorComments,
+        aiEvaluationSummary: data.aiEvaluationSummary,
+        recordingUrl: data.recordingUrl,
+        evaluationFileUrl: data.evaluationFileUrl,
       },
       include: evaluationInclude,
     });
@@ -82,9 +94,36 @@ export class EvaluationRepository extends BaseRepository {
         ...(data.softSkillScore !== undefined && {
           softSkillScore: data.softSkillScore,
         }),
+        ...(data.communicationScore !== undefined && {
+          communicationScore: data.communicationScore,
+        }),
+        ...(data.problemSolvingScore !== undefined && {
+          problemSolvingScore: data.problemSolvingScore,
+        }),
+        ...(data.architectureScore !== undefined && {
+          architectureScore: data.architectureScore,
+        }),
+        ...(data.clientReadinessScore !== undefined && {
+          clientReadinessScore: data.clientReadinessScore,
+        }),
         ...(data.summary !== undefined && { summary: data.summary }),
         ...(data.strengths !== undefined && { strengths: data.strengths }),
         ...(data.weaknesses !== undefined && { weaknesses: data.weaknesses }),
+        ...(data.evaluatorName !== undefined && { evaluatorName: data.evaluatorName }),
+        ...(data.evaluatorCompany !== undefined && {
+          evaluatorCompany: data.evaluatorCompany,
+        }),
+        ...(data.evaluationType !== undefined && { evaluationType: data.evaluationType }),
+        ...(data.evaluatorComments !== undefined && {
+          evaluatorComments: data.evaluatorComments,
+        }),
+        ...(data.aiEvaluationSummary !== undefined && {
+          aiEvaluationSummary: data.aiEvaluationSummary,
+        }),
+        ...(data.recordingUrl !== undefined && { recordingUrl: data.recordingUrl }),
+        ...(data.evaluationFileUrl !== undefined && {
+          evaluationFileUrl: data.evaluationFileUrl,
+        }),
       },
       include: evaluationInclude,
     });

@@ -26,6 +26,10 @@ export type ClientFormValues = {
   email: string;
   phone: string;
   accountManager: string;
+  companySize?: string;
+  headquarters?: string;
+  website?: string;
+  paymentTerms?: string;
   logoFileName?: string;
   logoPreviewUrl?: string;
 };
@@ -131,6 +135,12 @@ export type DeploymentFormValues = {
   startDate: string;
   endDate?: string;
   billingRate: number;
+  candidatePayRate?: number;
+  grossMarginPerHour?: number;
+  expectedHoursPerWeek?: number;
+  timezone?: string;
+  reportingManagerName?: string;
+  reportingManagerEmail?: string;
   currency: string;
   workLocation?: string;
   notes?: string;
@@ -191,7 +201,7 @@ export type UserInviteFormValues = {
   firstName: string;
   lastName: string;
   phone?: string;
-  role: 'ADMIN' | 'RECRUITER' | 'SALES' | 'CLIENT';
+  role: 'ADMIN' | 'RECRUITER' | 'SALES';
 };
 
 export type UserPayload = UserInviteFormValues & {
@@ -462,7 +472,7 @@ export function buildDocumentPayload(
     entityId,
     originalName: form.fileName,
     s3Key: `uploads/${entityType}/${entityId}/${form.fileName}`,
-    s3Bucket: 'bestal-demo',
+    s3Bucket: 'amnet-digital',
     mimeType: 'application/octet-stream',
     fileSize: 0,
     status: 'UPLOADED',
@@ -568,6 +578,10 @@ export type TrialRequestFormValues = {
   roleTitle: string;
   startDate: string;
   endDate: string;
+  trialType?: string;
+  maxTrialHours?: number;
+  taskDescription?: string;
+  successCriteria?: string;
   feedback?: string;
 };
 

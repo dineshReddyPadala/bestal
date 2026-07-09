@@ -11,6 +11,10 @@ import type {
   CreateCandidateInput,
   UpdateCandidateInput,
 } from './candidate.types.js';
+import {
+  buildCandidateCreateData,
+  buildCandidateScalarData,
+} from './candidate-field-mapper.js';
 import { parseSortParam } from './candidate.mapper.js';
 
 const candidateInclude = {
@@ -40,26 +44,7 @@ export class CandidateRepository extends BaseRepository {
     data: CreateCandidateInput,
   ): Promise<CandidateRecord> {
     return this.prisma.candidate.create({
-      data: {
-        organizationId: BigInt(organizationId),
-        firstName: data.firstName,
-        lastName: data.lastName,
-        email: data.email.toLowerCase(),
-        phone: data.phone,
-        status: data.status,
-        source: data.source,
-        headline: data.headline,
-        summary: data.summary,
-        location: data.location,
-        yearsExperience: data.yearsExperience,
-        availableFrom: data.availableFrom ? new Date(data.availableFrom) : undefined,
-        expectedRate: data.expectedRate,
-        currency: data.currency,
-        linkedinUrl: data.linkedinUrl,
-        primarySkillCommunityId: data.primarySkillCommunityId
-          ? BigInt(data.primarySkillCommunityId)
-          : undefined,
-      },
+      data: buildCandidateCreateData(organizationId, data),
       include: candidateInclude,
     });
   }
@@ -95,31 +80,7 @@ export class CandidateRepository extends BaseRepository {
         id: BigInt(id),
         organizationId: BigInt(organizationId),
       },
-      data: {
-        ...(data.firstName !== undefined && { firstName: data.firstName }),
-        ...(data.lastName !== undefined && { lastName: data.lastName }),
-        ...(data.email !== undefined && { email: data.email.toLowerCase() }),
-        ...(data.phone !== undefined && { phone: data.phone }),
-        ...(data.status !== undefined && { status: data.status }),
-        ...(data.source !== undefined && { source: data.source }),
-        ...(data.headline !== undefined && { headline: data.headline }),
-        ...(data.summary !== undefined && { summary: data.summary }),
-        ...(data.location !== undefined && { location: data.location }),
-        ...(data.yearsExperience !== undefined && {
-          yearsExperience: data.yearsExperience,
-        }),
-        ...(data.availableFrom !== undefined && {
-          availableFrom: data.availableFrom ? new Date(data.availableFrom) : null,
-        }),
-        ...(data.expectedRate !== undefined && { expectedRate: data.expectedRate }),
-        ...(data.currency !== undefined && { currency: data.currency }),
-        ...(data.linkedinUrl !== undefined && { linkedinUrl: data.linkedinUrl }),
-        ...(data.primarySkillCommunityId !== undefined && {
-          primarySkillCommunityId: data.primarySkillCommunityId
-            ? BigInt(data.primarySkillCommunityId)
-            : null,
-        }),
-      },
+      data: buildCandidateScalarData(data) as Prisma.CandidateUncheckedUpdateInput,
       include: candidateInclude,
     });
   }

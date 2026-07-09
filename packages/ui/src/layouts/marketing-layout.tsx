@@ -1,4 +1,3 @@
-import { cn } from '@bestal/shared-utils';
 import { type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 
@@ -33,10 +32,7 @@ export function MarketingLayout({
               <Link
                 key={item.href}
                 to={item.href}
-                className={cn(
-                  'text-sm font-medium text-white/80 transition-colors hover:text-white',
-                  item.label === 'Sign In' && 'text-white/60',
-                )}
+                className="text-sm font-medium text-white/80 transition-colors hover:text-white"
               >
                 {item.label}
               </Link>
