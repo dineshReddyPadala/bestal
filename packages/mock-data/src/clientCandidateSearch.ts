@@ -84,7 +84,7 @@ export function getClientSearchRecords(): readonly ClientSearchRecord[] {
   return candidateListingRecords
     .filter((r) => {
       const c = candidates.find((x) => x.id === r.id);
-      return c?.visibility === 'PUBLISHED' && c?.approvalStatus === 'APPROVED';
+      return c?.visibility === 'CLIENT_VISIBLE' && c?.approvalStatus === 'APPROVED';
     })
     .map(buildSearchRecord);
 }

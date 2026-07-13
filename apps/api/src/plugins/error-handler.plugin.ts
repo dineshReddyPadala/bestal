@@ -1,8 +1,9 @@
 import type { FastifyError, FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import fp from 'fastify-plugin';
+import { Prisma } from '@prisma/client';
 import { ZodError } from 'zod';
 import { ERROR_CODES, HTTP_STATUS } from '../constants/index.js';
-import { AppError } from '../utils/index.js';
+import { AppError, ConflictError } from '../utils/index.js';
 import type { ProblemDetail } from '../types/index.js';
 
 function formatZodError(error: ZodError): ProblemDetail {
@@ -31,9 +32,36 @@ function formatAppError(error: AppError, instance: string): ProblemDetail {
   };
 }
 
+function mapPrismaError(
+  error: Prisma.PrismaClientKnownRequestError,
+  instance: string,
+): ProblemDetail | null {
+  if (error.code !== 'P2002') {
+    return null;
+  }
+
+  const target = error.meta?.target;
+  const fields = Array.isArray(target) ? target.map(String) : [];
+
+  if (fields.includes('candidate_id') && fields.includes('skill_community_id')) {
+    const conflict = new ConflictError(
+      'Each skill community can only appear once per candidate. Remove duplicate skill communities or merge skills into a single entry.',
+    );
+    return formatAppError(conflict, instance);
+  }
+
+  if (fields.includes('email')) {
+    const conflict = new ConflictError('A candidate with this email already exists');
+    return formatAppError(conflict, instance);
+  }
+
+  const conflict = new ConflictError('A record with these values already exists');
+  return formatAppError(conflict, instance);
+}
+
 async function errorHandlerPlugin(fastify: FastifyInstance): Promise<void> {
   fastify.setErrorHandler(
-    (error: FastifyError | AppError | ZodError, request: FastifyRequest, reply: FastifyReply) => {
+    (error: FastifyError | AppError | ZodError | Prisma.PrismaClientKnownRequestError, request: FastifyRequest, reply: FastifyReply) => {
       const instance = request.url;
 
       if (error instanceof ZodError) {
@@ -54,12 +82,25 @@ async function errorHandlerPlugin(fastify: FastifyInstance): Promise<void> {
         return reply.status(problem.status).type('application/problem+json').send(problem);
       }
 
-      if (error.validation) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        const prismaError = mapPrismaError(error, instance);
+        if (prismaError) {
+          request.log.warn({ err: error, problem: prismaError }, 'Prisma constraint error');
+          return reply
+            .status(prismaError.status)
+            .type('application/problem+json')
+            .send(prismaError);
+        }
+      }
+
+      const fastifyError = error as FastifyError;
+
+      if (fastifyError.validation) {
         const problem: ProblemDetail = {
           type: 'https://bestal.com/errors/validation',
           title: 'Validation Error',
           status: HTTP_STATUS.UNPROCESSABLE_ENTITY,
-          detail: error.message,
+          detail: fastifyError.message,
           instance,
           code: ERROR_CODES.VALIDATION_ERROR,
         };
@@ -68,7 +109,7 @@ async function errorHandlerPlugin(fastify: FastifyInstance): Promise<void> {
         return reply.status(problem.status).type('application/problem+json').send(problem);
       }
 
-      const statusCode = error.statusCode ?? HTTP_STATUS.INTERNAL_SERVER_ERROR;
+      const statusCode = fastifyError.statusCode ?? HTTP_STATUS.INTERNAL_SERVER_ERROR;
       const problem: ProblemDetail = {
         type: 'https://bestal.com/errors/internal',
         title: 'Internal Server Error',
@@ -76,7 +117,7 @@ async function errorHandlerPlugin(fastify: FastifyInstance): Promise<void> {
         detail:
           fastify.config.isProduction && statusCode >= 500
             ? 'An unexpected error occurred'
-            : error.message,
+            : fastifyError.message,
         instance,
         code: ERROR_CODES.INTERNAL_ERROR,
       };

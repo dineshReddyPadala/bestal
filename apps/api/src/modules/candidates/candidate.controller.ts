@@ -128,6 +128,44 @@ export class CandidateController {
     return reply.status(200).send({ data });
   };
 
+  runAiScreening = async (request: FastifyRequest, reply: FastifyReply) => {
+    const { id } = request.params as { id: number };
+    const data = await this.candidateService.runAiScreening(
+      request.authUser!,
+      id,
+      (request.body ?? {}) as import('./candidate.validator.js').RunAiScreeningBody,
+    );
+    return reply.status(200).send({ data });
+  };
+
+  completeRecruiterReview = async (request: FastifyRequest, reply: FastifyReply) => {
+    const { id } = request.params as { id: number };
+    const data = await this.candidateService.completeRecruiterReview(
+      request.authUser!,
+      id,
+      (request.body ?? {}) as import('./candidate.validator.js').CompleteRecruiterReviewBody,
+    );
+    return reply.status(200).send({ data });
+  };
+
+  completePricingAndAvailability = async (request: FastifyRequest, reply: FastifyReply) => {
+    const { id } = request.params as { id: number };
+    const data = await this.candidateService.completePricingAndAvailability(
+      request.authUser!,
+      id,
+    );
+    return reply.status(200).send({ data });
+  };
+
+  submitForApproval = async (request: FastifyRequest, reply: FastifyReply) => {
+    const { id } = request.params as { id: number };
+    const data = await this.candidateService.submitForApproval(
+      request.authUser!,
+      id,
+    );
+    return reply.status(200).send({ data });
+  };
+
   private async handleUpload(
     request: FastifyRequest,
     reply: FastifyReply,

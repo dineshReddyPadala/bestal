@@ -1,4 +1,9 @@
-import { candidates, evaluationRecommendations, evaluationTypes } from '@bestal/mock-data';
+import { candidates } from '@bestal/mock-data';
+import {
+  EVALUATION_RECOMMENDATIONS,
+  EVALUATION_TYPES,
+  type EvaluationTypeValue,
+} from '@bestal/shared-utils';
 import { Button, FileUpload, Input, Select } from '@bestal/ui';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm, type Resolver } from 'react-hook-form';
@@ -14,16 +19,17 @@ const optionalScore = z.preprocess(
 const evaluationFormSchema = z.object({
   candidateName: z.string().min(1, 'Select a candidate'),
   evaluatorName: z.string().min(1, 'Enter evaluator name').max(100),
-  evaluationType: z.enum(['TECHNICAL', 'BEHAVIORAL', 'ARCHITECTURE', 'FULL_STACK', 'SECURITY']),
+  evaluatorCompany: z.string().max(255).optional(),
+  evaluationType: z.enum(EVALUATION_TYPES),
   evaluatedDate: z.string().min(1, 'Date is required'),
   technicalScore: optionalScore,
   communicationScore: optionalScore,
   architectureScore: optionalScore,
   problemSolvingScore: optionalScore,
-  recommendation: z
-    .enum(['STRONG_HIRE', 'HIRE', 'NEUTRAL', 'NO_HIRE', 'STRONG_NO_HIRE'])
-    .optional(),
-  summary: z.string().max(5000).optional(),
+  clientReadinessScore: optionalScore,
+  recommendation: z.enum(EVALUATION_RECOMMENDATIONS).optional(),
+  evaluatorComments: z.string().max(5000).optional(),
+  aiEvaluationSummary: z.string().max(5000).optional(),
   recordingFileName: z.string().optional(),
   pdfFileName: z.string().optional(),
 });
@@ -56,7 +62,7 @@ export function EvaluationForm({
   } = useForm<EvaluationFormValues>({
     resolver: zodResolver(evaluationFormSchema) as Resolver<EvaluationFormValues>,
     defaultValues: {
-      evaluationType: 'TECHNICAL',
+      evaluationType: 'Coding Test' satisfies EvaluationTypeValue,
       evaluatorName: '',
       ...defaultValues,
     },
@@ -98,11 +104,20 @@ export function EvaluationForm({
             </div>
 
             <div className="space-y-2">
+              <Label htmlFor="evaluatorCompany">Evaluator company</Label>
+              <Input
+                id="evaluatorCompany"
+                {...register('evaluatorCompany')}
+                placeholder="Company or organization"
+              />
+            </div>
+
+            <div className="space-y-2">
               <Label htmlFor="evaluationType">Evaluation type *</Label>
               <Select id="evaluationType" {...register('evaluationType')}>
-                {evaluationTypes.map((t) => (
+                {EVALUATION_TYPES.map((t) => (
                   <option key={t} value={t}>
-                    {t.replace(/_/g, ' ')}
+                    {t}
                   </option>
                 ))}
               </Select>
@@ -120,9 +135,9 @@ export function EvaluationForm({
               <Label htmlFor="recommendation">Recommendation</Label>
               <Select id="recommendation" {...register('recommendation')}>
                 <option value="">— Not set —</option>
-                {evaluationRecommendations.map((r) => (
+                {EVALUATION_RECOMMENDATIONS.map((r) => (
                   <option key={r} value={r}>
-                    {r.replace(/_/g, ' ')}
+                    {r}
                   </option>
                 ))}
               </Select>
@@ -174,15 +189,36 @@ export function EvaluationForm({
                 {...register('problemSolvingScore', { valueAsNumber: true })}
               />
             </div>
+            <div className="space-y-2">
+              <Label htmlFor="clientReadinessScore">Client readiness</Label>
+              <Input
+                id="clientReadinessScore"
+                type="number"
+                min={0}
+                max={100}
+                placeholder="0–100"
+                {...register('clientReadinessScore', { valueAsNumber: true })}
+              />
+            </div>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="summary">Summary</Label>
+            <Label htmlFor="evaluatorComments">Evaluator comments</Label>
             <textarea
-              id="summary"
+              id="evaluatorComments"
               rows={2}
               className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              {...register('summary')}
+              {...register('evaluatorComments')}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="aiEvaluationSummary">AI evaluation summary</Label>
+            <textarea
+              id="aiEvaluationSummary"
+              rows={2}
+              className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              {...register('aiEvaluationSummary')}
             />
           </div>
         </>

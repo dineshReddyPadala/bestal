@@ -1,3 +1,7 @@
+import {
+  CANDIDATE_AVAILABILITY_STATUSES,
+  type CandidateVisibilityStatusValue,
+} from '@bestal/shared-utils';
 import { z } from 'zod';
 
 const optionalNumber = z.preprocess(
@@ -49,7 +53,7 @@ export const candidateWizardFormSchema = z.object({
   skills: z.array(skillEntrySchema).min(1, 'Add at least one skill'),
   availableFrom: z.string().min(1, 'Available from date is required'),
   timezone: z.string().max(100).optional().nullable(),
-  availabilityStatus: z.string().max(50).optional().nullable(),
+  availabilityStatus: z.enum(CANDIDATE_AVAILABILITY_STATUSES).optional().nullable(),
   preferredShift: z.string().max(50).optional().nullable(),
   noticePeriodDays: optionalNumber,
   hoursPerWeek: optionalNumber,
@@ -84,7 +88,7 @@ export type CandidateWizardValues = CandidateWizardFormValues & {
   organizationId: number;
   photoUrl: string | null;
   status: 'NEW' | 'ACTIVE' | 'INACTIVE' | 'PLACED' | 'DO_NOT_CONTACT';
-  visibility: 'DRAFT' | 'PUBLISHED' | 'HIDDEN';
+  visibility: CandidateVisibilityStatusValue;
   approvalStatus: 'PENDING' | 'APPROVED' | 'REJECTED';
   publishedAt: string | null;
   hiddenAt: string | null;
@@ -135,7 +139,7 @@ export const candidateWizardDefaults: CandidateWizardFormValues = {
   ],
   availableFrom: '',
   timezone: 'America/New_York',
-  availabilityStatus: 'AVAILABLE',
+  availabilityStatus: 'IMMEDIATE',
   preferredShift: '',
   noticePeriodDays: 14,
   hoursPerWeek: 40,
@@ -174,7 +178,7 @@ export function buildCandidatePayload(form: CandidateWizardFormValues): Candidat
     organizationId: 1,
     photoUrl: null,
     status: 'NEW',
-    visibility: 'DRAFT',
+    visibility: 'INTERNAL_ONLY',
     approvalStatus: 'PENDING',
     publishedAt: null,
     hiddenAt: null,
@@ -256,11 +260,7 @@ export type WizardStepId = (typeof WIZARD_STEPS)[number]['id'];
 
 export type CandidateEntryMethod = 'resume' | 'oorwin' | 'manual' | 'csv';
 
-export function getInitialStepIndexForEntryMethod(method: CandidateEntryMethod): number {
-  if (method === 'resume') {
-    const index = WIZARD_STEPS.findIndex((step) => step.id === 'upload');
-    return index >= 0 ? index : 0;
-  }
+export function getInitialStepIndexForEntryMethod(_method: CandidateEntryMethod): number {
   return 0;
 }
 
@@ -338,8 +338,50 @@ export const REVIEW_FIELD_KEYS: (keyof CandidateWizardFormValues)[] = [
   'introVideoFileName',
 ];
 
+/** Merge wizard skill rows that share the same skill community (DB allows one row per community). */
+export function mergeWizardSkills<T extends {
+  skillCommunityId: number;
+  proficiencyLevel: 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED' | 'EXPERT';
+  yearsExperience?: number | null;
+  isPrimary: boolean;
+  notes?: string | null;
+}>(skills: T[]): T[] {
+  const rank = { BEGINNER: 1, INTERMEDIATE: 2, ADVANCED: 3, EXPERT: 4 } as const;
+  const byCommunity = new Map<number, T>();
+
+  for (const skill of skills) {
+    const existing = byCommunity.get(skill.skillCommunityId);
+    if (!existing) {
+      byCommunity.set(skill.skillCommunityId, skill);
+      continue;
+    }
+
+    const mergedNotes = [existing.notes, skill.notes]
+      .flatMap((value) => (value ? value.split(/,\s*/) : []))
+      .map((value) => value.trim())
+      .filter(Boolean);
+    const uniqueNotes = [...new Set(mergedNotes)].join(', ');
+
+    byCommunity.set(skill.skillCommunityId, {
+      ...existing,
+      notes: uniqueNotes || existing.notes,
+      isPrimary: existing.isPrimary || skill.isPrimary,
+      yearsExperience:
+        Math.max(existing.yearsExperience ?? 0, skill.yearsExperience ?? 0) || undefined,
+      proficiencyLevel:
+        rank[skill.proficiencyLevel] > rank[existing.proficiencyLevel]
+          ? skill.proficiencyLevel
+          : existing.proficiencyLevel,
+    });
+  }
+
+  return [...byCommunity.values()];
+}
+
 /** Map wizard form values to the API create-candidate request body. */
-export function mapWizardToApiCreateBody(form: CandidateWizardFormValues): Record<string, unknown> {
+export function mapWizardToApiCreateBody(
+  form: CandidateWizardFormValues,
+): Record<string, unknown> {
   const grossMargin =
     form.billRate != null && form.payRate != null ? form.billRate - form.payRate : undefined;
 
@@ -376,8 +418,10 @@ export function mapWizardToApiCreateBody(form: CandidateWizardFormValues): Recor
     preferredShift: form.preferredShift ?? undefined,
     minHoursPerWeek: form.minHoursPerWeek ?? form.hoursPerWeek ?? undefined,
     maxHoursPerWeek: form.maxHoursPerWeek ?? form.hoursPerWeek ?? undefined,
-    skills: form.skills.map((skill) => ({
+    visibility: 'INTERNAL_ONLY' satisfies CandidateVisibilityStatusValue,
+    skills: mergeWizardSkills(form.skills).map((skill) => ({
       skillCommunityId: skill.skillCommunityId,
+      skillName: skill.notes?.trim() || undefined,
       proficiencyLevel: skill.proficiencyLevel,
       yearsExperience: skill.yearsExperience ?? undefined,
       isPrimary: skill.isPrimary,

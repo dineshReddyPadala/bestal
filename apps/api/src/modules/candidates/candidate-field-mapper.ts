@@ -1,4 +1,4 @@
-import type { Prisma } from '@prisma/client';
+import type { Prisma, CandidateAvailabilityStatus, CandidateProfileStatus } from '@prisma/client';
 import { bigintToNumber } from '../../utils/index.js';
 import type { CreateCandidateInput, UpdateCandidateInput } from './candidate.types.js';
 
@@ -65,6 +65,7 @@ export function buildCandidateScalarData(
   if (data.bgvStatus !== undefined) result.bgvStatus = data.bgvStatus;
   if (data.profileStatus !== undefined) result.profileStatus = data.profileStatus;
   if (data.deploymentStatus !== undefined) result.deploymentStatus = data.deploymentStatus;
+  if (data.visibility !== undefined) result.visibility = data.visibility;
 
   return result;
 }
@@ -112,7 +113,7 @@ export function mapCandidateExtendedDto(candidate: {
   clientBillRate: { toString(): string } | null;
   candidatePayRate: { toString(): string } | null;
   grossMargin: { toString(): string } | null;
-  availabilityStatus: string | null;
+  availabilityStatus: CandidateAvailabilityStatus | null;
   timezoneOverlap: string | null;
   preferredShift: string | null;
   minHoursPerWeek: number | null;
@@ -128,8 +129,9 @@ export function mapCandidateExtendedDto(candidate: {
   reliabilityScore: number | null;
   evaluationStatus: string | null;
   bgvStatus: string | null;
-  profileStatus: string | null;
+  profileStatus: CandidateProfileStatus | null;
   deploymentStatus: string | null;
+  submittedForApprovalAt: Date | null;
   createdById: bigint | null;
 }) {
   return {
@@ -161,6 +163,7 @@ export function mapCandidateExtendedDto(candidate: {
     bgvStatus: candidate.bgvStatus,
     profileStatus: candidate.profileStatus,
     deploymentStatus: candidate.deploymentStatus,
+    submittedForApprovalAt: candidate.submittedForApprovalAt?.toISOString() ?? null,
     createdById: candidate.createdById ? bigintToNumber(candidate.createdById) : null,
   };
 }

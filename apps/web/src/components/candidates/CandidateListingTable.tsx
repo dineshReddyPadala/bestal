@@ -17,6 +17,8 @@ import {
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 
+import { usePermissions } from '../../hooks/usePermissions';
+
 type RowAction = {
   label: string;
   icon: React.ReactNode;
@@ -33,6 +35,8 @@ type CandidateRowActionsProps = {
 export function CandidateRowActions({ basePath, record, onAction }: CandidateRowActionsProps) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const { canApproveCandidates, canWriteCandidates, canUploadEvaluation, canUploadBgv, canDeleteCandidates } =
+    usePermissions();
 
   useEffect(() => {
     if (!open) return;
@@ -45,14 +49,46 @@ export function CandidateRowActions({ basePath, record, onAction }: CandidateRow
 
   const actions: RowAction[] = [
     { label: 'View', icon: <Eye className="h-3.5 w-3.5" />, onClick: () => onAction('View') },
-    { label: 'Edit', icon: <Pencil className="h-3.5 w-3.5" />, onClick: () => onAction('Edit') },
-    { label: 'Approve', icon: <CheckCircle className="h-3.5 w-3.5" />, onClick: () => onAction('Approve') },
-    { label: 'Run AI', icon: <Sparkles className="h-3.5 w-3.5" />, onClick: () => onAction('Run AI') },
-    { label: 'Upload Evaluation', icon: <Upload className="h-3.5 w-3.5" />, onClick: () => onAction('Upload Evaluation') },
-    { label: 'Upload BGV', icon: <Upload className="h-3.5 w-3.5" />, onClick: () => onAction('Upload BGV') },
-    { label: 'Publish', icon: <Globe className="h-3.5 w-3.5" />, onClick: () => onAction('Publish') },
-    { label: 'Delete', icon: <Trash2 className="h-3.5 w-3.5" />, onClick: () => onAction('Delete'), variant: 'danger' },
   ];
+
+  if (canWriteCandidates) {
+    actions.push(
+      { label: 'Edit', icon: <Pencil className="h-3.5 w-3.5" />, onClick: () => onAction('Edit') },
+      { label: 'Run AI', icon: <Sparkles className="h-3.5 w-3.5" />, onClick: () => onAction('Run AI') },
+    );
+  }
+
+  if (canUploadEvaluation) {
+    actions.push({
+      label: 'Upload Evaluation',
+      icon: <Upload className="h-3.5 w-3.5" />,
+      onClick: () => onAction('Upload Evaluation'),
+    });
+  }
+
+  if (canUploadBgv) {
+    actions.push({
+      label: 'Upload BGV',
+      icon: <Upload className="h-3.5 w-3.5" />,
+      onClick: () => onAction('Upload BGV'),
+    });
+  }
+
+  if (canApproveCandidates) {
+    actions.push(
+      { label: 'Approve', icon: <CheckCircle className="h-3.5 w-3.5" />, onClick: () => onAction('Approve') },
+      { label: 'Publish', icon: <Globe className="h-3.5 w-3.5" />, onClick: () => onAction('Publish') },
+    );
+  }
+
+  if (canDeleteCandidates) {
+    actions.push({
+      label: 'Delete',
+      icon: <Trash2 className="h-3.5 w-3.5" />,
+      onClick: () => onAction('Delete'),
+      variant: 'danger',
+    });
+  }
 
   return (
     <div className="relative flex items-center gap-1" ref={ref} onClick={(e) => e.stopPropagation()}>
@@ -126,28 +162,36 @@ export function BulkActionBar({
 }: {
   onAction: (action: string, count: number) => void;
 }) {
+  const { canApproveCandidates, canDeleteCandidates } = usePermissions();
+
   return (
     <>
-      <Button variant="outline" size="sm" onClick={() => onAction('Approve', 0)}>
-        <CheckCircle className="mr-1.5 h-3.5 w-3.5" />
-        Approve
-      </Button>
-      <Button variant="outline" size="sm" onClick={() => onAction('Reject', 0)}>
-        <XCircle className="mr-1.5 h-3.5 w-3.5" />
-        Reject
-      </Button>
-      <Button variant="outline" size="sm" onClick={() => onAction('Publish', 0)}>
-        <Globe className="mr-1.5 h-3.5 w-3.5" />
-        Publish
-      </Button>
-      <Button variant="outline" size="sm" onClick={() => onAction('Hide', 0)}>
-        <EyeOff className="mr-1.5 h-3.5 w-3.5" />
-        Hide
-      </Button>
-      <Button variant="outline" size="sm" onClick={() => onAction('Delete', 0)}>
-        <Trash2 className="mr-1.5 h-3.5 w-3.5" />
-        Delete
-      </Button>
+      {canApproveCandidates ? (
+        <>
+          <Button variant="outline" size="sm" onClick={() => onAction('Approve', 0)}>
+            <CheckCircle className="mr-1.5 h-3.5 w-3.5" />
+            Approve
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => onAction('Reject', 0)}>
+            <XCircle className="mr-1.5 h-3.5 w-3.5" />
+            Reject
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => onAction('Publish', 0)}>
+            <Globe className="mr-1.5 h-3.5 w-3.5" />
+            Publish
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => onAction('Hide', 0)}>
+            <EyeOff className="mr-1.5 h-3.5 w-3.5" />
+            Hide
+          </Button>
+        </>
+      ) : null}
+      {canDeleteCandidates ? (
+        <Button variant="outline" size="sm" onClick={() => onAction('Delete', 0)}>
+          <Trash2 className="mr-1.5 h-3.5 w-3.5" />
+          Delete
+        </Button>
+      ) : null}
       <Button variant="outline" size="sm" onClick={() => onAction('Export CSV', 0)}>
         Export CSV
       </Button>

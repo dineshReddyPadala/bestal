@@ -1,4 +1,8 @@
-import { cn } from '@bestal/shared-utils';
+import {
+  CANDIDATE_AVAILABILITY_LABELS,
+  CANDIDATE_AVAILABILITY_STATUSES,
+  cn,
+} from '@bestal/shared-utils';
 import { Button, FileUpload, Input, Select } from '@bestal/ui';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
@@ -21,6 +25,7 @@ import {
   type Resolver,
 } from 'react-hook-form';
 import { useSkillCommunitiesList } from '../../hooks/api/useSkillCommunities';
+import { usePermissions } from '../../hooks/usePermissions';
 import type { SkillCommunityListItem } from '../../lib/api/types';
 import { Label } from '../ui/label';
 import {
@@ -41,10 +46,14 @@ import {
 type CandidateWizardProps = {
   entryMethod: CandidateEntryMethod;
   initialStepIndex?: number;
+  initialFormValues?: Partial<CandidateWizardFormValues>;
+  initialUploads?: CandidateWizardUploads;
   onSubmit: (values: CandidateWizardValues, uploads: CandidateWizardUploads) => void | Promise<void>;
   onCancel: () => void;
   onChangeEntryMethod?: () => void;
   onToast: (message: string) => void;
+  submitError?: string | null;
+  isSubmitting?: boolean;
 };
 
 const SkillCommunitiesContext = createContext<SkillCommunityListItem[]>([]);
@@ -77,6 +86,18 @@ function skillCommunityName(
 
 const textareaClass =
   'flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
+
+function applyWizardFormPatch(
+  patch: Partial<CandidateWizardFormValues>,
+  setValue: ReturnType<typeof useFormContext<CandidateWizardFormValues>>['setValue'],
+) {
+  (Object.keys(patch) as (keyof CandidateWizardFormValues)[]).forEach((key) => {
+    const value = patch[key];
+    if (value !== undefined) {
+      setValue(key, value as CandidateWizardFormValues[typeof key], { shouldValidate: true });
+    }
+  });
+}
 
 function FieldError({ message }: { message?: string }) {
   if (!message) return null;
@@ -353,11 +374,12 @@ function AvailabilityStep() {
         <Input id="timezone" {...register('timezone')} placeholder="America/New_York" />
       </FormField>
       <FormField label="Availability Status" name="availabilityStatus">
-        <Select id="availabilityStatus" {...register('availabilityStatus')}>
-          <option value="AVAILABLE">Available</option>
-          <option value="PARTIALLY_AVAILABLE">Partially Available</option>
-          <option value="NOT_AVAILABLE">Not Available</option>
-          <option value="ON_NOTICE">On Notice</option>
+        <Select id="availabilityStatus" className="h-10" {...register('availabilityStatus')}>
+          {CANDIDATE_AVAILABILITY_STATUSES.map((value) => (
+            <option key={value} value={value}>
+              {CANDIDATE_AVAILABILITY_LABELS[value]}
+            </option>
+          ))}
         </Select>
       </FormField>
       <FormField label="Preferred Shift" name="preferredShift">
@@ -403,6 +425,7 @@ function AvailabilityStep() {
 
 function PricingStep() {
   const { register } = useFormContext<CandidateWizardFormValues>();
+  const { canViewPayRate } = usePermissions();
 
   return (
     <div className="grid gap-4 sm:grid-cols-2">
@@ -412,9 +435,11 @@ function PricingStep() {
       <FormField label="Currency" name="currency">
         <Input id="currency" maxLength={3} {...register('currency')} />
       </FormField>
-      <FormField label="Pay Rate ($/hr)" name="payRate">
-        <Input id="payRate" type="number" min={0} step={0.01} {...register('payRate', { valueAsNumber: true })} />
-      </FormField>
+      {canViewPayRate && (
+        <FormField label="Pay Rate ($/hr)" name="payRate">
+          <Input id="payRate" type="number" min={0} step={0.01} {...register('payRate', { valueAsNumber: true })} />
+        </FormField>
+      )}
       <FormField label="Bill Rate ($/hr)" name="billRate">
         <Input id="billRate" type="number" min={0} step={0.01} {...register('billRate', { valueAsNumber: true })} />
       </FormField>
@@ -428,36 +453,35 @@ function PricingStep() {
 }
 
 function DocumentsStep({
+  entryMethod,
   onToast,
   pendingUploads,
 }: {
+  entryMethod: CandidateEntryMethod;
   onToast?: (msg: string) => void;
   pendingUploads: MutableRefObject<CandidateWizardUploads>;
 }) {
   const { setValue, watch } = useFormContext<CandidateWizardFormValues>();
+  const skillCommunities = useSkillCommunityOptions();
   const [extracting, setExtracting] = useState(false);
+
+  async function applyExtraction(file: File) {
+    const { extractResumeFromFile } = await import('../../lib/api/ai/resume-extraction.stub');
+    const { applyResumeExtractionToWizardForm } = await import(
+      '../../lib/api/ai/resume-extraction.mapper'
+    );
+    const result = await extractResumeFromFile(file);
+    const patch = applyResumeExtractionToWizardForm(result, skillCommunities, file.name);
+    applyWizardFormPatch(patch, setValue);
+    onToast?.(`Resume extracted (${Math.round(result.confidence * 100)}% confidence)`);
+  }
 
   async function handleResumeSelect(file: File) {
     pendingUploads.current.resume = file;
     setValue('resumeFileName', file.name, { shouldValidate: true });
     setExtracting(true);
     try {
-      const { extractResume } = await import('../../lib/api/ai/resume-extraction.stub');
-      const result = await extractResume({
-        fileName: file.name,
-        mimeType: file.type,
-      });
-      const c = result.candidate;
-      if (c.firstName) setValue('firstName', c.firstName);
-      if (c.lastName) setValue('lastName', c.lastName);
-      if (c.email) setValue('email', c.email);
-      if (c.phone) setValue('phone', c.phone);
-      if (c.location) setValue('location', c.location);
-      if (c.linkedinUrl) setValue('linkedinUrl', c.linkedinUrl);
-      if (c.headline) setValue('headline', c.headline);
-      if (c.summary) setValue('summary', c.summary);
-      if (c.yearsExperience != null) setValue('yearsExperience', c.yearsExperience);
-      onToast?.(`Resume extracted (${Math.round(result.confidence * 100)}% confidence)`);
+      await applyExtraction(file);
     } catch {
       onToast?.('Resume uploaded — extraction unavailable');
     } finally {
@@ -465,10 +489,14 @@ function DocumentsStep({
     }
   }
 
+  const resumeAlreadyUploaded = Boolean(watch('resumeFileName'));
+
   return (
     <div className="space-y-6">
       <p className="text-sm text-muted-foreground">
-        Upload files directly — no URLs needed. Documents are stored securely after you submit.
+        {entryMethod === 'resume' && resumeAlreadyUploaded
+          ? 'Your resume is attached. You can replace it below or continue to review other documents.'
+          : 'Upload files directly — no URLs needed. Documents are stored securely after you submit.'}
       </p>
 
       <div>
@@ -571,10 +599,12 @@ function ReviewStep() {
 
 function StepContent({
   stepId,
+  entryMethod,
   onToast,
   pendingUploads,
 }: {
   stepId: WizardStepId;
+  entryMethod: CandidateEntryMethod;
   onToast?: (msg: string) => void;
   pendingUploads: MutableRefObject<CandidateWizardUploads>;
 }) {
@@ -590,7 +620,13 @@ function StepContent({
     case 'pricing':
       return <PricingStep />;
     case 'upload':
-      return <DocumentsStep onToast={onToast} pendingUploads={pendingUploads} />;
+      return (
+        <DocumentsStep
+          entryMethod={entryMethod}
+          onToast={onToast}
+          pendingUploads={pendingUploads}
+        />
+      );
     case 'review':
       return <ReviewStep />;
     default:
@@ -601,13 +637,17 @@ function StepContent({
 export function CandidateWizard({
   entryMethod,
   initialStepIndex = 0,
+  initialFormValues,
+  initialUploads,
   onSubmit,
   onCancel,
   onChangeEntryMethod,
   onToast,
+  submitError,
+  isSubmitting = false,
 }: CandidateWizardProps) {
   const [stepIndex, setStepIndex] = useState(initialStepIndex);
-  const pendingUploads = useRef<CandidateWizardUploads>({});
+  const pendingUploads = useRef<CandidateWizardUploads>(initialUploads ?? {});
   const currentStep = WIZARD_STEPS[stepIndex]!;
   const {
     data: skillCommunities = [],
@@ -617,13 +657,22 @@ export function CandidateWizard({
 
   const methods = useForm<CandidateWizardFormValues>({
     resolver: zodResolver(candidateWizardFormSchema) as Resolver<CandidateWizardFormValues>,
-    defaultValues: candidateWizardDefaults,
+    defaultValues: {
+      ...candidateWizardDefaults,
+      ...initialFormValues,
+    },
     mode: 'onBlur',
   });
 
   const { handleSubmit, trigger, getValues, reset, setValue } = methods;
 
   useEffect(() => {
+    if (initialFormValues) {
+      reset({ ...candidateWizardDefaults, ...initialFormValues });
+      pendingUploads.current = initialUploads ?? {};
+      return;
+    }
+
     try {
       const raw = localStorage.getItem(DRAFT_STORAGE_KEY);
       if (raw) {
@@ -633,7 +682,7 @@ export function CandidateWizard({
     } catch {
       /* ignore corrupt draft */
     }
-  }, [reset]);
+  }, [initialFormValues, initialUploads, reset]);
 
   useEffect(() => {
     if (entryMethod === 'oorwin') {
@@ -642,8 +691,8 @@ export function CandidateWizard({
   }, [entryMethod, setValue]);
 
   const entryMethodHint = useMemo(() => {
-    if (entryMethod === 'resume' && currentStep.id === 'upload') {
-      return 'Upload a resume to auto-extract candidate details. You can edit every field before creating the record.';
+    if (entryMethod === 'resume' && currentStep.id === 'personal') {
+      return 'Profile fields were pre-filled from your resume. Review each section and adjust anything before submitting.';
     }
     if (entryMethod === 'oorwin' && currentStep.id === 'personal') {
       return 'Enter the Oorwin candidate ID to link this profile. Fill in or adjust the remaining personal details as needed.';
@@ -732,8 +781,22 @@ export function CandidateWizard({
               {entryMethodHint}
             </p>
           )}
-          <StepContent stepId={currentStep.id} onToast={onToast} pendingUploads={pendingUploads} />
+          <StepContent
+            stepId={currentStep.id}
+            entryMethod={entryMethod}
+            onToast={onToast}
+            pendingUploads={pendingUploads}
+          />
         </div>
+
+        {submitError ? (
+          <div
+            className="mt-4 rounded-lg border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive"
+            role="alert"
+          >
+            {submitError}
+          </div>
+        ) : null}
 
         <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4">
           <div className="flex flex-wrap gap-2">
@@ -767,8 +830,8 @@ export function CandidateWizard({
               </Button>
             )}
             {isLast && (
-              <Button type="submit" variant="primary" size="sm">
-                Create Candidate
+              <Button type="submit" variant="primary" size="sm" disabled={isSubmitting}>
+                {isSubmitting ? 'Creating…' : 'Create Candidate'}
               </Button>
             )}
           </div>

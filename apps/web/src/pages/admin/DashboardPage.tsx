@@ -40,7 +40,7 @@ export function DashboardPage() {
   const interviewRows = interviews.data?.data ?? [];
 
   const pendingApprovals = candidateRows.filter((c) => c.approvalStatus === 'PENDING').length;
-  const published = candidateRows.filter((c) => c.visibility === 'PUBLISHED').length;
+  const published = candidateRows.filter((c) => c.visibility === 'CLIENT_VISIBLE').length;
   const openTrials = trialRows.filter((t) =>
     ['REQUESTED', 'APPROVED', 'IN_PROGRESS', 'SCHEDULED'].includes(t.status),
   ).length;

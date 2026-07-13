@@ -1,4 +1,5 @@
 import type { FastifyInstance } from 'fastify';
+import type { PrismaClient } from '@prisma/client';
 import type { AuthenticatedUser } from '../../types/index.js';
 import {
   BadRequestError,
@@ -6,13 +7,15 @@ import {
   requireOrganization,
 } from '../../utils/index.js';
 import { buildPaginationMeta } from '../../validators/common.validator.js';
+import { notifyEvaluationProcessed } from '../../services/notification-dispatch.service.js';
+import { assertCanCreateEvaluation } from '../candidates/candidate-pipeline.js';
+import { recalculateCandidateScoresFromEvaluations } from './candidate-score.service.js';
 import {
   mapEvaluationToDto,
   mapEvaluationToListItem,
 } from './evaluation.mapper.js';
 import { EvaluationRepository } from './evaluation.repository.js';
 import type {
-  CompleteEvaluationInput,
   CreateEvaluationInput,
   EvaluationDto,
   EvaluationListItemDto,
@@ -20,8 +23,28 @@ import type {
 } from './evaluation.types.js';
 import type { ListEvaluationsQuery } from './evaluation.validator.js';
 
+function wasAiProcessed(input: {
+  aiEvaluationSummary?: string | null;
+  technicalScore?: number | null;
+  communicationScore?: number | null;
+  problemSolvingScore?: number | null;
+  architectureScore?: number | null;
+  clientReadinessScore?: number | null;
+}): boolean {
+  return Boolean(
+    input.aiEvaluationSummary?.trim() ||
+      input.technicalScore != null ||
+      input.communicationScore != null ||
+      input.problemSolvingScore != null ||
+      input.architectureScore != null ||
+      input.clientReadinessScore != null,
+  );
+}
+
 export class EvaluationService {
   private readonly evaluationRepository: EvaluationRepository;
+  private readonly prisma: PrismaClient;
+  private readonly webAppUrl: string;
 
   constructor(
     fastify: FastifyInstance,
@@ -29,6 +52,8 @@ export class EvaluationService {
   ) {
     this.evaluationRepository =
       evaluationRepository ?? new EvaluationRepository(fastify.prisma);
+    this.prisma = fastify.prisma;
+    this.webAppUrl = fastify.config.webAppUrl;
   }
 
   async create(
@@ -36,22 +61,32 @@ export class EvaluationService {
     input: CreateEvaluationInput,
   ): Promise<EvaluationDto> {
     const organizationId = requireOrganization(authUser);
-
     await this.validateCandidate(organizationId, input.candidateId);
 
-    if (input.clientId) {
-      await this.validateClient(organizationId, input.clientId);
+    const evaluation = await this.evaluationRepository.create(organizationId, input);
+
+    await this.prisma.candidate.update({
+      where: {
+        id: BigInt(input.candidateId),
+        organizationId: BigInt(organizationId),
+      },
+      data: { profileStatus: 'EVALUATION_PENDING' },
+    });
+
+    const dto = mapEvaluationToDto(evaluation);
+
+    if (wasAiProcessed(input)) {
+      await this.runPostProcessing(
+        organizationId,
+        evaluation.candidateId,
+        evaluation.candidate.firstName,
+        evaluation.candidate.lastName,
+        Number(evaluation.id),
+        authUser.id,
+      );
     }
 
-    const evaluatorId = input.evaluatorId ?? authUser.id;
-    await this.validateEvaluator(evaluatorId);
-
-    const evaluation = await this.evaluationRepository.create(
-      organizationId,
-      evaluatorId,
-      input,
-    );
-    return mapEvaluationToDto(evaluation);
+    return dto;
   }
 
   async update(
@@ -60,44 +95,38 @@ export class EvaluationService {
     input: UpdateEvaluationInput,
   ): Promise<EvaluationDto> {
     const organizationId = requireOrganization(authUser);
-    await this.getEvaluationOrThrow(organizationId, id);
-
-    if (input.clientId) {
-      await this.validateClient(organizationId, input.clientId);
-    }
-
-    if (input.evaluatorId) {
-      await this.validateEvaluator(input.evaluatorId);
-    }
+    const existing = await this.getEvaluationOrThrow(organizationId, id);
 
     const evaluation = await this.evaluationRepository.update(
       organizationId,
       id,
       input,
     );
-    return mapEvaluationToDto(evaluation);
-  }
+    const dto = mapEvaluationToDto(evaluation);
 
-  async complete(
-    authUser: AuthenticatedUser,
-    id: number,
-    input: CompleteEvaluationInput,
-  ): Promise<EvaluationDto> {
-    const organizationId = requireOrganization(authUser);
-    await this.getEvaluationOrThrow(organizationId, id);
+    if (wasAiProcessed(input)) {
+      await this.runPostProcessing(
+        organizationId,
+        existing.candidateId,
+        existing.candidate.firstName,
+        existing.candidate.lastName,
+        id,
+        authUser.id,
+      );
+    }
 
-    const evaluation = await this.evaluationRepository.complete(
-      organizationId,
-      id,
-      input,
-    );
-    return mapEvaluationToDto(evaluation);
+    return dto;
   }
 
   async delete(authUser: AuthenticatedUser, id: number): Promise<void> {
     const organizationId = requireOrganization(authUser);
-    await this.getEvaluationOrThrow(organizationId, id);
+    const existing = await this.getEvaluationOrThrow(organizationId, id);
     await this.evaluationRepository.softDelete(organizationId, id);
+    await recalculateCandidateScoresFromEvaluations(
+      this.prisma,
+      organizationId,
+      Number(existing.candidateId),
+    );
   }
 
   async list(
@@ -115,9 +144,7 @@ export class EvaluationService {
       limit: query.limit,
       sort: query.sort,
       candidateId: query.candidateId,
-      clientId: query.clientId,
-      status: query.status,
-      evaluatorId: query.evaluatorId,
+      evaluationType: query.evaluationType,
     });
 
     return {
@@ -132,6 +159,31 @@ export class EvaluationService {
     return mapEvaluationToDto(evaluation);
   }
 
+  private async runPostProcessing(
+    organizationId: number,
+    candidateId: bigint,
+    firstName: string,
+    lastName: string,
+    evaluationId: number,
+    triggeredByUserId: number,
+  ): Promise<void> {
+    const { bestalScore } = await recalculateCandidateScoresFromEvaluations(
+      this.prisma,
+      organizationId,
+      Number(candidateId),
+    );
+
+    await notifyEvaluationProcessed(this.prisma, {
+      organizationId,
+      candidateId: Number(candidateId),
+      candidateName: `${firstName} ${lastName}`.trim(),
+      evaluationId,
+      bestalScore,
+      triggeredByUserId,
+      webAppUrl: this.webAppUrl,
+    });
+  }
+
   private async getEvaluationOrThrow(organizationId: number, id: number) {
     const evaluation = await this.evaluationRepository.findById(organizationId, id);
     if (!evaluation) {
@@ -144,32 +196,30 @@ export class EvaluationService {
     organizationId: number,
     candidateId: number,
   ): Promise<void> {
-    const exists = await this.evaluationRepository.candidateExists(
-      organizationId,
-      candidateId,
-    );
-    if (!exists) {
+    const candidate = await this.prisma.candidate.findFirst({
+      where: {
+        id: BigInt(candidateId),
+        organizationId: BigInt(organizationId),
+        deletedAt: null,
+      },
+      select: {
+        profileStatus: true,
+        approvalStatus: true,
+        visibility: true,
+        resumeDocumentId: true,
+        evaluationStatus: true,
+        bgvStatus: true,
+        clientBillRate: true,
+        availabilityStatus: true,
+        availableFrom: true,
+        submittedForApprovalAt: true,
+      },
+    });
+
+    if (!candidate) {
       throw new BadRequestError('Candidate not found');
     }
-  }
 
-  private async validateClient(
-    organizationId: number,
-    clientId: number,
-  ): Promise<void> {
-    const exists = await this.evaluationRepository.clientExists(
-      organizationId,
-      clientId,
-    );
-    if (!exists) {
-      throw new BadRequestError('Client not found');
-    }
-  }
-
-  private async validateEvaluator(evaluatorId: number): Promise<void> {
-    const exists = await this.evaluationRepository.evaluatorExists(evaluatorId);
-    if (!exists) {
-      throw new BadRequestError('Evaluator not found');
-    }
+    assertCanCreateEvaluation(candidate);
   }
 }

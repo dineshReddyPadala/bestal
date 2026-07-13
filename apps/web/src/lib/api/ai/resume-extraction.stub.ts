@@ -62,9 +62,28 @@ const STATIC_EXTRACTION: ResumeExtractionResponse = {
 
 /**
  * Extract resume fields via AI service.
- * When VITE_AI_EXTRACTION_URL is set, calls the external endpoint.
+ * When VITE_AI_EXTRACTION_URL is set, calls the external endpoint with base64 file content.
  * Otherwise returns static sample data for UI development.
  */
+export async function fileToBase64(file: File): Promise<string> {
+  const buffer = await file.arrayBuffer();
+  const bytes = new Uint8Array(buffer);
+  let binary = '';
+  for (let i = 0; i < bytes.byteLength; i++) {
+    binary += String.fromCharCode(bytes[i]!);
+  }
+  return btoa(binary);
+}
+
+export async function extractResumeFromFile(file: File): Promise<ResumeExtractionResponse> {
+  const content = await fileToBase64(file);
+  return extractResume({
+    fileName: file.name,
+    mimeType: file.type || 'application/octet-stream',
+    content,
+  });
+}
+
 export async function extractResume(
   request: ResumeExtractionRequest,
 ): Promise<ResumeExtractionResponse> {
@@ -77,7 +96,10 @@ export async function extractResume(
       body: JSON.stringify(request),
     });
     if (!response.ok) {
-      throw new Error(`AI extraction failed: ${response.statusText}`);
+      const detail = await response.text().catch(() => '');
+      throw new Error(
+        detail ? `AI extraction failed: ${detail}` : `AI extraction failed: ${response.statusText}`,
+      );
     }
     return (await response.json()) as ResumeExtractionResponse;
   }

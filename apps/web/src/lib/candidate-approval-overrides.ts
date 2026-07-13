@@ -9,7 +9,7 @@ const STORAGE_KEY = 'bestal-candidate-approval-overrides';
 
 export type CandidateApprovalOverride = {
   approvalStatus: 'PENDING' | 'APPROVED' | 'REJECTED';
-  visibility: 'DRAFT' | 'PUBLISHED' | 'HIDDEN';
+  visibility: 'INTERNAL_ONLY' | 'CLIENT_VISIBLE' | 'HIDDEN';
   publishedAt: string | null;
   approvedAt: string | null;
   approvedByName: string | null;
@@ -42,7 +42,7 @@ function baseOverride(candidateId: number): CandidateApprovalOverride {
   const c = candidates.find((x) => x.id === candidateId);
   return {
     approvalStatus: c?.approvalStatus ?? 'PENDING',
-    visibility: c?.visibility ?? 'DRAFT',
+    visibility: c?.visibility ?? 'INTERNAL_ONLY',
     publishedAt: null,
     approvedAt: null,
     approvedByName: null,
@@ -105,7 +105,7 @@ export function countReadyToPublish(): number {
   return getApprovalQueueRecords().filter(
     (r) =>
       r.effectiveApprovalStatus === 'APPROVED' &&
-      r.effectiveVisibility !== 'PUBLISHED' &&
+      r.effectiveVisibility !== 'CLIENT_VISIBLE' &&
       r.evaluationStatus === 'COMPLETED' &&
       r.bgvStatus === 'CLEAR',
   ).length;
@@ -149,14 +149,14 @@ export function rejectCandidate(
 export function publishCandidate(candidateId: number): CandidateApprovalOverride {
   const now = new Date().toISOString();
   return patchOverride(candidateId, {
-    visibility: 'PUBLISHED',
+    visibility: 'CLIENT_VISIBLE',
     publishedAt: now,
   });
 }
 
 export function unpublishCandidate(candidateId: number): CandidateApprovalOverride {
   return patchOverride(candidateId, {
-    visibility: 'DRAFT',
+    visibility: 'INTERNAL_ONLY',
     publishedAt: null,
   });
 }
@@ -169,5 +169,5 @@ export function subscribeApprovalChanges(listener: () => void): () => void {
 /** Client search — published & approved with session overrides applied. */
 export function isClientVisible(candidateId: number): boolean {
   const o = getApprovalOverride(candidateId);
-  return o.approvalStatus === 'APPROVED' && o.visibility === 'PUBLISHED';
+  return o.approvalStatus === 'APPROVED' && o.visibility === 'CLIENT_VISIBLE';
 }

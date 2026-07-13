@@ -4,11 +4,13 @@ import type { MockEvaluation } from './types.js';
 export type EvaluationManagementStatus = MockEvaluation['status'];
 
 export type EvaluationType =
-  | 'TECHNICAL'
-  | 'BEHAVIORAL'
-  | 'ARCHITECTURE'
-  | 'FULL_STACK'
-  | 'SECURITY';
+  | 'Coding Test'
+  | 'Live Technical Interview'
+  | 'System Design'
+  | 'Platform-Specific'
+  | 'Communication'
+  | 'Functional'
+  | 'Manual Scorecard';
 
 export type EvaluationManagementRecord = {
   readonly id: number;
@@ -21,17 +23,17 @@ export type EvaluationManagementRecord = {
   readonly communicationScore: number | null;
   readonly architectureScore: number | null;
   readonly problemSolvingScore: number | null;
-  readonly recommendation: MockEvaluation['recommendation'];
+  readonly recommendation: string | null;
   readonly status: EvaluationManagementStatus;
   readonly hasRecording: boolean;
   readonly hasPdf: boolean;
 };
 
 function mapEvaluationType(skillCommunity: string): EvaluationType {
-  if (skillCommunity.includes('Full-Stack')) return 'FULL_STACK';
-  if (skillCommunity.includes('Cybersecurity')) return 'SECURITY';
-  if (skillCommunity.includes('Machine Learning')) return 'ARCHITECTURE';
-  return 'TECHNICAL';
+  if (skillCommunity.includes('Full-Stack')) return 'Live Technical Interview';
+  if (skillCommunity.includes('Cybersecurity')) return 'Platform-Specific';
+  if (skillCommunity.includes('Machine Learning')) return 'System Design';
+  return 'Coding Test';
 }
 
 function deriveArchitectureScore(ev: MockEvaluation): number | null {
@@ -80,12 +82,12 @@ const supplementalRecords: EvaluationManagementRecord[] = [
     candidateName: 'Sofia Martinez',
     evaluatorName: 'Maria Gonzalez',
     evaluatedDate: '2026-06-20T15:30:00Z',
-    evaluationType: 'BEHAVIORAL',
+    evaluationType: 'Communication',
     technicalScore: 82,
     communicationScore: 94,
     architectureScore: 78,
     problemSolvingScore: 80,
-    recommendation: 'HIRE',
+    recommendation: 'Hire',
     status: 'COMPLETED',
     hasRecording: true,
     hasPdf: true,
@@ -96,12 +98,12 @@ const supplementalRecords: EvaluationManagementRecord[] = [
     candidateName: 'Lucas Fernandez',
     evaluatorName: 'Kevin O\'Brien',
     evaluatedDate: '2026-05-10T11:00:00Z',
-    evaluationType: 'TECHNICAL',
+    evaluationType: 'Coding Test',
     technicalScore: 72,
     communicationScore: 78,
     architectureScore: 70,
     problemSolvingScore: 74,
-    recommendation: 'NO_HIRE',
+    recommendation: 'Reject',
     status: 'ARCHIVED',
     hasRecording: true,
     hasPdf: true,
@@ -112,7 +114,7 @@ const supplementalRecords: EvaluationManagementRecord[] = [
     candidateName: 'Amara Okafor',
     evaluatorName: 'Dr. Alan Wright',
     evaluatedDate: null,
-    evaluationType: 'ARCHITECTURE',
+    evaluationType: 'System Design',
     technicalScore: null,
     communicationScore: null,
     architectureScore: null,
@@ -138,11 +140,13 @@ export const evaluationEvaluators = [
 ].sort();
 
 export const evaluationTypes: readonly EvaluationType[] = [
-  'TECHNICAL',
-  'BEHAVIORAL',
-  'ARCHITECTURE',
-  'FULL_STACK',
-  'SECURITY',
+  'Coding Test',
+  'Live Technical Interview',
+  'System Design',
+  'Platform-Specific',
+  'Communication',
+  'Functional',
+  'Manual Scorecard',
 ];
 
 export const evaluationStatuses: readonly EvaluationManagementStatus[] = [
@@ -153,11 +157,10 @@ export const evaluationStatuses: readonly EvaluationManagementStatus[] = [
 ];
 
 export const evaluationRecommendations = [
-  'STRONG_HIRE',
-  'HIRE',
-  'NEUTRAL',
-  'NO_HIRE',
-  'STRONG_NO_HIRE',
+  'Strong Hire',
+  'Hire',
+  'Borderline',
+  'Reject',
 ] as const;
 
 export function getEvaluationManagementById(

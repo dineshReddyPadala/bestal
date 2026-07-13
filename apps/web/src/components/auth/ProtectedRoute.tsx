@@ -44,7 +44,11 @@ export function ProtectedRoute({ portal, children }: ProtectedRouteProps) {
     return <Navigate to={PORTAL_LOGIN[portal]} state={{ from: location }} replace />;
   }
 
-  if (user.portal !== portal && user.role !== 'ADMIN') {
+  if (
+    user.portal !== portal &&
+    user.role !== 'ADMIN' &&
+    user.role !== 'SUPER_ADMIN'
+  ) {
     return <Navigate to={PORTAL_LOGIN[user.portal]} replace />;
   }
 

@@ -52,6 +52,7 @@ import { InterviewsPage as RecruiterInterviewsPage } from '../pages/recruiter/In
 import { LoginPage as RecruiterLoginPage } from '../pages/recruiter/LoginPage';
 import { ShortlistsPage as RecruiterShortlistsPage } from '../pages/recruiter/ShortlistsPage';
 import { SalesShell } from '../layouts/SalesShell';
+import { SalesCandidatesPage } from '../pages/sales/CandidatesPage';
 import { ClientDetailPage as SalesClientDetailPage } from '../pages/sales/ClientDetailPage';
 import { ClientsPage as SalesClientsPage } from '../pages/sales/ClientsPage';
 import { DashboardPage as SalesDashboardPage } from '../pages/sales/DashboardPage';
@@ -256,6 +257,7 @@ const router = createBrowserRouter([
         children: [
           { index: true, element: <SalesDashboardPage /> },
           { path: 'clients', element: <SalesClientsPage /> },
+          { path: 'candidates', element: <SalesCandidatesPage /> },
           { path: 'clients/:id', element: <SalesClientDetailPage /> },
           { path: 'trials', element: <SalesTrialsPage /> },
           { path: 'interviews', element: <SalesInterviewRequestsPage /> },

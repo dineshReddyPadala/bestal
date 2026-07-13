@@ -1,33 +1,29 @@
+import {
+  EVALUATION_RECOMMENDATIONS,
+  EVALUATION_TYPES,
+} from '@bestal/shared-utils';
 import { z } from 'zod';
 import { paginationMetaSchema } from '../../validators/api-responses.validator.js';
 import { optionalTextField, optionalUrlField } from '../../validators/optional-fields.js';
 
-const evaluationStatusEnum = z.enum(['DRAFT', 'IN_PROGRESS', 'COMPLETED', 'ARCHIVED']);
+const evaluationTypeEnum = z.enum(EVALUATION_TYPES);
+const recommendationEnum = z.enum(EVALUATION_RECOMMENDATIONS);
 
-const evaluationRecommendationEnum = z.enum([
-  'STRONG_HIRE',
-  'HIRE',
-  'NEUTRAL',
-  'NO_HIRE',
-  'STRONG_NO_HIRE',
-]);
+const scoreField = z.coerce.number().int().min(0).max(100).optional();
+const nullableScoreField = z.coerce.number().int().min(0).max(100).nullable().optional();
 
 export const createEvaluationBodySchema = z.object({
   candidateId: z.coerce.number().int().positive(),
-  clientId: z.coerce.number().int().positive().optional(),
-  evaluatorId: z.coerce.number().int().positive().optional(),
-  status: evaluationStatusEnum.optional(),
-  summary: optionalTextField(),
-  strengths: optionalTextField(),
-  weaknesses: optionalTextField(),
-  evaluatorName: z.string().max(150).optional(),
+  evaluatorName: z.string().min(1).max(150),
   evaluatorCompany: z.string().max(255).optional(),
-  evaluationType: z.string().max(100).optional(),
-  technicalScore: z.coerce.number().min(0).max(100).optional(),
-  communicationScore: z.coerce.number().min(0).max(100).optional(),
-  problemSolvingScore: z.coerce.number().min(0).max(100).optional(),
-  architectureScore: z.coerce.number().min(0).max(100).optional(),
-  clientReadinessScore: z.coerce.number().min(0).max(100).optional(),
+  evaluationType: evaluationTypeEnum.optional(),
+  evaluationDate: z.string().date().optional(),
+  technicalScore: scoreField,
+  communicationScore: scoreField,
+  problemSolvingScore: scoreField,
+  architectureScore: scoreField,
+  clientReadinessScore: scoreField,
+  recommendation: recommendationEnum.optional(),
   evaluatorComments: optionalTextField(),
   aiEvaluationSummary: optionalTextField(),
   recordingUrl: optionalUrlField,
@@ -35,35 +31,20 @@ export const createEvaluationBodySchema = z.object({
 });
 
 export const updateEvaluationBodySchema = z.object({
-  clientId: z.coerce.number().int().positive().nullable().optional(),
-  evaluatorId: z.coerce.number().int().positive().optional(),
-  status: evaluationStatusEnum.optional(),
-  recommendation: evaluationRecommendationEnum.optional(),
-  overallScore: z.coerce.number().min(0).max(100).optional(),
-  technicalScore: z.coerce.number().min(0).max(100).optional(),
-  softSkillScore: z.coerce.number().min(0).max(100).optional(),
-  communicationScore: z.coerce.number().min(0).max(100).optional(),
-  problemSolvingScore: z.coerce.number().min(0).max(100).optional(),
-  architectureScore: z.coerce.number().min(0).max(100).optional(),
-  clientReadinessScore: z.coerce.number().min(0).max(100).optional(),
-  summary: optionalTextField(),
-  strengths: optionalTextField(),
-  weaknesses: optionalTextField(),
-  evaluatorName: z.string().max(150).optional(),
-  evaluatorCompany: z.string().max(255).optional(),
-  evaluationType: z.string().max(100).optional(),
+  evaluatorName: z.string().min(1).max(150).optional(),
+  evaluatorCompany: z.string().max(255).nullable().optional(),
+  evaluationType: evaluationTypeEnum.nullable().optional(),
+  evaluationDate: z.string().date().nullable().optional(),
+  technicalScore: nullableScoreField,
+  communicationScore: nullableScoreField,
+  problemSolvingScore: nullableScoreField,
+  architectureScore: nullableScoreField,
+  clientReadinessScore: nullableScoreField,
+  recommendation: recommendationEnum.nullable().optional(),
   evaluatorComments: optionalTextField(),
   aiEvaluationSummary: optionalTextField(),
   recordingUrl: optionalUrlField,
   evaluationFileUrl: optionalUrlField,
-});
-
-export const completeEvaluationBodySchema = z.object({
-  recommendation: evaluationRecommendationEnum,
-  overallScore: z.coerce.number().min(0).max(100).optional(),
-  technicalScore: z.coerce.number().min(0).max(100).optional(),
-  softSkillScore: z.coerce.number().min(0).max(100).optional(),
-  summary: z.string().max(5000).optional(),
 });
 
 export const listEvaluationsQuerySchema = z.object({
@@ -72,14 +53,12 @@ export const listEvaluationsQuerySchema = z.object({
   sort: z
     .string()
     .regex(
-      /^(-?(createdAt|updatedAt|status|evaluatedAt|overallScore))(,-?(createdAt|updatedAt|status|evaluatedAt|overallScore))*$/,
+      /^(-?(createdAt|updatedAt|evaluationDate|technicalScore))(,-?(createdAt|updatedAt|evaluationDate|technicalScore))*$/,
       'Invalid sort format',
     )
     .optional(),
   candidateId: z.coerce.number().int().positive().optional(),
-  clientId: z.coerce.number().int().positive().optional(),
-  status: evaluationStatusEnum.optional(),
-  evaluatorId: z.coerce.number().int().positive().optional(),
+  evaluationType: evaluationTypeEnum.optional(),
 });
 
 export const evaluationIdParamSchema = z.object({
@@ -88,7 +67,6 @@ export const evaluationIdParamSchema = z.object({
 
 export type CreateEvaluationBody = z.infer<typeof createEvaluationBodySchema>;
 export type UpdateEvaluationBody = z.infer<typeof updateEvaluationBodySchema>;
-export type CompleteEvaluationBody = z.infer<typeof completeEvaluationBodySchema>;
 export type ListEvaluationsQuery = z.infer<typeof listEvaluationsQuerySchema>;
 
 const evaluationDtoSchema = z.object({
@@ -96,19 +74,20 @@ const evaluationDtoSchema = z.object({
   organizationId: z.number(),
   candidateId: z.number(),
   candidateName: z.string(),
-  clientId: z.number().nullable(),
-  clientName: z.string().nullable(),
-  evaluatorId: z.number(),
   evaluatorName: z.string(),
-  status: z.string(),
-  recommendation: z.string().nullable(),
-  overallScore: z.number().nullable(),
+  evaluatorCompany: z.string().nullable(),
+  evaluationType: z.string().nullable(),
+  evaluationDate: z.string().nullable(),
   technicalScore: z.number().nullable(),
-  softSkillScore: z.number().nullable(),
-  summary: z.string().nullable(),
-  strengths: z.string().nullable(),
-  weaknesses: z.string().nullable(),
-  evaluatedAt: z.string().nullable(),
+  communicationScore: z.number().nullable(),
+  problemSolvingScore: z.number().nullable(),
+  architectureScore: z.number().nullable(),
+  clientReadinessScore: z.number().nullable(),
+  recommendation: z.string().nullable(),
+  evaluatorComments: z.string().nullable(),
+  aiEvaluationSummary: z.string().nullable(),
+  recordingUrl: z.string().nullable(),
+  evaluationFileUrl: z.string().nullable(),
   createdAt: z.string(),
   updatedAt: z.string(),
 });
@@ -121,14 +100,12 @@ export const evaluationListItemSchema = z.object({
   id: z.number(),
   candidateId: z.number(),
   candidateName: z.string(),
-  clientId: z.number().nullable(),
-  clientName: z.string().nullable(),
-  evaluatorId: z.number(),
   evaluatorName: z.string(),
-  status: z.string(),
+  evaluatorCompany: z.string().nullable(),
+  evaluationType: z.string().nullable(),
+  evaluationDate: z.string().nullable(),
   recommendation: z.string().nullable(),
-  overallScore: z.number().nullable(),
-  evaluatedAt: z.string().nullable(),
+  technicalScore: z.number().nullable(),
   createdAt: z.string(),
   updatedAt: z.string(),
 });

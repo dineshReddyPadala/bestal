@@ -1,7 +1,6 @@
 import type { Evaluation, Prisma, PrismaClient } from '@prisma/client';
 import { BaseRepository } from '../../repositories/base.repository.js';
 import type {
-  CompleteEvaluationInput,
   CreateEvaluationInput,
   EvaluationListFilters,
   UpdateEvaluationInput,
@@ -10,42 +9,38 @@ import { parseSortParam } from './evaluation.mapper.js';
 
 const evaluationInclude = {
   candidate: { select: { id: true, firstName: true, lastName: true } },
-  client: { select: { id: true, name: true } },
-  evaluator: { select: { id: true, firstName: true, lastName: true } },
 } satisfies Prisma.EvaluationInclude;
 
 export type EvaluationRecord = Prisma.EvaluationGetPayload<{
   include: typeof evaluationInclude;
 }>;
 
+function parseEvaluationDate(value: string | null | undefined): Date | null | undefined {
+  if (value === undefined) return undefined;
+  if (value === null) return null;
+  return new Date(`${value}T00:00:00.000Z`);
+}
+
 export class EvaluationRepository extends BaseRepository {
   constructor(prisma: PrismaClient) {
     super(prisma);
   }
 
-  create(
-    organizationId: number,
-    evaluatorId: number,
-    data: CreateEvaluationInput,
-  ): Promise<EvaluationRecord> {
+  create(organizationId: number, data: CreateEvaluationInput): Promise<EvaluationRecord> {
     return this.prisma.evaluation.create({
       data: {
         organizationId: BigInt(organizationId),
         candidateId: BigInt(data.candidateId),
-        clientId: data.clientId ? BigInt(data.clientId) : undefined,
-        evaluatorId: BigInt(evaluatorId),
-        status: data.status,
-        summary: data.summary,
-        strengths: data.strengths,
-        weaknesses: data.weaknesses,
         evaluatorName: data.evaluatorName,
         evaluatorCompany: data.evaluatorCompany,
         evaluationType: data.evaluationType,
+        evaluationDate: parseEvaluationDate(data.evaluationDate),
         technicalScore: data.technicalScore,
         communicationScore: data.communicationScore,
         problemSolvingScore: data.problemSolvingScore,
         architectureScore: data.architectureScore,
         clientReadinessScore: data.clientReadinessScore,
+        recommendation: data.recommendation,
         evaluatorComments: data.evaluatorComments,
         aiEvaluationSummary: data.aiEvaluationSummary,
         recordingUrl: data.recordingUrl,
@@ -77,22 +72,16 @@ export class EvaluationRepository extends BaseRepository {
         organizationId: BigInt(organizationId),
       },
       data: {
-        ...(data.clientId !== undefined && {
-          clientId: data.clientId ? BigInt(data.clientId) : null,
+        ...(data.evaluatorName !== undefined && { evaluatorName: data.evaluatorName }),
+        ...(data.evaluatorCompany !== undefined && {
+          evaluatorCompany: data.evaluatorCompany,
         }),
-        ...(data.evaluatorId !== undefined && {
-          evaluatorId: BigInt(data.evaluatorId),
+        ...(data.evaluationType !== undefined && { evaluationType: data.evaluationType }),
+        ...(data.evaluationDate !== undefined && {
+          evaluationDate: parseEvaluationDate(data.evaluationDate),
         }),
-        ...(data.status !== undefined && { status: data.status }),
-        ...(data.recommendation !== undefined && {
-          recommendation: data.recommendation,
-        }),
-        ...(data.overallScore !== undefined && { overallScore: data.overallScore }),
         ...(data.technicalScore !== undefined && {
           technicalScore: data.technicalScore,
-        }),
-        ...(data.softSkillScore !== undefined && {
-          softSkillScore: data.softSkillScore,
         }),
         ...(data.communicationScore !== undefined && {
           communicationScore: data.communicationScore,
@@ -106,14 +95,7 @@ export class EvaluationRepository extends BaseRepository {
         ...(data.clientReadinessScore !== undefined && {
           clientReadinessScore: data.clientReadinessScore,
         }),
-        ...(data.summary !== undefined && { summary: data.summary }),
-        ...(data.strengths !== undefined && { strengths: data.strengths }),
-        ...(data.weaknesses !== undefined && { weaknesses: data.weaknesses }),
-        ...(data.evaluatorName !== undefined && { evaluatorName: data.evaluatorName }),
-        ...(data.evaluatorCompany !== undefined && {
-          evaluatorCompany: data.evaluatorCompany,
-        }),
-        ...(data.evaluationType !== undefined && { evaluationType: data.evaluationType }),
+        ...(data.recommendation !== undefined && { recommendation: data.recommendation }),
         ...(data.evaluatorComments !== undefined && {
           evaluatorComments: data.evaluatorComments,
         }),
@@ -124,29 +106,6 @@ export class EvaluationRepository extends BaseRepository {
         ...(data.evaluationFileUrl !== undefined && {
           evaluationFileUrl: data.evaluationFileUrl,
         }),
-      },
-      include: evaluationInclude,
-    });
-  }
-
-  complete(
-    organizationId: number,
-    id: number,
-    data: CompleteEvaluationInput,
-  ): Promise<EvaluationRecord> {
-    return this.prisma.evaluation.update({
-      where: {
-        id: BigInt(id),
-        organizationId: BigInt(organizationId),
-      },
-      data: {
-        status: 'COMPLETED',
-        recommendation: data.recommendation,
-        overallScore: data.overallScore,
-        technicalScore: data.technicalScore,
-        softSkillScore: data.softSkillScore,
-        summary: data.summary,
-        evaluatedAt: new Date(),
       },
       include: evaluationInclude,
     });
@@ -195,32 +154,6 @@ export class EvaluationRepository extends BaseRepository {
       .then(Boolean);
   }
 
-  clientExists(organizationId: number, clientId: number): Promise<boolean> {
-    return this.prisma.client
-      .findFirst({
-        where: {
-          id: BigInt(clientId),
-          organizationId: BigInt(organizationId),
-          deletedAt: null,
-        },
-        select: { id: true },
-      })
-      .then(Boolean);
-  }
-
-  evaluatorExists(evaluatorId: number): Promise<boolean> {
-    return this.prisma.user
-      .findFirst({
-        where: {
-          id: BigInt(evaluatorId),
-          deletedAt: null,
-          isActive: true,
-        },
-        select: { id: true },
-      })
-      .then(Boolean);
-  }
-
   private buildWhereClause(
     filters: EvaluationListFilters,
   ): Prisma.EvaluationWhereInput {
@@ -233,16 +166,8 @@ export class EvaluationRepository extends BaseRepository {
       where.candidateId = BigInt(filters.candidateId);
     }
 
-    if (filters.clientId) {
-      where.clientId = BigInt(filters.clientId);
-    }
-
-    if (filters.status) {
-      where.status = filters.status;
-    }
-
-    if (filters.evaluatorId) {
-      where.evaluatorId = BigInt(filters.evaluatorId);
+    if (filters.evaluationType) {
+      where.evaluationType = filters.evaluationType;
     }
 
     return where;

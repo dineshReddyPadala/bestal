@@ -6,9 +6,11 @@ import { useState } from 'react';
 import { CsvImportScreen } from '../../components/import/CsvImportScreen';
 import { CandidateEntryMethodChooser } from '../../components/forms/CandidateEntryMethodChooser';
 import { CandidateWizard } from '../../components/forms/CandidateWizard';
+import { ResumeUploadDialog } from '../../components/forms/ResumeUploadDialog';
 import type {
   CandidateWizardUploads,
   CandidateWizardValues,
+  CandidateWizardFormValues,
 } from '../../components/forms/candidate-wizard-schema';
 import {
   getInitialStepIndexForEntryMethod,
@@ -17,7 +19,9 @@ import {
 } from '../../components/forms/candidate-wizard-schema';
 import { useDemoToast } from '../../lib/use-demo-toast';
 import { useCandidateMutations } from '../../hooks/api/useCandidates';
+import { getApiErrorMessage } from '../../lib/api/errors';
 import { uploadCandidateFile } from '../../lib/api/candidates';
+import { ToastHost } from '../../components/ui/ToastHost';
 
 function usePortalBasePath() {
   const { pathname } = useLocation();
@@ -28,14 +32,49 @@ function usePortalBasePath() {
 export function AddCandidatePage() {
   const navigate = useNavigate();
   const basePath = usePortalBasePath();
-  const { message, show } = useDemoToast();
+  const { message, variant, show, showError, dismiss } = useDemoToast();
   const { create } = useCandidateMutations();
   const [submittedId, setSubmittedId] = useState<number | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const [entryMethod, setEntryMethod] = useState<CandidateEntryMethod | null>(null);
+  const [resumeDialogOpen, setResumeDialogOpen] = useState(false);
+  const [resumeBootstrap, setResumeBootstrap] = useState<{
+    formValues: Partial<CandidateWizardFormValues>;
+    uploads: CandidateWizardUploads;
+    sessionKey: string;
+  } | null>(null);
+
+  function handleEntrySelect(method: CandidateEntryMethod) {
+    if (method === 'resume') {
+      setResumeDialogOpen(true);
+      return;
+    }
+    setResumeBootstrap(null);
+    setEntryMethod(method);
+  }
+
+  function handleResumeSuccess(
+    file: File,
+    formValues: Partial<CandidateWizardFormValues>,
+    uploads: CandidateWizardUploads,
+    toastMessage: string,
+  ) {
+    setResumeBootstrap({
+      formValues,
+      uploads,
+      sessionKey: `${file.name}-${file.lastModified}`,
+    });
+    setEntryMethod('resume');
+    setResumeDialogOpen(false);
+    show(toastMessage);
+  }
 
   async function handleSubmit(values: CandidateWizardValues, uploads: CandidateWizardUploads) {
+    setSubmitError(null);
     try {
-      const created = await create.mutateAsync(mapWizardToApiCreateBody(values));
+      const created = await create.mutateAsync(
+        mapWizardToApiCreateBody(values),
+      );
 
       const uploadJobs: Promise<unknown>[] = [];
       if (uploads.profileImage) {
@@ -59,12 +98,15 @@ export function AddCandidatePage() {
       );
       setTimeout(() => navigate(`${basePath}/candidates/${created.id}`), 1200);
     } catch (err) {
-      show(err instanceof Error ? err.message : 'Failed to create candidate');
+      const errorMessage = getApiErrorMessage(err, 'Failed to create candidate');
+      setSubmitError(errorMessage);
+      showError(errorMessage);
     }
   }
 
   return (
     <div className="min-h-full bg-muted/10">
+      <ToastHost message={message} variant={variant} onDismiss={dismiss} />
       <PageHeader
         title="Add Candidate"
         description="Add a new candidate to the talent pool"
@@ -77,7 +119,14 @@ export function AddCandidatePage() {
       />
 
       {message && (
-        <div className="mx-6 mt-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+        <div
+          className={`mx-6 mt-4 rounded-xl border px-4 py-3 text-sm ${
+            variant === 'error'
+              ? 'border-destructive/30 bg-destructive/10 text-destructive'
+              : 'border-emerald-200 bg-emerald-50 text-emerald-700'
+          }`}
+          role="status"
+        >
           {message}
         </div>
       )}
@@ -94,7 +143,7 @@ export function AddCandidatePage() {
           <Card className="mx-auto max-w-4xl">
             <CardContent className="p-6">
               <CandidateEntryMethodChooser
-                onSelect={setEntryMethod}
+                onSelect={handleEntrySelect}
                 onCancel={() => navigate(`${basePath}/candidates`)}
               />
             </CardContent>
@@ -115,18 +164,35 @@ export function AddCandidatePage() {
           <Card className="mx-auto max-w-4xl">
             <CardContent className="p-6">
               <CandidateWizard
-                key={entryMethod}
+                key={
+                  entryMethod === 'resume' && resumeBootstrap
+                    ? `resume-${resumeBootstrap.sessionKey}`
+                    : entryMethod
+                }
                 entryMethod={entryMethod}
                 initialStepIndex={getInitialStepIndexForEntryMethod(entryMethod)}
+                initialFormValues={resumeBootstrap?.formValues}
+                initialUploads={resumeBootstrap?.uploads}
                 onSubmit={handleSubmit}
                 onCancel={() => navigate(`${basePath}/candidates`)}
-                onChangeEntryMethod={() => setEntryMethod(null)}
+                onChangeEntryMethod={() => {
+                  setResumeBootstrap(null);
+                  setEntryMethod(null);
+                }}
                 onToast={show}
+                submitError={submitError}
+                isSubmitting={create.isPending}
               />
             </CardContent>
           </Card>
         )}
       </div>
+
+      <ResumeUploadDialog
+        open={resumeDialogOpen}
+        onClose={() => setResumeDialogOpen(false)}
+        onSuccess={handleResumeSuccess}
+      />
     </div>
   );
 }

@@ -6,10 +6,9 @@ export class SkillCommunityRepository extends BaseRepository {
     super(prisma);
   }
 
-  listActive(organizationId: number) {
+  listActive() {
     return this.prisma.skillCommunity.findMany({
       where: {
-        organizationId: BigInt(organizationId),
         isActive: true,
         deletedAt: null,
       },

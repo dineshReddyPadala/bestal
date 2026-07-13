@@ -1,5 +1,7 @@
 import type {
   CandidateApprovalStatus,
+  CandidateAvailabilityStatus,
+  CandidateProfileStatus,
   CandidateSource,
   CandidateStatus,
   CandidateVisibility,
@@ -74,7 +76,7 @@ export interface CandidateDto {
   clientBillRate: number | null;
   candidatePayRate: number | null;
   grossMargin: number | null;
-  availabilityStatus: string | null;
+  availabilityStatus: CandidateAvailabilityStatus | null;
   timezoneOverlap: string | null;
   preferredShift: string | null;
   minHoursPerWeek: number | null;
@@ -90,8 +92,9 @@ export interface CandidateDto {
   reliabilityScore: number | null;
   evaluationStatus: string | null;
   bgvStatus: string | null;
-  profileStatus: string | null;
+  profileStatus: CandidateProfileStatus | null;
   deploymentStatus: string | null;
+  submittedForApprovalAt: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -111,6 +114,10 @@ export interface CandidateListItemDto {
   hasResume: boolean;
   hasProfileImage: boolean;
   hasIntroVideo: boolean;
+  profileStatus: string | null;
+  evaluationStatus: string | null;
+  bgvStatus: string | null;
+  submittedForApprovalAt: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -168,7 +175,7 @@ export interface CreateCandidateInput {
   clientBillRate?: number;
   candidatePayRate?: number;
   grossMargin?: number;
-  availabilityStatus?: string;
+  availabilityStatus?: CandidateAvailabilityStatus;
   timezoneOverlap?: string;
   preferredShift?: string;
   minHoursPerWeek?: number;
@@ -184,7 +191,8 @@ export interface CreateCandidateInput {
   reliabilityScore?: number;
   evaluationStatus?: string;
   bgvStatus?: string;
-  profileStatus?: string;
+  profileStatus?: CandidateProfileStatus;
+  visibility?: CandidateVisibility;
   deploymentStatus?: string;
   skills?: CreateCandidateSkillInput[];
 }
@@ -193,6 +201,17 @@ export interface UpdateCandidateInput extends Partial<CreateCandidateInput> {}
 
 export interface RejectCandidateInput {
   reason: string;
+}
+
+export interface RunAiScreeningInput {
+  aiSummary?: string;
+  strengths?: string;
+  weaknesses?: string;
+  riskFlags?: string;
+}
+
+export interface CompleteRecruiterReviewInput {
+  clientProfileSummary?: string;
 }
 
 export type CandidateAssetKind = 'RESUME' | 'PROFILE_IMAGE' | 'INTRO_VIDEO';

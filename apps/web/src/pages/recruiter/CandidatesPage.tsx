@@ -6,6 +6,7 @@ export function CandidatesPage() {
       basePath="/recruiter/candidates"
       addCandidatePath="/recruiter/candidates/new"
       title="Candidates"
+      enableSubmitForApproval
     />
   );
 }

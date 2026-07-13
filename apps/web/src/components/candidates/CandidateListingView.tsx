@@ -1,20 +1,33 @@
+import {
+  CANDIDATE_PROFILE_STATUS_LABELS,
+  CANDIDATE_VISIBILITY_LABELS,
+  CANDIDATE_VISIBILITY_STATUSES,
+  type CandidateProfileStatusValue,
+} from '@bestal/shared-utils';
 import { Avatar, Button, StatusBadge, TanStackDataTable } from '@bestal/ui';
 import { type ColumnDef } from '@tanstack/react-table';
-import { Plus } from 'lucide-react';
-import { useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useCandidatesList } from '../../hooks/api/useCandidates';
+import { MoreHorizontal, Plus, Send } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { useCandidateMutations, useCandidatesList } from '../../hooks/api/useCandidates';
+import { usePermissions } from '../../hooks/usePermissions';
+import { getApiErrorMessage } from '../../lib/api/errors';
 import type { CandidateListItem } from '../../lib/api/types';
+import { useDemoToast } from '../../lib/use-demo-toast';
 import {
   ListingFilterSelect,
   ListingFiltersRow,
   ListingPageShell,
 } from '../layout/ListingPageShell';
+import { ToastHost } from '../ui/ToastHost';
 
 type CandidateListingViewProps = {
   basePath: string;
-  addCandidatePath: string;
+  addCandidatePath?: string;
   title?: string;
+  readOnly?: boolean;
+  /** Recruiter listing: row + multi-select Submit for approval */
+  enableSubmitForApproval?: boolean;
 };
 
 type ListFilters = {
@@ -41,18 +54,106 @@ function toRow(item: CandidateListItem): ApiCandidateRow {
 }
 
 function VisibilityBadge({ value }: { value: string }) {
-  if (value === 'PUBLISHED') return <StatusBadge status="PUBLISHED" />;
+  if (value === 'CLIENT_VISIBLE') return <StatusBadge status="CLIENT_VISIBLE" />;
   if (value === 'HIDDEN') return <StatusBadge status="HIDDEN" />;
-  return <StatusBadge status="DRAFT" />;
+  return <StatusBadge status="INTERNAL_ONLY" />;
+}
+
+function canSubmitCandidate(row: ApiCandidateRow): boolean {
+  return row.profileStatus === 'PROFILE_DRAFT' && !row.submittedForApprovalAt;
+}
+
+function profileStatusLabel(status: string | null): string {
+  if (!status) return '—';
+  return (
+    CANDIDATE_PROFILE_STATUS_LABELS[status as CandidateProfileStatusValue] ?? status
+  );
+}
+
+function CandidateRowActionsMenu({
+  basePath,
+  row,
+  onSubmit,
+  submitting,
+}: {
+  basePath: string;
+  row: ApiCandidateRow;
+  onSubmit: (row: ApiCandidateRow) => void;
+  submitting: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const eligible = canSubmitCandidate(row);
+
+  useEffect(() => {
+    if (!open) return;
+    const close = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', close);
+    return () => document.removeEventListener('mousedown', close);
+  }, [open]);
+
+  return (
+    <div className="relative" ref={ref} onClick={(e) => e.stopPropagation()}>
+      <button
+        type="button"
+        className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
+        onClick={() => setOpen((v) => !v)}
+        aria-label="Candidate actions"
+      >
+        <MoreHorizontal className="h-4 w-4" />
+      </button>
+      {open ? (
+        <div className="absolute right-0 top-full z-20 mt-1 min-w-[200px] rounded-lg border border-border bg-background py-1 shadow-elevated">
+          <Link
+            to={`${basePath}/${row.id}`}
+            className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-muted"
+            onClick={() => setOpen(false)}
+          >
+            View
+          </Link>
+          <button
+            type="button"
+            disabled={!eligible || submitting}
+            title={
+              eligible
+                ? undefined
+                : row.submittedForApprovalAt
+                  ? 'Already submitted for approval'
+                  : 'Requires profile status PROFILE_DRAFT'
+            }
+            className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-muted disabled:cursor-not-allowed disabled:opacity-40"
+            onClick={() => {
+              if (!eligible || submitting) return;
+              onSubmit(row);
+              setOpen(false);
+            }}
+          >
+            <Send className="h-3.5 w-3.5" />
+            Submit for approval
+          </button>
+        </div>
+      ) : null}
+    </div>
+  );
 }
 
 export function CandidateListingView({
   basePath,
   addCandidatePath,
   title = 'Candidates',
+  readOnly = false,
+  enableSubmitForApproval = false,
 }: CandidateListingViewProps) {
   const navigate = useNavigate();
+  const { canWriteCandidates } = usePermissions();
+  const mutations = useCandidateMutations();
+  const { message, variant, show, showError, dismiss } = useDemoToast();
   const [filters, setFilters] = useState(defaultFilters);
+  const [submitting, setSubmitting] = useState(false);
+
+  const showSubmitActions = enableSubmitForApproval && canWriteCandidates && !readOnly;
 
   const listParams = useMemo(
     () => ({
@@ -68,8 +169,97 @@ export function CandidateListingView({
   const { data, isLoading, isError, error } = useCandidatesList(listParams);
   const rows = useMemo(() => (data?.data ?? []).map(toRow), [data]);
 
-  const columns = useMemo<ColumnDef<ApiCandidateRow>[]>(
-    () => [
+  const submitOne = useCallback(
+    async (row: ApiCandidateRow) => {
+      if (!canSubmitCandidate(row)) {
+        showError('Candidate is not ready to submit for approval');
+        return;
+      }
+      setSubmitting(true);
+      try {
+        await mutations.submitForApproval.mutateAsync(row.id);
+        show(`Submitted ${row.fullName} for approval`);
+      } catch (err) {
+        showError(getApiErrorMessage(err, 'Submit for approval failed'));
+      } finally {
+        setSubmitting(false);
+      }
+    },
+    [mutations.submitForApproval, show, showError],
+  );
+
+  const submitMany = useCallback(
+    async (selected: ApiCandidateRow[]) => {
+      const eligible = selected.filter(canSubmitCandidate);
+      if (eligible.length === 0) {
+        showError('None of the selected candidates are ready to submit (need PROFILE_DRAFT)');
+        return;
+      }
+
+      setSubmitting(true);
+      let success = 0;
+      const failures: string[] = [];
+
+      for (const row of eligible) {
+        try {
+          await mutations.submitForApproval.mutateAsync(row.id);
+          success += 1;
+        } catch (err) {
+          failures.push(`${row.fullName}: ${getApiErrorMessage(err, 'failed')}`);
+        }
+      }
+
+      setSubmitting(false);
+
+      const skipped = selected.length - eligible.length;
+      if (failures.length === 0) {
+        show(
+          `Submitted ${success} candidate${success === 1 ? '' : 's'} for approval${
+            skipped > 0 ? ` (${skipped} skipped)` : ''
+          }`,
+        );
+      } else {
+        showError(
+          `Submitted ${success}, failed ${failures.length}${
+            skipped > 0 ? `, skipped ${skipped}` : ''
+          }. ${failures[0]}`,
+        );
+      }
+    },
+    [mutations.submitForApproval, show, showError],
+  );
+
+  const columns = useMemo<ColumnDef<ApiCandidateRow>[]>(() => {
+    const cols: ColumnDef<ApiCandidateRow>[] = [];
+
+    if (showSubmitActions) {
+      cols.push({
+        id: 'select',
+        header: ({ table }) => (
+          <input
+            type="checkbox"
+            className="h-4 w-4 rounded border-border accent-brand"
+            checked={table.getIsAllPageRowsSelected()}
+            onChange={table.getToggleAllPageRowsSelectedHandler()}
+            onClick={(e) => e.stopPropagation()}
+            aria-label="Select all"
+          />
+        ),
+        cell: ({ row }) => (
+          <input
+            type="checkbox"
+            className="h-4 w-4 rounded border-border accent-brand"
+            checked={row.getIsSelected()}
+            onChange={row.getToggleSelectedHandler()}
+            onClick={(e) => e.stopPropagation()}
+            aria-label="Select row"
+          />
+        ),
+        enableSorting: false,
+      });
+    }
+
+    cols.push(
       {
         accessorKey: 'fullName',
         header: 'Name',
@@ -115,6 +305,18 @@ export function CandidateListingView({
         cell: ({ getValue }) => (getValue() as string | null) || '—',
       },
       {
+        accessorKey: 'profileStatus',
+        header: 'Pipeline',
+        cell: ({ row }) => (
+          <div className="min-w-[120px]">
+            <StatusBadge status={row.original.profileStatus ?? 'SOURCED'} />
+            {row.original.submittedForApprovalAt ? (
+              <p className="mt-1 text-[10px] text-muted-foreground">Submitted</p>
+            ) : null}
+          </div>
+        ),
+      },
+      {
         accessorKey: 'status',
         header: 'Status',
         cell: ({ getValue }) => <StatusBadge status={String(getValue())} />,
@@ -124,85 +326,146 @@ export function CandidateListingView({
         header: 'Visibility',
         cell: ({ getValue }) => <VisibilityBadge value={String(getValue())} />,
       },
-    ],
-    [],
-  );
+    );
+
+    if (showSubmitActions) {
+      cols.push({
+        id: 'actions',
+        header: '',
+        cell: ({ row }) => (
+          <CandidateRowActionsMenu
+            basePath={basePath}
+            row={row.original}
+            onSubmit={submitOne}
+            submitting={submitting}
+          />
+        ),
+        enableSorting: false,
+      });
+    }
+
+    return cols;
+  }, [basePath, showSubmitActions, submitOne, submitting]);
 
   return (
-    <ListingPageShell
-      title={title}
-      loading={isLoading}
-      loadingLabel="Loading candidates…"
-      error={isError ? (error instanceof Error ? error.message : 'Failed to load candidates') : null}
-      actions={
-        <Button size="sm" to={addCandidatePath}>
-          <Plus className="mr-1.5 h-3.5 w-3.5" />
-          Add Candidate
-        </Button>
-      }
-    >
-      <TanStackDataTable
-        columns={columns}
-        data={rows}
-        searchPlaceholder="Search by name or email…"
-        pageSize={12}
-        getRowId={(row) => String(row.id)}
-        stickyHeader
-        fillHeight
-        dense
-        filtersInline
-        emptyTitle="No candidates yet"
-        emptyDescription="Add a candidate or adjust filters to see live records."
-        onRowClick={(row) => navigate(`${basePath}/${row.id}`)}
-        filters={
-          <ListingFiltersRow onClear={() => setFilters(defaultFilters)}>
-            <ListingFilterSelect
-              label="STATUS"
-              value={filters.status}
-              onChange={(v) => setFilters((prev) => ({ ...prev, status: v }))}
-              options={[
-                { value: 'all', label: 'All statuses' },
-                { value: 'NEW', label: 'New' },
-                { value: 'ACTIVE', label: 'Active' },
-                { value: 'INACTIVE', label: 'Inactive' },
-                { value: 'PLACED', label: 'Placed' },
-                { value: 'DO_NOT_CONTACT', label: 'Do not contact' },
-              ]}
-            />
-            <ListingFilterSelect
-              label="VISIBILITY"
-              value={filters.visibility}
-              onChange={(v) => setFilters((prev) => ({ ...prev, visibility: v }))}
-              options={[
-                { value: 'all', label: 'All visibility' },
-                { value: 'PUBLISHED', label: 'Published' },
-                { value: 'DRAFT', label: 'Unpublished' },
-                { value: 'HIDDEN', label: 'Hidden' },
-              ]}
-            />
-            <ListingFilterSelect
-              label="APPROVAL"
-              value={filters.approvalStatus}
-              onChange={(v) => setFilters((prev) => ({ ...prev, approvalStatus: v }))}
-              options={[
-                { value: 'all', label: 'All approvals' },
-                { value: 'PENDING', label: 'Pending' },
-                { value: 'APPROVED', label: 'Approved' },
-                { value: 'REJECTED', label: 'Rejected' },
-              ]}
-            />
-          </ListingFiltersRow>
+    <>
+      <ToastHost message={message} variant={variant} onDismiss={dismiss} />
+      <ListingPageShell
+        title={title}
+        loading={isLoading}
+        loadingLabel="Loading candidates…"
+        error={isError ? (error instanceof Error ? error.message : 'Failed to load candidates') : null}
+        actions={
+          addCandidatePath ? (
+            <Button size="sm" to={addCandidatePath}>
+              <Plus className="mr-1.5 h-3.5 w-3.5" />
+              Add Candidate
+            </Button>
+          ) : undefined
         }
-        globalFilterFn={(row, _columnId, filterValue) => {
-          const q = String(filterValue).toLowerCase().trim();
-          if (!q) return true;
-          const r = row.original;
-          return [r.fullName, r.email, r.headline ?? '', r.location ?? '', r.primarySkillCommunityName ?? '']
-            .join(' ')
-            .toLowerCase()
-            .includes(q);
-        }}
-      />
-    </ListingPageShell>
+      >
+        <TanStackDataTable
+          columns={columns}
+          data={rows}
+          searchPlaceholder="Search by name or email…"
+          pageSize={12}
+          getRowId={(row) => String(row.id)}
+          stickyHeader
+          fillHeight
+          dense
+          filtersInline
+          enableRowSelection={showSubmitActions}
+          emptyTitle={readOnly ? 'No matching candidates' : 'No candidates yet'}
+          emptyDescription={
+            readOnly
+              ? 'Adjust your search or filters to find talent.'
+              : 'Add a candidate or adjust filters to see live records.'
+          }
+          onRowClick={readOnly ? undefined : (row) => navigate(`${basePath}/${row.id}`)}
+          bulkActions={
+            showSubmitActions
+              ? (selected) => {
+                  const eligibleCount = selected.filter(canSubmitCandidate).length;
+                  return (
+                    <Button
+                      size="sm"
+                      disabled={submitting || eligibleCount === 0}
+                      title={
+                        eligibleCount === 0
+                          ? 'Select candidates in PROFILE_DRAFT that are not yet submitted'
+                          : `Submit ${eligibleCount} ready candidate(s)`
+                      }
+                      onClick={() => void submitMany(selected)}
+                    >
+                      <Send className="mr-1.5 h-3.5 w-3.5" />
+                      {submitting
+                        ? 'Submitting…'
+                        : `Submit for approval${eligibleCount > 0 ? ` (${eligibleCount})` : ''}`}
+                    </Button>
+                  );
+                }
+              : undefined
+          }
+          filters={
+            readOnly ? undefined : (
+              <ListingFiltersRow onClear={() => setFilters(defaultFilters)}>
+                <ListingFilterSelect
+                  label="STATUS"
+                  value={filters.status}
+                  onChange={(v) => setFilters((prev) => ({ ...prev, status: v }))}
+                  options={[
+                    { value: 'all', label: 'All statuses' },
+                    { value: 'NEW', label: 'New' },
+                    { value: 'ACTIVE', label: 'Active' },
+                    { value: 'INACTIVE', label: 'Inactive' },
+                    { value: 'PLACED', label: 'Placed' },
+                    { value: 'DO_NOT_CONTACT', label: 'Do not contact' },
+                  ]}
+                />
+                <ListingFilterSelect
+                  label="VISIBILITY"
+                  value={filters.visibility}
+                  onChange={(v) => setFilters((prev) => ({ ...prev, visibility: v }))}
+                  options={[
+                    { value: 'all', label: 'All visibility' },
+                    ...CANDIDATE_VISIBILITY_STATUSES.map((value) => ({
+                      value,
+                      label: CANDIDATE_VISIBILITY_LABELS[value],
+                    })),
+                  ]}
+                />
+                <ListingFilterSelect
+                  label="APPROVAL"
+                  value={filters.approvalStatus}
+                  onChange={(v) => setFilters((prev) => ({ ...prev, approvalStatus: v }))}
+                  options={[
+                    { value: 'all', label: 'All approvals' },
+                    { value: 'PENDING', label: 'Pending' },
+                    { value: 'APPROVED', label: 'Approved' },
+                    { value: 'REJECTED', label: 'Rejected' },
+                  ]}
+                />
+              </ListingFiltersRow>
+            )
+          }
+          globalFilterFn={(row, _columnId, filterValue) => {
+            const q = String(filterValue).toLowerCase().trim();
+            if (!q) return true;
+            const r = row.original;
+            return [
+              r.fullName,
+              r.email,
+              r.headline ?? '',
+              r.location ?? '',
+              r.primarySkillCommunityName ?? '',
+              profileStatusLabel(r.profileStatus),
+            ]
+              .join(' ')
+              .toLowerCase()
+              .includes(q);
+          }}
+        />
+      </ListingPageShell>
+    </>
   );
 }

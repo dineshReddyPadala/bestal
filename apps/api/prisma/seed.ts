@@ -84,12 +84,7 @@ async function main() {
 
   for (const community of skillCommunitySeed) {
     await prisma.skillCommunity.upsert({
-      where: {
-        organizationId_slug: {
-          organizationId: orgId,
-          slug: community.slug,
-        },
-      },
+      where: { slug: community.slug },
       update: {
         name: community.name,
         description: community.description,
@@ -97,7 +92,6 @@ async function main() {
         deletedAt: null,
       },
       create: {
-        organizationId: orgId,
         name: community.name,
         slug: community.slug,
         description: community.description,
@@ -108,6 +102,7 @@ async function main() {
   console.log(`Seeded ${skillCommunitySeed.length} skill communities.`);
 
   const users = [
+    { email: 'superadmin@bestal.com', firstName: 'Super', lastName: 'Admin', role: Role.SUPER_ADMIN },
     { email: 'admin@bestal.com', firstName: 'Platform', lastName: 'Admin', role: Role.ADMIN },
     { email: 'recruiter@bestal.com', firstName: 'Demo', lastName: 'Recruiter', role: Role.RECRUITER },
     { email: 'sales@bestal.com', firstName: 'Demo', lastName: 'Sales', role: Role.SALES },
@@ -184,7 +179,7 @@ async function main() {
       lastName: 'Petrov',
       email: 'alexandra.petrov@demo.bestal.com',
       status: CandidateStatus.ACTIVE,
-      visibility: CandidateVisibility.PUBLISHED,
+      visibility: CandidateVisibility.CLIENT_VISIBLE,
       approvalStatus: CandidateApprovalStatus.APPROVED,
       source: CandidateSource.LINKEDIN,
       headline: 'Senior Full-Stack Engineer',

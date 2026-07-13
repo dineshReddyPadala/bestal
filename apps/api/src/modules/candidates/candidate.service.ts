@@ -2,6 +2,25 @@ import type { DocumentKind } from '@prisma/client';
 import type { FastifyInstance } from 'fastify';
 import { ROLES } from '../../constants/index.js';
 import type { AuthenticatedUser } from '../../types/index.js';
+import {
+  PERMISSIONS,
+  roleHasPermission,
+} from '../auth/auth.permissions.js';
+import {
+  assertSalesLimitedCandidateUpdate,
+  redactCandidatePayFields,
+} from './candidate-access.js';
+import { normalizeCandidateSkills } from './candidate-skills.js';
+import {
+  assertCanApprove,
+  assertCanCompletePricing,
+  assertCanCompleteRecruiterReview,
+  assertCanPublish,
+  assertCanRunAiScreening,
+  assertCanSubmitForApproval,
+  isPricingComplete,
+  type PipelineCandidateSnapshot,
+} from './candidate-pipeline.js';
 import { StorageService } from '../../services/storage.service.js';
 import { getUploadCategoryConfig } from '../../services/storage/file-validation.js';
 import type { UploadCategory } from '../../services/storage/storage.constants.js';
@@ -24,9 +43,11 @@ import type {
   CandidateDto,
   CandidateListItemDto,
   CompleteAssetUploadInput,
+  CompleteRecruiterReviewInput,
   CreateCandidateInput,
   PrepareAssetUploadInput,
   RejectCandidateInput,
+  RunAiScreeningInput,
   UpdateCandidateInput,
   UploadAssetInput,
 } from './candidate.types.js';
@@ -52,11 +73,11 @@ export class CandidateService {
   ): Promise<CandidateDto> {
     const organizationId = this.requireOrganization(authUser);
 
-    await this.validateSkillCommunity(organizationId, input.primarySkillCommunityId);
+    await this.validateSkillCommunity(input.primarySkillCommunityId);
 
     if (input.skills?.length) {
       for (const skill of input.skills) {
-        await this.validateSkillCommunity(organizationId, skill.skillCommunityId);
+        await this.validateSkillCommunity(skill.skillCommunityId);
       }
     }
 
@@ -69,11 +90,22 @@ export class CandidateService {
       throw new ConflictError('A candidate with this email already exists');
     }
 
+    const {
+      profileStatus: _profileStatus,
+      visibility: _visibility,
+      evaluationStatus: _evaluationStatus,
+      bgvStatus: _bgvStatus,
+      ...safeInput
+    } = input;
+
     const candidate = await this.candidateRepository.create(organizationId, {
-      ...input,
+      ...safeInput,
+      skills: normalizeCandidateSkills(safeInput.skills),
+      profileStatus: 'SOURCED',
+      visibility: 'INTERNAL_ONLY',
       createdById: authUser.id,
     });
-    return this.toDto(candidate);
+    return this.toDto(candidate, authUser);
   }
 
   async update(
@@ -94,14 +126,26 @@ export class CandidateService {
       }
     }
 
-    await this.validateSkillCommunity(organizationId, input.primarySkillCommunityId);
+    await this.validateSkillCommunity(input.primarySkillCommunityId);
+
+    const canFullWrite = roleHasPermission(authUser.role, PERMISSIONS.CANDIDATES_WRITE);
+    const canLimitedWrite = roleHasPermission(
+      authUser.role,
+      PERMISSIONS.CANDIDATES_EDIT_LIMITED,
+    );
+
+    if (!canFullWrite && canLimitedWrite) {
+      assertSalesLimitedCandidateUpdate(input);
+    } else if (!canFullWrite) {
+      throw new AuthorizationError('You do not have permission to update candidates');
+    }
 
     const candidate = await this.candidateRepository.update(
       organizationId,
       id,
-      input,
+      this.stripWorkflowFields(input),
     );
-    return this.toDto(candidate);
+    return this.toDto(candidate, authUser);
   }
 
   async delete(authUser: AuthenticatedUser, id: number): Promise<void> {
@@ -133,7 +177,7 @@ export class CandidateService {
     });
 
     return {
-      data: items.map(mapCandidateToListItem),
+      data: items.map((item) => mapCandidateToListItem(item)),
       meta: buildPaginationMeta(query.page, query.limit, total),
     };
   }
@@ -144,14 +188,14 @@ export class CandidateService {
 
     if (authUser.role === ROLES.CLIENT) {
       if (
-        candidate.visibility !== 'PUBLISHED' ||
+        candidate.visibility !== 'CLIENT_VISIBLE' ||
         candidate.approvalStatus !== 'APPROVED'
       ) {
         throw new NotFoundError('Candidate not found');
       }
     }
 
-    return this.toDto(candidate);
+    return this.toDto(candidate, authUser);
   }
 
   async uploadAsset(
@@ -340,7 +384,7 @@ export class CandidateService {
       document.id,
     );
 
-    return this.toDto(updated);
+    return this.toDto(updated, authUser);
   }
 
   private validateCandidateAssetKey(
@@ -367,30 +411,31 @@ export class CandidateService {
     const organizationId = this.requireOrganization(authUser);
     const candidate = await this.getCandidateOrThrow(organizationId, id);
 
-    if (candidate.approvalStatus === 'REJECTED') {
-      throw new BadRequestError('Rejected candidates cannot be published');
-    }
+    assertCanPublish(this.toPipelineSnapshot(candidate));
 
     const updated = await this.candidateRepository.publish(organizationId, id);
-    return this.toDto(updated);
+    return this.toDto(updated, authUser);
   }
 
   async hide(authUser: AuthenticatedUser, id: number): Promise<CandidateDto> {
     const organizationId = this.requireOrganization(authUser);
     await this.getCandidateOrThrow(organizationId, id);
     const updated = await this.candidateRepository.hide(organizationId, id);
-    return this.toDto(updated);
+    return this.toDto(updated, authUser);
   }
 
   async approve(authUser: AuthenticatedUser, id: number): Promise<CandidateDto> {
     const organizationId = this.requireOrganization(authUser);
-    await this.getCandidateOrThrow(organizationId, id);
+    const candidate = await this.getCandidateOrThrow(organizationId, id);
+
+    assertCanApprove(this.toPipelineSnapshot(candidate));
+
     const updated = await this.candidateRepository.approve(
       organizationId,
       id,
       authUser.id,
     );
-    return this.toDto(updated);
+    return this.toDto(updated, authUser);
   }
 
   async reject(
@@ -406,7 +451,126 @@ export class CandidateService {
       authUser.id,
       input.reason,
     );
-    return this.toDto(updated);
+    return this.toDto(updated, authUser);
+  }
+
+  async runAiScreening(
+    authUser: AuthenticatedUser,
+    id: number,
+    input: RunAiScreeningInput,
+  ): Promise<CandidateDto> {
+    const organizationId = this.requireOrganization(authUser);
+    const candidate = await this.getCandidateOrThrow(organizationId, id);
+
+    assertCanRunAiScreening(this.toPipelineSnapshot(candidate));
+
+    const updated = await this.candidateRepository.updatePipelineState(
+      organizationId,
+      id,
+      {
+        profileStatus: 'AI_SCREENED',
+        ...(input.aiSummary !== undefined ? { aiSummary: input.aiSummary } : {}),
+        ...(input.strengths !== undefined ? { strengths: input.strengths } : {}),
+        ...(input.weaknesses !== undefined ? { weaknesses: input.weaknesses } : {}),
+        ...(input.riskFlags !== undefined ? { riskFlags: input.riskFlags } : {}),
+      },
+    );
+
+    return this.toDto(updated, authUser);
+  }
+
+  async completeRecruiterReview(
+    authUser: AuthenticatedUser,
+    id: number,
+    input: CompleteRecruiterReviewInput,
+  ): Promise<CandidateDto> {
+    const organizationId = this.requireOrganization(authUser);
+    const candidate = await this.getCandidateOrThrow(organizationId, id);
+
+    assertCanCompleteRecruiterReview(this.toPipelineSnapshot(candidate));
+
+    const updated = await this.candidateRepository.updatePipelineState(
+      organizationId,
+      id,
+      {
+        profileStatus: 'RECRUITER_SCREENED',
+        ...(input.clientProfileSummary !== undefined
+          ? { clientProfileSummary: input.clientProfileSummary }
+          : {}),
+      },
+    );
+
+    return this.toDto(updated, authUser);
+  }
+
+  async completePricingAndAvailability(
+    authUser: AuthenticatedUser,
+    id: number,
+  ): Promise<CandidateDto> {
+    const organizationId = this.requireOrganization(authUser);
+    const candidate = await this.getCandidateOrThrow(organizationId, id);
+
+    assertCanCompletePricing(this.toPipelineSnapshot(candidate));
+
+    if (!isPricingComplete(this.toPipelineSnapshot(candidate))) {
+      throw new BadRequestError(
+        'Complete pricing requires client bill rate, availability status, and available-from date',
+      );
+    }
+
+    const updated = await this.candidateRepository.updatePipelineState(
+      organizationId,
+      id,
+      { profileStatus: 'PROFILE_DRAFT' },
+    );
+
+    return this.toDto(updated, authUser);
+  }
+
+  async submitForApproval(
+    authUser: AuthenticatedUser,
+    id: number,
+  ): Promise<CandidateDto> {
+    const organizationId = this.requireOrganization(authUser);
+    const candidate = await this.getCandidateOrThrow(organizationId, id);
+
+    assertCanSubmitForApproval(this.toPipelineSnapshot(candidate));
+
+    const updated = await this.candidateRepository.updatePipelineState(
+      organizationId,
+      id,
+      { submittedForApprovalAt: new Date() },
+    );
+
+    return this.toDto(updated, authUser);
+  }
+
+  private stripWorkflowFields(input: UpdateCandidateInput): UpdateCandidateInput {
+    const {
+      profileStatus: _profileStatus,
+      visibility: _visibility,
+      evaluationStatus: _evaluationStatus,
+      bgvStatus: _bgvStatus,
+      ...rest
+    } = input;
+    return rest;
+  }
+
+  private toPipelineSnapshot(
+    candidate: NonNullable<Awaited<ReturnType<CandidateRepository['findById']>>>,
+  ): PipelineCandidateSnapshot {
+    return {
+      profileStatus: candidate.profileStatus,
+      approvalStatus: candidate.approvalStatus,
+      visibility: candidate.visibility,
+      resumeDocumentId: candidate.resumeDocumentId,
+      evaluationStatus: candidate.evaluationStatus,
+      bgvStatus: candidate.bgvStatus,
+      clientBillRate: candidate.clientBillRate,
+      availabilityStatus: candidate.availabilityStatus,
+      availableFrom: candidate.availableFrom,
+      submittedForApprovalAt: candidate.submittedForApprovalAt,
+    };
   }
 
   private requireOrganization(authUser: AuthenticatedUser): number {
@@ -424,18 +588,12 @@ export class CandidateService {
     return candidate;
   }
 
-  private async validateSkillCommunity(
-    organizationId: number,
-    skillCommunityId?: number,
-  ): Promise<void> {
+  private async validateSkillCommunity(skillCommunityId?: number): Promise<void> {
     if (skillCommunityId === undefined) {
       return;
     }
 
-    const exists = await this.candidateRepository.skillCommunityExists(
-      organizationId,
-      skillCommunityId,
-    );
+    const exists = await this.candidateRepository.skillCommunityExists(skillCommunityId);
 
     if (!exists) {
       throw new BadRequestError('Primary skill community not found');
@@ -464,9 +622,11 @@ export class CandidateService {
 
   private async toDto(
     candidate: NonNullable<Awaited<ReturnType<CandidateRepository['findById']>>>,
+    authUser: AuthenticatedUser,
   ): Promise<CandidateDto> {
-    return mapCandidateToDtoAsync(candidate, (key, bucket, mimeType) =>
+    const dto = await mapCandidateToDtoAsync(candidate, (key, bucket, mimeType) =>
       this.storageService.resolveFileUrl(key, bucket, mimeType),
     );
+    return redactCandidatePayFields(dto, authUser.role);
   }
 }

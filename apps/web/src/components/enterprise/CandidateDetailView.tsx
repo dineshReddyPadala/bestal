@@ -37,6 +37,8 @@ import { useNavigate } from 'react-router-dom';
 import { DetailPageShell } from './DetailPageShell';
 import { SchemaFieldGrid, type SchemaFieldDef } from './SchemaFieldGrid';
 import { useDemoToast } from '../../lib/use-demo-toast';
+import { usePermissions } from '../../hooks/usePermissions';
+import type { WorkflowAction } from './DetailPageShell';
 
 type CandidateDetailViewProps = {
   candidateId: number;
@@ -226,6 +228,13 @@ function OverviewTab({
 export function CandidateDetailView({ candidateId, basePath }: CandidateDetailViewProps) {
   const navigate = useNavigate();
   const { message, show } = useDemoToast();
+  const {
+    canApproveCandidates,
+    canWriteCandidates,
+    canUploadEvaluation,
+    canUploadBgv,
+    canDeleteCandidates,
+  } = usePermissions();
   const record = getSchemaCandidate(candidateId);
   const profile = getCandidateDetailProfile(candidateId);
   const docs = useMemo(() => getSchemaDocumentsForCandidate(candidateId), [candidateId]);
@@ -268,18 +277,67 @@ export function CandidateDetailView({ candidateId, basePath }: CandidateDetailVi
   const primarySkills = record.skills.filter((s) => s.isPrimary);
   const secondarySkills = record.skills.filter((s) => !s.isPrimary);
 
-  const workflowActions = [
-    { id: 'run-ai', label: 'Run AI', variant: 'outline' as const, icon: <Sparkles className="mr-1.5 h-3.5 w-3.5" /> },
-    { id: 'upload-resume', label: 'Upload Resume', variant: 'outline' as const, icon: <Upload className="mr-1.5 h-3.5 w-3.5" /> },
-    { id: 'upload-eval', label: 'Upload Evaluation', variant: 'outline' as const, icon: <Upload className="mr-1.5 h-3.5 w-3.5" /> },
-    { id: 'upload-bgv', label: 'Upload BGV', variant: 'outline' as const, icon: <Upload className="mr-1.5 h-3.5 w-3.5" /> },
-    { id: 'approve', label: 'Approve', variant: 'primary' as const, icon: <CheckCircle className="mr-1.5 h-3.5 w-3.5" /> },
-    { id: 'publish', label: 'Publish', variant: 'outline' as const, icon: <Globe className="mr-1.5 h-3.5 w-3.5" /> },
-    { id: 'reject', label: 'Reject', variant: 'outline' as const, icon: <XCircle className="mr-1.5 h-3.5 w-3.5" /> },
-    { id: 'delete', label: 'Delete', variant: 'outline' as const, icon: <Trash2 className="mr-1.5 h-3.5 w-3.5" /> },
-    { id: 'download-resume', label: 'Download Resume', variant: 'outline' as const, icon: <Download className="mr-1.5 h-3.5 w-3.5" /> },
-    { id: 'client-profile', label: 'Generate Client Profile', variant: 'outline' as const, icon: <UserCircle className="mr-1.5 h-3.5 w-3.5" /> },
-  ];
+  const workflowActions = useMemo(() => {
+    const actions: WorkflowAction[] = [];
+
+    if (canWriteCandidates) {
+      actions.push(
+        { id: 'run-ai', label: 'Run AI', variant: 'outline', icon: <Sparkles className="mr-1.5 h-3.5 w-3.5" /> },
+        { id: 'upload-resume', label: 'Upload Resume', variant: 'outline', icon: <Upload className="mr-1.5 h-3.5 w-3.5" /> },
+        { id: 'client-profile', label: 'Generate Client Profile', variant: 'outline', icon: <UserCircle className="mr-1.5 h-3.5 w-3.5" /> },
+      );
+    }
+
+    if (canUploadEvaluation) {
+      actions.push({
+        id: 'upload-eval',
+        label: 'Upload Evaluation',
+        variant: 'outline',
+        icon: <Upload className="mr-1.5 h-3.5 w-3.5" />,
+      });
+    }
+
+    if (canUploadBgv) {
+      actions.push({
+        id: 'upload-bgv',
+        label: 'Upload BGV',
+        variant: 'outline',
+        icon: <Upload className="mr-1.5 h-3.5 w-3.5" />,
+      });
+    }
+
+    if (canApproveCandidates) {
+      actions.push(
+        { id: 'approve', label: 'Approve', variant: 'primary', icon: <CheckCircle className="mr-1.5 h-3.5 w-3.5" /> },
+        { id: 'publish', label: 'Publish', variant: 'outline', icon: <Globe className="mr-1.5 h-3.5 w-3.5" /> },
+        { id: 'reject', label: 'Reject', variant: 'outline', icon: <XCircle className="mr-1.5 h-3.5 w-3.5" /> },
+      );
+    }
+
+    actions.push({
+      id: 'download-resume',
+      label: 'Download Resume',
+      variant: 'outline',
+      icon: <Download className="mr-1.5 h-3.5 w-3.5" />,
+    });
+
+    if (canDeleteCandidates) {
+      actions.push({
+        id: 'delete',
+        label: 'Delete',
+        variant: 'outline',
+        icon: <Trash2 className="mr-1.5 h-3.5 w-3.5" />,
+      });
+    }
+
+    return actions;
+  }, [
+    canApproveCandidates,
+    canDeleteCandidates,
+    canUploadBgv,
+    canUploadEvaluation,
+    canWriteCandidates,
+  ]);
 
   function handleAction(id: string) {
     const labels: Record<string, string> = {

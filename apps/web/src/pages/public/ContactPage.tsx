@@ -95,7 +95,7 @@ export function ContactPage() {
 
               <div className="mt-6">
                 <label htmlFor="role" className="block text-sm font-medium text-foreground">
-                  Role you&apos;re hiring for
+                  Role needed
                 </label>
                 <input
                   id="role"

@@ -120,6 +120,10 @@ export function mapCandidateToListItem(
     hasResume: Boolean(candidate.resumeDocumentId),
     hasProfileImage: Boolean(candidate.profileImageDocumentId),
     hasIntroVideo: Boolean(candidate.introVideoDocumentId),
+    profileStatus: candidate.profileStatus,
+    evaluationStatus: candidate.evaluationStatus,
+    bgvStatus: candidate.bgvStatus,
+    submittedForApprovalAt: candidate.submittedForApprovalAt?.toISOString() ?? null,
     createdAt: candidate.createdAt.toISOString(),
     updatedAt: candidate.updatedAt.toISOString(),
   };

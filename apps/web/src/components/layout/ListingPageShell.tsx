@@ -1,11 +1,14 @@
 import { Button, Select } from '@bestal/ui';
 import type { ReactNode } from 'react';
 
+import type { ToastVariant } from '../../lib/use-demo-toast';
+
 type ListingPageShellProps = {
   title: string;
   actions?: ReactNode;
   error?: string | null;
   message?: string | null;
+  messageVariant?: ToastVariant;
   loading?: boolean;
   loadingLabel?: string;
   children: ReactNode;
@@ -17,6 +20,7 @@ export function ListingPageShell({
   actions,
   error,
   message,
+  messageVariant = 'success',
   loading = false,
   loadingLabel = 'Loading…',
   children,
@@ -29,7 +33,14 @@ export function ListingPageShell({
       </div>
 
       {message ? (
-        <div className="mx-5 mt-3 shrink-0 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm text-emerald-700 sm:mx-6">
+        <div
+          className={`mx-5 mt-3 shrink-0 rounded-lg border px-4 py-2.5 text-sm sm:mx-6 ${
+            messageVariant === 'error'
+              ? 'border-destructive/30 bg-destructive/10 text-destructive'
+              : 'border-emerald-200 bg-emerald-50 text-emerald-700'
+          }`}
+          role="status"
+        >
           {message}
         </div>
       ) : null}

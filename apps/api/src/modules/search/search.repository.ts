@@ -29,8 +29,9 @@ export type DeploymentSearchRow = {
 
 export type EvaluationSearchRow = {
   id: bigint;
-  status: string;
-  summary: string | null;
+  evaluatorName: string;
+  evaluationType: string | null;
+  recommendation: string | null;
   createdAt: Date;
   candidate: { firstName: string; lastName: string };
 };
@@ -138,9 +139,12 @@ export class SearchRepository extends BaseRepository {
         organizationId: BigInt(organizationId),
         deletedAt: null,
         OR: [
-          { summary: { contains: term, mode: 'insensitive' } },
-          { strengths: { contains: term, mode: 'insensitive' } },
-          { weaknesses: { contains: term, mode: 'insensitive' } },
+          { evaluatorName: { contains: term, mode: 'insensitive' } },
+          { evaluatorCompany: { contains: term, mode: 'insensitive' } },
+          { evaluationType: { contains: term, mode: 'insensitive' } },
+          { recommendation: { contains: term, mode: 'insensitive' } },
+          { evaluatorComments: { contains: term, mode: 'insensitive' } },
+          { aiEvaluationSummary: { contains: term, mode: 'insensitive' } },
           {
             candidate: {
               OR: [
@@ -153,8 +157,9 @@ export class SearchRepository extends BaseRepository {
       },
       select: {
         id: true,
-        status: true,
-        summary: true,
+        evaluatorName: true,
+        evaluationType: true,
+        recommendation: true,
         createdAt: true,
         candidate: { select: { firstName: true, lastName: true } },
       },

@@ -21,6 +21,10 @@ export function useCandidate(id: number) {
 export function useCandidateMutations() {
   const qc = useQueryClient();
   const invalidate = () => qc.invalidateQueries({ queryKey: queryKeys.candidates.all });
+  const invalidateDetail = (id: number) => {
+    invalidate();
+    qc.invalidateQueries({ queryKey: queryKeys.candidates.detail(id) });
+  };
 
   return {
     create: useMutation({
@@ -34,20 +38,38 @@ export function useCandidateMutations() {
     }),
     approve: useMutation({
       mutationFn: (id: number) => candidatesApi.approve(id),
-      onSuccess: invalidate,
+      onSuccess: (_data, id) => invalidateDetail(id),
     }),
     reject: useMutation({
       mutationFn: ({ id, reason }: { id: number; reason?: string }) =>
         candidatesApi.reject(id, reason),
-      onSuccess: invalidate,
+      onSuccess: (_data, { id }) => invalidateDetail(id),
     }),
     publish: useMutation({
       mutationFn: (id: number) => candidatesApi.publish(id),
-      onSuccess: invalidate,
+      onSuccess: (_data, id) => invalidateDetail(id),
     }),
     hide: useMutation({
       mutationFn: (id: number) => candidatesApi.hide(id),
-      onSuccess: invalidate,
+      onSuccess: (_data, id) => invalidateDetail(id),
+    }),
+    runAiScreening: useMutation({
+      mutationFn: ({ id, body }: { id: number; body?: Record<string, unknown> }) =>
+        candidatesApi.runAiScreening(id, body),
+      onSuccess: (_data, { id }) => invalidateDetail(id),
+    }),
+    completeRecruiterReview: useMutation({
+      mutationFn: ({ id, body }: { id: number; body?: Record<string, unknown> }) =>
+        candidatesApi.completeRecruiterReview(id, body),
+      onSuccess: (_data, { id }) => invalidateDetail(id),
+    }),
+    completePricing: useMutation({
+      mutationFn: (id: number) => candidatesApi.completePricing(id),
+      onSuccess: (_data, id) => invalidateDetail(id),
+    }),
+    submitForApproval: useMutation({
+      mutationFn: (id: number) => candidatesApi.submitForApproval(id),
+      onSuccess: (_data, id) => invalidateDetail(id),
     }),
   };
 }

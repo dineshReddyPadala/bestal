@@ -32,7 +32,8 @@
     "fastify-plugin": "^5.0.1",
     "fastify-type-provider-zod": "^4.0.2",
     "nodemailer": "^9.0.3",
-    "zod": "^3.25.51"
+    "zod": "^3.25.51",
+    "@bestal/shared-utils": "*"
   },
   "devDependencies": {
     "@types/node": "^22.15.29",

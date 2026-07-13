@@ -2,7 +2,7 @@ import { candidates } from '@bestal/mock-data';
 import { TalentCard } from '@bestal/ui';
 import { Container } from '../../components/Container';
 
-const publishedCandidates = candidates.filter((c) => c.visibility === 'PUBLISHED');
+const publishedCandidates = candidates.filter((c) => c.visibility === 'CLIENT_VISIBLE');
 
 export function TalentPage() {
   return (

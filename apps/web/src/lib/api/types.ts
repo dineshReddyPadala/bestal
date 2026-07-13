@@ -1,6 +1,6 @@
 export type Portal = 'ADMIN' | 'RECRUITER' | 'SALES' | 'CLIENT';
 
-export type Role = 'ADMIN' | 'RECRUITER' | 'SALES' | 'CLIENT';
+export type Role = 'SUPER_ADMIN' | 'ADMIN' | 'RECRUITER' | 'SALES' | 'CLIENT';
 
 export type PaginationMeta = {
   page: number;
@@ -283,6 +283,11 @@ export type CandidateListItem = {
   location: string | null;
   yearsExperience: number | null;
   primarySkillCommunityName: string | null;
+  hasResume?: boolean;
+  profileStatus: string | null;
+  evaluationStatus: string | null;
+  bgvStatus: string | null;
+  submittedForApprovalAt: string | null;
   publishedAt: string | null;
   createdAt: string;
   updatedAt: string;
@@ -298,10 +303,14 @@ export type CandidateDto = CandidateListItem & {
   currency: string | null;
   linkedinUrl: string | null;
   primarySkillCommunityId: number | null;
+  clientBillRate?: number | null;
+  availabilityStatus?: string | null;
   hiddenAt: string | null;
   approvedAt: string | null;
   rejectedAt: string | null;
   rejectionReason: string | null;
+  aiSummary?: string | null;
+  resume?: { id: number } | null;
 };
 
 // ─── Shortlist ────────────────────────────────────────────────────────────────
@@ -354,16 +363,20 @@ export type EvaluationListItem = {
   id: number;
   candidateId: number;
   candidateName: string;
-  clientId?: number | null;
-  clientName?: string | null;
-  evaluatorId?: number;
   evaluatorName: string;
-  status: string;
-  type?: string;
+  evaluatorCompany?: string | null;
+  evaluationType?: string | null;
+  evaluationDate?: string | null;
   recommendation?: string | null;
-  score?: number | null;
-  overallScore?: number | null;
-  evaluatedAt?: string | null;
+  technicalScore?: number | null;
+  communicationScore?: number | null;
+  problemSolvingScore?: number | null;
+  architectureScore?: number | null;
+  clientReadinessScore?: number | null;
+  evaluatorComments?: string | null;
+  aiEvaluationSummary?: string | null;
+  recordingUrl?: string | null;
+  evaluationFileUrl?: string | null;
   createdAt: string;
   updatedAt: string;
 };

@@ -22,8 +22,10 @@ export const PERMISSIONS = {
   // Candidates & talent
   CANDIDATES_READ: 'candidates:read',
   CANDIDATES_WRITE: 'candidates:write',
+  CANDIDATES_EDIT_LIMITED: 'candidates:edit_limited',
   CANDIDATES_DELETE: 'candidates:delete',
   CANDIDATES_APPROVE: 'candidates:approve',
+  CANDIDATES_VIEW_PAY_RATE: 'candidates:view_pay_rate',
   SKILLS_READ: 'skills:read',
   SKILLS_WRITE: 'skills:write',
 
@@ -55,6 +57,10 @@ export const PERMISSIONS = {
 export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
 
 const ALL_PERMISSIONS = Object.values(PERMISSIONS);
+
+const ORG_ADMIN_PERMISSIONS: Permission[] = ALL_PERMISSIONS.filter(
+  (permission) => permission !== PERMISSIONS.ADMIN_PLATFORM,
+);
 
 const RECRUITER_PERMISSIONS: Permission[] = [
   PERMISSIONS.AUTH_ME,
@@ -90,6 +96,8 @@ const SALES_PERMISSIONS: Permission[] = [
   PERMISSIONS.CLIENTS_READ,
   PERMISSIONS.CLIENTS_WRITE,
   PERMISSIONS.CANDIDATES_READ,
+  PERMISSIONS.CANDIDATES_EDIT_LIMITED,
+  PERMISSIONS.CANDIDATES_VIEW_PAY_RATE,
   PERMISSIONS.SKILLS_READ,
   PERMISSIONS.SHORTLISTS_READ,
   PERMISSIONS.INTERVIEWS_READ,
@@ -121,7 +129,8 @@ const CLIENT_PERMISSIONS: Permission[] = [
 ];
 
 export const ROLE_PERMISSIONS: Record<Role, readonly Permission[]> = {
-  [ROLES.ADMIN]: ALL_PERMISSIONS,
+  [ROLES.SUPER_ADMIN]: ALL_PERMISSIONS,
+  [ROLES.ADMIN]: ORG_ADMIN_PERMISSIONS,
   [ROLES.RECRUITER]: RECRUITER_PERMISSIONS,
   [ROLES.SALES]: SALES_PERMISSIONS,
   [ROLES.CLIENT]: CLIENT_PERMISSIONS,

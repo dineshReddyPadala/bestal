@@ -1,13 +1,15 @@
-import { formatDate } from '@bestal/shared-utils';
-import { Button, Dialog, Input, Select, StatusBadge, TanStackDataTable } from '@bestal/ui';
+import { formatDate, EVALUATION_RECOMMENDATIONS, EVALUATION_TYPES } from '@bestal/shared-utils';
+import { Button, Dialog, FileUpload, Input, Select, StatusBadge, TanStackDataTable } from '@bestal/ui';
 import { type ColumnDef } from '@tanstack/react-table';
-import { Plus } from 'lucide-react';
+import { AlertCircle, Loader2, Plus, Sparkles } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
 import { useCandidatesList } from '../../hooks/api/useCandidates';
 import {
   useEvaluationMutations,
   useEvaluationsList,
 } from '../../hooks/api/useEvaluations';
+import { mapEvaluationExtractionToForm } from '../../lib/api/ai/evaluation-extraction.mapper';
+import { extractEvaluationFromFile } from '../../lib/api/ai/evaluation-extraction.stub';
 import type { EvaluationListItem } from '../../lib/api/types';
 import { useDemoToast } from '../../lib/use-demo-toast';
 import {
@@ -23,9 +25,9 @@ type EvaluationManagementViewProps = {
 };
 
 const defaultFilters = {
-  status: 'all',
   candidate: 'all',
   evaluator: 'all',
+  evaluationType: 'all',
   recommendation: 'all',
 };
 
@@ -34,6 +36,13 @@ function ScoreCell({ value }: { value: number | null | undefined }) {
     return <span className="text-muted-foreground">—</span>;
   }
   return <span className="font-medium tabular-nums">{value}</span>;
+}
+
+function parseOptionalScore(value: string): number | undefined {
+  const trimmed = value.trim();
+  if (!trimmed) return undefined;
+  const num = Number(trimmed);
+  return Number.isFinite(num) ? num : undefined;
 }
 
 export function EvaluationManagementView({
@@ -49,9 +58,19 @@ export function EvaluationManagementView({
   const [evaluatorName, setEvaluatorName] = useState('');
   const [evaluatorCompany, setEvaluatorCompany] = useState('');
   const [evaluationType, setEvaluationType] = useState('');
-  const [summary, setSummary] = useState('');
+  const [evaluationDate, setEvaluationDate] = useState('');
   const [technicalScore, setTechnicalScore] = useState('');
   const [communicationScore, setCommunicationScore] = useState('');
+  const [problemSolvingScore, setProblemSolvingScore] = useState('');
+  const [architectureScore, setArchitectureScore] = useState('');
+  const [clientReadinessScore, setClientReadinessScore] = useState('');
+  const [recommendation, setRecommendation] = useState('');
+  const [evaluatorComments, setEvaluatorComments] = useState('');
+  const [aiEvaluationSummary, setAiEvaluationSummary] = useState('');
+  const [evaluationFileUrl, setEvaluationFileUrl] = useState('');
+  const [extractingPdf, setExtractingPdf] = useState(false);
+  const [extractHint, setExtractHint] = useState<string | null>(null);
+  const [extractError, setExtractError] = useState<string | null>(null);
 
   const records = useMemo(() => data?.data ?? [], [data]);
 
@@ -64,11 +83,6 @@ export function EvaluationManagementView({
     [candidatesData],
   );
 
-  const statusOptions = useMemo(
-    () => [...new Set(records.map((r) => r.status))].sort(),
-    [records],
-  );
-
   const candidateNames = useMemo(
     () => [...new Set(records.map((r) => r.candidateName))].sort(),
     [records],
@@ -76,6 +90,12 @@ export function EvaluationManagementView({
 
   const evaluatorNames = useMemo(
     () => [...new Set(records.map((r) => r.evaluatorName))].sort(),
+    [records],
+  );
+
+  const evaluationTypeOptions = useMemo(
+    () =>
+      [...new Set(records.map((r) => r.evaluationType).filter(Boolean) as string[])].sort(),
     [records],
   );
 
@@ -88,14 +108,14 @@ export function EvaluationManagementView({
   const filteredData = useMemo(() => {
     let rows = [...records];
 
-    if (filters.status !== 'all') {
-      rows = rows.filter((r) => r.status === filters.status);
-    }
     if (filters.candidate !== 'all') {
       rows = rows.filter((r) => r.candidateName === filters.candidate);
     }
     if (filters.evaluator !== 'all') {
       rows = rows.filter((r) => r.evaluatorName === filters.evaluator);
+    }
+    if (filters.evaluationType !== 'all') {
+      rows = rows.filter((r) => r.evaluationType === filters.evaluationType);
     }
     if (filters.recommendation !== 'all') {
       if (filters.recommendation === 'none') {
@@ -112,46 +132,151 @@ export function EvaluationManagementView({
     return rows;
   }, [records, filters]);
 
+  const resetCreateForm = useCallback(() => {
+    setSelectedCandidateId('');
+    setEvaluatorName('');
+    setEvaluatorCompany('');
+    setEvaluationType('');
+    setEvaluationDate('');
+    setTechnicalScore('');
+    setCommunicationScore('');
+    setProblemSolvingScore('');
+    setArchitectureScore('');
+    setClientReadinessScore('');
+    setRecommendation('');
+    setEvaluatorComments('');
+    setAiEvaluationSummary('');
+    setEvaluationFileUrl('');
+    setExtractHint(null);
+    setExtractError(null);
+  }, []);
+
+  const applyExtractedFields = useCallback(
+    (patch: ReturnType<typeof mapEvaluationExtractionToForm>, message: string) => {
+      if (patch.evaluatorName) setEvaluatorName(patch.evaluatorName);
+      if (patch.evaluatorCompany) setEvaluatorCompany(patch.evaluatorCompany);
+      if (patch.evaluationType) setEvaluationType(patch.evaluationType);
+      if (patch.evaluationDate) setEvaluationDate(patch.evaluationDate);
+      if (patch.technicalScore != null) setTechnicalScore(String(patch.technicalScore));
+      if (patch.communicationScore != null) {
+        setCommunicationScore(String(patch.communicationScore));
+      }
+      if (patch.problemSolvingScore != null) {
+        setProblemSolvingScore(String(patch.problemSolvingScore));
+      }
+      if (patch.architectureScore != null) setArchitectureScore(String(patch.architectureScore));
+      if (patch.clientReadinessScore != null) {
+        setClientReadinessScore(String(patch.clientReadinessScore));
+      }
+      if (patch.recommendation) setRecommendation(patch.recommendation);
+      if (patch.evaluatorComments) setEvaluatorComments(patch.evaluatorComments);
+      if (patch.aiEvaluationSummary) setAiEvaluationSummary(patch.aiEvaluationSummary);
+      if (patch.evaluationFileUrl) setEvaluationFileUrl(patch.evaluationFileUrl);
+      setExtractHint(message);
+      setExtractError(null);
+    },
+    [],
+  );
+
+  const handlePdfUpload = useCallback(
+    async (file: File) => {
+      const candidateId = Number(selectedCandidateId);
+      if (!candidateId) {
+        setExtractError('Select a candidate before uploading the evaluation PDF.');
+        return;
+      }
+
+      const ext = file.name.split('.').pop()?.toLowerCase();
+      if (!ext || !['pdf', 'doc', 'docx'].includes(ext)) {
+        setExtractError('Please upload a PDF or Word document (.pdf, .doc, .docx).');
+        return;
+      }
+
+      setExtractingPdf(true);
+      setExtractError(null);
+      setExtractHint(null);
+
+      try {
+        const extraction = await extractEvaluationFromFile(file, candidateId);
+        const patch = mapEvaluationExtractionToForm(extraction, file.name);
+        if (!patch.aiEvaluationSummary) {
+          throw new Error('AI did not return an evaluation summary for this document.');
+        }
+
+        const confidence = Math.round(extraction.confidence * 100);
+        const warningNote =
+          extraction.warnings.length > 0 ? ` ${extraction.warnings[0]}` : '';
+
+        applyExtractedFields(
+          patch,
+          `Evaluation extracted (${confidence}% confidence). Review fields, then save to update BesTal score and notify your team.${warningNote}`,
+        );
+      } catch (err) {
+        setExtractError(err instanceof Error ? err.message : 'Evaluation extraction failed');
+      } finally {
+        setExtractingPdf(false);
+      }
+    },
+    [applyExtractedFields, selectedCandidateId],
+  );
+
   const handleCreate = useCallback(async () => {
     const candidateId = Number(selectedCandidateId);
+    const name = evaluatorName.trim();
     if (!candidateId) {
       show('Select a candidate');
+      return;
+    }
+    if (!name) {
+      show('Enter evaluator name');
       return;
     }
 
     try {
       await mutations.create.mutateAsync({
         candidateId,
-        evaluatorName: evaluatorName.trim() || undefined,
+        evaluatorName: name,
         evaluatorCompany: evaluatorCompany.trim() || undefined,
         evaluationType: evaluationType || undefined,
-        summary: summary.trim() || undefined,
-        technicalScore: technicalScore ? Number(technicalScore) : undefined,
-        communicationScore: communicationScore ? Number(communicationScore) : undefined,
+        evaluationDate: evaluationDate || undefined,
+        technicalScore: parseOptionalScore(technicalScore),
+        communicationScore: parseOptionalScore(communicationScore),
+        problemSolvingScore: parseOptionalScore(problemSolvingScore),
+        architectureScore: parseOptionalScore(architectureScore),
+        clientReadinessScore: parseOptionalScore(clientReadinessScore),
+        recommendation: recommendation.trim() || undefined,
+        evaluatorComments: evaluatorComments.trim() || undefined,
+        aiEvaluationSummary: aiEvaluationSummary.trim() || undefined,
+        evaluationFileUrl: evaluationFileUrl.trim() || undefined,
       });
       const candidate = candidateOptions.find((c) => c.id === candidateId);
-      show(`Evaluation created — ${candidate?.name ?? 'candidate'}`);
+      const suffix = aiEvaluationSummary.trim()
+        ? ' BesTal score recalculated and team notified.'
+        : '';
+      show(`Evaluation created — ${candidate?.name ?? 'candidate'}.${suffix}`);
       setCreateOpen(false);
-      setSelectedCandidateId('');
-      setEvaluatorName('');
-      setEvaluatorCompany('');
-      setEvaluationType('');
-      setSummary('');
-      setTechnicalScore('');
-      setCommunicationScore('');
+      resetCreateForm();
     } catch (err) {
       show(err instanceof Error ? err.message : 'Create failed');
     }
   }, [
+    aiEvaluationSummary,
+    evaluationFileUrl,
+    architectureScore,
     candidateOptions,
+    clientReadinessScore,
     communicationScore,
+    evaluationDate,
     evaluationType,
+    evaluatorComments,
     evaluatorCompany,
     evaluatorName,
     mutations.create,
+    problemSolvingScore,
+    recommendation,
+    resetCreateForm,
     selectedCandidateId,
     show,
-    summary,
     technicalScore,
   ]);
 
@@ -170,9 +295,28 @@ export function EvaluationManagementView({
         ),
       },
       {
-        accessorKey: 'status',
-        header: 'Status',
-        cell: ({ getValue }) => <StatusBadge status={getValue() as string} />,
+        accessorKey: 'evaluationType',
+        header: 'Type',
+        cell: ({ getValue }) => {
+          const val = getValue() as string | null | undefined;
+          return val ? (
+            <span>{val}</span>
+          ) : (
+            <span className="text-muted-foreground">—</span>
+          );
+        },
+      },
+      {
+        accessorKey: 'evaluationDate',
+        header: 'Date',
+        cell: ({ getValue }) => {
+          const val = getValue() as string | null | undefined;
+          return val ? (
+            <span className="text-muted-foreground">{formatDate(val)}</span>
+          ) : (
+            <span className="text-muted-foreground">—</span>
+          );
+        },
       },
       {
         accessorKey: 'recommendation',
@@ -187,11 +331,9 @@ export function EvaluationManagementView({
         },
       },
       {
-        id: 'score',
-        header: 'Score',
-        cell: ({ row }) => (
-          <ScoreCell value={row.original.overallScore ?? row.original.score} />
-        ),
+        accessorKey: 'technicalScore',
+        header: 'Technical',
+        cell: ({ getValue }) => <ScoreCell value={getValue() as number | null} />,
       },
       {
         accessorKey: 'createdAt',
@@ -226,7 +368,7 @@ export function EvaluationManagementView({
           <Button
             size="sm"
             onClick={() => {
-              setSelectedCandidateId('');
+              resetCreateForm();
               setCreateOpen(true);
             }}
           >
@@ -238,7 +380,7 @@ export function EvaluationManagementView({
         <TanStackDataTable
           columns={columns}
           data={filteredData}
-          searchPlaceholder="Search by candidate, evaluator, or status…"
+          searchPlaceholder="Search by candidate, evaluator, or type…"
           pageSize={12}
           stickyHeader
           fillHeight
@@ -246,18 +388,6 @@ export function EvaluationManagementView({
           filtersInline
           filters={
             <ListingFiltersRow onClear={() => setFilters(defaultFilters)}>
-              <ListingFilterSelect
-                label="STATUS"
-                value={filters.status}
-                onChange={(v) => updateFilter('status', v)}
-                options={[
-                  { value: 'all', label: 'All statuses' },
-                  ...statusOptions.map((s) => ({
-                    value: s,
-                    label: s.replace(/_/g, ' '),
-                  })),
-                ]}
-              />
               <ListingFilterSelect
                 label="CANDIDATE"
                 value={filters.candidate}
@@ -277,6 +407,18 @@ export function EvaluationManagementView({
                 ]}
               />
               <ListingFilterSelect
+                label="TYPE"
+                value={filters.evaluationType}
+                onChange={(v) => updateFilter('evaluationType', v)}
+                options={[
+                  { value: 'all', label: 'All types' },
+                  ...evaluationTypeOptions.map((t) => ({
+                    value: t,
+                    label: t,
+                  })),
+                ]}
+              />
+              <ListingFilterSelect
                 label="RECOMMENDATION"
                 value={filters.recommendation}
                 onChange={(v) => updateFilter('recommendation', v)}
@@ -286,7 +428,7 @@ export function EvaluationManagementView({
                   { value: 'none', label: 'None yet' },
                   ...recommendationOptions.map((r) => ({
                     value: r,
-                    label: r.replace(/_/g, ' '),
+                    label: r,
                   })),
                 ]}
               />
@@ -296,9 +438,12 @@ export function EvaluationManagementView({
             const q = String(filterValue).toLowerCase().trim();
             if (!q) return true;
             const r = row.original;
-            return [r.candidateName, r.evaluatorName, r.status, r.recommendation].some((field) =>
-              String(field ?? '').toLowerCase().includes(q),
-            );
+            return [
+              r.candidateName,
+              r.evaluatorName,
+              r.evaluationType,
+              r.recommendation,
+            ].some((field) => String(field ?? '').toLowerCase().includes(q));
           }}
         />
       </ListingPageShell>
@@ -307,119 +452,215 @@ export function EvaluationManagementView({
         open={createOpen}
         onClose={() => setCreateOpen(false)}
         title="Add evaluation"
-        className="max-w-lg"
+        description="Upload a PDF to auto-fill scores, or enter details manually."
+        scrollable
+        className="max-w-2xl"
         footer={
           <>
             <Button type="button" variant="outline" onClick={() => setCreateOpen(false)}>
               Cancel
             </Button>
-            <Button type="button" onClick={() => void handleCreate()}>
+            <Button type="button" onClick={() => void handleCreate()} disabled={extractingPdf}>
               Create evaluation
             </Button>
           </>
         }
       >
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <label htmlFor="eval-candidate" className="text-sm font-medium">
-              Candidate *
-            </label>
-            <Select
-              id="eval-candidate"
-              value={selectedCandidateId}
-              onChange={(e) => setSelectedCandidateId(e.target.value)}
-            >
-              <option value="">— Select —</option>
-              {candidateOptions.map((c) => (
-                <option key={c.id} value={String(c.id)}>
-                  {c.name}
-                </option>
-              ))}
-            </Select>
-          </div>
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
-              <label htmlFor="eval-evaluator-name" className="text-sm font-medium">
-                Evaluator name
-              </label>
-              <Input
-                id="eval-evaluator-name"
-                value={evaluatorName}
-                onChange={(e) => setEvaluatorName(e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <label htmlFor="eval-evaluator-company" className="text-sm font-medium">
-                Evaluator company
-              </label>
-              <Input
-                id="eval-evaluator-company"
-                value={evaluatorCompany}
-                onChange={(e) => setEvaluatorCompany(e.target.value)}
-              />
+        <div className="space-y-6">
+          <div className="rounded-xl border border-brand/20 bg-brand/5 px-4 py-3 text-sm text-muted-foreground">
+            <div className="flex items-start gap-2">
+              <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-brand" />
+              <p>
+                {import.meta.env.VITE_AI_EVALUATION_URL
+                  ? 'Connected to the AI evaluation service. Upload a PDF to extract scores and summary.'
+                  : 'Demo extraction is active. Set VITE_AI_EVALUATION_URL for live AI processing.'}
+              </p>
             </div>
           </div>
 
-          <div className="space-y-2">
-            <label htmlFor="eval-type" className="text-sm font-medium">
-              Evaluation type
-            </label>
-            <Select
-              id="eval-type"
-              value={evaluationType}
-              onChange={(e) => setEvaluationType(e.target.value)}
-            >
-              <option value="">— Select —</option>
-              <option value="TECHNICAL">Technical</option>
-              <option value="BEHAVIORAL">Behavioral</option>
-              <option value="ARCHITECTURE">Architecture</option>
-              <option value="FULL_STACK">Full stack</option>
-              <option value="SECURITY">Security</option>
-            </Select>
-          </div>
-
-          <div className="grid gap-4 sm:grid-cols-2">
+          <section className="space-y-4">
+            <h3 className="text-sm font-semibold text-foreground">Candidate & document</h3>
             <div className="space-y-2">
-              <label htmlFor="eval-technical-score" className="text-sm font-medium">
-                Technical score
+              <label htmlFor="eval-candidate" className="text-sm font-medium">
+                Candidate *
               </label>
-              <Input
-                id="eval-technical-score"
-                type="number"
-                min={0}
-                max={100}
-                value={technicalScore}
-                onChange={(e) => setTechnicalScore(e.target.value)}
-              />
+              <Select
+                id="eval-candidate"
+                className="h-10"
+                value={selectedCandidateId}
+                onChange={(e) => setSelectedCandidateId(e.target.value)}
+              >
+                <option value="">— Select —</option>
+                {candidateOptions.map((c) => (
+                  <option key={c.id} value={String(c.id)}>
+                    {c.name}
+                  </option>
+                ))}
+              </Select>
             </div>
-            <div className="space-y-2">
-              <label htmlFor="eval-communication-score" className="text-sm font-medium">
-                Communication score
-              </label>
-              <Input
-                id="eval-communication-score"
-                type="number"
-                min={0}
-                max={100}
-                value={communicationScore}
-                onChange={(e) => setCommunicationScore(e.target.value)}
-              />
-            </div>
-          </div>
 
-          <div className="space-y-2">
-            <label htmlFor="eval-summary" className="text-sm font-medium">
-              Summary
-            </label>
-            <textarea
-              id="eval-summary"
-              rows={3}
-              className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              value={summary}
-              onChange={(e) => setSummary(e.target.value)}
+            <FileUpload
+              label="Upload evaluation PDF"
+              accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+              hint={
+                extractingPdf
+                  ? 'Extracting text and generating AI summary…'
+                  : 'PDF or Word · select candidate first'
+              }
+              onFileSelect={(file) => {
+                if (!extractingPdf) void handlePdfUpload(file);
+              }}
             />
-          </div>
+            {extractingPdf && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin text-brand" />
+                Processing evaluation document…
+              </div>
+            )}
+            {extractHint && (
+              <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+                {extractHint}
+              </div>
+            )}
+            {extractError && (
+              <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                <span>{extractError}</span>
+              </div>
+            )}
+          </section>
+
+          <section className="space-y-4 border-t border-border pt-6">
+            <h3 className="text-sm font-semibold text-foreground">Evaluator details</h3>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <label htmlFor="eval-evaluator-name" className="text-sm font-medium">
+                  Evaluator name *
+                </label>
+                <Input
+                  id="eval-evaluator-name"
+                  value={evaluatorName}
+                  onChange={(e) => setEvaluatorName(e.target.value)}
+                  placeholder="External evaluator name"
+                />
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="eval-evaluator-company" className="text-sm font-medium">
+                  Evaluator company
+                </label>
+                <Input
+                  id="eval-evaluator-company"
+                  value={evaluatorCompany}
+                  onChange={(e) => setEvaluatorCompany(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="eval-type" className="text-sm font-medium">
+                  Evaluation type
+                </label>
+                <Select
+                  id="eval-type"
+                  className="h-10"
+                  value={evaluationType}
+                  onChange={(e) => setEvaluationType(e.target.value)}
+                >
+                  <option value="">— Select —</option>
+                  {EVALUATION_TYPES.map((type) => (
+                    <option key={type} value={type}>
+                      {type}
+                    </option>
+                  ))}
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="eval-date" className="text-sm font-medium">
+                  Evaluation date
+                </label>
+                <Input
+                  id="eval-date"
+                  type="date"
+                  value={evaluationDate}
+                  onChange={(e) => setEvaluationDate(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2 sm:col-span-2">
+                <label htmlFor="eval-recommendation" className="text-sm font-medium">
+                  Recommendation
+                </label>
+                <Select
+                  id="eval-recommendation"
+                  className="h-10"
+                  value={recommendation}
+                  onChange={(e) => setRecommendation(e.target.value)}
+                >
+                  <option value="">— Select —</option>
+                  {EVALUATION_RECOMMENDATIONS.map((value) => (
+                    <option key={value} value={value}>
+                      {value}
+                    </option>
+                  ))}
+                </Select>
+              </div>
+            </div>
+          </section>
+
+          <section className="space-y-4 border-t border-border pt-6">
+            <h3 className="text-sm font-semibold text-foreground">Scores</h3>
+            <div className="grid gap-4 sm:grid-cols-2">
+              {(
+                [
+                  ['eval-technical-score', 'Technical score', technicalScore, setTechnicalScore],
+                  ['eval-communication-score', 'Communication score', communicationScore, setCommunicationScore],
+                  ['eval-problem-solving-score', 'Problem solving score', problemSolvingScore, setProblemSolvingScore],
+                  ['eval-architecture-score', 'Architecture score', architectureScore, setArchitectureScore],
+                  ['eval-client-readiness-score', 'Client readiness score', clientReadinessScore, setClientReadinessScore],
+                ] as const
+              ).map(([id, label, value, setter]) => (
+                <div key={id} className="space-y-2">
+                  <label htmlFor={id} className="text-sm font-medium">
+                    {label}
+                  </label>
+                  <Input
+                    id={id}
+                    type="number"
+                    min={0}
+                    max={100}
+                    value={value}
+                    onChange={(e) => setter(e.target.value)}
+                  />
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <section className="space-y-4 border-t border-border pt-6">
+            <h3 className="text-sm font-semibold text-foreground">Comments & summary</h3>
+            <div className="space-y-2">
+              <label htmlFor="eval-comments" className="text-sm font-medium">
+                Evaluator comments
+              </label>
+              <textarea
+                id="eval-comments"
+                rows={3}
+                className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                value={evaluatorComments}
+                onChange={(e) => setEvaluatorComments(e.target.value)}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label htmlFor="eval-ai-summary" className="text-sm font-medium">
+                AI evaluation summary
+              </label>
+              <textarea
+                id="eval-ai-summary"
+                rows={3}
+                className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                value={aiEvaluationSummary}
+                onChange={(e) => setAiEvaluationSummary(e.target.value)}
+              />
+            </div>
+          </section>
         </div>
       </Dialog>
     </>

@@ -12,12 +12,15 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useCandidateMutations, useCandidatesList } from '../../hooks/api/useCandidates';
 import type { CandidateListItem } from '../../lib/api/types';
-import { useDemoToast } from '../../lib/use-demo-toast';
+import { canApprove, canPublish } from '../../lib/candidate-approval-gates';
 import {
   ListingFilterSelect,
   ListingFiltersRow,
   ListingPageShell,
 } from '../layout/ListingPageShell';
+import { getApiErrorMessage } from '../../lib/api/errors';
+import { useDemoToast } from '../../lib/use-demo-toast';
+import { ToastHost } from '../ui/ToastHost';
 
 type QueueFilter = 'all' | 'pending' | 'approved' | 'published' | 'rejected';
 
@@ -36,10 +39,12 @@ type ApprovalRow = {
   fullName: string;
   email: string;
   role: string | null;
+  profileStatus: string | null;
   approvalStatus: string;
   visibility: string;
-  evaluationStatus: 'NOT_STARTED';
-  bgvStatus: 'NOT_STARTED';
+  evaluationStatus: string | null;
+  bgvStatus: string | null;
+  submittedForApprovalAt: string | null;
 };
 
 function toApprovalRow(candidate: CandidateListItem): ApprovalRow {
@@ -48,10 +53,12 @@ function toApprovalRow(candidate: CandidateListItem): ApprovalRow {
     fullName: `${candidate.firstName} ${candidate.lastName}`.trim(),
     email: candidate.email,
     role: candidate.headline,
+    profileStatus: candidate.profileStatus,
     approvalStatus: candidate.approvalStatus,
     visibility: candidate.visibility,
-    evaluationStatus: 'NOT_STARTED',
-    bgvStatus: 'NOT_STARTED',
+    evaluationStatus: candidate.evaluationStatus,
+    bgvStatus: candidate.bgvStatus,
+    submittedForApprovalAt: candidate.submittedForApprovalAt,
   };
 }
 
@@ -78,28 +85,59 @@ function ApprovalRowActions({
     label: ApprovalAction;
     icon: React.ReactNode;
     disabled?: boolean;
+    title?: string;
     variant?: 'danger';
   }[] = [
     {
       label: 'Approve',
       icon: <CheckCircle className="h-3.5 w-3.5" />,
-      disabled: record.approvalStatus !== 'PENDING',
+      disabled: !canApprove({
+        profileStatus: record.profileStatus,
+        evaluationStatus: record.evaluationStatus,
+        bgvStatus: record.bgvStatus,
+        approvalStatus: record.approvalStatus,
+        visibility: record.visibility,
+        submittedForApprovalAt: record.submittedForApprovalAt,
+      }).allowed,
+      title: canApprove({
+        profileStatus: record.profileStatus,
+        evaluationStatus: record.evaluationStatus,
+        bgvStatus: record.bgvStatus,
+        approvalStatus: record.approvalStatus,
+        visibility: record.visibility,
+        submittedForApprovalAt: record.submittedForApprovalAt,
+      }).blockers.join('; '),
     },
     {
       label: 'Reject',
       icon: <XCircle className="h-3.5 w-3.5" />,
-      disabled: record.approvalStatus !== 'PENDING',
+      disabled: record.approvalStatus !== 'PENDING' || !record.submittedForApprovalAt,
       variant: 'danger',
     },
     {
       label: 'Publish',
       icon: <Globe className="h-3.5 w-3.5" />,
-      disabled: record.approvalStatus !== 'APPROVED' || record.visibility === 'PUBLISHED',
+      disabled: !canPublish({
+        profileStatus: record.profileStatus,
+        evaluationStatus: record.evaluationStatus,
+        bgvStatus: record.bgvStatus,
+        approvalStatus: record.approvalStatus,
+        visibility: record.visibility,
+        submittedForApprovalAt: record.submittedForApprovalAt,
+      }).allowed,
+      title: canPublish({
+        profileStatus: record.profileStatus,
+        evaluationStatus: record.evaluationStatus,
+        bgvStatus: record.bgvStatus,
+        approvalStatus: record.approvalStatus,
+        visibility: record.visibility,
+        submittedForApprovalAt: record.submittedForApprovalAt,
+      }).blockers.join('; '),
     },
     {
       label: 'Unpublish',
       icon: <EyeOff className="h-3.5 w-3.5" />,
-      disabled: record.visibility !== 'PUBLISHED',
+      disabled: record.visibility !== 'CLIENT_VISIBLE',
     },
   ];
 
@@ -115,11 +153,12 @@ function ApprovalRowActions({
       </button>
       {open && (
         <div className="absolute right-0 top-full z-20 mt-1 min-w-[160px] rounded-lg border border-border bg-background py-1 shadow-elevated">
-          {actions.map(({ label, icon, disabled, variant }) => (
+          {actions.map(({ label, icon, disabled, variant, title }) => (
             <button
               key={label}
               type="button"
               disabled={disabled}
+              title={title}
               className={`flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-muted disabled:cursor-not-allowed disabled:opacity-40 ${
                 variant === 'danger' ? 'text-destructive' : 'text-foreground'
               }`}
@@ -141,7 +180,7 @@ function ApprovalRowActions({
 export function CandidateApprovalQueueView({
   candidateDetailBasePath = '/admin/candidates',
 }: CandidateApprovalQueueViewProps) {
-  const { message, show } = useDemoToast();
+  const { message, variant, show, showError, dismiss } = useDemoToast();
   const { data, isLoading, isError, error } = useCandidatesList({ limit: 100, sort: '-createdAt' });
   const mutations = useCandidateMutations();
   const [filters, setFilters] = useState(defaultFilters);
@@ -155,13 +194,15 @@ export function CandidateApprovalQueueView({
     let rows = [...records];
 
     if (filters.queue === 'pending') {
-      rows = rows.filter((r) => r.approvalStatus === 'PENDING');
+      rows = rows.filter(
+        (r) => r.approvalStatus === 'PENDING' && Boolean(r.submittedForApprovalAt),
+      );
     } else if (filters.queue === 'approved') {
       rows = rows.filter(
-        (r) => r.approvalStatus === 'APPROVED' && r.visibility !== 'PUBLISHED',
+        (r) => r.approvalStatus === 'APPROVED' && r.visibility !== 'CLIENT_VISIBLE',
       );
     } else if (filters.queue === 'published') {
-      rows = rows.filter((r) => r.visibility === 'PUBLISHED');
+      rows = rows.filter((r) => r.visibility === 'CLIENT_VISIBLE');
     } else if (filters.queue === 'rejected') {
       rows = rows.filter((r) => r.approvalStatus === 'REJECTED');
     }
@@ -169,7 +210,7 @@ export function CandidateApprovalQueueView({
     rows.sort((a, b) => {
       const priority = (r: ApprovalRow) => {
         if (r.approvalStatus === 'PENDING') return 0;
-        if (r.approvalStatus === 'APPROVED' && r.visibility !== 'PUBLISHED') return 1;
+        if (r.approvalStatus === 'APPROVED' && r.visibility !== 'CLIENT_VISIBLE') return 1;
         return 2;
       };
       return priority(a) - priority(b) || a.fullName.localeCompare(b.fullName);
@@ -184,7 +225,7 @@ export function CandidateApprovalQueueView({
         await mutations.approve.mutateAsync(record.id);
         show(`Approved — ${record.fullName}`);
       } catch (err) {
-        show(err instanceof Error ? err.message : 'Approve failed');
+        showError(getApiErrorMessage(err, 'Approve failed'));
       }
     },
     [mutations.approve, show],
@@ -196,7 +237,7 @@ export function CandidateApprovalQueueView({
         await mutations.publish.mutateAsync(record.id);
         show(`Published — ${record.fullName} is now visible to clients`);
       } catch (err) {
-        show(err instanceof Error ? err.message : 'Publish failed');
+        showError(getApiErrorMessage(err, 'Publish failed'));
       }
     },
     [mutations.publish, show],
@@ -208,7 +249,7 @@ export function CandidateApprovalQueueView({
         await mutations.hide.mutateAsync(record.id);
         show(`Unpublished — ${record.fullName} hidden from client portal`);
       } catch (err) {
-        show(err instanceof Error ? err.message : 'Unpublish failed');
+        showError(getApiErrorMessage(err, 'Unpublish failed'));
       }
     },
     [mutations.hide, show],
@@ -231,7 +272,7 @@ export function CandidateApprovalQueueView({
       setRejectOpen(false);
       setRejectTarget(null);
     } catch (err) {
-      show(err instanceof Error ? err.message : 'Reject failed');
+      showError(getApiErrorMessage(err, 'Reject failed'));
     }
   };
 
@@ -313,9 +354,11 @@ export function CandidateApprovalQueueView({
 
   return (
     <>
+      <ToastHost message={message} variant={variant} onDismiss={dismiss} />
       <ListingPageShell
         title="Approvals"
         message={message}
+        messageVariant={variant}
         error={listError}
         loading={isLoading}
         loadingLabel="Loading candidates…"

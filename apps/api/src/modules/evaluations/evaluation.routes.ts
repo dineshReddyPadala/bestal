@@ -7,7 +7,6 @@ import { PERMISSIONS } from '../auth/auth.permissions.js';
 import { EvaluationController } from './evaluation.controller.js';
 import { EvaluationService } from './evaluation.service.js';
 import {
-  completeEvaluationBodySchema,
   createEvaluationBodySchema,
   evaluationIdParamSchema,
   evaluationListResponseSchema,
@@ -134,29 +133,5 @@ export async function evaluationRoutes(fastify: FastifyInstance): Promise<void> 
       },
     },
     evaluationController.remove,
-  );
-
-  app.post(
-    '/:id/complete',
-    {
-      preHandler: [
-        authenticate,
-        requirePermission(PERMISSIONS.EVALUATIONS_WRITE),
-      ],
-      schema: {
-        tags: ['Evaluations'],
-        summary: 'Complete evaluation with recommendation and scores',
-        security: [{ bearerAuth: [] }],
-        params: evaluationIdParamSchema,
-        body: completeEvaluationBodySchema,
-        response: {
-          200: evaluationResponseSchema,
-          401: errorResponses[401],
-          404: errorResponses[404],
-          422: errorResponses[422],
-        },
-      },
-    },
-    evaluationController.complete,
   );
 }

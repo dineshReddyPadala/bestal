@@ -7,8 +7,6 @@ export const evaluationsApi = {
   create: (body: Record<string, unknown>) => apiCreate<EvaluationListItem>('/evaluations', body),
   update: (id: number, body: Record<string, unknown>) =>
     apiUpdate<EvaluationListItem>(`/evaluations/${id}`, body),
-  complete: (id: number, body?: Record<string, unknown>) =>
-    apiCreate<EvaluationListItem>(`/evaluations/${id}/complete`, body ?? {}),
 };
 
 export const backgroundChecksApi = {

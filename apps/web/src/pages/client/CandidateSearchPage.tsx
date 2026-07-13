@@ -1,4 +1,6 @@
 import { getClientSearchRecordsLive } from '../../lib/client-search-overrides';
+import { mapApiCandidateToClientSearchRecord } from '../../lib/client-search-api';
+import { useCandidatesList } from '../../hooks/api/useCandidates';
 import { subscribeApprovalChanges } from '../../lib/candidate-approval-overrides';
 import { EmptyState, PageHeader, Select } from '@bestal/ui';
 import { Grid3X3, List, Users } from 'lucide-react';
@@ -39,10 +41,17 @@ export function CandidateSearchPage() {
   const [dialogType, setDialogType] = useState<'interview' | 'trial' | null>(null);
 
   const [approvalTick, setApprovalTick] = useState(0);
+  const { data: apiCandidates } = useCandidatesList({ limit: 100 });
 
   useEffect(() => subscribeApprovalChanges(() => setApprovalTick((t) => t + 1)), []);
 
-  const allRecords = useMemo(() => getClientSearchRecordsLive(), [approvalTick]);
+  const allRecords = useMemo(() => {
+    const apiRows = apiCandidates?.data?.map(mapApiCandidateToClientSearchRecord) ?? [];
+    if (apiRows.length > 0) {
+      return apiRows;
+    }
+    return getClientSearchRecordsLive();
+  }, [apiCandidates, approvalTick]);
 
   const filtered = useMemo(() => {
     const rows = filterClientSearchRecords(allRecords, filters);

@@ -19,7 +19,7 @@ export async function skillCommunityRoutes(fastify: FastifyInstance): Promise<vo
       preHandler: [authenticate, requirePermission(PERMISSIONS.SKILLS_READ)],
       schema: {
         tags: ['Skill Communities'],
-        summary: 'List active skill communities for the organization',
+        summary: 'List active platform skill communities',
         security: [{ bearerAuth: [] }],
         response: {
           200: skillCommunityListResponseSchema,

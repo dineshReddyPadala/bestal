@@ -46,12 +46,19 @@ export function mapEvaluationSearchRow(
   row: EvaluationSearchRow,
 ): SearchResultItemDto {
   const candidateName = `${row.candidate.firstName} ${row.candidate.lastName}`;
+  const subtitle = [
+    row.evaluatorName,
+    row.evaluationType?.replace(/_/g, ' '),
+    row.recommendation?.replace(/_/g, ' '),
+  ]
+    .filter(Boolean)
+    .join(' · ');
   return {
     type: 'evaluations',
     id: bigintToNumber(row.id),
     title: `Evaluation: ${candidateName}`,
-    subtitle: row.summary,
-    status: row.status,
+    subtitle: subtitle || null,
+    status: row.recommendation,
     createdAt: row.createdAt.toISOString(),
   };
 }

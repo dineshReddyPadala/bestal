@@ -72,7 +72,7 @@ export type MockCandidate = {
   readonly expectedRate: number;
   readonly currency: string;
   readonly status: 'NEW' | 'ACTIVE' | 'INACTIVE' | 'PLACED' | 'DO_NOT_CONTACT';
-  readonly visibility: 'DRAFT' | 'PUBLISHED' | 'HIDDEN';
+  readonly visibility: 'INTERNAL_ONLY' | 'CLIENT_VISIBLE' | 'HIDDEN';
   readonly approvalStatus: 'PENDING' | 'APPROVED' | 'REJECTED';
   readonly source: 'DIRECT' | 'REFERRAL' | 'LINKEDIN' | 'JOB_BOARD' | 'AGENCY';
   readonly photoUrl: string;

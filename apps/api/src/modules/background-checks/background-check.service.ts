@@ -1,4 +1,5 @@
 import type { FastifyInstance } from 'fastify';
+import type { PrismaClient } from '@prisma/client';
 import type { AuthenticatedUser } from '../../types/index.js';
 import {
   BadRequestError,
@@ -6,6 +7,7 @@ import {
   requireOrganization,
 } from '../../utils/index.js';
 import { buildPaginationMeta } from '../../validators/common.validator.js';
+import { assertCanCreateBackgroundCheck } from '../candidates/candidate-pipeline.js';
 import {
   mapBackgroundCheckToDto,
   mapBackgroundCheckToListItem,
@@ -19,8 +21,14 @@ import type {
 } from './background-check.types.js';
 import type { ListBackgroundChecksQuery } from './background-check.validator.js';
 
+function deriveCandidateBgvProfileStatus(status: string | undefined): 'BGV_PENDING' | 'BGV_COMPLETE' {
+  if (status === 'CLEAR') return 'BGV_COMPLETE';
+  return 'BGV_PENDING';
+}
+
 export class BackgroundCheckService {
   private readonly backgroundCheckRepository: BackgroundCheckRepository;
+  private readonly prisma: PrismaClient;
 
   constructor(
     fastify: FastifyInstance,
@@ -28,6 +36,7 @@ export class BackgroundCheckService {
   ) {
     this.backgroundCheckRepository =
       backgroundCheckRepository ?? new BackgroundCheckRepository(fastify.prisma);
+    this.prisma = fastify.prisma;
   }
 
   async create(
@@ -43,6 +52,18 @@ export class BackgroundCheckService {
       authUser.id,
       input,
     );
+
+    await this.prisma.candidate.update({
+      where: {
+        id: BigInt(input.candidateId),
+        organizationId: BigInt(organizationId),
+      },
+      data: {
+        bgvStatus: input.status ?? 'PENDING',
+        profileStatus: deriveCandidateBgvProfileStatus(input.status),
+      },
+    });
+
     return mapBackgroundCheckToDto(record);
   }
 
@@ -52,13 +73,27 @@ export class BackgroundCheckService {
     input: UpdateBackgroundCheckInput,
   ): Promise<BackgroundCheckDto> {
     const organizationId = requireOrganization(authUser);
-    await this.getBackgroundCheckOrThrow(organizationId, id);
+    const existing = await this.getBackgroundCheckOrThrow(organizationId, id);
 
     const record = await this.backgroundCheckRepository.update(
       organizationId,
       id,
       input,
     );
+
+    if (input.status) {
+      await this.prisma.candidate.update({
+        where: {
+          id: existing.candidateId,
+          organizationId: BigInt(organizationId),
+        },
+        data: {
+          bgvStatus: input.status,
+          profileStatus: deriveCandidateBgvProfileStatus(input.status),
+        },
+      });
+    }
+
     return mapBackgroundCheckToDto(record);
   }
 
@@ -117,12 +152,30 @@ export class BackgroundCheckService {
     organizationId: number,
     candidateId: number,
   ): Promise<void> {
-    const exists = await this.backgroundCheckRepository.candidateExists(
-      organizationId,
-      candidateId,
-    );
-    if (!exists) {
+    const candidate = await this.prisma.candidate.findFirst({
+      where: {
+        id: BigInt(candidateId),
+        organizationId: BigInt(organizationId),
+        deletedAt: null,
+      },
+      select: {
+        profileStatus: true,
+        approvalStatus: true,
+        visibility: true,
+        resumeDocumentId: true,
+        evaluationStatus: true,
+        bgvStatus: true,
+        clientBillRate: true,
+        availabilityStatus: true,
+        availableFrom: true,
+        submittedForApprovalAt: true,
+      },
+    });
+
+    if (!candidate) {
       throw new BadRequestError('Candidate not found');
     }
+
+    assertCanCreateBackgroundCheck(candidate);
   }
 }

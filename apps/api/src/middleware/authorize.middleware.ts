@@ -35,9 +35,9 @@ export function authorizePortal(expectedPortal: string) {
 }
 
 /** Shorthand guards for the four BesTal roles. */
-export const requireAdmin = authorize('ADMIN');
+export const requireAdmin = authorize('SUPER_ADMIN', 'ADMIN');
 export const requireRecruiter = authorize('RECRUITER');
 export const requireSales = authorize('SALES');
 export const requireClient = authorize('CLIENT');
 
-export const requireStaff = authorize('ADMIN', 'RECRUITER', 'SALES');
+export const requireStaff = authorize('SUPER_ADMIN', 'ADMIN', 'RECRUITER', 'SALES');

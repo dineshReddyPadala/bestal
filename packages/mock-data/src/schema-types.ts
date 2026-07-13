@@ -26,7 +26,7 @@ export type SchemaCandidate = {
   readonly email: string;
   readonly phone: string | null;
   readonly status: 'NEW' | 'ACTIVE' | 'INACTIVE' | 'PLACED' | 'DO_NOT_CONTACT';
-  readonly visibility: 'DRAFT' | 'PUBLISHED' | 'HIDDEN';
+  readonly visibility: 'INTERNAL_ONLY' | 'CLIENT_VISIBLE' | 'HIDDEN';
   readonly approvalStatus: 'PENDING' | 'APPROVED' | 'REJECTED';
   readonly source: 'DIRECT' | 'REFERRAL' | 'JOB_BOARD' | 'LINKEDIN' | 'AGENCY' | 'INTERNAL' | 'OTHER';
   readonly headline: string | null;

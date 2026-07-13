@@ -1,7 +1,6 @@
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { EvaluationService } from './evaluation.service.js';
 import type {
-  CompleteEvaluationBody,
   CreateEvaluationBody,
   ListEvaluationsQuery,
   UpdateEvaluationBody,
@@ -48,15 +47,5 @@ export class EvaluationController {
     return reply.status(200).send({
       data: { message: 'Evaluation deleted successfully' },
     });
-  };
-
-  complete = async (request: FastifyRequest, reply: FastifyReply) => {
-    const { id } = request.params as { id: number };
-    const data = await this.evaluationService.complete(
-      request.authUser!,
-      id,
-      request.body as CompleteEvaluationBody,
-    );
-    return reply.status(200).send({ data });
   };
 }

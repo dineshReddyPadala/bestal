@@ -1,4 +1,5 @@
 export const ROLES = {
+  SUPER_ADMIN: 'SUPER_ADMIN',
   ADMIN: 'ADMIN',
   RECRUITER: 'RECRUITER',
   SALES: 'SALES',
@@ -16,7 +17,7 @@ export const PORTALS = {
 
 export type Portal = (typeof PORTALS)[keyof typeof PORTALS];
 
-/** Maps each portal to the role required to log in through it. */
+/** Primary role expected when logging in through each portal. */
 export const PORTAL_ROLE: Record<Portal, Role> = {
   [PORTALS.ADMIN]: ROLES.ADMIN,
   [PORTALS.RECRUITER]: ROLES.RECRUITER,
@@ -24,7 +25,16 @@ export const PORTAL_ROLE: Record<Portal, Role> = {
   [PORTALS.CLIENT]: ROLES.CLIENT,
 };
 
+/** Roles allowed to authenticate through each portal. */
+export const PORTAL_ALLOWED_ROLES: Record<Portal, readonly Role[]> = {
+  [PORTALS.ADMIN]: [ROLES.SUPER_ADMIN, ROLES.ADMIN],
+  [PORTALS.RECRUITER]: [ROLES.RECRUITER],
+  [PORTALS.SALES]: [ROLES.SALES],
+  [PORTALS.CLIENT]: [ROLES.CLIENT],
+};
+
 export const ROLE_PORTAL: Record<Role, Portal> = {
+  [ROLES.SUPER_ADMIN]: PORTALS.ADMIN,
   [ROLES.ADMIN]: PORTALS.ADMIN,
   [ROLES.RECRUITER]: PORTALS.RECRUITER,
   [ROLES.SALES]: PORTALS.SALES,

@@ -1,5 +1,10 @@
 import { z } from 'zod';
 import {
+  CANDIDATE_AVAILABILITY_STATUSES,
+  CANDIDATE_PROFILE_STATUSES,
+  CANDIDATE_VISIBILITY_STATUSES,
+} from '@bestal/shared-utils';
+import {
   optionalIntField,
   optionalRateField,
   optionalTextField,
@@ -14,7 +19,7 @@ const candidateStatusEnum = z.enum([
   'DO_NOT_CONTACT',
 ]);
 
-const candidateVisibilityEnum = z.enum(['DRAFT', 'PUBLISHED', 'HIDDEN']);
+const candidateVisibilityEnum = z.enum(CANDIDATE_VISIBILITY_STATUSES);
 
 const candidateApprovalStatusEnum = z.enum(['PENDING', 'APPROVED', 'REJECTED']);
 
@@ -51,7 +56,7 @@ const candidateExtendedFieldsSchema = {
   clientBillRate: optionalRateField,
   candidatePayRate: optionalRateField,
   grossMargin: optionalRateField,
-  availabilityStatus: z.string().max(50).optional(),
+  availabilityStatus: z.enum(CANDIDATE_AVAILABILITY_STATUSES).optional(),
   timezoneOverlap: z.string().max(100).optional(),
   preferredShift: z.string().max(50).optional(),
   minHoursPerWeek: optionalIntField,
@@ -67,7 +72,8 @@ const candidateExtendedFieldsSchema = {
   reliabilityScore: z.coerce.number().int().min(0).max(100).optional(),
   evaluationStatus: z.string().max(50).optional(),
   bgvStatus: z.string().max(50).optional(),
-  profileStatus: z.string().max(50).optional(),
+  profileStatus: z.enum(CANDIDATE_PROFILE_STATUSES).optional(),
+  visibility: candidateVisibilityEnum.optional(),
   deploymentStatus: z.string().max(50).optional(),
   skills: z.array(candidateSkillBodySchema).optional(),
 };
@@ -116,6 +122,17 @@ export const rejectCandidateBodySchema = z.object({
   reason: z.string().min(3).max(500),
 });
 
+export const runAiScreeningBodySchema = z.object({
+  aiSummary: optionalTextField(),
+  strengths: optionalTextField(),
+  weaknesses: optionalTextField(),
+  riskFlags: optionalTextField(),
+});
+
+export const completeRecruiterReviewBodySchema = z.object({
+  clientProfileSummary: optionalTextField(),
+});
+
 export const prepareAssetUploadBodySchema = z.object({
   originalName: z.string().min(1).max(255),
   mimeType: z.string().min(1).max(255),
@@ -137,6 +154,8 @@ export type CreateCandidateBody = z.infer<typeof createCandidateBodySchema>;
 export type UpdateCandidateBody = z.infer<typeof updateCandidateBodySchema>;
 export type ListCandidatesQuery = z.infer<typeof listCandidatesQuerySchema>;
 export type RejectCandidateBody = z.infer<typeof rejectCandidateBodySchema>;
+export type RunAiScreeningBody = z.infer<typeof runAiScreeningBodySchema>;
+export type CompleteRecruiterReviewBody = z.infer<typeof completeRecruiterReviewBodySchema>;
 
 const documentDtoSchema = z.object({
   id: z.number(),
@@ -212,6 +231,10 @@ export const candidateListItemSchema = z.object({
   hasResume: z.boolean(),
   hasProfileImage: z.boolean(),
   hasIntroVideo: z.boolean(),
+  profileStatus: z.string().nullable(),
+  evaluationStatus: z.string().nullable(),
+  bgvStatus: z.string().nullable(),
+  submittedForApprovalAt: z.string().nullable(),
   createdAt: z.string(),
   updatedAt: z.string(),
 });

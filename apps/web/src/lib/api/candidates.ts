@@ -14,6 +14,14 @@ export const candidatesApi = {
     apiAction<CandidateDto>(`/candidates/${id}/reject`, reason ? { reason } : {}),
   publish: (id: number) => apiAction<CandidateDto>(`/candidates/${id}/publish`),
   hide: (id: number) => apiAction<CandidateDto>(`/candidates/${id}/hide`),
+  runAiScreening: (id: number, body?: Record<string, unknown>) =>
+    apiAction<CandidateDto>(`/candidates/${id}/pipeline/ai-screening`, body ?? {}),
+  completeRecruiterReview: (id: number, body?: Record<string, unknown>) =>
+    apiAction<CandidateDto>(`/candidates/${id}/pipeline/recruiter-review`, body ?? {}),
+  completePricing: (id: number) =>
+    apiAction<CandidateDto>(`/candidates/${id}/pipeline/pricing`),
+  submitForApproval: (id: number) =>
+    apiAction<CandidateDto>(`/candidates/${id}/pipeline/submit`),
 };
 
 type CandidateAssetKind = 'resume' | 'profile-image' | 'intro-video';

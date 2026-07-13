@@ -7,6 +7,11 @@ function formatPersonName(firstName: string, lastName: string): string {
   return `${firstName} ${lastName}`;
 }
 
+function formatDateOnly(value: Date | null): string | null {
+  if (!value) return null;
+  return value.toISOString().slice(0, 10);
+}
+
 export function mapEvaluationToDto(evaluation: EvaluationRecord): EvaluationDto {
   return {
     id: bigintToNumber(evaluation.id),
@@ -16,46 +21,20 @@ export function mapEvaluationToDto(evaluation: EvaluationRecord): EvaluationDto 
       evaluation.candidate.firstName,
       evaluation.candidate.lastName,
     ),
-    clientId: evaluation.clientId ? bigintToNumber(evaluation.clientId) : null,
-    clientName: evaluation.client?.name ?? null,
-    evaluatorId: bigintToNumber(evaluation.evaluatorId),
-    evaluatorName:
-      evaluation.evaluatorName ??
-      formatPersonName(
-        evaluation.evaluator.firstName,
-        evaluation.evaluator.lastName,
-      ),
-    status: evaluation.status,
-    recommendation: evaluation.recommendation,
-    overallScore: evaluation.overallScore ? Number(evaluation.overallScore) : null,
-    technicalScore: evaluation.technicalScore
-      ? Number(evaluation.technicalScore)
-      : null,
-    softSkillScore: evaluation.softSkillScore
-      ? Number(evaluation.softSkillScore)
-      : null,
-    communicationScore: evaluation.communicationScore
-      ? Number(evaluation.communicationScore)
-      : null,
-    problemSolvingScore: evaluation.problemSolvingScore
-      ? Number(evaluation.problemSolvingScore)
-      : null,
-    architectureScore: evaluation.architectureScore
-      ? Number(evaluation.architectureScore)
-      : null,
-    clientReadinessScore: evaluation.clientReadinessScore
-      ? Number(evaluation.clientReadinessScore)
-      : null,
+    evaluatorName: evaluation.evaluatorName,
     evaluatorCompany: evaluation.evaluatorCompany,
     evaluationType: evaluation.evaluationType,
+    evaluationDate: formatDateOnly(evaluation.evaluationDate),
+    technicalScore: evaluation.technicalScore,
+    communicationScore: evaluation.communicationScore,
+    problemSolvingScore: evaluation.problemSolvingScore,
+    architectureScore: evaluation.architectureScore,
+    clientReadinessScore: evaluation.clientReadinessScore,
+    recommendation: evaluation.recommendation,
     evaluatorComments: evaluation.evaluatorComments,
     aiEvaluationSummary: evaluation.aiEvaluationSummary,
     recordingUrl: evaluation.recordingUrl,
     evaluationFileUrl: evaluation.evaluationFileUrl,
-    summary: evaluation.summary,
-    strengths: evaluation.strengths,
-    weaknesses: evaluation.weaknesses,
-    evaluatedAt: evaluation.evaluatedAt?.toISOString() ?? null,
     createdAt: evaluation.createdAt.toISOString(),
     updatedAt: evaluation.updatedAt.toISOString(),
   };
@@ -71,17 +50,12 @@ export function mapEvaluationToListItem(
       evaluation.candidate.firstName,
       evaluation.candidate.lastName,
     ),
-    clientId: evaluation.clientId ? bigintToNumber(evaluation.clientId) : null,
-    clientName: evaluation.client?.name ?? null,
-    evaluatorId: bigintToNumber(evaluation.evaluatorId),
-    evaluatorName: formatPersonName(
-      evaluation.evaluator.firstName,
-      evaluation.evaluator.lastName,
-    ),
-    status: evaluation.status,
+    evaluatorName: evaluation.evaluatorName,
+    evaluatorCompany: evaluation.evaluatorCompany,
+    evaluationType: evaluation.evaluationType,
+    evaluationDate: formatDateOnly(evaluation.evaluationDate),
     recommendation: evaluation.recommendation,
-    overallScore: evaluation.overallScore ? Number(evaluation.overallScore) : null,
-    evaluatedAt: evaluation.evaluatedAt?.toISOString() ?? null,
+    technicalScore: evaluation.technicalScore,
     createdAt: evaluation.createdAt.toISOString(),
     updatedAt: evaluation.updatedAt.toISOString(),
   };
@@ -100,9 +74,8 @@ export function parseSortParam(
     const direction = desc ? 'desc' : 'asc';
 
     switch (key) {
-      case 'status':
-      case 'evaluatedAt':
-      case 'overallScore':
+      case 'evaluationDate':
+      case 'technicalScore':
       case 'createdAt':
       case 'updatedAt':
         return { [key]: direction };

@@ -119,7 +119,8 @@ export class CandidateRepository extends BaseRepository {
     return this.prisma.candidate.update({
       where: { id: BigInt(id), organizationId: BigInt(organizationId) },
       data: {
-        visibility: 'PUBLISHED',
+        visibility: 'CLIENT_VISIBLE',
+        profileStatus: 'CLIENT_VISIBLE',
         publishedAt: new Date(),
         hiddenAt: null,
       },
@@ -147,6 +148,7 @@ export class CandidateRepository extends BaseRepository {
       where: { id: BigInt(id), organizationId: BigInt(organizationId) },
       data: {
         approvalStatus: 'APPROVED',
+        profileStatus: 'ADMIN_APPROVED',
         approvedAt: new Date(),
         approvedById: BigInt(approvedById),
         rejectedAt: null,
@@ -167,12 +169,26 @@ export class CandidateRepository extends BaseRepository {
       where: { id: BigInt(id), organizationId: BigInt(organizationId) },
       data: {
         approvalStatus: 'REJECTED',
+        profileStatus: 'REJECTED',
         rejectedAt: new Date(),
         rejectedById: BigInt(rejectedById),
         rejectionReason: reason,
         approvedAt: null,
         approvedById: null,
+        submittedForApprovalAt: null,
       },
+      include: candidateInclude,
+    });
+  }
+
+  updatePipelineState(
+    organizationId: number,
+    id: number,
+    data: Prisma.CandidateUncheckedUpdateInput,
+  ): Promise<CandidateRecord> {
+    return this.prisma.candidate.update({
+      where: { id: BigInt(id), organizationId: BigInt(organizationId) },
+      data,
       include: candidateInclude,
     });
   }
@@ -248,15 +264,11 @@ export class CandidateRepository extends BaseRepository {
     });
   }
 
-  skillCommunityExists(
-    organizationId: number,
-    skillCommunityId: number,
-  ): Promise<boolean> {
+  skillCommunityExists(skillCommunityId: number): Promise<boolean> {
     return this.prisma.skillCommunity
       .findFirst({
         where: {
           id: BigInt(skillCommunityId),
-          organizationId: BigInt(organizationId),
           deletedAt: null,
           isActive: true,
         },
@@ -274,7 +286,7 @@ export class CandidateRepository extends BaseRepository {
     };
 
     if (filters.clientView) {
-      where.visibility = 'PUBLISHED';
+      where.visibility = 'CLIENT_VISIBLE';
       where.approvalStatus = 'APPROVED';
     } else {
       if (filters.visibility) {

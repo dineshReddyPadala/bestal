@@ -1,5 +1,10 @@
 /** Which fields users fill vs what the backend/system sets automatically. */
 
+import type {
+  EvaluationRecommendationValue,
+  EvaluationTypeValue,
+} from '@bestal/shared-utils';
+
 export const SYSTEM_FIELDS_NOTE =
   'Status, audit timestamps, IDs, and workflow fields are set automatically by the system.';
 
@@ -78,14 +83,17 @@ export function buildClientPayload(
 export type EvaluationFormValues = {
   candidateName: string;
   evaluatorName: string;
-  evaluationType: 'TECHNICAL' | 'BEHAVIORAL' | 'ARCHITECTURE' | 'FULL_STACK' | 'SECURITY';
+  evaluatorCompany?: string;
+  evaluationType: EvaluationTypeValue;
   evaluatedDate: string;
   technicalScore?: number;
   communicationScore?: number;
   architectureScore?: number;
   problemSolvingScore?: number;
-  recommendation?: 'STRONG_HIRE' | 'HIRE' | 'NEUTRAL' | 'NO_HIRE' | 'STRONG_NO_HIRE';
-  summary?: string;
+  clientReadinessScore?: number;
+  recommendation?: EvaluationRecommendationValue;
+  evaluatorComments?: string;
+  aiEvaluationSummary?: string;
   recordingFileName?: string;
   pdfFileName?: string;
 };
@@ -94,9 +102,7 @@ export type EvaluationPayload = EvaluationFormValues & {
   id?: number;
   candidateId: number;
   organizationId: number;
-  evaluatorId: number;
   evaluatorName: string;
-  status: 'DRAFT' | 'IN_PROGRESS' | 'COMPLETED' | 'ARCHIVED';
   hasRecording: boolean;
   hasPdf: boolean;
   createdAt: string;
@@ -114,9 +120,7 @@ export function buildEvaluationPayload(
     id: existing?.id,
     candidateId: existing?.candidateId ?? 1,
     organizationId: existing?.organizationId ?? 1,
-    evaluatorId: existing?.evaluatorId ?? demoDocId(form.evaluatorName),
     evaluatorName: form.evaluatorName,
-    status: existing?.status ?? 'DRAFT',
     hasRecording: !!(form.recordingFileName ?? existing?.hasRecording),
     hasPdf: !!(form.pdfFileName ?? existing?.hasPdf),
     createdAt: existing?.createdAt ?? ts,

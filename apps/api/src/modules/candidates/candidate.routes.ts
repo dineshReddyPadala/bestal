@@ -1,7 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { authenticate } from '../../middleware/authenticate.middleware.js';
-import { requirePermission } from '../../middleware/permission.middleware.js';
+import { requireAnyPermission, requirePermission } from '../../middleware/permission.middleware.js';
 import { PERMISSIONS } from '../auth/auth.permissions.js';
 import { CandidateController } from './candidate.controller.js';
 import { CandidateService } from './candidate.service.js';
@@ -16,6 +16,8 @@ import {
   messageResponseSchema,
   prepareAssetUploadBodySchema,
   rejectCandidateBodySchema,
+  runAiScreeningBodySchema,
+  completeRecruiterReviewBodySchema,
   updateCandidateBodySchema,
 } from './candidate.validator.js';
 
@@ -72,7 +74,13 @@ export async function candidateRoutes(fastify: FastifyInstance): Promise<void> {
   app.patch(
     '/:id',
     {
-      preHandler: [authenticate, requirePermission(PERMISSIONS.CANDIDATES_WRITE)],
+      preHandler: [
+        authenticate,
+        requireAnyPermission(
+          PERMISSIONS.CANDIDATES_WRITE,
+          PERMISSIONS.CANDIDATES_EDIT_LIMITED,
+        ),
+      ],
       schema: {
         tags: ['Candidates'],
         summary: 'Update candidate',
@@ -247,10 +255,10 @@ export async function candidateRoutes(fastify: FastifyInstance): Promise<void> {
   app.post(
     '/:id/publish',
     {
-      preHandler: [authenticate, requirePermission(PERMISSIONS.CANDIDATES_WRITE)],
+      preHandler: [authenticate, requirePermission(PERMISSIONS.CANDIDATES_APPROVE)],
       schema: {
         tags: ['Candidates'],
-        summary: 'Publish candidate profile',
+        summary: 'Publish candidate profile to clients',
         security: [{ bearerAuth: [] }],
         params: candidateIdParamSchema,
         response: { 200: candidateResponseSchema },
@@ -262,7 +270,7 @@ export async function candidateRoutes(fastify: FastifyInstance): Promise<void> {
   app.post(
     '/:id/hide',
     {
-      preHandler: [authenticate, requirePermission(PERMISSIONS.CANDIDATES_WRITE)],
+      preHandler: [authenticate, requirePermission(PERMISSIONS.CANDIDATES_APPROVE)],
       schema: {
         tags: ['Candidates'],
         summary: 'Hide candidate profile',
@@ -303,5 +311,67 @@ export async function candidateRoutes(fastify: FastifyInstance): Promise<void> {
       },
     },
     candidateController.reject,
+  );
+
+  app.post(
+    '/:id/pipeline/ai-screening',
+    {
+      preHandler: [authenticate, requirePermission(PERMISSIONS.CANDIDATES_WRITE)],
+      schema: {
+        tags: ['Candidates'],
+        summary: 'Run AI screening (SOURCED → AI_SCREENED)',
+        security: [{ bearerAuth: [] }],
+        params: candidateIdParamSchema,
+        body: runAiScreeningBodySchema,
+        response: { 200: candidateResponseSchema },
+      },
+    },
+    candidateController.runAiScreening,
+  );
+
+  app.post(
+    '/:id/pipeline/recruiter-review',
+    {
+      preHandler: [authenticate, requirePermission(PERMISSIONS.CANDIDATES_WRITE)],
+      schema: {
+        tags: ['Candidates'],
+        summary: 'Complete recruiter review (AI_SCREENED → RECRUITER_SCREENED)',
+        security: [{ bearerAuth: [] }],
+        params: candidateIdParamSchema,
+        body: completeRecruiterReviewBodySchema,
+        response: { 200: candidateResponseSchema },
+      },
+    },
+    candidateController.completeRecruiterReview,
+  );
+
+  app.post(
+    '/:id/pipeline/pricing',
+    {
+      preHandler: [authenticate, requirePermission(PERMISSIONS.CANDIDATES_WRITE)],
+      schema: {
+        tags: ['Candidates'],
+        summary: 'Complete pricing and availability (BGV_COMPLETE → PROFILE_DRAFT)',
+        security: [{ bearerAuth: [] }],
+        params: candidateIdParamSchema,
+        response: { 200: candidateResponseSchema },
+      },
+    },
+    candidateController.completePricingAndAvailability,
+  );
+
+  app.post(
+    '/:id/pipeline/submit',
+    {
+      preHandler: [authenticate, requirePermission(PERMISSIONS.CANDIDATES_WRITE)],
+      schema: {
+        tags: ['Candidates'],
+        summary: 'Submit candidate for admin approval',
+        security: [{ bearerAuth: [] }],
+        params: candidateIdParamSchema,
+        response: { 200: candidateResponseSchema },
+      },
+    },
+    candidateController.submitForApproval,
   );
 }

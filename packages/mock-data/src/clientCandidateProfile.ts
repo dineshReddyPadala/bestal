@@ -93,7 +93,7 @@ export function getClientCandidateProfile(candidateId: number): ClientCandidateP
   const detail = getCandidateDetailProfile(candidateId);
   if (!cand || !detail) return undefined;
 
-  if (cand.visibility !== 'PUBLISHED' || cand.approvalStatus !== 'APPROVED') {
+  if (cand.visibility !== 'CLIENT_VISIBLE' || cand.approvalStatus !== 'APPROVED') {
     return undefined;
   }
 

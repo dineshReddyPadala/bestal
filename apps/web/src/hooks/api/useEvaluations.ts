@@ -23,11 +23,6 @@ export function useEvaluationMutations() {
         evaluationsApi.update(id, body),
       onSuccess: invalidate,
     }),
-    complete: useMutation({
-      mutationFn: ({ id, body }: { id: number; body?: Record<string, unknown> }) =>
-        evaluationsApi.complete(id, body),
-      onSuccess: invalidate,
-    }),
   };
 }
 

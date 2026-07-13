@@ -1,7 +1,7 @@
 import argon2 from 'argon2';
 import type { FastifyInstance } from 'fastify';
 import {
-  PORTAL_ROLE,
+  PORTAL_ALLOWED_ROLES,
   PORTALS,
   type Portal,
   type Role,
@@ -160,9 +160,9 @@ export class AuthService {
       return { message: FORGOT_PASSWORD_MESSAGE };
     }
 
-    const requiredRole = PORTAL_ROLE[input.portal];
-    const hasPortalAccess = user.memberships.some(
-      (membership) => membership.role === requiredRole,
+    const allowedRoles = PORTAL_ALLOWED_ROLES[input.portal];
+    const hasPortalAccess = user.memberships.some((membership) =>
+      allowedRoles.includes(membership.role as (typeof allowedRoles)[number]),
     );
 
     if (!hasPortalAccess) {
@@ -308,15 +308,15 @@ export class AuthService {
     portal: Portal,
     organizationId?: number,
   ): SessionContext {
-    const requiredRole = PORTAL_ROLE[portal];
+    const allowedRoles = PORTAL_ALLOWED_ROLES[portal];
 
-    const eligibleMemberships = user.memberships.filter(
-      (membership) => membership.role === requiredRole,
+    const eligibleMemberships = user.memberships.filter((membership) =>
+      allowedRoles.includes(membership.role as (typeof allowedRoles)[number]),
     );
 
     if (eligibleMemberships.length === 0) {
       throw new AuthorizationError(
-        `No active '${requiredRole}' membership found for portal '${portal}'`,
+        `No active membership found for portal '${portal}'`,
       );
     }
 

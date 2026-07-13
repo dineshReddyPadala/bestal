@@ -5,7 +5,8 @@ import {
   getScreeningForCandidate,
   type MockCandidate,
 } from '@bestal/mock-data';
-import { formatDate } from '@bestal/shared-utils';
+import { formatCurrency, formatDate } from '@bestal/shared-utils';
+import { usePermissions } from '../../hooks/usePermissions';
 import {
   Badge,
   Button,
@@ -23,11 +24,9 @@ import {
 } from '@bestal/ui';
 import {
   AlertTriangle,
-  CheckCircle2,
   Play,
   ShieldCheck,
   Sparkles,
-  XCircle,
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -36,6 +35,7 @@ type CandidateWorkflowTabsProps = {
 };
 
 export function CandidateWorkflowTabs({ candidate }: CandidateWorkflowTabsProps) {
+  const { canViewPayRate } = usePermissions();
   const docs = getDocumentsForCandidate(candidate.id);
   const screening = getScreeningForCandidate(candidate.id);
   const pricing = getPricingForCandidate(candidate.id);
@@ -47,7 +47,6 @@ export function CandidateWorkflowTabs({ candidate }: CandidateWorkflowTabsProps)
 
   const [screeningRunning, setScreeningRunning] = useState(false);
   const [screeningDone, setScreeningDone] = useState(!!screening);
-  const [approvalStatus, setApprovalStatus] = useState(candidate.approvalStatus);
   const [uploadMsg, setUploadMsg] = useState<string | null>(null);
 
   function mockUpload(label: string) {
@@ -164,14 +163,24 @@ export function CandidateWorkflowTabs({ candidate }: CandidateWorkflowTabsProps)
         <CardContent>
           {pricing ? (
             <>
-              <PricingEditor payRate={pricing.payRate} billRate={pricing.billRate} currency={pricing.currency} />
+              {canViewPayRate ? (
+                <PricingEditor
+                  payRate={pricing.payRate}
+                  billRate={pricing.billRate}
+                  currency={pricing.currency}
+                />
+              ) : (
+                <p className="text-lg font-semibold">
+                  Bill rate: {formatCurrency(pricing.billRate, pricing.currency)}/hr
+                </p>
+              )}
               <p className="mt-4 text-xs text-muted-foreground">{pricing.notes}</p>
               <Button className="mt-4" size="sm" onClick={() => mockUpload('Pricing')}>
                 Save pricing
               </Button>
             </>
           ) : (
-            <PricingEditor payRate={100} billRate={140} onChange={() => {}} />
+            <PricingEditor payRate={canViewPayRate ? 100 : 0} billRate={140} onChange={() => {}} />
           )}
         </CardContent>
       </Card>
@@ -258,47 +267,22 @@ export function CandidateWorkflowTabs({ candidate }: CandidateWorkflowTabsProps)
         </CardContent>
       </Card>
 
-      {/* Client visibility approval */}
+      {/* Approval status (admin queue only — read-only for recruiters) */}
       <Card>
         <CardHeader>
-          <CardTitle>Approve for Client Visibility</CardTitle>
+          <CardTitle>Approval Status</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex flex-wrap items-center gap-3">
-            <StatusBadge status={approvalStatus} />
+            <StatusBadge status={candidate.approvalStatus} />
             <Badge variant="outline">Visibility: {candidate.visibility}</Badge>
-            {candidate.visibility === 'DRAFT' && (
+            {candidate.visibility === 'INTERNAL_ONLY' && (
               <Badge variant="outline">Not visible to clients</Badge>
             )}
           </div>
           <p className="mt-4 text-sm text-muted-foreground">
-            Approving makes this candidate searchable in the client portal. Reject to keep internal only.
+            Profile approval and publishing are managed by administrators in the Approvals queue.
           </p>
-          {approvalStatus === 'PENDING' && (
-            <div className="mt-4 flex gap-3">
-              <Button
-                onClick={() => setApprovalStatus('APPROVED')}
-                className="bg-emerald-600 hover:bg-emerald-700"
-              >
-                <CheckCircle2 className="mr-2 h-4 w-4" />
-                Approve
-              </Button>
-              <Button variant="outline" onClick={() => setApprovalStatus('REJECTED')}>
-                <XCircle className="mr-2 h-4 w-4" />
-                Reject
-              </Button>
-            </div>
-          )}
-          {approvalStatus === 'APPROVED' && (
-            <p className="mt-4 text-sm font-medium text-emerald-600">
-              Candidate approved — visible to clients in search results.
-            </p>
-          )}
-          {approvalStatus === 'REJECTED' && (
-            <p className="mt-4 text-sm font-medium text-red-600">
-              Candidate rejected — hidden from client portal.
-            </p>
-          )}
         </CardContent>
       </Card>
     </div>
