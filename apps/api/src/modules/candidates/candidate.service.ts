@@ -122,7 +122,8 @@ export class CandidateService {
   }
 
   /**
-   * Upload resume → storage, call Python AI, and persist a SOURCED draft in parallel.
+   * Always uploads the resume to storage and saves the file link on the draft.
+   * Extraction uses static JSON when AI_EXTRACTION_URL is unset; otherwise calls Python.
    */
   async extractResumeAndCreateDraft(
     authUser: AuthenticatedUser,
@@ -151,24 +152,35 @@ export class CandidateService {
     const candidateId = bigintToNumber(draft.id);
     const content = bufferToBase64(file.buffer);
 
-    let extraction: ResumeExtractionResponse;
     try {
-      const [, extractResult] = await Promise.all([
-        this.uploadResumeForDraft({
-          authUser,
-          organizationId,
-          candidate: draft,
-          candidateId,
-          file,
-          uploadCategory,
-        }),
-        this.resumeExtractionClient.extract({
-          fileName: file.originalName,
-          mimeType: file.mimeType,
-          content,
-        }),
-      ]);
-      extraction = extractResult;
+      // Dynamic: always upload to bucket and persist document link first
+      await this.uploadResumeForDraft({
+        authUser,
+        organizationId,
+        candidate: draft,
+        candidateId,
+        file,
+        uploadCategory,
+      });
+
+      // Extraction: static hardcoded JSON unless AI_EXTRACTION_URL is configured
+      const extraction = await this.resumeExtractionClient.extract({
+        fileName: file.originalName,
+        mimeType: file.mimeType,
+        content,
+      });
+
+      const updated = await this.applyExtractionToDraft(
+        organizationId,
+        candidateId,
+        draftEmail,
+        extraction,
+      );
+
+      return {
+        candidate: await this.toDto(updated, authUser),
+        extraction,
+      };
     } catch (error) {
       await this.candidateRepository.softDelete(organizationId, candidateId).catch(() => undefined);
       throw error instanceof BadRequestError || error instanceof ConflictError
@@ -177,18 +189,6 @@ export class CandidateService {
             error instanceof Error ? error.message : 'Resume extraction failed',
           );
     }
-
-    const updated = await this.applyExtractionToDraft(
-      organizationId,
-      candidateId,
-      draftEmail,
-      extraction,
-    );
-
-    return {
-      candidate: await this.toDto(updated, authUser),
-      extraction,
-    };
   }
 
   private async uploadResumeForDraft(params: {
@@ -222,6 +222,15 @@ export class CandidateService {
       },
     );
 
+    const durableFileUrl =
+      uploadResult.url ??
+      (await this.storageService.resolveFileUrl(
+        uploadResult.key,
+        uploadResult.bucket,
+        file.mimeType,
+      )) ??
+      `s3://${uploadResult.bucket}/${uploadResult.key}`;
+
     await this.registerCandidateAsset({
       authUser,
       organizationId,
@@ -230,8 +239,9 @@ export class CandidateService {
       kind: 'RESUME',
       documentKind: 'RESUME',
       uploadCategory,
-      storageKey,
+      storageKey: uploadResult.key,
       bucket: uploadResult.bucket,
+      fileUrl: durableFileUrl,
       file,
     });
   }
@@ -276,11 +286,17 @@ export class CandidateService {
       return partial ? Number(partial.id) : null;
     };
 
+    const communityFromExtraction = extraction.community
+      ? matchCommunityId(extraction.community)
+      : null;
+
     const fallbackCommunityId = communities[0] ? Number(communities[0].id) : null;
     const mappedSkills = (extraction.skills ?? [])
       .map((skill, index) => {
         const skillCommunityId =
-          matchCommunityId(skill.name) ?? fallbackCommunityId;
+          communityFromExtraction ??
+          matchCommunityId(skill.name) ??
+          fallbackCommunityId;
         if (!skillCommunityId) return null;
         return {
           skillCommunityId,
@@ -295,6 +311,7 @@ export class CandidateService {
 
     const normalizedSkills = normalizeCandidateSkills(mappedSkills);
     const primarySkillCommunityId =
+      communityFromExtraction ??
       normalizedSkills?.find((s) => s.isPrimary)?.skillCommunityId ??
       normalizedSkills?.[0]?.skillCommunityId ??
       fallbackCommunityId ??
@@ -309,6 +326,23 @@ export class CandidateService {
       )
       .filter(Boolean)
       .join('; ');
+
+    const aiSummary =
+      extraction.aiSummary ??
+      extracted.summary ??
+      extraction.rawSections?.summary ??
+      undefined;
+    const hasScreeningSignal =
+      extraction.bestalScore != null ||
+      Boolean(extraction.aiSummary?.trim()) ||
+      Boolean(extraction.strengths?.trim());
+
+    const clientBillRate = extraction.recommendedClientRate;
+    const candidatePayRate = extraction.recommendedCandidateRate;
+    const grossMargin =
+      clientBillRate != null && candidatePayRate != null
+        ? clientBillRate - candidatePayRate
+        : undefined;
 
     await this.prisma.candidateSkill.updateMany({
       where: {
@@ -330,21 +364,28 @@ export class CandidateService {
         phone: extracted.phone ?? undefined,
         location: extracted.location ?? undefined,
         linkedinUrl: extracted.linkedinUrl ?? undefined,
-        headline: extracted.headline ?? undefined,
+        headline: extracted.headline ?? extraction.primaryRole ?? undefined,
         summary: extracted.summary ?? extraction.rawSections?.summary ?? undefined,
         yearsExperience: extracted.yearsExperience ?? undefined,
         displayName: `${firstName} ${lastName}`.trim(),
-        primaryRole: latestJob?.title ?? extracted.headline ?? undefined,
+        primaryRole:
+          extraction.primaryRole ?? latestJob?.title ?? extracted.headline ?? undefined,
         currentCompany: latestJob?.company ?? undefined,
         education: education || undefined,
         clientProfileSummary:
           extracted.summary ?? extraction.rawSections?.summary ?? undefined,
-        strengths: extraction.rawSections?.skills ?? undefined,
-        aiSummary: extracted.summary ?? extraction.rawSections?.summary ?? undefined,
+        strengths: extraction.strengths ?? extraction.rawSections?.skills ?? undefined,
+        weaknesses: extraction.weaknesses ?? undefined,
+        riskFlags: extraction.riskFlags ?? undefined,
+        aiSummary,
+        bestalScore: extraction.bestalScore ?? undefined,
+        clientBillRate: clientBillRate ?? undefined,
+        candidatePayRate: candidatePayRate ?? undefined,
+        grossMargin,
         primarySkillCommunityId: primarySkillCommunityId
           ? BigInt(primarySkillCommunityId)
           : undefined,
-        profileStatus: 'SOURCED',
+        profileStatus: hasScreeningSignal ? 'AI_SCREENED' : 'SOURCED',
         ...(normalizedSkills?.length
           ? {
               skills: {
@@ -606,6 +647,7 @@ export class CandidateService {
     uploadCategory: UploadCategory;
     storageKey: string;
     bucket: string;
+    fileUrl?: string | null;
     file: Pick<UploadAssetInput, 'originalName' | 'mimeType' | 'size'>;
   }): Promise<CandidateDto> {
     const {
@@ -617,10 +659,16 @@ export class CandidateService {
       documentKind,
       storageKey,
       bucket,
+      fileUrl,
       file,
     } = params;
 
     const existingDocId = this.getExistingDocumentId(candidate, kind);
+
+    const resolvedFileUrl =
+      fileUrl ??
+      (await this.storageService.resolveFileUrl(storageKey, bucket, file.mimeType)) ??
+      `s3://${bucket}/${storageKey}`;
 
     const document = await this.candidateRepository.createDocument({
       organizationId,
@@ -631,6 +679,7 @@ export class CandidateService {
       originalName: file.originalName,
       s3Key: storageKey,
       s3Bucket: bucket,
+      fileUrl: resolvedFileUrl,
       mimeType: file.mimeType,
       fileSize: file.size,
     });

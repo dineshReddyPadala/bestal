@@ -20,10 +20,12 @@ export type ResumeExtractionEducation = {
   graduationYear: number | null;
 };
 
+/** Unified extract + AI screening response from Python. */
 export type ResumeExtractionResponse = {
   jobId: string;
   confidence: number;
   extractedAt: string;
+  warnings: string[];
   candidate: {
     firstName: string;
     lastName: string;
@@ -35,14 +37,23 @@ export type ResumeExtractionResponse = {
     summary: string | null;
     yearsExperience: number | null;
   };
+  primaryRole: string | null;
+  seniority: string | null;
+  community: string | null;
   skills: ResumeExtractionSkill[];
   experience: ResumeExtractionExperience[];
   education: ResumeExtractionEducation[];
+  aiSummary: string | null;
+  strengths: string | null;
+  weaknesses: string | null;
+  riskFlags: string | null;
+  bestalScore: number | null;
+  recommendedClientRate: number | null;
+  recommendedCandidateRate: number | null;
   rawSections: {
     summary: string | null;
     skills: string | null;
     experience: string | null;
     education: string | null;
   };
-  warnings: string[];
 };

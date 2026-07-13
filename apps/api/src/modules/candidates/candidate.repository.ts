@@ -232,6 +232,7 @@ export class CandidateRepository extends BaseRepository {
     s3Bucket: string;
     mimeType: string;
     fileSize: number;
+    fileUrl?: string | null;
   }): Promise<Document> {
     return this.prisma.document.create({
       data: {
@@ -244,6 +245,7 @@ export class CandidateRepository extends BaseRepository {
         originalName: data.originalName,
         s3Key: data.s3Key,
         s3Bucket: data.s3Bucket,
+        fileUrl: data.fileUrl ?? null,
         mimeType: data.mimeType,
         fileSize: BigInt(data.fileSize),
         status: 'UPLOADED',

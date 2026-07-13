@@ -219,17 +219,29 @@ export const candidateResponseSchema = z.object({
 export const resumeExtractionDraftResponseSchema = z.object({
   data: z.object({
     candidate: z.record(z.string(), z.unknown()),
-    extraction: z.object({
-      jobId: z.string(),
-      confidence: z.number(),
-      extractedAt: z.string(),
-      candidate: z.record(z.string(), z.unknown()),
-      skills: z.array(z.record(z.string(), z.unknown())),
-      experience: z.array(z.record(z.string(), z.unknown())),
-      education: z.array(z.record(z.string(), z.unknown())),
-      rawSections: z.record(z.string(), z.unknown()).nullable().optional(),
-      warnings: z.array(z.string()),
-    }).passthrough(),
+    extraction: z
+      .object({
+        jobId: z.string(),
+        confidence: z.number(),
+        extractedAt: z.string(),
+        warnings: z.array(z.string()),
+        candidate: z.record(z.string(), z.unknown()),
+        primaryRole: z.string().nullable().optional(),
+        seniority: z.string().nullable().optional(),
+        community: z.string().nullable().optional(),
+        skills: z.array(z.record(z.string(), z.unknown())),
+        experience: z.array(z.record(z.string(), z.unknown())),
+        education: z.array(z.record(z.string(), z.unknown())),
+        aiSummary: z.string().nullable().optional(),
+        strengths: z.string().nullable().optional(),
+        weaknesses: z.string().nullable().optional(),
+        riskFlags: z.string().nullable().optional(),
+        bestalScore: z.number().nullable().optional(),
+        recommendedClientRate: z.number().nullable().optional(),
+        recommendedCandidateRate: z.number().nullable().optional(),
+        rawSections: z.record(z.string(), z.unknown()).nullable().optional(),
+      })
+      .passthrough(),
   }),
 });
 

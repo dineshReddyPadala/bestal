@@ -30,7 +30,7 @@ function formatEducation(extraction: ResumeExtractionResponse): string {
       )
       .join('; ');
   }
-  return extraction.rawSections.education?.trim() ?? '';
+  return extraction.rawSections?.education?.trim() ?? '';
 }
 
 function formatExperienceNotes(extraction: ResumeExtractionResponse): string {
@@ -43,7 +43,7 @@ function formatExperienceNotes(extraction: ResumeExtractionResponse): string {
   return snippets.join('\n');
 }
 
-/** Map AI extraction response into candidate wizard form defaults. */
+/** Map unified AI extraction + screening response into wizard form defaults. */
 export function applyResumeExtractionToWizardForm(
   extraction: ResumeExtractionResponse,
   skillCommunities: SkillCommunityListItem[],
@@ -53,10 +53,16 @@ export function applyResumeExtractionToWizardForm(
   const latestJob = extraction.experience[0];
   const fallbackCommunityId = skillCommunities[0]?.id;
 
+  const communityIdFromExtraction = extraction.community
+    ? matchSkillCommunityId(extraction.community, skillCommunities)
+    : undefined;
+
   const mappedSkills = extraction.skills
     .map((skill, index) => {
       const skillCommunityId =
-        matchSkillCommunityId(skill.name, skillCommunities) ?? fallbackCommunityId;
+        communityIdFromExtraction ??
+        matchSkillCommunityId(skill.name, skillCommunities) ??
+        fallbackCommunityId;
       if (!skillCommunityId) return null;
       return {
         skillCommunityId,
@@ -70,13 +76,16 @@ export function applyResumeExtractionToWizardForm(
 
   const primarySkill =
     extraction.skills.find((skill) => skill.isPrimary) ?? extraction.skills[0];
-  const primarySkillCommunityId = primarySkill
-    ? matchSkillCommunityId(primarySkill.name, skillCommunities) ?? fallbackCommunityId
-    : mappedSkills[0]?.skillCommunityId;
+  const primarySkillCommunityId =
+    communityIdFromExtraction ??
+    (primarySkill
+      ? matchSkillCommunityId(primarySkill.name, skillCommunities) ?? fallbackCommunityId
+      : mappedSkills[0]?.skillCommunityId);
 
   const summary =
+    extraction.aiSummary?.trim() ||
     c.summary?.trim() ||
-    extraction.rawSections.summary?.trim() ||
+    extraction.rawSections?.summary?.trim() ||
     '';
   const experienceNotes = formatExperienceNotes(extraction);
   const today = new Date().toISOString().slice(0, 10);
@@ -89,16 +98,26 @@ export function applyResumeExtractionToWizardForm(
     location: c.location?.trim() ?? '',
     linkedinUrl: c.linkedinUrl?.trim() ?? '',
     source: 'JOB_BOARD',
-    headline: c.headline?.trim() ?? latestJob?.title?.trim() ?? '',
-    primaryRole: latestJob?.title?.trim() ?? c.headline?.trim() ?? '',
+    headline:
+      c.headline?.trim() ||
+      extraction.primaryRole?.trim() ||
+      latestJob?.title?.trim() ||
+      '',
+    primaryRole:
+      extraction.primaryRole?.trim() ||
+      latestJob?.title?.trim() ||
+      c.headline?.trim() ||
+      '',
     currentCompany: latestJob?.company?.trim() ?? '',
     education: formatEducation(extraction),
     summary,
     clientProfileSummary: summary,
-    strengths: extraction.rawSections.skills?.trim() ?? '',
-    weaknesses: '',
+    strengths: extraction.strengths?.trim() || extraction.rawSections?.skills?.trim() || '',
+    weaknesses: extraction.weaknesses?.trim() || '',
     yearsExperience: c.yearsExperience ?? undefined,
     primarySkillCommunityId: primarySkillCommunityId ?? undefined,
+    billRate: extraction.recommendedClientRate ?? undefined,
+    payRate: extraction.recommendedCandidateRate ?? undefined,
     skills:
       mappedSkills.length > 0
         ? mergeWizardSkills(mappedSkills)
@@ -114,7 +133,14 @@ export function applyResumeExtractionToWizardForm(
             ]
           : undefined,
     availableFrom: today,
-    availabilityNotes: experienceNotes || undefined,
+    availabilityNotes: [
+      experienceNotes,
+      extraction.seniority ? `Seniority: ${extraction.seniority}` : '',
+      extraction.riskFlags ? `Risk flags: ${extraction.riskFlags}` : '',
+      extraction.bestalScore != null ? `BesTal score: ${extraction.bestalScore}` : '',
+    ]
+      .filter(Boolean)
+      .join('\n') || undefined,
     resumeFileName: fileName,
     displayName: [c.firstName, c.lastName].filter(Boolean).join(' ').trim() || undefined,
   };

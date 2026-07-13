@@ -1,7 +1,6 @@
 /**
- * Expected JSON response from the AI resume extraction service.
- * This structure will be returned by a separate AI project endpoint.
- * For now, use the static stub in resume-extraction.stub.ts.
+ * Unified extract + AI screening response from the Python service
+ * (same contract as apps/api resume-extraction.types).
  */
 export type ResumeExtractionSkill = {
   name: string;
@@ -26,13 +25,10 @@ export type ResumeExtractionEducation = {
 };
 
 export type ResumeExtractionResponse = {
-  /** Extraction job id from AI service */
   jobId: string;
-  /** Overall confidence score 0–1 */
   confidence: number;
-  /** ISO timestamp when extraction completed */
   extractedAt: string;
-  /** Parsed candidate fields */
+  warnings: string[];
   candidate: {
     firstName: string;
     lastName: string;
@@ -44,23 +40,29 @@ export type ResumeExtractionResponse = {
     summary: string | null;
     yearsExperience: number | null;
   };
+  primaryRole: string | null;
+  seniority: string | null;
+  community: string | null;
   skills: ResumeExtractionSkill[];
   experience: ResumeExtractionExperience[];
   education: ResumeExtractionEducation[];
-  /** Raw text snippets for review */
+  aiSummary: string | null;
+  strengths: string | null;
+  weaknesses: string | null;
+  riskFlags: string | null;
+  bestalScore: number | null;
+  recommendedClientRate: number | null;
+  recommendedCandidateRate: number | null;
   rawSections: {
     summary: string | null;
     skills: string | null;
     experience: string | null;
     education: string | null;
   };
-  /** Warnings or low-confidence fields */
-  warnings: string[];
 };
 
 export type ResumeExtractionRequest = {
   fileName: string;
   mimeType: string;
-  /** Base64-encoded file content or file URL — AI service defines transport */
   content?: string;
 };

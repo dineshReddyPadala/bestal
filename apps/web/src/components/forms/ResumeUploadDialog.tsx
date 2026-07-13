@@ -78,6 +78,8 @@ export function ResumeUploadDialog({ open, onClose, onSuccess }: ResumeUploadDia
       }
 
       const confidence = Math.round(extraction.confidence * 100);
+      const scoreNote =
+        extraction.bestalScore != null ? ` BesTal score ${extraction.bestalScore}.` : '';
       const warningNote =
         extraction.warnings.length > 0 ? ` ${extraction.warnings[0]}` : '';
 
@@ -85,7 +87,7 @@ export function ResumeUploadDialog({ open, onClose, onSuccess }: ResumeUploadDia
         file,
         formValues,
         { resume: file },
-        `Resume saved & extracted (${confidence}% confidence). Draft #${candidate.id} created — review before submitting.${warningNote}`,
+        `Resume saved & extracted (${confidence}% confidence). Draft #${candidate.id} created.${scoreNote} Review before submitting.${warningNote}`,
         candidate.id,
       );
 
@@ -121,9 +123,9 @@ export function ResumeUploadDialog({ open, onClose, onSuccess }: ResumeUploadDia
           <div className="flex items-start gap-2">
             <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-brand" />
             <p>
-              The API uploads your resume to storage, calls the AI service, and saves a draft
-              candidate in parallel. Configure AI_EXTRACTION_URL on the API for live Python
-              extraction.
+              Resume is uploaded to storage and linked on a draft candidate. AI fields use a
+              static response until <code className="rounded bg-white/80 px-1">AI_EXTRACTION_URL</code>{' '}
+              is configured on the API.
             </p>
           </div>
         </div>
