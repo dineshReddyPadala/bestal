@@ -3,8 +3,9 @@ import { Button, Dialog, FileUpload } from '@bestal/ui';
 import { AlertCircle, FileText, Loader2, Sparkles } from 'lucide-react';
 import { useState } from 'react';
 import { useSkillCommunitiesList } from '../../hooks/api/useSkillCommunities';
+import { getApiErrorMessage } from '../../lib/api/errors';
 import { applyResumeExtractionToWizardForm } from '../../lib/api/ai/resume-extraction.mapper';
-import { extractResumeFromFile } from '../../lib/api/ai/resume-extraction.stub';
+import { extractResumeAndCreateDraft } from '../../lib/api/ai/resume-extraction.stub';
 import type {
   CandidateWizardFormValues,
   CandidateWizardUploads,
@@ -30,6 +31,7 @@ type ResumeUploadDialogProps = {
     formValues: Partial<CandidateWizardFormValues>,
     uploads: CandidateWizardUploads,
     message: string,
+    draftCandidateId: number,
   ) => void;
 };
 
@@ -61,7 +63,7 @@ export function ResumeUploadDialog({ open, onClose, onSuccess }: ResumeUploadDia
     setExtracting(true);
 
     try {
-      const extraction = await extractResumeFromFile(file);
+      const { candidate, extraction } = await extractResumeAndCreateDraft(file);
       const formValues = applyResumeExtractionToWizardForm(
         extraction,
         skillCommunities,
@@ -83,13 +85,14 @@ export function ResumeUploadDialog({ open, onClose, onSuccess }: ResumeUploadDia
         file,
         formValues,
         { resume: file },
-        `Resume extracted (${confidence}% confidence). Review all sections before submitting.${warningNote}`,
+        `Resume saved & extracted (${confidence}% confidence). Draft #${candidate.id} created — review before submitting.${warningNote}`,
+        candidate.id,
       );
 
       setFileName(null);
       setError(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Resume extraction failed');
+      setError(getApiErrorMessage(err, 'Resume extraction failed'));
     } finally {
       setExtracting(false);
     }
@@ -100,7 +103,7 @@ export function ResumeUploadDialog({ open, onClose, onSuccess }: ResumeUploadDia
       open={open}
       onClose={handleClose}
       title="Upload resume"
-      description="Upload a PDF or Word resume. BesTal will extract profile details and pre-fill the candidate form."
+      description="Upload a PDF or Word resume. BesTal stores the file, runs AI extraction, and creates a draft candidate."
       className="max-w-lg"
       footer={
         <Button type="button" variant="outline" onClick={handleClose} disabled={extracting}>
@@ -118,9 +121,9 @@ export function ResumeUploadDialog({ open, onClose, onSuccess }: ResumeUploadDia
           <div className="flex items-start gap-2">
             <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-brand" />
             <p>
-              {import.meta.env.VITE_AI_EXTRACTION_URL
-                ? 'Connected to the AI resume extraction service. Fields will be filled automatically after upload.'
-                : 'AI extraction URL is not configured — demo data will be used to pre-fill the form.'}
+              The API uploads your resume to storage, calls the AI service, and saves a draft
+              candidate in parallel. Configure AI_EXTRACTION_URL on the API for live Python
+              extraction.
             </p>
           </div>
         </div>
@@ -134,7 +137,7 @@ export function ResumeUploadDialog({ open, onClose, onSuccess }: ResumeUploadDia
           <FileUpload
             label="Resume file"
             accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-            hint={extracting ? 'Extracting…' : 'PDF or Word · max 10 MB'}
+            hint={extracting ? 'Uploading & extracting…' : 'PDF or Word · max 10 MB'}
             onFileSelect={(file) => {
               if (!extracting) void handleFileSelect(file);
             }}
@@ -144,7 +147,7 @@ export function ResumeUploadDialog({ open, onClose, onSuccess }: ResumeUploadDia
         {extracting && (
           <div className="flex items-center gap-2 rounded-lg border border-border/80 bg-muted/20 px-3 py-3 text-sm text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin text-brand" />
-            Extracting resume with AI…
+            Uploading resume, calling AI, and creating draft…
           </div>
         )}
 

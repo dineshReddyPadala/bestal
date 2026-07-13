@@ -213,6 +213,23 @@ export const candidateResponseSchema = z.object({
     ),
     createdAt: z.string(),
     updatedAt: z.string(),
+  }).passthrough(),
+});
+
+export const resumeExtractionDraftResponseSchema = z.object({
+  data: z.object({
+    candidate: z.record(z.string(), z.unknown()),
+    extraction: z.object({
+      jobId: z.string(),
+      confidence: z.number(),
+      extractedAt: z.string(),
+      candidate: z.record(z.string(), z.unknown()),
+      skills: z.array(z.record(z.string(), z.unknown())),
+      experience: z.array(z.record(z.string(), z.unknown())),
+      education: z.array(z.record(z.string(), z.unknown())),
+      rawSections: z.record(z.string(), z.unknown()).nullable().optional(),
+      warnings: z.array(z.string()),
+    }).passthrough(),
   }),
 });
 

@@ -241,3 +241,8 @@ export interface AssetUploadUrlDto {
   key: string;
   bucket: string;
 }
+
+export interface ResumeExtractionDraftResult {
+  candidate: CandidateDto;
+  extraction: import('../../services/resume-extraction.types.js').ResumeExtractionResponse;
+}

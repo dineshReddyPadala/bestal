@@ -87,18 +87,6 @@ function skillCommunityName(
 const textareaClass =
   'flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
 
-function applyWizardFormPatch(
-  patch: Partial<CandidateWizardFormValues>,
-  setValue: ReturnType<typeof useFormContext<CandidateWizardFormValues>>['setValue'],
-) {
-  (Object.keys(patch) as (keyof CandidateWizardFormValues)[]).forEach((key) => {
-    const value = patch[key];
-    if (value !== undefined) {
-      setValue(key, value as CandidateWizardFormValues[typeof key], { shouldValidate: true });
-    }
-  });
-}
-
 function FieldError({ message }: { message?: string }) {
   if (!message) return null;
   return <p className="text-xs text-red-600">{message}</p>;
@@ -462,28 +450,17 @@ function DocumentsStep({
   pendingUploads: MutableRefObject<CandidateWizardUploads>;
 }) {
   const { setValue, watch } = useFormContext<CandidateWizardFormValues>();
-  const skillCommunities = useSkillCommunityOptions();
   const [extracting, setExtracting] = useState(false);
-
-  async function applyExtraction(file: File) {
-    const { extractResumeFromFile } = await import('../../lib/api/ai/resume-extraction.stub');
-    const { applyResumeExtractionToWizardForm } = await import(
-      '../../lib/api/ai/resume-extraction.mapper'
-    );
-    const result = await extractResumeFromFile(file);
-    const patch = applyResumeExtractionToWizardForm(result, skillCommunities, file.name);
-    applyWizardFormPatch(patch, setValue);
-    onToast?.(`Resume extracted (${Math.round(result.confidence * 100)}% confidence)`);
-  }
 
   async function handleResumeSelect(file: File) {
     pendingUploads.current.resume = file;
     setValue('resumeFileName', file.name, { shouldValidate: true });
     setExtracting(true);
     try {
-      await applyExtraction(file);
-    } catch {
-      onToast?.('Resume uploaded — extraction unavailable');
+      // Full extract+draft runs only via Resume Upload entry dialog (Node API).
+      onToast?.(
+        `Resume "${file.name}" attached — use Upload Resume entry for AI extraction + draft.`,
+      );
     } finally {
       setExtracting(false);
     }
@@ -506,7 +483,7 @@ function DocumentsStep({
           onFileSelect={(file) => void handleResumeSelect(file)}
         />
         {extracting && (
-          <p className="mt-2 text-sm text-muted-foreground">Extracting resume fields…</p>
+          <p className="mt-2 text-sm text-muted-foreground">Attaching resume…</p>
         )}
         {watch('resumeFileName') && (
           <p className="mt-2 text-sm text-emerald-700">Selected: {watch('resumeFileName')}</p>

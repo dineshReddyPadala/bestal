@@ -18,6 +18,7 @@ import {
   rejectCandidateBodySchema,
   runAiScreeningBodySchema,
   completeRecruiterReviewBodySchema,
+  resumeExtractionDraftResponseSchema,
   updateCandidateBodySchema,
 } from './candidate.validator.js';
 
@@ -39,6 +40,22 @@ export async function candidateRoutes(fastify: FastifyInstance): Promise<void> {
       },
     },
     candidateController.create,
+  );
+
+  app.post(
+    '/extract-resume',
+    {
+      preHandler: [authenticate, requirePermission(PERMISSIONS.CANDIDATES_WRITE)],
+      schema: {
+        tags: ['Candidates'],
+        summary:
+          'Upload resume to storage, extract via Python AI, and create a SOURCED draft candidate',
+        security: [{ bearerAuth: [] }],
+        consumes: ['multipart/form-data'],
+        response: { 201: resumeExtractionDraftResponseSchema },
+      },
+    },
+    candidateController.extractResume,
   );
 
   app.get(

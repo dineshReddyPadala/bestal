@@ -1,6 +1,12 @@
 import { apiAction, apiCreate, apiDelete, apiGet, apiList, apiRequest, apiUpdate, type ListQuery } from './client';
 import type { CandidateDto, CandidateListItem } from './types';
+import type { ResumeExtractionResponse } from './ai/resume-extraction.types';
 import { ApiError } from './types';
+
+export type ResumeExtractDraftResult = {
+  candidate: CandidateDto;
+  extraction: ResumeExtractionResponse;
+};
 
 export const candidatesApi = {
   list: (query?: ListQuery) => apiList<CandidateListItem>('/candidates', query),
@@ -22,6 +28,16 @@ export const candidatesApi = {
     apiAction<CandidateDto>(`/candidates/${id}/pipeline/pricing`),
   submitForApproval: (id: number) =>
     apiAction<CandidateDto>(`/candidates/${id}/pipeline/submit`),
+  /** Node uploads resume to bucket, calls Python AI, creates SOURCED draft. */
+  extractResume: async (file: File): Promise<ResumeExtractDraftResult> => {
+    const form = new FormData();
+    form.append('file', file, file.name);
+    const json = await apiRequest<{ data: ResumeExtractDraftResult }>(
+      '/candidates/extract-resume',
+      { method: 'POST', body: form },
+    );
+    return json.data;
+  },
 };
 
 type CandidateAssetKind = 'resume' | 'profile-image' | 'intro-video';

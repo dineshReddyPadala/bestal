@@ -100,6 +100,32 @@ export class CandidateController {
     return this.handleCompleteUpload(request, reply, 'INTRO_VIDEO');
   };
 
+  extractResume = async (request: FastifyRequest, reply: FastifyReply) => {
+    const file = await request.file();
+    if (!file) {
+      throw new BadRequestError('Resume file is required');
+    }
+
+    const buffer = await file.toBuffer();
+    validateUploadFile(UPLOAD_CATEGORIES.RESUME, {
+      mimeType: file.mimetype,
+      size: buffer.length,
+      originalName: file.filename,
+    });
+
+    const data = await this.candidateService.extractResumeAndCreateDraft(
+      request.authUser!,
+      {
+        buffer,
+        originalName: file.filename,
+        mimeType: file.mimetype,
+        size: buffer.length,
+      },
+    );
+
+    return reply.status(201).send({ data });
+  };
+
   publish = async (request: FastifyRequest, reply: FastifyReply) => {
     const { id } = request.params as { id: number };
     const data = await this.candidateService.publish(request.authUser!, id);

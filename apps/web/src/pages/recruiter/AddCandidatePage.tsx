@@ -33,7 +33,7 @@ export function AddCandidatePage() {
   const navigate = useNavigate();
   const basePath = usePortalBasePath();
   const { message, variant, show, showError, dismiss } = useDemoToast();
-  const { create } = useCandidateMutations();
+  const { create, update } = useCandidateMutations();
   const [submittedId, setSubmittedId] = useState<number | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [entryMethod, setEntryMethod] = useState<CandidateEntryMethod | null>(null);
@@ -42,6 +42,7 @@ export function AddCandidatePage() {
     formValues: Partial<CandidateWizardFormValues>;
     uploads: CandidateWizardUploads;
     sessionKey: string;
+    draftCandidateId: number;
   } | null>(null);
 
   function handleEntrySelect(method: CandidateEntryMethod) {
@@ -58,11 +59,13 @@ export function AddCandidatePage() {
     formValues: Partial<CandidateWizardFormValues>,
     uploads: CandidateWizardUploads,
     toastMessage: string,
+    draftCandidateId: number,
   ) {
     setResumeBootstrap({
       formValues,
       uploads,
       sessionKey: `${file.name}-${file.lastModified}`,
+      draftCandidateId,
     });
     setEntryMethod('resume');
     setResumeDialogOpen(false);
@@ -72,31 +75,38 @@ export function AddCandidatePage() {
   async function handleSubmit(values: CandidateWizardValues, uploads: CandidateWizardUploads) {
     setSubmitError(null);
     try {
-      const created = await create.mutateAsync(
-        mapWizardToApiCreateBody(values),
-      );
+      const draftId = resumeBootstrap?.draftCandidateId;
+      const saved = draftId
+        ? await update.mutateAsync({
+            id: draftId,
+            body: mapWizardToApiCreateBody(values),
+          })
+        : await create.mutateAsync(mapWizardToApiCreateBody(values));
 
       const uploadJobs: Promise<unknown>[] = [];
       if (uploads.profileImage) {
-        uploadJobs.push(uploadCandidateFile(created.id, 'profile-image', uploads.profileImage));
+        uploadJobs.push(uploadCandidateFile(saved.id, 'profile-image', uploads.profileImage));
       }
-      if (uploads.resume) {
-        uploadJobs.push(uploadCandidateFile(created.id, 'resume', uploads.resume));
+      // Resume already uploaded during extract-resume when starting from draft
+      if (uploads.resume && !draftId) {
+        uploadJobs.push(uploadCandidateFile(saved.id, 'resume', uploads.resume));
       }
       if (uploads.introVideo) {
-        uploadJobs.push(uploadCandidateFile(created.id, 'intro-video', uploads.introVideo));
+        uploadJobs.push(uploadCandidateFile(saved.id, 'intro-video', uploads.introVideo));
       }
       if (uploadJobs.length > 0) {
         await Promise.all(uploadJobs);
       }
 
-      setSubmittedId(created.id);
+      setSubmittedId(saved.id);
       show(
-        uploadJobs.length > 0
-          ? 'Candidate created and files uploaded to storage'
-          : 'Candidate created successfully',
+        draftId
+          ? 'Draft candidate updated successfully'
+          : uploadJobs.length > 0
+            ? 'Candidate created and files uploaded to storage'
+            : 'Candidate created successfully',
       );
-      setTimeout(() => navigate(`${basePath}/candidates/${created.id}`), 1200);
+      setTimeout(() => navigate(`${basePath}/candidates/${saved.id}`), 1200);
     } catch (err) {
       const errorMessage = getApiErrorMessage(err, 'Failed to create candidate');
       setSubmitError(errorMessage);

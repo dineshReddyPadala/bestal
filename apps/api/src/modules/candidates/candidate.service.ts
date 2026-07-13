@@ -1,5 +1,6 @@
-import type { DocumentKind } from '@prisma/client';
+import type { DocumentKind, PrismaClient } from '@prisma/client';
 import type { FastifyInstance } from 'fastify';
+import { randomUUID } from 'node:crypto';
 import { ROLES } from '../../constants/index.js';
 import type { AuthenticatedUser } from '../../types/index.js';
 import {
@@ -22,6 +23,11 @@ import {
   type PipelineCandidateSnapshot,
 } from './candidate-pipeline.js';
 import { StorageService } from '../../services/storage.service.js';
+import {
+  bufferToBase64,
+  ResumeExtractionClient,
+} from '../../services/resume-extraction.client.js';
+import type { ResumeExtractionResponse } from '../../services/resume-extraction.types.js';
 import { getUploadCategoryConfig } from '../../services/storage/file-validation.js';
 import type { UploadCategory } from '../../services/storage/storage.constants.js';
 import {
@@ -47,6 +53,7 @@ import type {
   CreateCandidateInput,
   PrepareAssetUploadInput,
   RejectCandidateInput,
+  ResumeExtractionDraftResult,
   RunAiScreeningInput,
   UpdateCandidateInput,
   UploadAssetInput,
@@ -56,6 +63,8 @@ import type { ListCandidatesQuery } from './candidate.validator.js';
 export class CandidateService {
   private readonly candidateRepository: CandidateRepository;
   private readonly storageService: StorageService;
+  private readonly resumeExtractionClient: ResumeExtractionClient;
+  private readonly prisma: PrismaClient;
 
   constructor(
     fastify: FastifyInstance,
@@ -65,6 +74,10 @@ export class CandidateService {
       fastify.prisma,
     );
     this.storageService = new StorageService(fastify.config);
+    this.resumeExtractionClient = new ResumeExtractionClient(
+      fastify.config.aiExtractionUrl,
+    );
+    this.prisma = fastify.prisma;
   }
 
   async create(
@@ -106,6 +119,259 @@ export class CandidateService {
       createdById: authUser.id,
     });
     return this.toDto(candidate, authUser);
+  }
+
+  /**
+   * Upload resume → storage, call Python AI, and persist a SOURCED draft in parallel.
+   */
+  async extractResumeAndCreateDraft(
+    authUser: AuthenticatedUser,
+    file: UploadAssetInput,
+  ): Promise<ResumeExtractionDraftResult> {
+    const organizationId = this.requireOrganization(authUser);
+    const uploadCategory = this.storageService.uploadCategoryFromDocumentKind('RESUME');
+
+    this.storageService.validateFile(uploadCategory, {
+      mimeType: file.mimeType,
+      size: file.size,
+      originalName: file.originalName,
+    });
+
+    const draftEmail = `draft-${randomUUID()}@draft.bestal.local`;
+    const draft = await this.candidateRepository.create(organizationId, {
+      firstName: 'Draft',
+      lastName: 'Candidate',
+      email: draftEmail,
+      source: 'JOB_BOARD',
+      profileStatus: 'SOURCED',
+      visibility: 'INTERNAL_ONLY',
+      createdById: authUser.id,
+    });
+
+    const candidateId = bigintToNumber(draft.id);
+    const content = bufferToBase64(file.buffer);
+
+    let extraction: ResumeExtractionResponse;
+    try {
+      const [, extractResult] = await Promise.all([
+        this.uploadResumeForDraft({
+          authUser,
+          organizationId,
+          candidate: draft,
+          candidateId,
+          file,
+          uploadCategory,
+        }),
+        this.resumeExtractionClient.extract({
+          fileName: file.originalName,
+          mimeType: file.mimeType,
+          content,
+        }),
+      ]);
+      extraction = extractResult;
+    } catch (error) {
+      await this.candidateRepository.softDelete(organizationId, candidateId).catch(() => undefined);
+      throw error instanceof BadRequestError || error instanceof ConflictError
+        ? error
+        : new BadRequestError(
+            error instanceof Error ? error.message : 'Resume extraction failed',
+          );
+    }
+
+    const updated = await this.applyExtractionToDraft(
+      organizationId,
+      candidateId,
+      draftEmail,
+      extraction,
+    );
+
+    return {
+      candidate: await this.toDto(updated, authUser),
+      extraction,
+    };
+  }
+
+  private async uploadResumeForDraft(params: {
+    authUser: AuthenticatedUser;
+    organizationId: number;
+    candidate: NonNullable<Awaited<ReturnType<CandidateRepository['findById']>>>;
+    candidateId: number;
+    file: UploadAssetInput;
+    uploadCategory: UploadCategory;
+  }): Promise<void> {
+    const { authUser, organizationId, candidate, candidateId, file, uploadCategory } = params;
+    const storageKey = this.storageService.buildCandidateAssetKey(
+      organizationId,
+      candidateId,
+      uploadCategory,
+      file.originalName,
+    );
+
+    const uploadResult = await this.storageService.upload(
+      storageKey,
+      {
+        buffer: file.buffer,
+        originalName: file.originalName,
+        mimeType: file.mimeType,
+        size: file.size,
+      },
+      {
+        category: uploadCategory,
+        organizationId,
+        entityId: candidateId,
+      },
+    );
+
+    await this.registerCandidateAsset({
+      authUser,
+      organizationId,
+      candidate,
+      id: candidateId,
+      kind: 'RESUME',
+      documentKind: 'RESUME',
+      uploadCategory,
+      storageKey,
+      bucket: uploadResult.bucket,
+      file,
+    });
+  }
+
+  private async applyExtractionToDraft(
+    organizationId: number,
+    candidateId: number,
+    draftEmail: string,
+    extraction: ResumeExtractionResponse,
+  ) {
+    const extracted = extraction.candidate;
+    const firstName = extracted.firstName?.trim() || 'Draft';
+    const lastName = extracted.lastName?.trim() || 'Candidate';
+    let email = extracted.email?.trim().toLowerCase() || draftEmail;
+
+    if (email !== draftEmail) {
+      const existing = await this.candidateRepository.findByEmail(organizationId, email);
+      if (existing && bigintToNumber(existing.id) !== candidateId) {
+        extraction.warnings = [
+          ...(extraction.warnings ?? []),
+          `Email ${email} already exists — draft kept temporary email until you change it.`,
+        ];
+        email = draftEmail;
+      }
+    }
+
+    const communities = await this.prisma.skillCommunity.findMany({
+      where: { deletedAt: null },
+      select: { id: true, name: true },
+    });
+
+    const matchCommunityId = (skillName: string): number | null => {
+      const normalized = skillName.toLowerCase().trim();
+      if (!normalized) return null;
+      const exact = communities.find((c) => c.name.toLowerCase() === normalized);
+      if (exact) return Number(exact.id);
+      const partial = communities.find(
+        (c) =>
+          normalized.includes(c.name.toLowerCase()) ||
+          c.name.toLowerCase().includes(normalized),
+      );
+      return partial ? Number(partial.id) : null;
+    };
+
+    const fallbackCommunityId = communities[0] ? Number(communities[0].id) : null;
+    const mappedSkills = (extraction.skills ?? [])
+      .map((skill, index) => {
+        const skillCommunityId =
+          matchCommunityId(skill.name) ?? fallbackCommunityId;
+        if (!skillCommunityId) return null;
+        return {
+          skillCommunityId,
+          skillName: skill.name,
+          proficiencyLevel: skill.proficiencyLevel,
+          yearsExperience: skill.yearsExperience ?? undefined,
+          isPrimary: skill.isPrimary || index === 0,
+          notes: skill.name,
+        };
+      })
+      .filter((skill): skill is NonNullable<typeof skill> => skill !== null);
+
+    const normalizedSkills = normalizeCandidateSkills(mappedSkills);
+    const primarySkillCommunityId =
+      normalizedSkills?.find((s) => s.isPrimary)?.skillCommunityId ??
+      normalizedSkills?.[0]?.skillCommunityId ??
+      fallbackCommunityId ??
+      undefined;
+
+    const latestJob = extraction.experience?.[0];
+    const education = (extraction.education ?? [])
+      .map((entry) =>
+        [entry.degree, entry.fieldOfStudy, entry.institution, entry.graduationYear]
+          .filter((part) => part != null && part !== '')
+          .join(', '),
+      )
+      .filter(Boolean)
+      .join('; ');
+
+    await this.prisma.candidateSkill.updateMany({
+      where: {
+        candidateId: BigInt(candidateId),
+        deletedAt: null,
+      },
+      data: { deletedAt: new Date() },
+    });
+
+    return this.prisma.candidate.update({
+      where: {
+        id: BigInt(candidateId),
+        organizationId: BigInt(organizationId),
+      },
+      data: {
+        firstName,
+        lastName,
+        email,
+        phone: extracted.phone ?? undefined,
+        location: extracted.location ?? undefined,
+        linkedinUrl: extracted.linkedinUrl ?? undefined,
+        headline: extracted.headline ?? undefined,
+        summary: extracted.summary ?? extraction.rawSections?.summary ?? undefined,
+        yearsExperience: extracted.yearsExperience ?? undefined,
+        displayName: `${firstName} ${lastName}`.trim(),
+        primaryRole: latestJob?.title ?? extracted.headline ?? undefined,
+        currentCompany: latestJob?.company ?? undefined,
+        education: education || undefined,
+        clientProfileSummary:
+          extracted.summary ?? extraction.rawSections?.summary ?? undefined,
+        strengths: extraction.rawSections?.skills ?? undefined,
+        aiSummary: extracted.summary ?? extraction.rawSections?.summary ?? undefined,
+        primarySkillCommunityId: primarySkillCommunityId
+          ? BigInt(primarySkillCommunityId)
+          : undefined,
+        profileStatus: 'SOURCED',
+        ...(normalizedSkills?.length
+          ? {
+              skills: {
+                create: normalizedSkills.map((skill) => ({
+                  skillCommunityId: BigInt(skill.skillCommunityId),
+                  skillName: skill.skillName,
+                  skillCategory: skill.skillCategory,
+                  proficiencyLevel: skill.proficiencyLevel ?? 'INTERMEDIATE',
+                  yearsExperience: skill.yearsExperience,
+                  isPrimary: skill.isPrimary ?? false,
+                  notes: skill.notes,
+                })),
+              },
+            }
+          : {}),
+      },
+      include: {
+        primarySkillCommunity: { select: { id: true, name: true } },
+        resumeDocument: true,
+        profileImageDocument: true,
+        introVideoDocument: true,
+        skills: {
+          where: { deletedAt: null },
+          include: { skillCommunity: { select: { name: true } } },
+        },
+      },
+    });
   }
 
   async update(
