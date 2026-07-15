@@ -6,7 +6,7 @@ import {
 } from '@bestal/shared-utils';
 import { Avatar, Button, StatusBadge, TanStackDataTable } from '@bestal/ui';
 import { type ColumnDef } from '@tanstack/react-table';
-import { MoreHorizontal, Plus, Send } from 'lucide-react';
+import { MoreHorizontal, FileSpreadsheet, Plus, Send } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useCandidateMutations, useCandidatesList } from '../../hooks/api/useCandidates';
@@ -24,6 +24,8 @@ import { ToastHost } from '../ui/ToastHost';
 type CandidateListingViewProps = {
   basePath: string;
   addCandidatePath?: string;
+  /** When set, shows a Data Import action that opens the CSV import screen */
+  importPath?: string;
   title?: string;
   readOnly?: boolean;
   /** Recruiter listing: row + multi-select Submit for approval */
@@ -142,6 +144,7 @@ function CandidateRowActionsMenu({
 export function CandidateListingView({
   basePath,
   addCandidatePath,
+  importPath,
   title = 'Candidates',
   readOnly = false,
   enableSubmitForApproval = false,
@@ -356,11 +359,21 @@ export function CandidateListingView({
         loadingLabel="Loading candidates…"
         error={isError ? (error instanceof Error ? error.message : 'Failed to load candidates') : null}
         actions={
-          addCandidatePath ? (
-            <Button size="sm" to={addCandidatePath}>
-              <Plus className="mr-1.5 h-3.5 w-3.5" />
-              Add Candidate
-            </Button>
+          addCandidatePath || importPath ? (
+            <>
+              {importPath ? (
+                <Button size="sm" variant="outline" to={importPath}>
+                  <FileSpreadsheet className="mr-1.5 h-3.5 w-3.5" />
+                  Data Import
+                </Button>
+              ) : null}
+              {addCandidatePath ? (
+                <Button size="sm" to={addCandidatePath}>
+                  <Plus className="mr-1.5 h-3.5 w-3.5" />
+                  Add Candidate
+                </Button>
+              ) : null}
+            </>
           ) : undefined
         }
       >

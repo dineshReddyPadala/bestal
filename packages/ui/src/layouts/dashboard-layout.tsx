@@ -1,6 +1,15 @@
 import { cn } from '@bestal/shared-utils';
 import { ChevronDown, LogOut, Menu, X } from 'lucide-react';
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react';
 import { Link } from 'react-router-dom';
 import { Avatar } from '../components/avatar.js';
 import { Badge } from '../components/badge.js';
@@ -27,6 +36,28 @@ export type DashboardLayoutProps = {
   currentPath?: string;
   onLogout?: () => void | Promise<void>;
 };
+
+type DashboardChromeContextValue = {
+  setHeaderLeading: (node: ReactNode | null) => void;
+};
+
+const DashboardChromeContext = createContext<DashboardChromeContextValue | null>(null);
+
+/**
+ * Render content in the top bar, to the left of the profile menu.
+ * Returns true when inside DashboardLayout (leading slot is active).
+ */
+export function useDashboardHeaderLeading(node: ReactNode | null): boolean {
+  const ctx = useContext(DashboardChromeContext);
+
+  useLayoutEffect(() => {
+    if (!ctx) return;
+    ctx.setHeaderLeading(node);
+    return () => ctx.setHeaderLeading(null);
+  }, [ctx, node]);
+
+  return ctx != null;
+}
 
 function NavLink({
   item,
@@ -193,79 +224,85 @@ export function DashboardLayout({
   onLogout,
 }: DashboardLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [headerLeading, setHeaderLeading] = useState<ReactNode | null>(null);
+  const chromeValue = useMemo(() => ({ setHeaderLeading }), []);
 
   return (
-    <div className="flex h-svh overflow-hidden bg-muted/30">
-      {sidebarOpen && (
-        <div
-          className="fixed inset-0 z-40 bg-black/50 lg:hidden"
-          onClick={() => setSidebarOpen(false)}
-          aria-hidden
-        />
-      )}
-
-      <aside
-        className={cn(
-          'fixed inset-y-0 left-0 z-50 flex h-svh w-64 shrink-0 flex-col overflow-hidden bg-navy transition-transform lg:static lg:translate-x-0',
-          sidebarOpen ? 'translate-x-0' : '-translate-x-full',
-        )}
-      >
-        <div className="flex h-16 shrink-0 items-center justify-between border-b border-white/10 px-4">
-          <div className="min-w-0">
-            <span className="block truncate text-lg font-bold leading-none text-white">Bestal</span>
-            <p className="mt-1 truncate text-xs leading-none text-white/60">{portalName}</p>
-          </div>
-          <button
-            type="button"
-            className="text-white/70 hover:text-white lg:hidden"
+    <DashboardChromeContext.Provider value={chromeValue}>
+      <div className="flex h-svh overflow-hidden bg-muted/30">
+        {sidebarOpen && (
+          <div
+            className="fixed inset-0 z-40 bg-black/50 lg:hidden"
             onClick={() => setSidebarOpen(false)}
-            aria-label="Close sidebar"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
-
-        <nav className="flex flex-1 flex-col justify-start gap-0.5 overflow-hidden px-2 py-3">
-          {navItems.map((item) => (
-            <NavLink
-              key={item.href}
-              item={item}
-              isActive={currentPath === item.href}
-              onClick={() => setSidebarOpen(false)}
-            />
-          ))}
-        </nav>
-
-        <div className="shrink-0 border-t border-white/10 px-3 py-3">
-          <ProfileMenu
-            user={user}
-            onLogout={onLogout}
-            variant="dark"
-            align="left"
+            aria-hidden
           />
+        )}
+
+        <aside
+          className={cn(
+            'fixed inset-y-0 left-0 z-50 flex h-svh w-64 shrink-0 flex-col overflow-hidden bg-navy transition-transform lg:static lg:translate-x-0',
+            sidebarOpen ? 'translate-x-0' : '-translate-x-full',
+          )}
+        >
+          <div className="flex h-16 shrink-0 items-center justify-between border-b border-white/10 px-4">
+            <div className="min-w-0">
+              <span className="block truncate text-lg font-bold leading-none text-white">Bestal</span>
+              <p className="mt-1 truncate text-xs leading-none text-white/60">{portalName}</p>
+            </div>
+            <button
+              type="button"
+              className="text-white/70 hover:text-white lg:hidden"
+              onClick={() => setSidebarOpen(false)}
+              aria-label="Close sidebar"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
+
+          <nav className="flex flex-1 flex-col justify-start gap-0.5 overflow-hidden px-2 py-3">
+            {navItems.map((item) => (
+              <NavLink
+                key={item.href}
+                item={item}
+                isActive={currentPath === item.href}
+                onClick={() => setSidebarOpen(false)}
+              />
+            ))}
+          </nav>
+
+          <div className="shrink-0 border-t border-white/10 px-3 py-3">
+            <ProfileMenu
+              user={user}
+              onLogout={onLogout}
+              variant="dark"
+              align="left"
+            />
+          </div>
+        </aside>
+
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+          <header className="z-30 flex h-16 shrink-0 items-center gap-3 border-b border-border bg-background px-4 sm:px-6">
+            <button
+              type="button"
+              className="shrink-0 text-muted-foreground hover:text-foreground lg:hidden"
+              onClick={() => setSidebarOpen(true)}
+              aria-label="Open sidebar"
+            >
+              <Menu className="h-5 w-5" />
+            </button>
+
+            <div className="flex min-w-0 flex-1 items-center">{headerLeading}</div>
+
+            <div className="shrink-0">
+              <ProfileMenu user={user} onLogout={onLogout} />
+            </div>
+          </header>
+
+          <main className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden bg-background">
+            {children}
+          </main>
         </div>
-      </aside>
-
-      <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-        <header className="z-30 flex h-16 shrink-0 items-center justify-between border-b border-border bg-background px-4 sm:px-6">
-          <button
-            type="button"
-            className="text-muted-foreground hover:text-foreground lg:hidden"
-            onClick={() => setSidebarOpen(true)}
-            aria-label="Open sidebar"
-          >
-            <Menu className="h-5 w-5" />
-          </button>
-
-          <div className="hidden lg:block" />
-
-          <ProfileMenu user={user} onLogout={onLogout} />
-        </header>
-
-        <main className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden bg-background">
-          {children}
-        </main>
       </div>
-    </div>
+    </DashboardChromeContext.Provider>
   );
 }

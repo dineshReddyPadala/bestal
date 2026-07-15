@@ -1,4 +1,5 @@
 import { Button, PageHeader, StatusBadge } from '@bestal/ui';
+import { ArrowLeft } from 'lucide-react';
 import { type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 
@@ -40,16 +41,22 @@ export function DetailPageShell({
         title={title}
         description={description}
         breadcrumbs={
-          <Link to={backHref} className="inline-flex items-center gap-1 text-sm hover:text-foreground">
-            ← {backLabel}
+          <Link
+            to={backHref}
+            className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+          >
+            <ArrowLeft className="h-3.5 w-3.5" />
+            {backLabel}
           </Link>
         }
         actions={
-          <div className="flex flex-wrap items-center gap-2">
-            {statusBadges.map((s) => (
-              <StatusBadge key={s} status={s} />
-            ))}
-          </div>
+          statusBadges.length > 0 ? (
+            <div className="flex flex-wrap items-center gap-2">
+              {statusBadges.map((s) => (
+                <StatusBadge key={s} status={s} />
+              ))}
+            </div>
+          ) : undefined
         }
       />
 

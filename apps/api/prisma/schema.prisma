@@ -266,6 +266,8 @@ model User {
   memberships              Membership[]
   managedClients           Client[]            @relation("ClientAccountManager")
   backgroundChecksRequested BackgroundCheck[]  @relation("BackgroundCheckRequester")
+  backgroundChecksConsentConfirmed BackgroundCheck[] @relation("BackgroundCheckConsentConfirm")
+  backgroundChecksReviewed BackgroundCheck[] @relation("BackgroundCheckReviewer")
   shortlistsCreated        Shortlist[]         @relation("ShortlistCreator")
   shortlistEntriesAdded    ShortlistCandidate[] @relation("ShortlistEntryAddedBy")
   interviewRequestsCreated InterviewRequest[]  @relation("InterviewRequestCreator")
@@ -576,25 +578,38 @@ model Evaluation {
 }
 
 model BackgroundCheck {
-  id                  BigInt                @id @default(autoincrement())
-  organizationId      BigInt                @map("organization_id")
-  candidateId         BigInt                @map("candidate_id")
-  requestedById       BigInt                @map("requested_by_id")
-  type                BackgroundCheckType
-  status              BackgroundCheckStatus @default(NOT_STARTED)
-  provider            String?               @db.VarChar(100)
-  externalReferenceId String?               @map("external_reference_id") @db.VarChar(255)
-  resultSummary       String?               @map("result_summary") @db.Text
-  initiatedAt         DateTime?             @map("initiated_at")
-  completedAt         DateTime?             @map("completed_at")
-  expiresAt           DateTime?             @map("expires_at")
-  createdAt           DateTime              @default(now()) @map("created_at")
-  updatedAt           DateTime              @updatedAt @map("updated_at")
-  deletedAt           DateTime?             @map("deleted_at")
+  id                   BigInt                @id @default(autoincrement())
+  organizationId       BigInt                @map("organization_id")
+  candidateId          BigInt                @map("candidate_id")
+  requestedById        BigInt                @map("requested_by_id")
+  type                 BackgroundCheckType
+  status               BackgroundCheckStatus @default(NOT_STARTED)
+  provider             String?               @db.VarChar(100)
+  externalReferenceId  String?               @map("external_reference_id") @db.VarChar(255)
+  resultSummary        String?               @map("result_summary") @db.Text
+  aiSummary            String?               @map("ai_summary") @db.Text
+  reviewNotes          String?               @map("review_notes") @db.Text
+  consentConfirmedAt   DateTime?             @map("consent_confirmed_at")
+  consentConfirmedById BigInt?               @map("consent_confirmed_by_id")
+  vendorAssignedAt     DateTime?             @map("vendor_assigned_at")
+  reviewedById         BigInt?               @map("reviewed_by_id")
+  reviewedAt           DateTime?             @map("reviewed_at")
+  consentDocumentId    BigInt?               @map("consent_document_id")
+  reportDocumentId     BigInt?               @map("report_document_id")
+  initiatedAt          DateTime?             @map("initiated_at")
+  completedAt          DateTime?             @map("completed_at")
+  expiresAt            DateTime?             @map("expires_at")
+  createdAt            DateTime              @default(now()) @map("created_at")
+  updatedAt            DateTime              @updatedAt @map("updated_at")
+  deletedAt            DateTime?             @map("deleted_at")
 
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  candidate    Candidate    @relation(fields: [candidateId], references: [id], onDelete: Cascade)
-  requestedBy  User         @relation("BackgroundCheckRequester", fields: [requestedById], references: [id], onDelete: Restrict)
+  organization       Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  candidate          Candidate    @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  requestedBy        User         @relation("BackgroundCheckRequester", fields: [requestedById], references: [id], onDelete: Restrict)
+  consentConfirmedBy User?        @relation("BackgroundCheckConsentConfirm", fields: [consentConfirmedById], references: [id], onDelete: SetNull)
+  reviewedBy         User?        @relation("BackgroundCheckReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+  consentDocument    Document?    @relation("BackgroundCheckConsentDocument", fields: [consentDocumentId], references: [id], onDelete: SetNull)
+  reportDocument     Document?    @relation("BackgroundCheckReportDocument", fields: [reportDocumentId], references: [id], onDelete: SetNull)
 
   @@index([organizationId, status, deletedAt])
   @@index([candidateId, type, deletedAt])
@@ -826,6 +841,8 @@ model Document {
   candidateResume      Candidate?   @relation("CandidateResume")
   candidateProfileImage Candidate?  @relation("CandidateProfileImage")
   candidateIntroVideo  Candidate?   @relation("CandidateIntroVideo")
+  backgroundCheckConsent BackgroundCheck[] @relation("BackgroundCheckConsentDocument")
+  backgroundCheckReport  BackgroundCheck[] @relation("BackgroundCheckReportDocument")
 
   @@index([organizationId, entityType, entityId, deletedAt])
   @@index([organizationId, entityType, entityId, kind, deletedAt])

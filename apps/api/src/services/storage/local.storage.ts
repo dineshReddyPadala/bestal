@@ -3,7 +3,6 @@ import path from 'node:path';
 import type { AppConfig } from '../../config/index.js';
 import type {
   SignedUrlOptions,
-  SignedUploadUrlOptions,
   StorageAdapter,
   StorageUploadMetadata,
   UploadInput,
@@ -67,14 +66,6 @@ export class LocalStorageAdapter implements StorageAdapter {
   ): Promise<string> {
     const publicUrl = this.getPublicUrl(key, bucket);
     return publicUrl ?? `${this.appUrl}/uploads/${key.replace(/\\/g, '/')}`;
-  }
-
-  async getSignedUploadUrl(
-    key: string,
-    bucket: string,
-    _options: SignedUploadUrlOptions,
-  ): Promise<string> {
-    return this.getSignedDownloadUrl(key, bucket);
   }
 
   getPublicUrl(key: string, bucket: string): string | null {

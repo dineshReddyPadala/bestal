@@ -23,6 +23,8 @@ export function usePermissions() {
       canManageClients: has('clients:write'),
       canUploadEvaluation: has('evaluations:write'),
       canUploadBgv: has('background_checks:write'),
+      canApproveBgv: has('background_checks:approve'),
+      canReadBgv: has('background_checks:read'),
       isPlatformAdmin: has('admin:platform'),
     }),
     [has, permissions],

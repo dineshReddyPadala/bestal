@@ -1,5 +1,5 @@
-import { Button, Select } from '@bestal/ui';
-import type { ReactNode } from 'react';
+import { Button, Select, useDashboardHeaderLeading } from '@bestal/ui';
+import { useMemo, type ReactNode } from 'react';
 
 import type { ToastVariant } from '../../lib/use-demo-toast';
 
@@ -14,7 +14,7 @@ type ListingPageShellProps = {
   children: ReactNode;
 };
 
-/** Baseline table page layout: compact title bar, fixed viewport, content fills remaining height. */
+/** Listing layout: title in the dashboard top bar (before profile); actions sit below the header. */
 export function ListingPageShell({
   title,
   actions,
@@ -25,12 +25,23 @@ export function ListingPageShell({
   loadingLabel = 'Loading…',
   children,
 }: ListingPageShellProps) {
+  const headerLeading = useMemo(
+    () => (
+      <h1 className="truncate text-lg font-semibold tracking-tight text-foreground sm:text-xl">
+        {title}
+      </h1>
+    ),
+    [title],
+  );
+  useDashboardHeaderLeading(headerLeading);
+
   return (
     <div className="flex h-[calc(100svh-4rem)] min-h-0 flex-col overflow-hidden bg-background">
-      <div className="flex h-14 shrink-0 items-center justify-between gap-3 border-b border-border px-5 sm:px-6">
-        <h1 className="truncate text-xl font-semibold tracking-tight text-foreground">{title}</h1>
-        {actions ? <div className="flex shrink-0 items-center gap-2">{actions}</div> : null}
-      </div>
+      {actions ? (
+        <div className="flex shrink-0 items-center justify-end gap-2 px-5 pt-3 sm:px-6">
+          {actions}
+        </div>
+      ) : null}
 
       {message ? (
         <div

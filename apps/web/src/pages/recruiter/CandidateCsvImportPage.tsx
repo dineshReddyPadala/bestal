@@ -4,7 +4,7 @@ export function CandidateCsvImportPage() {
   return (
     <CsvImportScreen
       cancelPath="/recruiter/candidates"
-      title="CSV Import"
+      title="Data Import"
       description="Bulk import candidates into your recruiting pipeline"
     />
   );

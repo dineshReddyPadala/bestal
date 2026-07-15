@@ -1,7 +1,6 @@
 import { apiAction, apiCreate, apiDelete, apiGet, apiList, apiRequest, apiUpdate, type ListQuery } from './client';
 import type { CandidateDto, CandidateListItem } from './types';
 import type { ResumeExtractionResponse } from './ai/resume-extraction.types';
-import { ApiError } from './types';
 
 export type ResumeExtractDraftResult = {
   candidate: CandidateDto;
@@ -28,81 +27,38 @@ export const candidatesApi = {
     apiAction<CandidateDto>(`/candidates/${id}/pipeline/pricing`),
   submitForApproval: (id: number) =>
     apiAction<CandidateDto>(`/candidates/${id}/pipeline/submit`),
-  /** Node uploads resume to bucket, calls Python AI, creates SOURCED draft. */
-  extractResume: async (file: File): Promise<ResumeExtractDraftResult> => {
+  /** Node uploads resume to bucket, calls Python AI, creates or updates SOURCED draft. */
+  extractResume: async (
+    file: File,
+    existingCandidateId?: number,
+  ): Promise<ResumeExtractDraftResult> => {
     const form = new FormData();
     form.append('file', file, file.name);
+    if (existingCandidateId != null && existingCandidateId > 0) {
+      form.append('candidateId', String(existingCandidateId));
+    }
     const json = await apiRequest<{ data: ResumeExtractDraftResult }>(
       '/candidates/extract-resume',
       { method: 'POST', body: form },
     );
+    console.log('json', json);
     return json.data;
   },
 };
 
 type CandidateAssetKind = 'resume' | 'profile-image' | 'intro-video';
 
-interface AssetUploadUrl {
-  uploadUrl: string;
-  key: string;
-  bucket: string;
-}
-
-async function prepareCandidateAssetUpload(
-  id: number,
-  kind: CandidateAssetKind,
-  file: File,
-): Promise<AssetUploadUrl> {
-  const json = await apiRequest<{ data: AssetUploadUrl }>(`/candidates/${id}/${kind}/upload-url`, {
-    method: 'POST',
-    body: {
-      originalName: file.name,
-      mimeType: file.type || 'application/octet-stream',
-      size: file.size,
-    },
-  });
-  return json.data;
-}
-
-async function uploadFileToS3(uploadUrl: string, file: File): Promise<void> {
-  const response = await fetch(uploadUrl, {
-    method: 'PUT',
-    body: file,
-    headers: {
-      'Content-Type': file.type || 'application/octet-stream',
-    },
-  });
-
-  if (!response.ok) {
-    throw new ApiError('Failed to upload file to S3', response.status);
-  }
-}
-
-async function completeCandidateAssetUpload(
-  id: number,
-  kind: CandidateAssetKind,
-  file: File,
-  key: string,
-): Promise<CandidateDto> {
-  const json = await apiRequest<{ data: CandidateDto }>(`/candidates/${id}/${kind}/complete`, {
-    method: 'POST',
-    body: {
-      key,
-      originalName: file.name,
-      mimeType: file.type || 'application/octet-stream',
-      size: file.size,
-    },
-  });
-  return json.data;
-}
-
-/** Uploads directly to S3 via presigned URL — files never pass through the API server. */
+/** Uploads a candidate asset through the API (server stores to S3 / local). */
 export async function uploadCandidateFile(
   id: number,
   kind: CandidateAssetKind,
   file: File,
 ): Promise<CandidateDto> {
-  const { uploadUrl, key } = await prepareCandidateAssetUpload(id, kind, file);
-  await uploadFileToS3(uploadUrl, file);
-  return completeCandidateAssetUpload(id, kind, file, key);
+  const form = new FormData();
+  form.append('file', file, file.name);
+  const json = await apiRequest<{ data: CandidateDto }>(`/candidates/${id}/${kind}`, {
+    method: 'POST',
+    body: form,
+  });
+  return json.data;
 }

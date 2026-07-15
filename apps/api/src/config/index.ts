@@ -24,6 +24,11 @@ export const envSchema = z
     AWS_SECRET_ACCESS_KEY: z.string().optional(),
     S3_BUCKET_NAME: z.string().optional(),
     S3_PRESIGNED_URL_EXPIRY: z.coerce.number().int().positive().default(3600),
+    S3_ENDPOINT: z.string().url().optional(),
+    S3_FORCE_PATH_STYLE: z
+      .enum(['true', 'false'])
+      .optional()
+      .transform((value) => value === 'true'),
     CORS_ORIGINS: z.string().transform((val) =>
       val
         .split(',')
@@ -64,6 +69,8 @@ export interface AwsS3Config {
   accessKeyId?: string;
   secretAccessKey?: string;
   presignedUrlExpirySeconds: number;
+  endpoint?: string;
+  forcePathStyle?: boolean;
 }
 
 export interface StorageConfig {
@@ -133,6 +140,10 @@ function mapEnvToConfig(env: EnvSchema): AppConfig {
               secretAccessKey: env.AWS_SECRET_ACCESS_KEY,
               bucket: env.S3_BUCKET_NAME,
               presignedUrlExpirySeconds: env.S3_PRESIGNED_URL_EXPIRY,
+              ...(env.S3_ENDPOINT ? { endpoint: env.S3_ENDPOINT } : {}),
+              ...(env.S3_FORCE_PATH_STYLE !== undefined
+                ? { forcePathStyle: env.S3_FORCE_PATH_STYLE }
+                : {}),
             },
           }
         : {}),

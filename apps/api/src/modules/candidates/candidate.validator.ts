@@ -133,19 +133,6 @@ export const completeRecruiterReviewBodySchema = z.object({
   clientProfileSummary: optionalTextField(),
 });
 
-export const prepareAssetUploadBodySchema = z.object({
-  originalName: z.string().min(1).max(255),
-  mimeType: z.string().min(1).max(255),
-  size: z.coerce.number().int().positive(),
-});
-
-export const completeAssetUploadBodySchema = prepareAssetUploadBodySchema.extend({
-  key: z.string().min(1).max(1024),
-});
-
-export type PrepareAssetUploadBody = z.infer<typeof prepareAssetUploadBodySchema>;
-export type CompleteAssetUploadBody = z.infer<typeof completeAssetUploadBodySchema>;
-
 export const candidateIdParamSchema = z.object({
   id: z.coerce.number().int().positive(),
 });
@@ -281,14 +268,6 @@ export const candidateListResponseSchema = z.object({
 export const messageResponseSchema = z.object({
   data: z.object({
     message: z.string(),
-  }),
-});
-
-export const assetUploadUrlResponseSchema = z.object({
-  data: z.object({
-    uploadUrl: z.string().url(),
-    key: z.string(),
-    bucket: z.string(),
   }),
 });
 

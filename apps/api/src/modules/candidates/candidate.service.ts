@@ -28,7 +28,6 @@ import {
   ResumeExtractionClient,
 } from '../../services/resume-extraction.client.js';
 import type { ResumeExtractionResponse } from '../../services/resume-extraction.types.js';
-import { getUploadCategoryConfig } from '../../services/storage/file-validation.js';
 import type { UploadCategory } from '../../services/storage/storage.constants.js';
 import {
   AuthorizationError,
@@ -44,14 +43,11 @@ import {
 } from './candidate.mapper.js';
 import { CandidateRepository } from './candidate.repository.js';
 import type {
-  AssetUploadUrlDto,
   CandidateAssetKind,
   CandidateDto,
   CandidateListItemDto,
-  CompleteAssetUploadInput,
   CompleteRecruiterReviewInput,
   CreateCandidateInput,
-  PrepareAssetUploadInput,
   RejectCandidateInput,
   ResumeExtractionDraftResult,
   RunAiScreeningInput,
@@ -128,6 +124,7 @@ export class CandidateService {
   async extractResumeAndCreateDraft(
     authUser: AuthenticatedUser,
     file: UploadAssetInput,
+    existingCandidateId?: number,
   ): Promise<ResumeExtractionDraftResult> {
     const organizationId = this.requireOrganization(authUser);
     const uploadCategory = this.storageService.uploadCategoryFromDocumentKind('RESUME');
@@ -138,32 +135,43 @@ export class CandidateService {
       originalName: file.originalName,
     });
 
-    const draftEmail = `draft-${randomUUID()}@draft.bestal.local`;
-    const draft = await this.candidateRepository.create(organizationId, {
-      firstName: 'Draft',
-      lastName: 'Candidate',
-      email: draftEmail,
-      source: 'JOB_BOARD',
-      profileStatus: 'SOURCED',
-      visibility: 'INTERNAL_ONLY',
-      createdById: authUser.id,
-    });
+    let candidateId: number;
+    let fallbackEmail: string;
+    let createdNewDraft = false;
 
-    const candidateId = bigintToNumber(draft.id);
+    if (existingCandidateId != null && existingCandidateId > 0) {
+      const existing = await this.getCandidateOrThrow(organizationId, existingCandidateId);
+      candidateId = existingCandidateId;
+      fallbackEmail = existing.email;
+    } else {
+      const draftEmail = `draft-${randomUUID()}@draft.bestal.local`;
+      const draft = await this.candidateRepository.create(organizationId, {
+        firstName: 'Draft',
+        lastName: 'Candidate',
+        email: draftEmail,
+        source: 'JOB_BOARD',
+        profileStatus: 'SOURCED',
+        visibility: 'INTERNAL_ONLY',
+        createdById: authUser.id,
+      });
+      candidateId = bigintToNumber(draft.id);
+      fallbackEmail = draftEmail;
+      createdNewDraft = true;
+    }
+
+    const candidate = await this.getCandidateOrThrow(organizationId, candidateId);
     const content = bufferToBase64(file.buffer);
 
     try {
-      // Dynamic: always upload to bucket and persist document link first
       await this.uploadResumeForDraft({
         authUser,
         organizationId,
-        candidate: draft,
+        candidate,
         candidateId,
         file,
         uploadCategory,
       });
 
-      // Extraction: static hardcoded JSON unless AI_EXTRACTION_URL is configured
       const extraction = await this.resumeExtractionClient.extract({
         fileName: file.originalName,
         mimeType: file.mimeType,
@@ -173,7 +181,7 @@ export class CandidateService {
       const updated = await this.applyExtractionToDraft(
         organizationId,
         candidateId,
-        draftEmail,
+        fallbackEmail,
         extraction,
       );
 
@@ -182,7 +190,9 @@ export class CandidateService {
         extraction,
       };
     } catch (error) {
-      await this.candidateRepository.softDelete(organizationId, candidateId).catch(() => undefined);
+      if (createdNewDraft) {
+        await this.candidateRepository.softDelete(organizationId, candidateId).catch(() => undefined);
+      }
       throw error instanceof BadRequestError || error instanceof ConflictError
         ? error
         : new BadRequestError(
@@ -207,20 +217,29 @@ export class CandidateService {
       file.originalName,
     );
 
-    const uploadResult = await this.storageService.upload(
-      storageKey,
-      {
-        buffer: file.buffer,
-        originalName: file.originalName,
-        mimeType: file.mimeType,
-        size: file.size,
-      },
-      {
-        category: uploadCategory,
-        organizationId,
-        entityId: candidateId,
-      },
-    );
+    let uploadResult;
+    try {
+      uploadResult = await this.storageService.upload(
+        storageKey,
+        {
+          buffer: file.buffer,
+          originalName: file.originalName,
+          mimeType: file.mimeType,
+          size: file.size,
+        },
+        {
+          category: uploadCategory,
+          organizationId,
+          entityId: candidateId,
+        },
+      );
+    } catch (error) {
+      throw error instanceof BadRequestError || error instanceof ConflictError
+        ? error
+        : new BadRequestError(
+            error instanceof Error ? error.message : 'Resume upload failed',
+          );
+    }
 
     const durableFileUrl =
       uploadResult.url ??
@@ -344,12 +363,10 @@ export class CandidateService {
         ? clientBillRate - candidatePayRate
         : undefined;
 
-    await this.prisma.candidateSkill.updateMany({
+    await this.prisma.candidateSkill.deleteMany({
       where: {
         candidateId: BigInt(candidateId),
-        deletedAt: null,
       },
-      data: { deletedAt: new Date() },
     });
 
     return this.prisma.candidate.update({
@@ -443,15 +460,29 @@ export class CandidateService {
 
     if (!canFullWrite && canLimitedWrite) {
       assertSalesLimitedCandidateUpdate(input);
-    } else if (!canFullWrite) {
+      const candidate = await this.candidateRepository.update(
+        organizationId,
+        id,
+        this.stripWorkflowFields(input),
+      );
+      return this.toDto(candidate, authUser);
+    }
+
+    if (!canFullWrite) {
       throw new AuthorizationError('You do not have permission to update candidates');
     }
 
-    const candidate = await this.candidateRepository.update(
-      organizationId,
-      id,
-      this.stripWorkflowFields(input),
-    );
+    if (input.skills?.length) {
+      for (const skill of input.skills) {
+        await this.validateSkillCommunity(skill.skillCommunityId);
+      }
+    }
+
+    const candidate = await this.candidateRepository.update(organizationId, id, {
+      ...input,
+      skills:
+        input.skills !== undefined ? normalizeCandidateSkills(input.skills) : undefined,
+    });
     return this.toDto(candidate, authUser);
   }
 
@@ -511,12 +542,6 @@ export class CandidateService {
     kind: CandidateAssetKind,
     file: UploadAssetInput,
   ): Promise<CandidateDto> {
-    if (this.storageService.driver === 's3') {
-      throw new BadRequestError(
-        'Server-side file upload is disabled. Upload directly to S3 using the upload-url and complete endpoints.',
-      );
-    }
-
     const organizationId = this.requireOrganization(authUser);
     const candidate = await this.getCandidateOrThrow(organizationId, id);
 
@@ -562,78 +587,6 @@ export class CandidateService {
       storageKey,
       bucket: uploadResult.bucket,
       file,
-    });
-  }
-
-  async prepareAssetUpload(
-    authUser: AuthenticatedUser,
-    id: number,
-    kind: CandidateAssetKind,
-    input: PrepareAssetUploadInput,
-  ): Promise<AssetUploadUrlDto> {
-    if (this.storageService.driver !== 's3') {
-      throw new BadRequestError('Direct S3 uploads are only available when STORAGE_DRIVER=s3');
-    }
-
-    const organizationId = this.requireOrganization(authUser);
-    await this.getCandidateOrThrow(organizationId, id);
-
-    const documentKind = kind as DocumentKind;
-    const uploadCategory = this.storageService.uploadCategoryFromDocumentKind(documentKind);
-
-    this.storageService.validateFile(uploadCategory, input);
-
-    const storageKey = this.storageService.buildCandidateAssetKey(
-      organizationId,
-      id,
-      uploadCategory,
-      input.originalName,
-    );
-
-    const presigned = await this.storageService.generatePresignedUpload(
-      storageKey,
-      input.mimeType,
-    );
-
-    return presigned;
-  }
-
-  async completeAssetUpload(
-    authUser: AuthenticatedUser,
-    id: number,
-    kind: CandidateAssetKind,
-    input: CompleteAssetUploadInput,
-  ): Promise<CandidateDto> {
-    if (this.storageService.driver !== 's3') {
-      throw new BadRequestError('Direct S3 uploads are only available when STORAGE_DRIVER=s3');
-    }
-
-    const organizationId = this.requireOrganization(authUser);
-    const candidate = await this.getCandidateOrThrow(organizationId, id);
-
-    const documentKind = kind as DocumentKind;
-    const uploadCategory = this.storageService.uploadCategoryFromDocumentKind(documentKind);
-
-    this.storageService.validateFile(uploadCategory, input);
-    this.validateCandidateAssetKey(organizationId, id, uploadCategory, input.key);
-
-    const bucket = this.storageService.bucket;
-    const exists = await this.storageService.exists(input.key, bucket);
-    if (!exists) {
-      throw new BadRequestError('Uploaded file was not found in S3. Complete the PUT upload first.');
-    }
-
-    return this.registerCandidateAsset({
-      authUser,
-      organizationId,
-      candidate,
-      id,
-      kind,
-      documentKind,
-      uploadCategory,
-      storageKey: input.key,
-      bucket,
-      file: input,
     });
   }
 
@@ -700,26 +653,6 @@ export class CandidateService {
     );
 
     return this.toDto(updated, authUser);
-  }
-
-  private validateCandidateAssetKey(
-    organizationId: number,
-    candidateId: number,
-    category: UploadCategory,
-    key: string,
-  ): void {
-    const config = getUploadCategoryConfig(category);
-    const expectedPrefix = [
-      'organizations',
-      String(organizationId),
-      'candidates',
-      String(candidateId),
-      config.s3Prefix,
-    ].join('/');
-
-    if (!key.startsWith(`${expectedPrefix}/`)) {
-      throw new BadRequestError('Invalid storage key for this candidate upload');
-    }
   }
 
   async publish(authUser: AuthenticatedUser, id: number): Promise<CandidateDto> {
@@ -942,6 +875,37 @@ export class CandidateService {
     const dto = await mapCandidateToDtoAsync(candidate, (key, bucket, mimeType) =>
       this.storageService.resolveFileUrl(key, bucket, mimeType),
     );
+
+    const bgvVerified = candidate.bgvStatus === 'CLEAR';
+    dto.bgvVerified = bgvVerified;
+
+    if (bgvVerified) {
+      const clearCheck = await this.prisma.backgroundCheck.findFirst({
+        where: {
+          organizationId: candidate.organizationId,
+          candidateId: candidate.id,
+          status: 'CLEAR',
+          deletedAt: null,
+        },
+        orderBy: { completedAt: 'desc' },
+        select: { completedAt: true, aiSummary: true, resultSummary: true },
+      });
+      dto.bgvCompletedAt = clearCheck?.completedAt?.toISOString() ?? null;
+      dto.bgvSummary = clearCheck?.aiSummary ?? clearCheck?.resultSummary ?? null;
+    } else {
+      dto.bgvCompletedAt = null;
+      dto.bgvSummary = null;
+    }
+
+    // Clients never receive document assets beyond public profile media already on DTO.
+    if (authUser.role === ROLES.CLIENT) {
+      return {
+        ...redactCandidatePayFields(dto, authUser.role),
+        resume: null,
+        // Keep photo for profile cards; never expose BGV report links (not on DTO today).
+      };
+    }
+
     return redactCandidatePayFields(dto, authUser.role);
   }
 }

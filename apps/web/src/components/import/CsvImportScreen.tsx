@@ -12,8 +12,8 @@ import {
   DataTableHead,
   DataTableHeader,
   DataTableRow,
-  PageHeader,
   StatusBadge,
+  useDashboardHeaderLeading,
 } from '@bestal/ui';
 import {
   AlertCircle,
@@ -25,7 +25,7 @@ import {
   Terminal,
   Upload,
 } from 'lucide-react';
-import { useCallback, useRef, useState, type DragEvent } from 'react';
+import { useCallback, useMemo, useRef, useState, type DragEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   downloadTemplateCsv,
@@ -239,6 +239,29 @@ export function CsvImportScreen({
     navigate(cancelPath);
   };
 
+  const headerLeading = useMemo(
+    () =>
+      embedded ? null : (
+        <div className="flex min-w-0 items-center gap-3">
+          <Link
+            to={cancelPath}
+            className="inline-flex shrink-0 items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+          >
+            <ArrowLeft className="h-3.5 w-3.5" />
+            Back
+          </Link>
+          <span className="hidden h-4 w-px bg-border sm:block" aria-hidden />
+          <div className="min-w-0">
+            <h1 className="truncate text-lg font-semibold tracking-tight text-foreground sm:text-xl">
+              {title}
+            </h1>
+          </div>
+        </div>
+      ),
+    [cancelPath, embedded, title],
+  );
+  useDashboardHeaderLeading(headerLeading);
+
   const content = (
     <div className={embedded ? 'space-y-6' : 'space-y-6 p-4 sm:p-6'}>
       {embedded && (
@@ -248,7 +271,7 @@ export function CsvImportScreen({
             <p className="mt-1 text-sm text-muted-foreground">{description}</p>
           </div>
           <Button type="button" variant="ghost" size="sm" onClick={handleBack}>
-            Change method
+            Back
           </Button>
         </div>
       )}
@@ -429,12 +452,6 @@ export function CsvImportScreen({
           >
             {importing ? 'Importing…' : 'Import'}
           </Button>
-          {!embedded && (
-            <Button variant="outline" onClick={handleBack}>
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to candidates
-            </Button>
-          )}
         </div>
 
         {/* Logs */}
@@ -471,30 +488,7 @@ export function CsvImportScreen({
     return content;
   }
 
-  return (
-    <div className="min-h-full bg-muted/10">
-      <PageHeader
-        title={title}
-        description={description}
-        breadcrumbs={
-          <Link
-            to={cancelPath}
-            className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
-          >
-            <ArrowLeft className="h-3.5 w-3.5" />
-            Back to candidates
-          </Link>
-        }
-        actions={
-          <Button variant="outline" to={cancelPath}>
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to candidates
-          </Button>
-        }
-      />
-      {content}
-    </div>
-  );
+  return <div className="min-h-full bg-background">{content}</div>;
 }
 
 function PreviewRow({ row }: { row: CsvImportRow }) {

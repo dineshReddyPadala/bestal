@@ -4,7 +4,6 @@ import { uploadToS3 } from './upload.utils.js';
 import { deleteFromS3 } from './delete.utils.js';
 import type {
   SignedUrlOptions,
-  SignedUploadUrlOptions,
   StorageAdapter,
   StorageUploadMetadata,
   UploadInput,
@@ -67,19 +66,6 @@ export class S3StorageAdapter implements StorageAdapter {
       bucket,
       expiresInSeconds: options?.expiresInSeconds,
       contentType: options?.contentType,
-    });
-  }
-
-  async getSignedUploadUrl(
-    key: string,
-    bucket: string,
-    options: SignedUploadUrlOptions,
-  ): Promise<string> {
-    return this.s3Service.getSignedUploadUrl({
-      key,
-      bucket,
-      expiresInSeconds: options.expiresInSeconds,
-      contentType: options.contentType,
     });
   }
 

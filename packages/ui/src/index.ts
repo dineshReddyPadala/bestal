@@ -45,6 +45,7 @@ export {
 } from './layouts/marketing-layout.js';
 export {
   DashboardLayout,
+  useDashboardHeaderLeading,
   type DashboardLayoutProps,
   type DashboardNavItem,
   type DashboardUser,

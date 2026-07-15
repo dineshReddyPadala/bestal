@@ -6,10 +6,8 @@ import {
 } from '../../services/storage.service.js';
 import { CandidateService } from './candidate.service.js';
 import type {
-  CompleteAssetUploadBody,
   CreateCandidateBody,
   ListCandidatesQuery,
-  PrepareAssetUploadBody,
   RejectCandidateBody,
   UpdateCandidateBody,
 } from './candidate.validator.js';
@@ -76,30 +74,6 @@ export class CandidateController {
     return this.handleUpload(request, reply, 'INTRO_VIDEO');
   };
 
-  prepareResumeUpload = async (request: FastifyRequest, reply: FastifyReply) => {
-    return this.handlePrepareUpload(request, reply, 'RESUME');
-  };
-
-  prepareProfileImageUpload = async (request: FastifyRequest, reply: FastifyReply) => {
-    return this.handlePrepareUpload(request, reply, 'PROFILE_IMAGE');
-  };
-
-  prepareIntroVideoUpload = async (request: FastifyRequest, reply: FastifyReply) => {
-    return this.handlePrepareUpload(request, reply, 'INTRO_VIDEO');
-  };
-
-  completeResumeUpload = async (request: FastifyRequest, reply: FastifyReply) => {
-    return this.handleCompleteUpload(request, reply, 'RESUME');
-  };
-
-  completeProfileImageUpload = async (request: FastifyRequest, reply: FastifyReply) => {
-    return this.handleCompleteUpload(request, reply, 'PROFILE_IMAGE');
-  };
-
-  completeIntroVideoUpload = async (request: FastifyRequest, reply: FastifyReply) => {
-    return this.handleCompleteUpload(request, reply, 'INTRO_VIDEO');
-  };
-
   extractResume = async (request: FastifyRequest, reply: FastifyReply) => {
     const file = await request.file();
     if (!file) {
@@ -113,6 +87,15 @@ export class CandidateController {
       originalName: file.filename,
     });
 
+    const candidateIdField = file.fields?.candidateId;
+    const candidateIdValue =
+      candidateIdField &&
+      !Array.isArray(candidateIdField) &&
+      'value' in candidateIdField
+        ? String((candidateIdField as { value: unknown }).value)
+        : undefined;
+    const existingCandidateId = candidateIdValue ? Number(candidateIdValue) : undefined;
+
     const data = await this.candidateService.extractResumeAndCreateDraft(
       request.authUser!,
       {
@@ -121,9 +104,12 @@ export class CandidateController {
         mimeType: file.mimetype,
         size: buffer.length,
       },
+      existingCandidateId && Number.isFinite(existingCandidateId)
+        ? existingCandidateId
+        : undefined,
     );
 
-    return reply.status(201).send({ data });
+    return reply.status(existingCandidateId ? 200 : 201).send({ data });
   };
 
   publish = async (request: FastifyRequest, reply: FastifyReply) => {
@@ -225,38 +211,6 @@ export class CandidateController {
       },
     );
 
-    return reply.status(200).send({ data });
-  }
-
-  private async handlePrepareUpload(
-    request: FastifyRequest,
-    reply: FastifyReply,
-    kind: CandidateAssetKind,
-  ) {
-    const { id } = request.params as { id: number };
-    const body = request.body as PrepareAssetUploadBody;
-    const data = await this.candidateService.prepareAssetUpload(
-      request.authUser!,
-      id,
-      kind,
-      body,
-    );
-    return reply.status(200).send({ data });
-  }
-
-  private async handleCompleteUpload(
-    request: FastifyRequest,
-    reply: FastifyReply,
-    kind: CandidateAssetKind,
-  ) {
-    const { id } = request.params as { id: number };
-    const body = request.body as CompleteAssetUploadBody;
-    const data = await this.candidateService.completeAssetUpload(
-      request.authUser!,
-      id,
-      kind,
-      body,
-    );
     return reply.status(200).send({ data });
   }
 }

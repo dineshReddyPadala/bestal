@@ -45,6 +45,12 @@ export class S3Service {
 
     const clientConfig: S3ClientConfig = {
       region: config.region,
+      // Follow 301 PermanentRedirect when AWS_REGION does not match the bucket region
+      followRegionRedirects: true,
+      ...(config.endpoint ? { endpoint: config.endpoint } : {}),
+      ...(config.forcePathStyle !== undefined
+        ? { forcePathStyle: config.forcePathStyle }
+        : {}),
     };
 
     if (config.accessKeyId && config.secretAccessKey) {
@@ -143,30 +149,6 @@ export class S3Service {
       return await getSignedUrl(this.client, command, { expiresIn });
     } catch (error) {
       throw mapAwsError(error, 'signed download URL');
-    }
-  }
-
-  async getSignedUploadUrl(params: SignedUrlParams): Promise<string> {
-    const bucket = params.bucket ?? this.bucket;
-    const expiresIn = params.expiresInSeconds ?? this.defaultExpiry;
-
-    if (!params.contentType) {
-      throw mapAwsError(
-        new Error('contentType is required for upload presigned URLs'),
-        'signed upload URL',
-      );
-    }
-
-    try {
-      const command = new PutObjectCommand({
-        Bucket: bucket,
-        Key: params.key,
-        ContentType: params.contentType,
-      });
-
-      return await getSignedUrl(this.client, command, { expiresIn });
-    } catch (error) {
-      throw mapAwsError(error, 'signed upload URL');
     }
   }
 }

@@ -95,6 +95,10 @@ export interface CandidateDto {
   profileStatus: CandidateProfileStatus | null;
   deploymentStatus: string | null;
   submittedForApprovalAt: string | null;
+  /** Client-safe BGV surface when status is CLEAR */
+  bgvVerified?: boolean;
+  bgvCompletedAt?: string | null;
+  bgvSummary?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -221,25 +225,6 @@ export interface UploadAssetInput {
   originalName: string;
   mimeType: string;
   size: number;
-}
-
-export interface PrepareAssetUploadInput {
-  originalName: string;
-  mimeType: string;
-  size: number;
-}
-
-export interface CompleteAssetUploadInput {
-  key: string;
-  originalName: string;
-  mimeType: string;
-  size: number;
-}
-
-export interface AssetUploadUrlDto {
-  uploadUrl: string;
-  key: string;
-  bucket: string;
 }
 
 export interface ResumeExtractionDraftResult {

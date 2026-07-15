@@ -6,10 +6,7 @@ import {
   buildEvaluationAssetKey,
   buildStorageKey,
 } from './storage/upload.utils.js';
-import {
-  generateSignedDownloadUrl,
-  generateSignedUploadUrl,
-} from './storage/signed-url.utils.js';
+import { generateSignedDownloadUrl } from './storage/signed-url.utils.js';
 import { safeDeleteFromS3 } from './storage/delete.utils.js';
 import { S3StorageAdapter } from './storage/s3.storage.js';
 import {
@@ -24,7 +21,6 @@ import {
 } from './storage/storage.constants.js';
 import type {
   SignedUrlOptions,
-  SignedUploadUrlOptions,
   StorageUploadMetadata,
   UploadInput,
   UploadResult,
@@ -83,14 +79,6 @@ export class StorageService {
     options?: SignedUrlOptions,
   ): Promise<string | null> {
     return this.adapter.getSignedDownloadUrl(key, bucket, options);
-  }
-
-  async getSignedUploadUrl(
-    key: string,
-    bucket: string,
-    options: SignedUploadUrlOptions,
-  ): Promise<string | null> {
-    return this.adapter.getSignedUploadUrl(key, bucket, options);
   }
 
   getPublicUrl(key: string, bucket: string): string | null {
@@ -159,7 +147,6 @@ export class StorageService {
     return getUploadCategoryConfig(category);
   }
 
-  /** Direct S3 helpers — available when STORAGE_DRIVER=s3. */
   getS3Adapter(): S3StorageAdapter | null {
     if (!this.isS3 || !(this.adapter instanceof S3StorageAdapter)) {
       return null;
@@ -187,36 +174,6 @@ export class StorageService {
       contentType,
       expiresInSeconds,
     });
-  }
-
-  async generatePresignedUpload(
-    key: string,
-    contentType: string,
-    expiresInSeconds?: number,
-  ): Promise<{ uploadUrl: string; key: string; bucket: string }> {
-    const bucket = this.bucket;
-    const s3 = this.getS3Adapter();
-
-    if (s3) {
-      const uploadUrl = await generateSignedUploadUrl(s3.getS3Service(), {
-        key,
-        bucket,
-        contentType,
-        expiresInSeconds,
-      });
-      return { uploadUrl, key, bucket };
-    }
-
-    const uploadUrl = await this.getSignedUploadUrl(key, bucket, {
-      contentType,
-      expiresInSeconds,
-    });
-
-    if (!uploadUrl) {
-      throw new Error('Unable to generate upload URL');
-    }
-
-    return { uploadUrl, key, bucket };
   }
 
   async safeDelete(key: string, bucket: string): Promise<boolean> {

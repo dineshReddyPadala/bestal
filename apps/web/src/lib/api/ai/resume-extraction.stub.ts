@@ -10,8 +10,11 @@ export async function extractResumeFromFile(file: File): Promise<ResumeExtractio
   return result.extraction;
 }
 
-export async function extractResumeAndCreateDraft(file: File): Promise<ResumeExtractDraftResult> {
-  return candidatesApi.extractResume(file);
+export async function extractResumeAndCreateDraft(
+  file: File,
+  existingCandidateId?: number,
+): Promise<ResumeExtractDraftResult> {
+  return candidatesApi.extractResume(file, existingCandidateId);
 }
 
 export type { ResumeExtractDraftResult };

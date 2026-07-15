@@ -10,6 +10,7 @@ import { parseSortParam } from './background-check.mapper.js';
 const backgroundCheckInclude = {
   candidate: { select: { id: true, firstName: true, lastName: true } },
   requestedBy: { select: { id: true, firstName: true, lastName: true } },
+  reviewedBy: { select: { id: true, firstName: true, lastName: true } },
 } satisfies Prisma.BackgroundCheckInclude;
 
 export type BackgroundCheckRecord = Prisma.BackgroundCheckGetPayload<{
@@ -32,11 +33,11 @@ export class BackgroundCheckRepository extends BaseRepository {
         candidateId: BigInt(data.candidateId),
         requestedById: BigInt(requestedById),
         type: data.type,
-        status: data.status,
+        status: data.status ?? 'PENDING',
         provider: data.provider,
         externalReferenceId: data.externalReferenceId,
         resultSummary: data.resultSummary,
-        initiatedAt: data.initiatedAt ? new Date(data.initiatedAt) : undefined,
+        initiatedAt: data.initiatedAt ? new Date(data.initiatedAt) : new Date(),
         expiresAt: data.expiresAt ? new Date(data.expiresAt) : undefined,
       },
       include: backgroundCheckInclude,
@@ -53,6 +54,22 @@ export class BackgroundCheckRepository extends BaseRepository {
         organizationId: BigInt(organizationId),
         deletedAt: null,
       },
+      include: backgroundCheckInclude,
+    });
+  }
+
+  findLatestClearForCandidate(
+    organizationId: number,
+    candidateId: number,
+  ): Promise<BackgroundCheckRecord | null> {
+    return this.prisma.backgroundCheck.findFirst({
+      where: {
+        organizationId: BigInt(organizationId),
+        candidateId: BigInt(candidateId),
+        status: 'CLEAR',
+        deletedAt: null,
+      },
+      orderBy: { completedAt: 'desc' },
       include: backgroundCheckInclude,
     });
   }
@@ -76,6 +93,41 @@ export class BackgroundCheckRepository extends BaseRepository {
         }),
         ...(data.resultSummary !== undefined && {
           resultSummary: data.resultSummary,
+        }),
+        ...(data.aiSummary !== undefined && { aiSummary: data.aiSummary }),
+        ...(data.reviewNotes !== undefined && { reviewNotes: data.reviewNotes }),
+        ...(data.consentConfirmedAt !== undefined && {
+          consentConfirmedAt: data.consentConfirmedAt
+            ? new Date(data.consentConfirmedAt)
+            : null,
+        }),
+        ...(data.consentConfirmedById !== undefined && {
+          consentConfirmedById:
+            data.consentConfirmedById != null
+              ? BigInt(data.consentConfirmedById)
+              : null,
+        }),
+        ...(data.vendorAssignedAt !== undefined && {
+          vendorAssignedAt: data.vendorAssignedAt
+            ? new Date(data.vendorAssignedAt)
+            : null,
+        }),
+        ...(data.reviewedById !== undefined && {
+          reviewedById:
+            data.reviewedById != null ? BigInt(data.reviewedById) : null,
+        }),
+        ...(data.reviewedAt !== undefined && {
+          reviewedAt: data.reviewedAt ? new Date(data.reviewedAt) : null,
+        }),
+        ...(data.consentDocumentId !== undefined && {
+          consentDocumentId:
+            data.consentDocumentId != null
+              ? BigInt(data.consentDocumentId)
+              : null,
+        }),
+        ...(data.reportDocumentId !== undefined && {
+          reportDocumentId:
+            data.reportDocumentId != null ? BigInt(data.reportDocumentId) : null,
         }),
         ...(data.initiatedAt !== undefined && {
           initiatedAt: data.initiatedAt ? new Date(data.initiatedAt) : null,
@@ -121,17 +173,49 @@ export class BackgroundCheckRepository extends BaseRepository {
     return { items, total };
   }
 
-  candidateExists(organizationId: number, candidateId: number): Promise<boolean> {
-    return this.prisma.candidate
-      .findFirst({
-        where: {
-          id: BigInt(candidateId),
-          organizationId: BigInt(organizationId),
-          deletedAt: null,
-        },
-        select: { id: true },
-      })
-      .then(Boolean);
+  listDocuments(organizationId: number, backgroundCheckId: number) {
+    return this.prisma.document.findMany({
+      where: {
+        organizationId: BigInt(organizationId),
+        entityType: 'BACKGROUND_CHECK',
+        entityId: BigInt(backgroundCheckId),
+        deletedAt: null,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  createDocument(data: {
+    organizationId: number;
+    uploadedById: number;
+    entityId: number;
+    fileName: string;
+    originalName: string;
+    s3Key: string;
+    s3Bucket: string;
+    fileUrl: string | null;
+    mimeType: string;
+    fileSize: number;
+    description: string;
+  }) {
+    return this.prisma.document.create({
+      data: {
+        organizationId: BigInt(data.organizationId),
+        uploadedById: BigInt(data.uploadedById),
+        entityType: 'BACKGROUND_CHECK',
+        entityId: BigInt(data.entityId),
+        kind: 'GENERAL',
+        fileName: data.fileName,
+        originalName: data.originalName,
+        s3Key: data.s3Key,
+        s3Bucket: data.s3Bucket,
+        fileUrl: data.fileUrl,
+        mimeType: data.mimeType,
+        fileSize: BigInt(data.fileSize),
+        status: 'UPLOADED',
+        description: data.description,
+      },
+    });
   }
 
   private buildWhereClause(

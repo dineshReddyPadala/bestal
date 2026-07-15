@@ -3,6 +3,8 @@ import { bigintToNumber } from '../../utils/index.js';
 import type {
   BackgroundCheckDto,
   BackgroundCheckListItemDto,
+  BackgroundCheckPublicSummaryDto,
+  BgvDocumentDto,
 } from './background-check.types.js';
 import type { BackgroundCheckRecord } from './background-check.repository.js';
 
@@ -12,6 +14,10 @@ function formatPersonName(firstName: string, lastName: string): string {
 
 export function mapBackgroundCheckToDto(
   record: BackgroundCheckRecord,
+  options?: {
+    documents?: BgvDocumentDto[];
+    supportingDocumentCount?: number;
+  },
 ): BackgroundCheckDto {
   return {
     id: bigintToNumber(record.id),
@@ -31,6 +37,18 @@ export function mapBackgroundCheckToDto(
     provider: record.provider,
     externalReferenceId: record.externalReferenceId,
     resultSummary: record.resultSummary,
+    aiSummary: record.aiSummary,
+    reviewNotes: record.reviewNotes,
+    consentConfirmedAt: record.consentConfirmedAt?.toISOString() ?? null,
+    vendorAssignedAt: record.vendorAssignedAt?.toISOString() ?? null,
+    reviewedAt: record.reviewedAt?.toISOString() ?? null,
+    reviewedByName: record.reviewedBy
+      ? formatPersonName(record.reviewedBy.firstName, record.reviewedBy.lastName)
+      : null,
+    hasConsentDocument: Boolean(record.consentDocumentId),
+    hasReportDocument: Boolean(record.reportDocumentId),
+    supportingDocumentCount: options?.supportingDocumentCount ?? 0,
+    documents: options?.documents,
     initiatedAt: record.initiatedAt?.toISOString() ?? null,
     completedAt: record.completedAt?.toISOString() ?? null,
     expiresAt: record.expiresAt?.toISOString() ?? null,
@@ -52,10 +70,25 @@ export function mapBackgroundCheckToListItem(
     type: record.type,
     status: record.status,
     provider: record.provider,
+    consentConfirmedAt: record.consentConfirmedAt?.toISOString() ?? null,
+    aiSummary: record.aiSummary,
+    hasReportDocument: Boolean(record.reportDocumentId),
     initiatedAt: record.initiatedAt?.toISOString() ?? null,
     completedAt: record.completedAt?.toISOString() ?? null,
     createdAt: record.createdAt.toISOString(),
     updatedAt: record.updatedAt.toISOString(),
+  };
+}
+
+export function mapBackgroundCheckToPublicSummary(
+  record: BackgroundCheckRecord,
+): BackgroundCheckPublicSummaryDto {
+  return {
+    status: record.status,
+    provider: record.provider,
+    completedAt: record.completedAt?.toISOString() ?? null,
+    aiSummary: record.aiSummary,
+    isBackgroundVerified: record.status === 'CLEAR',
   };
 }
 

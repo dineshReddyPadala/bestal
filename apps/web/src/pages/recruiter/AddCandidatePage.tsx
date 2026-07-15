@@ -1,22 +1,13 @@
-import { useLocation, useNavigate } from 'react-router-dom';
-import { Card, CardContent, PageHeader } from '@bestal/ui';
+import { useLocation, useNavigate, Link } from 'react-router-dom';
+import { Card, CardContent, useDashboardHeaderLeading } from '@bestal/ui';
 import { ArrowLeft } from 'lucide-react';
-import { Link } from 'react-router-dom';
-import { useState } from 'react';
-import { CsvImportScreen } from '../../components/import/CsvImportScreen';
-import { CandidateEntryMethodChooser } from '../../components/forms/CandidateEntryMethodChooser';
+import { useMemo, useRef, useState } from 'react';
 import { CandidateWizard } from '../../components/forms/CandidateWizard';
-import { ResumeUploadDialog } from '../../components/forms/ResumeUploadDialog';
 import type {
   CandidateWizardUploads,
   CandidateWizardValues,
-  CandidateWizardFormValues,
 } from '../../components/forms/candidate-wizard-schema';
-import {
-  getInitialStepIndexForEntryMethod,
-  mapWizardToApiCreateBody,
-  type CandidateEntryMethod,
-} from '../../components/forms/candidate-wizard-schema';
+import { mapWizardToApiCreateBody } from '../../components/forms/candidate-wizard-schema';
 import { useDemoToast } from '../../lib/use-demo-toast';
 import { useCandidateMutations } from '../../hooks/api/useCandidates';
 import { getApiErrorMessage } from '../../lib/api/errors';
@@ -33,62 +24,65 @@ export function AddCandidatePage() {
   const navigate = useNavigate();
   const basePath = usePortalBasePath();
   const { message, variant, show, showError, dismiss } = useDemoToast();
-  const { create, update } = useCandidateMutations();
+  const { create, update, submitForApproval } = useCandidateMutations();
   const [submittedId, setSubmittedId] = useState<number | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const [entryMethod, setEntryMethod] = useState<CandidateEntryMethod | null>(null);
-  const [resumeDialogOpen, setResumeDialogOpen] = useState(false);
-  const [resumeBootstrap, setResumeBootstrap] = useState<{
-    formValues: Partial<CandidateWizardFormValues>;
-    uploads: CandidateWizardUploads;
-    sessionKey: string;
-    draftCandidateId: number;
-  } | null>(null);
+  const [draftCandidateId, setDraftCandidateId] = useState<number | null>(null);
+  const draftCandidateIdRef = useRef<number | null>(null);
+  const resumeUploadedViaExtractRef = useRef(false);
 
-  function handleEntrySelect(method: CandidateEntryMethod) {
-    if (method === 'resume') {
-      setResumeDialogOpen(true);
-      return;
-    }
-    setResumeBootstrap(null);
-    setEntryMethod(method);
+  const headerLeading = useMemo(
+    () => (
+      <div className="flex min-w-0 items-center gap-3">
+        <Link
+          to={`${basePath}/candidates`}
+          className="inline-flex shrink-0 items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+        >
+          <ArrowLeft className="h-3.5 w-3.5" />
+          Back
+        </Link>
+        <span className="hidden h-4 w-px bg-border sm:block" aria-hidden />
+        <h1 className="truncate text-lg font-semibold tracking-tight text-foreground sm:text-xl">
+          Add Candidate
+        </h1>
+      </div>
+    ),
+    [basePath],
+  );
+  useDashboardHeaderLeading(headerLeading);
+
+  function setDraftId(id: number | null) {
+    draftCandidateIdRef.current = id;
+    setDraftCandidateId(id);
   }
 
-  function handleResumeSuccess(
-    file: File,
-    formValues: Partial<CandidateWizardFormValues>,
+  async function persistCandidate(
+    values: CandidateWizardValues,
     uploads: CandidateWizardUploads,
-    toastMessage: string,
-    draftCandidateId: number,
-  ) {
-    setResumeBootstrap({
-      formValues,
-      uploads,
-      sessionKey: `${file.name}-${file.lastModified}`,
-      draftCandidateId,
-    });
-    setEntryMethod('resume');
-    setResumeDialogOpen(false);
-    show(toastMessage);
-  }
-
-  async function handleSubmit(values: CandidateWizardValues, uploads: CandidateWizardUploads) {
+    options: { submit: boolean; silent?: boolean },
+  ): Promise<boolean> {
     setSubmitError(null);
     try {
-      const draftId = resumeBootstrap?.draftCandidateId;
-      const saved = draftId
-        ? await update.mutateAsync({
-            id: draftId,
-            body: mapWizardToApiCreateBody(values),
-          })
-        : await create.mutateAsync(mapWizardToApiCreateBody(values));
+      const body = mapWizardToApiCreateBody(values);
+      if (options.submit) {
+        body.profileStatus = 'PROFILE_DRAFT';
+        if (!body.availabilityStatus) {
+          body.availabilityStatus = values.availabilityStatus ?? 'IMMEDIATE';
+        }
+      }
+      // Create only once; every later Next / Save Draft updates the same candidate.
+      const existingDraftId = draftCandidateIdRef.current;
+      const saved = existingDraftId
+        ? await update.mutateAsync({ id: existingDraftId, body })
+        : await create.mutateAsync(body);
+
+      setDraftId(saved.id);
 
       const uploadJobs: Promise<unknown>[] = [];
       if (uploads.profileImage) {
         uploadJobs.push(uploadCandidateFile(saved.id, 'profile-image', uploads.profileImage));
       }
-      // Resume already uploaded during extract-resume when starting from draft
-      if (uploads.resume && !draftId) {
+      if (uploads.resume && !resumeUploadedViaExtractRef.current) {
         uploadJobs.push(uploadCandidateFile(saved.id, 'resume', uploads.resume));
       }
       if (uploads.introVideo) {
@@ -98,39 +92,36 @@ export function AddCandidatePage() {
         await Promise.all(uploadJobs);
       }
 
-      setSubmittedId(saved.id);
-      show(
-        draftId
-          ? 'Draft candidate updated successfully'
-          : uploadJobs.length > 0
-            ? 'Candidate created and files uploaded to storage'
-            : 'Candidate created successfully',
-      );
-      setTimeout(() => navigate(`${basePath}/candidates/${saved.id}`), 1200);
+      if (options.submit) {
+        await submitForApproval.mutateAsync(saved.id);
+        setSubmittedId(saved.id);
+        show('Candidate submitted for approval');
+        setTimeout(() => navigate(`${basePath}/candidates/${saved.id}`), 1200);
+        return true;
+      }
+
+      if (!options.silent) {
+        show(existingDraftId ? 'Draft updated' : 'Draft saved');
+      }
+      return true;
     } catch (err) {
-      const errorMessage = getApiErrorMessage(err, 'Failed to create candidate');
+      const errorMessage = getApiErrorMessage(
+        err,
+        options.submit ? 'Failed to submit candidate' : 'Failed to save candidate',
+      );
       setSubmitError(errorMessage);
       showError(errorMessage);
+      return false;
     }
   }
 
   return (
-    <div className="min-h-full bg-muted/10">
+    <div className="flex h-[calc(100svh-4rem)] min-h-0 flex-col overflow-hidden bg-background">
       <ToastHost message={message} variant={variant} onDismiss={dismiss} />
-      <PageHeader
-        title="Add Candidate"
-        description="Add a new candidate to the talent pool"
-        breadcrumbs={
-          <Link to={`${basePath}/candidates`} className="inline-flex items-center gap-1 hover:text-foreground">
-            <ArrowLeft className="h-3.5 w-3.5" />
-            Back to candidates
-          </Link>
-        }
-      />
 
-      {message && (
+      {message ? (
         <div
-          className={`mx-6 mt-4 rounded-xl border px-4 py-3 text-sm ${
+          className={`mx-5 mt-3 shrink-0 rounded-lg border px-4 py-2.5 text-sm sm:mx-6 ${
             variant === 'error'
               ? 'border-destructive/30 bg-destructive/10 text-destructive'
               : 'border-emerald-200 bg-emerald-50 text-emerald-700'
@@ -139,70 +130,48 @@ export function AddCandidatePage() {
         >
           {message}
         </div>
-      )}
+      ) : null}
 
-      <div className="p-4 sm:p-6">
+      <div className="flex min-h-0 flex-1 flex-col px-5 py-3 sm:px-6 sm:py-4">
         {submittedId !== null ? (
-          <Card className="mx-auto max-w-2xl">
+          <Card className="mx-auto w-full max-w-2xl self-center">
             <CardContent className="py-12 text-center">
-              <p className="text-lg font-medium text-emerald-600">Candidate created successfully</p>
+              <p className="text-lg font-medium text-emerald-600">Submitted for approval</p>
               <p className="mt-2 text-sm text-muted-foreground">Redirecting to candidate profile…</p>
             </CardContent>
           </Card>
-        ) : entryMethod === null ? (
-          <Card className="mx-auto max-w-4xl">
-            <CardContent className="p-6">
-              <CandidateEntryMethodChooser
-                onSelect={handleEntrySelect}
-                onCancel={() => navigate(`${basePath}/candidates`)}
-              />
-            </CardContent>
-          </Card>
-        ) : entryMethod === 'csv' ? (
-          <Card className="mx-auto max-w-6xl">
-            <CardContent className="p-6">
-              <CsvImportScreen
-                embedded
-                cancelPath={`${basePath}/candidates`}
-                title="Import CSV"
-                description="Upload a spreadsheet, validate rows, and bulk import candidates into your pipeline."
-                onBack={() => setEntryMethod(null)}
-              />
-            </CardContent>
-          </Card>
         ) : (
-          <Card className="mx-auto max-w-4xl">
-            <CardContent className="p-6">
+          <Card className="flex min-h-0 flex-1 flex-col overflow-hidden">
+            <CardContent className="flex min-h-0 flex-1 flex-col overflow-hidden p-4 sm:p-5">
               <CandidateWizard
-                key={
-                  entryMethod === 'resume' && resumeBootstrap
-                    ? `resume-${resumeBootstrap.sessionKey}`
-                    : entryMethod
-                }
-                entryMethod={entryMethod}
-                initialStepIndex={getInitialStepIndexForEntryMethod(entryMethod)}
-                initialFormValues={resumeBootstrap?.formValues}
-                initialUploads={resumeBootstrap?.uploads}
-                onSubmit={handleSubmit}
-                onCancel={() => navigate(`${basePath}/candidates`)}
-                onChangeEntryMethod={() => {
-                  setResumeBootstrap(null);
-                  setEntryMethod(null);
+                entryMethod="manual"
+                initialTab="basic"
+                draftCandidateId={draftCandidateId}
+                onDraftCandidateId={(id) => {
+                  resumeUploadedViaExtractRef.current = true;
+                  setDraftId(id);
                 }}
+                onSaveDraft={(values, uploads, options) =>
+                  persistCandidate(values, uploads, {
+                    submit: false,
+                    silent: options?.silent,
+                  })
+                }
+                onSubmitForApproval={(values, uploads) =>
+                  void persistCandidate(values, uploads, { submit: true })
+                }
+                onCancel={() => navigate(`${basePath}/candidates`)}
                 onToast={show}
                 submitError={submitError}
-                isSubmitting={create.isPending}
+                isSavingDraft={create.isPending || update.isPending}
+                isSubmitting={
+                  create.isPending || update.isPending || submitForApproval.isPending
+                }
               />
             </CardContent>
           </Card>
         )}
       </div>
-
-      <ResumeUploadDialog
-        open={resumeDialogOpen}
-        onClose={() => setResumeDialogOpen(false)}
-        onSuccess={handleResumeSuccess}
-      />
     </div>
   );
 }

@@ -75,13 +75,52 @@ export class CandidateRepository extends BaseRepository {
     id: number,
     data: UpdateCandidateInput,
   ): Promise<CandidateRecord> {
-    return this.prisma.candidate.update({
-      where: {
-        id: BigInt(id),
-        organizationId: BigInt(organizationId),
-      },
-      data: buildCandidateScalarData(data) as Prisma.CandidateUncheckedUpdateInput,
-      include: candidateInclude,
+    const { skills, ...scalarInput } = data;
+    const scalar = buildCandidateScalarData(scalarInput) as Prisma.CandidateUncheckedUpdateInput;
+
+    if (skills === undefined) {
+      return this.prisma.candidate.update({
+        where: {
+          id: BigInt(id),
+          organizationId: BigInt(organizationId),
+        },
+        data: scalar,
+        include: candidateInclude,
+      });
+    }
+
+    const skillRows = skills.map((skill) => ({
+      skillCommunityId: BigInt(skill.skillCommunityId),
+      skillName: skill.skillName,
+      skillCategory: skill.skillCategory,
+      proficiencyLevel: skill.proficiencyLevel ?? ('INTERMEDIATE' as const),
+      yearsExperience: skill.yearsExperience,
+      isPrimary: skill.isPrimary ?? false,
+      notes: skill.notes,
+    }));
+
+    return this.prisma.$transaction(async (tx) => {
+      await tx.candidateSkill.deleteMany({
+        where: { candidateId: BigInt(id) },
+      });
+
+      return tx.candidate.update({
+        where: {
+          id: BigInt(id),
+          organizationId: BigInt(organizationId),
+        },
+        data: {
+          ...scalar,
+          ...(skillRows.length
+            ? {
+                skills: {
+                  create: skillRows,
+                },
+              }
+            : {}),
+        },
+        include: candidateInclude,
+      });
     });
   }
 

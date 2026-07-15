@@ -16,10 +16,6 @@ export interface SignedUrlOptions {
   contentType?: string;
 }
 
-export interface SignedUploadUrlOptions extends SignedUrlOptions {
-  contentType: string;
-}
-
 export interface StorageAdapter {
   upload(
     key: string,
@@ -32,11 +28,6 @@ export interface StorageAdapter {
     key: string,
     bucket: string,
     options?: SignedUrlOptions,
-  ): Promise<string | null>;
-  getSignedUploadUrl(
-    key: string,
-    bucket: string,
-    options: SignedUploadUrlOptions,
   ): Promise<string | null>;
   getPublicUrl(key: string, bucket: string): string | null;
   getBucket(): string;

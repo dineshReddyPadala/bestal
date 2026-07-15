@@ -271,6 +271,30 @@ export type DeploymentListItem = {
 
 // ─── Candidate ────────────────────────────────────────────────────────────────
 
+export type CandidateDocumentDto = {
+  id: number;
+  kind: string;
+  fileName: string;
+  originalName: string;
+  mimeType: string;
+  fileSize: number;
+  status: string;
+  url: string | null;
+  createdAt: string;
+};
+
+export type CandidateSkillDto = {
+  id: number;
+  skillCommunityId: number;
+  skillCommunityName: string;
+  skillName: string | null;
+  skillCategory: string | null;
+  proficiencyLevel: string;
+  yearsExperience: number | null;
+  isPrimary: boolean;
+  notes?: string | null;
+};
+
 export type CandidateListItem = {
   id: number;
   firstName: string;
@@ -302,15 +326,42 @@ export type CandidateDto = CandidateListItem & {
   expectedRate: number | null;
   currency: string | null;
   linkedinUrl: string | null;
+  githubUrl?: string | null;
+  naukriUrl?: string | null;
   primarySkillCommunityId: number | null;
+  displayName?: string | null;
+  primaryRole?: string | null;
+  currentCompany?: string | null;
+  education?: string | null;
   clientBillRate?: number | null;
+  candidatePayRate?: number | null;
+  grossMargin?: number | null;
   availabilityStatus?: string | null;
+  timezoneOverlap?: string | null;
+  preferredShift?: string | null;
+  minHoursPerWeek?: number | null;
+  maxHoursPerWeek?: number | null;
+  aiSummary?: string | null;
+  clientProfileSummary?: string | null;
+  strengths?: string | null;
+  weaknesses?: string | null;
+  riskFlags?: string | null;
+  bestalScore?: number | null;
+  technicalScore?: number | null;
+  communicationScore?: number | null;
+  reliabilityScore?: number | null;
+  deploymentStatus?: string | null;
+  bgvVerified?: boolean;
+  bgvCompletedAt?: string | null;
+  bgvSummary?: string | null;
   hiddenAt: string | null;
   approvedAt: string | null;
   rejectedAt: string | null;
   rejectionReason: string | null;
-  aiSummary?: string | null;
-  resume?: { id: number } | null;
+  resume?: CandidateDocumentDto | null;
+  profileImage?: CandidateDocumentDto | null;
+  introVideo?: CandidateDocumentDto | null;
+  skills?: CandidateSkillDto[];
 };
 
 // ─── Shortlist ────────────────────────────────────────────────────────────────
@@ -389,11 +440,38 @@ export type BackgroundCheckListItem = {
   status: string;
   vendor?: string | null;
   provider?: string | null;
+  consentConfirmedAt?: string | null;
+  aiSummary?: string | null;
+  hasReportDocument?: boolean;
   requestedAt?: string | null;
   initiatedAt?: string | null;
   completedAt: string | null;
   createdAt: string;
   updatedAt: string;
+};
+
+export type BackgroundCheckDto = BackgroundCheckListItem & {
+  organizationId?: number;
+  requestedById?: number;
+  requestedByName?: string;
+  externalReferenceId?: string | null;
+  resultSummary?: string | null;
+  reviewNotes?: string | null;
+  vendorAssignedAt?: string | null;
+  reviewedAt?: string | null;
+  reviewedByName?: string | null;
+  hasConsentDocument?: boolean;
+  supportingDocumentCount?: number;
+  documents?: Array<{
+    id: number;
+    fileName: string;
+    originalName: string;
+    mimeType: string;
+    description: string | null;
+    url: string | null;
+    createdAt: string;
+  }>;
+  expiresAt?: string | null;
 };
 
 export type SearchResultItem = {

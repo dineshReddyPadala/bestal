@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { useSkillCommunitiesList } from '../../hooks/api/useSkillCommunities';
 import { getApiErrorMessage } from '../../lib/api/errors';
 import { applyResumeExtractionToWizardForm } from '../../lib/api/ai/resume-extraction.mapper';
-import { extractResumeAndCreateDraft } from '../../lib/api/ai/resume-extraction.stub';
+import { candidatesApi } from '../../lib/api/candidates';
 import type {
   CandidateWizardFormValues,
   CandidateWizardUploads,
@@ -63,7 +63,7 @@ export function ResumeUploadDialog({ open, onClose, onSuccess }: ResumeUploadDia
     setExtracting(true);
 
     try {
-      const { candidate, extraction } = await extractResumeAndCreateDraft(file);
+      const { candidate, extraction } = await candidatesApi.extractResume(file);
       const formValues = applyResumeExtractionToWizardForm(
         extraction,
         skillCommunities,

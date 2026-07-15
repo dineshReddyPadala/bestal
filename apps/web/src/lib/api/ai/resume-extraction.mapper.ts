@@ -97,7 +97,6 @@ export function applyResumeExtractionToWizardForm(
     phone: c.phone?.trim() ?? '',
     location: c.location?.trim() ?? '',
     linkedinUrl: c.linkedinUrl?.trim() ?? '',
-    source: 'JOB_BOARD',
     headline:
       c.headline?.trim() ||
       extraction.primaryRole?.trim() ||
@@ -111,13 +110,17 @@ export function applyResumeExtractionToWizardForm(
     currentCompany: latestJob?.company?.trim() ?? '',
     education: formatEducation(extraction),
     summary,
+    aiSummary: summary,
     clientProfileSummary: summary,
     strengths: extraction.strengths?.trim() || extraction.rawSections?.skills?.trim() || '',
     weaknesses: extraction.weaknesses?.trim() || '',
     yearsExperience: c.yearsExperience ?? undefined,
     primarySkillCommunityId: primarySkillCommunityId ?? undefined,
+    bestalScore: extraction.bestalScore ?? undefined,
     billRate: extraction.recommendedClientRate ?? undefined,
     payRate: extraction.recommendedCandidateRate ?? undefined,
+    expectedRate: extraction.recommendedCandidateRate ?? undefined,
+    profileStatus: 'AI_SCREENED',
     skills:
       mappedSkills.length > 0
         ? mergeWizardSkills(mappedSkills)
@@ -133,11 +136,11 @@ export function applyResumeExtractionToWizardForm(
             ]
           : undefined,
     availableFrom: today,
+    availabilityStatus: 'IMMEDIATE',
     availabilityNotes: [
       experienceNotes,
       extraction.seniority ? `Seniority: ${extraction.seniority}` : '',
       extraction.riskFlags ? `Risk flags: ${extraction.riskFlags}` : '',
-      extraction.bestalScore != null ? `BesTal score: ${extraction.bestalScore}` : '',
     ]
       .filter(Boolean)
       .join('\n') || undefined,

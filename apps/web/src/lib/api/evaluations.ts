@@ -1,5 +1,5 @@
-import { apiCreate, apiGet, apiList, apiUpdate, type ListQuery } from './client';
-import type { BackgroundCheckListItem, EvaluationListItem } from './types';
+import { apiAction, apiCreate, apiGet, apiList, apiRequest, apiUpdate, type ListQuery } from './client';
+import type { BackgroundCheckDto, BackgroundCheckListItem, EvaluationListItem } from './types';
 
 export const evaluationsApi = {
   list: (query?: ListQuery) => apiList<EvaluationListItem>('/evaluations', query),
@@ -11,9 +11,41 @@ export const evaluationsApi = {
 
 export const backgroundChecksApi = {
   list: (query?: ListQuery) => apiList<BackgroundCheckListItem>('/background-checks', query),
-  get: (id: number) => apiGet<BackgroundCheckListItem>(`/background-checks/${id}`),
+  get: (id: number) => apiGet<BackgroundCheckDto>(`/background-checks/${id}`),
   create: (body: Record<string, unknown>) =>
-    apiCreate<BackgroundCheckListItem>('/background-checks', body),
+    apiCreate<BackgroundCheckDto>('/background-checks', body),
   update: (id: number, body: Record<string, unknown>) =>
-    apiUpdate<BackgroundCheckListItem>(`/background-checks/${id}`, body),
+    apiUpdate<BackgroundCheckDto>(`/background-checks/${id}`, body),
+  confirmConsent: (id: number) =>
+    apiAction<BackgroundCheckDto>(`/background-checks/${id}/confirm-consent`),
+  assignVendor: (id: number, provider: string) =>
+    apiAction<BackgroundCheckDto>(`/background-checks/${id}/assign-vendor`, { provider }),
+  startVerification: (id: number) =>
+    apiAction<BackgroundCheckDto>(`/background-checks/${id}/start-verification`),
+  extractAi: (id: number) =>
+    apiAction<BackgroundCheckDto>(`/background-checks/${id}/extract-ai`),
+  submitForReview: (id: number) =>
+    apiAction<BackgroundCheckDto>(`/background-checks/${id}/submit-for-review`),
+  approve: (id: number) =>
+    apiAction<BackgroundCheckDto>(`/background-checks/${id}/approve`),
+  reject: (id: number, notes?: string) =>
+    apiAction<BackgroundCheckDto>(`/background-checks/${id}/reject`, notes ? { notes } : {}),
+  requestClarification: (id: number, notes: string) =>
+    apiAction<BackgroundCheckDto>(`/background-checks/${id}/request-clarification`, { notes }),
+  reopen: (id: number) =>
+    apiAction<BackgroundCheckDto>(`/background-checks/${id}/reopen`),
+  uploadDocument: async (
+    id: number,
+    kind: 'CONSENT' | 'SUPPORTING' | 'REPORT',
+    file: File,
+  ): Promise<BackgroundCheckDto> => {
+    const form = new FormData();
+    form.append('file', file, file.name);
+    form.append('kind', kind);
+    const json = await apiRequest<{ data: BackgroundCheckDto }>(
+      `/background-checks/${id}/documents`,
+      { method: 'POST', body: form },
+    );
+    return json.data;
+  },
 };

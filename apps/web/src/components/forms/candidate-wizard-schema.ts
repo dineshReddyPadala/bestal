@@ -1,5 +1,8 @@
 import {
   CANDIDATE_AVAILABILITY_STATUSES,
+  CANDIDATE_PROFILE_STATUSES,
+  CANDIDATE_VISIBILITY_STATUSES,
+  type CandidateProfileStatusValue,
   type CandidateVisibilityStatusValue,
 } from '@bestal/shared-utils';
 import { z } from 'zod';
@@ -27,11 +30,11 @@ export const skillEntrySchema = z.object({
   notes: z.string().max(5000).optional().nullable(),
 });
 
-/** Fields the recruiter/admin actually fills in. */
+/** Fields the recruiter/admin fills in (draft-friendly; submit validates required fields). */
 export const candidateWizardFormSchema = z.object({
-  firstName: z.string().min(1, 'First name is required').max(100),
-  lastName: z.string().min(1, 'Last name is required').max(100),
-  email: z.string().email('Invalid email').max(255),
+  firstName: z.string().max(100),
+  lastName: z.string().max(100),
+  email: z.string().max(255),
   phone: z.string().max(30).optional().nullable(),
   location: z.string().max(255).optional().nullable(),
   linkedinUrl: z.string().max(500).optional().nullable(),
@@ -45,13 +48,14 @@ export const candidateWizardFormSchema = z.object({
   currentCompany: z.string().max(255).optional().nullable(),
   education: z.string().max(500).optional().nullable(),
   summary: z.string().max(10000).optional().nullable(),
+  aiSummary: z.string().max(10000).optional().nullable(),
   clientProfileSummary: z.string().max(10000).optional().nullable(),
   strengths: z.string().max(5000).optional().nullable(),
   weaknesses: z.string().max(5000).optional().nullable(),
   yearsExperience: optionalNumber,
   primarySkillCommunityId: optionalNumber,
-  skills: z.array(skillEntrySchema).min(1, 'Add at least one skill'),
-  availableFrom: z.string().min(1, 'Available from date is required'),
+  skills: z.array(skillEntrySchema),
+  availableFrom: z.string().optional().nullable(),
   timezone: z.string().max(100).optional().nullable(),
   availabilityStatus: z.enum(CANDIDATE_AVAILABILITY_STATUSES).optional().nullable(),
   preferredShift: z.string().max(50).optional().nullable(),
@@ -70,6 +74,48 @@ export const candidateWizardFormSchema = z.object({
   payRate: optionalNumber,
   billRate: optionalNumber,
   pricingNotes: z.string().max(2000).optional().nullable(),
+  trialEligible: z.boolean().optional(),
+  bestalScore: optionalNumber,
+  technicalScore: optionalNumber,
+  communicationScore: optionalNumber,
+  problemSolvingScore: optionalNumber,
+  architectureScore: optionalNumber,
+  clientReadinessScore: optionalNumber,
+  evaluatorName: z.string().max(200).optional().nullable(),
+  evaluatorCompany: z.string().max(200).optional().nullable(),
+  evaluationType: z.string().max(100).optional().nullable(),
+  evaluationDate: z.string().optional().nullable(),
+  evaluationRecommendation: z.string().max(100).optional().nullable(),
+  evaluatorComments: z.string().max(10000).optional().nullable(),
+  aiEvaluationSummary: z.string().max(10000).optional().nullable(),
+  evaluationFileName: z.string().optional().nullable(),
+  bgvStatus: z.string().max(50).optional().nullable(),
+  bgvVendor: z.string().max(100).optional().nullable(),
+  bgvRequestedByName: z.string().max(100).optional().nullable(),
+  bgvCheckType: z
+    .enum([
+      'COMPREHENSIVE',
+      'CRIMINAL',
+      'EMPLOYMENT',
+      'EDUCATION',
+      'REFERENCE',
+      'IDENTITY',
+      'CREDIT',
+    ])
+    .optional()
+    .nullable(),
+  bgvEmployment: z.enum(['NOT_STARTED', 'PENDING']).optional().nullable(),
+  bgvEducation: z.enum(['NOT_STARTED', 'PENDING']).optional().nullable(),
+  bgvReference: z.enum(['NOT_STARTED', 'PENDING']).optional().nullable(),
+  bgvAddress: z.enum(['NOT_STARTED', 'PENDING']).optional().nullable(),
+  bgvCriminal: z.enum(['NOT_STARTED', 'PENDING']).optional().nullable(),
+  bgvNotes: z.string().max(2000).optional().nullable(),
+  bgvConsentFileName: z.string().optional().nullable(),
+  bgvFileName: z.string().optional().nullable(),
+  profileStatus: z.enum(CANDIDATE_PROFILE_STATUSES).optional().nullable(),
+  visibility: z.enum(CANDIDATE_VISIBILITY_STATUSES).optional().nullable(),
+  publishAfterApproval: z.boolean().optional(),
+  recruiterNotes: z.string().max(10000).optional().nullable(),
   resumeFileName: z.string().optional().nullable(),
   profileImageFileName: z.string().optional().nullable(),
   introVideoFileName: z.string().optional().nullable(),
@@ -77,11 +123,34 @@ export const candidateWizardFormSchema = z.object({
 
 export type CandidateWizardFormValues = z.infer<typeof candidateWizardFormSchema>;
 
-/** Full payload shape (includes system-managed fields set on submit). */
+/** Minimum fields required to create/update a draft in the API. */
+export const candidateWizardSaveSchema = z.object({
+  firstName: z.string().min(1, 'First name is required'),
+  lastName: z.string().min(1, 'Last name is required'),
+  email: z.string().email('Valid email is required'),
+  source: z.enum(['DIRECT', 'REFERRAL', 'JOB_BOARD', 'LINKEDIN', 'AGENCY', 'INTERNAL', 'OTHER']),
+});
+
+/** Stricter checks before Submit for Approval. */
+export const candidateWizardSubmitSchema = candidateWizardFormSchema
+  .extend({
+    firstName: z.string().min(1, 'First name is required').max(100),
+    lastName: z.string().min(1, 'Last name is required').max(100),
+    email: z.string().email('Invalid email').max(255),
+    source: z.enum(['DIRECT', 'REFERRAL', 'JOB_BOARD', 'LINKEDIN', 'AGENCY', 'INTERNAL', 'OTHER']),
+    availableFrom: z.string().min(1, 'Available from date is required'),
+    primarySkillCommunityId: z.number().int().positive('Select a skill community'),
+    billRate: z.number().positive('Client bill rate is required'),
+    skills: z.array(skillEntrySchema).min(1, 'Add at least one skill'),
+  });
+
 export type CandidateWizardUploads = {
   resume?: File;
   profileImage?: File;
   introVideo?: File;
+  evaluationFile?: File;
+  bgvFile?: File;
+  bgvConsentFile?: File;
 };
 
 export type CandidateWizardValues = CandidateWizardFormValues & {
@@ -123,22 +192,15 @@ export const candidateWizardDefaults: CandidateWizardFormValues = {
   currentCompany: '',
   education: '',
   summary: '',
+  aiSummary: '',
   clientProfileSummary: '',
   strengths: '',
   weaknesses: '',
   yearsExperience: undefined,
   primarySkillCommunityId: undefined,
-  skills: [
-    {
-      skillCommunityId: '' as unknown as number,
-      proficiencyLevel: 'INTERMEDIATE',
-      yearsExperience: undefined,
-      isPrimary: true,
-      notes: '',
-    },
-  ],
+  skills: [],
   availableFrom: '',
-  timezone: 'America/New_York',
+  timezone: 'Asia/Kolkata',
   availabilityStatus: 'IMMEDIATE',
   preferredShift: '',
   noticePeriodDays: 14,
@@ -153,6 +215,37 @@ export const candidateWizardDefaults: CandidateWizardFormValues = {
   payRate: undefined,
   billRate: undefined,
   pricingNotes: '',
+  trialEligible: false,
+  bestalScore: undefined,
+  technicalScore: undefined,
+  communicationScore: undefined,
+  problemSolvingScore: undefined,
+  architectureScore: undefined,
+  clientReadinessScore: undefined,
+  evaluatorName: '',
+  evaluatorCompany: '',
+  evaluationType: '',
+  evaluationDate: '',
+  evaluationRecommendation: '',
+  evaluatorComments: '',
+  aiEvaluationSummary: '',
+  evaluationFileName: '',
+  bgvStatus: 'NOT_STARTED',
+  bgvVendor: '',
+  bgvRequestedByName: '',
+  bgvCheckType: 'COMPREHENSIVE',
+  bgvEmployment: 'PENDING',
+  bgvEducation: 'PENDING',
+  bgvReference: 'PENDING',
+  bgvAddress: 'PENDING',
+  bgvCriminal: 'PENDING',
+  bgvNotes: '',
+  bgvConsentFileName: '',
+  bgvFileName: '',
+  profileStatus: 'SOURCED',
+  visibility: 'INTERNAL_ONLY',
+  publishAfterApproval: false,
+  recruiterNotes: '',
   resumeFileName: '',
   profileImageFileName: '',
   introVideoFileName: '',
@@ -178,7 +271,7 @@ export function buildCandidatePayload(form: CandidateWizardFormValues): Candidat
     organizationId: 1,
     photoUrl: null,
     status: 'NEW',
-    visibility: 'INTERNAL_ONLY',
+    visibility: form.visibility ?? 'INTERNAL_ONLY',
     approvalStatus: 'PENDING',
     publishedAt: null,
     hiddenAt: null,
@@ -199,69 +292,139 @@ export function buildCandidatePayload(form: CandidateWizardFormValues): Candidat
   };
 }
 
-export const WIZARD_STEPS = [
+/** Progress track shown above the form (wireframe order). */
+export const WIZARD_PROGRESS_STEPS = [
+  { id: 'basic', label: 'Basic Info', tabId: 'basic' },
+  { id: 'professional', label: 'Professional', tabId: 'professional' },
+  { id: 'skills', label: 'Skills', tabId: 'skills' },
+  { id: 'availability', label: 'Availability', tabId: 'availability' },
+  { id: 'pricing', label: 'Pricing', tabId: 'pricing' },
+  { id: 'evaluation', label: 'Evaluation', tabId: 'evaluation' },
+  { id: 'background-check', label: 'Background Check', tabId: 'background-check' },
+  { id: 'documents', label: 'Documents', tabId: 'documents' },
+  { id: 'review', label: 'Review', tabId: 'review' },
+] as const;
+
+/** Tabbed sections for create-candidate wizard. */
+export const WIZARD_TABS = [
   {
-    id: 'personal',
-    label: 'Personal',
-    description: 'Name, contact details, and how you sourced this candidate',
-    fields: ['firstName', 'lastName', 'email', 'phone', 'location', 'linkedinUrl', 'githubUrl', 'naukriUrl', 'displayName', 'oorwinCandidateId', 'source'] as const,
+    id: 'basic',
+    label: 'Basic Details',
+    description: 'Contact details, upload resume, and run AI screening',
   },
   {
     id: 'professional',
-    label: 'Professional',
-    description: 'Role headline, experience, and profile summary',
-    fields: ['headline', 'primaryRole', 'currentCompany', 'education', 'summary', 'clientProfileSummary', 'strengths', 'weaknesses', 'yearsExperience', 'primarySkillCommunityId'] as const,
+    label: 'Professional Details',
+    description: 'Role, experience, links, and AI profile summary',
   },
   {
     id: 'skills',
     label: 'Skills',
     description: 'Skill communities, proficiency, and primary skill',
-    fields: ['skills', 'primarySkillCommunityId'] as const,
   },
   {
     id: 'availability',
     label: 'Availability',
-    description: 'Start date, timezone, and weekly hours',
-    fields: [
-      'availableFrom',
-      'timezone',
-      'availabilityStatus',
-      'preferredShift',
-      'noticePeriodDays',
-      'hoursPerWeek',
-      'minHoursPerWeek',
-      'maxHoursPerWeek',
-      'preferredEngagement',
-      'blackoutDates',
-      'availabilityNotes',
-    ] as const,
+    description: 'Availability status, hours, and engagement',
   },
   {
     id: 'pricing',
     label: 'Pricing',
-    description: 'Expected, pay, and bill rates',
-    fields: ['expectedRate', 'currency', 'payRate', 'billRate', 'pricingNotes'] as const,
+    description: 'Pay rate, bill rate, and margin',
   },
   {
-    id: 'upload',
+    id: 'evaluation',
+    label: 'Evaluation',
+    description: 'Technical and communication scores',
+  },
+  {
+    id: 'background-check',
+    label: 'Background Verification',
+    description: 'BGV status and report',
+  },
+  {
+    id: 'documents',
     label: 'Documents',
-    description: 'Upload resume, profile photo, and optional intro video',
-    fields: ['resumeFileName', 'profileImageFileName', 'introVideoFileName'] as const,
+    description: 'Photo, video, and supporting files',
   },
   {
     id: 'review',
     label: 'Review',
-    description: 'Confirm details before creating the candidate',
-    fields: [] as const,
+    description: 'Confirm details, visibility, and recruiter notes',
   },
 ] as const;
 
-export type WizardStepId = (typeof WIZARD_STEPS)[number]['id'];
+export type WizardTabId = (typeof WIZARD_TABS)[number]['id'];
+export type WizardProgressId = (typeof WIZARD_PROGRESS_STEPS)[number]['id'];
+
+/** @deprecated Prefer WIZARD_TABS */
+export const WIZARD_STEPS = WIZARD_TABS;
+/** @deprecated Prefer WizardTabId */
+export type WizardStepId = WizardTabId;
 
 export type CandidateEntryMethod = 'resume' | 'oorwin' | 'manual' | 'csv';
 
-export function getInitialStepIndexForEntryMethod(_method: CandidateEntryMethod): number {
-  return 0;
+export function getInitialTabForEntryMethod(_method: CandidateEntryMethod): WizardTabId {
+  return 'basic';
+}
+
+/** @deprecated Prefer getInitialTabForEntryMethod */
+export function getInitialStepIndexForEntryMethod(method: CandidateEntryMethod): number {
+  const tabId = getInitialTabForEntryMethod(method);
+  return WIZARD_TABS.findIndex((tab) => tab.id === tabId);
+}
+
+export function isProgressStepComplete(
+  stepId: WizardProgressId,
+  values: CandidateWizardFormValues,
+): boolean {
+  switch (stepId) {
+    case 'basic':
+      return Boolean(
+        values.firstName?.trim() &&
+          values.lastName?.trim() &&
+          values.email?.trim() &&
+          values.source &&
+          (values.aiSummary?.trim() || values.bestalScore != null || values.resumeFileName?.trim()),
+      );
+    case 'professional':
+      return Boolean(values.primaryRole?.trim() || values.yearsExperience != null);
+    case 'skills':
+      return values.skills.some((s) => s.notes?.trim() || s.skillCommunityId);
+    case 'availability':
+      return Boolean(values.availableFrom?.trim() && values.availabilityStatus);
+    case 'pricing':
+      return values.billRate != null && !Number.isNaN(values.billRate) && values.billRate > 0;
+    case 'evaluation':
+      return (
+        values.technicalScore != null &&
+        !Number.isNaN(values.technicalScore) &&
+        values.communicationScore != null &&
+        !Number.isNaN(values.communicationScore)
+      );
+    case 'background-check':
+      return Boolean(
+        values.bgvStatus &&
+          values.bgvStatus !== 'NOT_STARTED' &&
+          values.bgvStatus !== 'FAILED',
+      );
+    case 'documents':
+      return Boolean(values.resumeFileName?.trim() || values.profileImageFileName?.trim());
+    case 'review':
+      return Boolean(values.profileStatus);
+    default:
+      return false;
+  }
+}
+
+/** Submit for Approval unlocks after basic+AI, skills, availability, and pricing. */
+export function canSubmitCandidateForApproval(values: CandidateWizardFormValues): boolean {
+  return (
+    isProgressStepComplete('basic', values) &&
+    isProgressStepComplete('skills', values) &&
+    isProgressStepComplete('availability', values) &&
+    isProgressStepComplete('pricing', values)
+  );
 }
 
 export const DRAFT_STORAGE_KEY = 'bestal-candidate-wizard-draft';
@@ -279,19 +442,20 @@ export const USER_FIELD_LABELS: Record<keyof CandidateWizardFormValues, string> 
   oorwinCandidateId: 'Oorwin ID',
   source: 'Source',
   headline: 'Headline',
-  primaryRole: 'Primary Role',
+  primaryRole: 'Current Role',
   currentCompany: 'Current Company',
   education: 'Education',
   summary: 'Summary',
+  aiSummary: 'AI Summary',
   clientProfileSummary: 'Client Profile Summary',
   strengths: 'Strengths',
   weaknesses: 'Weaknesses',
   yearsExperience: 'Years Experience',
-  primarySkillCommunityId: 'Primary Skill Community',
+  primarySkillCommunityId: 'Skill Community',
   skills: 'Skills',
   availableFrom: 'Available From',
   timezone: 'Timezone',
-  availabilityStatus: 'Availability Status',
+  availabilityStatus: 'Availability',
   preferredShift: 'Preferred Shift',
   noticePeriodDays: 'Notice Period (days)',
   hoursPerWeek: 'Hours Per Week',
@@ -302,9 +466,40 @@ export const USER_FIELD_LABELS: Record<keyof CandidateWizardFormValues, string> 
   availabilityNotes: 'Availability Notes',
   expectedRate: 'Expected Rate',
   currency: 'Currency',
-  payRate: 'Pay Rate',
-  billRate: 'Bill Rate',
+  payRate: 'Candidate Pay Rate',
+  billRate: 'Client Bill Rate',
   pricingNotes: 'Pricing Notes',
+  trialEligible: 'Trial Eligible',
+  bestalScore: 'BesTal Score',
+  technicalScore: 'Technical Score',
+  communicationScore: 'Communication',
+  problemSolvingScore: 'Problem Solving',
+  architectureScore: 'Architecture',
+  clientReadinessScore: 'Client Readiness',
+  evaluatorName: 'Evaluator Name',
+  evaluatorCompany: 'Evaluator Company',
+  evaluationType: 'Evaluation Type',
+  evaluationDate: 'Evaluation Date',
+  evaluationRecommendation: 'Recommendation',
+  evaluatorComments: 'Evaluator Comments',
+  aiEvaluationSummary: 'AI Evaluation Summary',
+  evaluationFileName: 'Evaluation File',
+  bgvStatus: 'BGV Status',
+  bgvVendor: 'BGV Vendor',
+  bgvRequestedByName: 'BGV Requested By',
+  bgvCheckType: 'BGV Package Type',
+  bgvEmployment: 'Employment Check',
+  bgvEducation: 'Education Check',
+  bgvReference: 'Reference Check',
+  bgvAddress: 'Address Check',
+  bgvCriminal: 'Criminal Check',
+  bgvNotes: 'BGV Notes',
+  bgvConsentFileName: 'BGV Consent',
+  bgvFileName: 'BGV Report',
+  profileStatus: 'Profile Status',
+  visibility: 'Visibility',
+  publishAfterApproval: 'Publish after Approval',
+  recruiterNotes: 'Recruiter Notes',
   resumeFileName: 'Resume',
   profileImageFileName: 'Profile Photo',
   introVideoFileName: 'Intro Video',
@@ -318,34 +513,49 @@ export const REVIEW_FIELD_KEYS: (keyof CandidateWizardFormValues)[] = [
   'email',
   'phone',
   'location',
-  'linkedinUrl',
-  'source',
-  'headline',
-  'summary',
+  'primaryRole',
   'yearsExperience',
   'primarySkillCommunityId',
   'availableFrom',
   'timezone',
-  'noticePeriodDays',
-  'hoursPerWeek',
-  'preferredEngagement',
-  'expectedRate',
-  'currency',
+  'aiSummary',
+  'bestalScore',
   'payRate',
   'billRate',
+  'technicalScore',
+  'communicationScore',
+  'bgvStatus',
+  'profileStatus',
+  'visibility',
   'resumeFileName',
-  'profileImageFileName',
-  'introVideoFileName',
 ];
 
+/** Split a single full-name string into first / last. */
+export function splitFullName(fullName: string): { firstName: string; lastName: string } {
+  const trimmed = fullName.trim().replace(/\s+/g, ' ');
+  if (!trimmed) return { firstName: '', lastName: '' };
+  const space = trimmed.indexOf(' ');
+  if (space === -1) return { firstName: trimmed, lastName: '' };
+  return {
+    firstName: trimmed.slice(0, space),
+    lastName: trimmed.slice(space + 1),
+  };
+}
+
+export function joinFullName(firstName: string, lastName: string): string {
+  return [firstName, lastName].filter(Boolean).join(' ').trim();
+}
+
 /** Merge wizard skill rows that share the same skill community (DB allows one row per community). */
-export function mergeWizardSkills<T extends {
-  skillCommunityId: number;
-  proficiencyLevel: 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED' | 'EXPERT';
-  yearsExperience?: number | null;
-  isPrimary: boolean;
-  notes?: string | null;
-}>(skills: T[]): T[] {
+export function mergeWizardSkills<
+  T extends {
+    skillCommunityId: number;
+    proficiencyLevel: 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED' | 'EXPERT';
+    yearsExperience?: number | null;
+    isPrimary: boolean;
+    notes?: string | null;
+  },
+>(skills: T[]): T[] {
   const rank = { BEGINNER: 1, INTERMEDIATE: 2, ADVANCED: 3, EXPERT: 4 } as const;
   const byCommunity = new Map<number, T>();
 
@@ -378,54 +588,90 @@ export function mergeWizardSkills<T extends {
   return [...byCommunity.values()];
 }
 
-/** Map wizard form values to the API create-candidate request body. */
+/** Map wizard form values to the API create/update-candidate request body. */
 export function mapWizardToApiCreateBody(
   form: CandidateWizardFormValues,
 ): Record<string, unknown> {
   const grossMargin =
     form.billRate != null && form.payRate != null ? form.billRate - form.payRate : undefined;
+  const aiSummary = form.aiSummary?.trim() || form.summary?.trim() || undefined;
+  const primarySkillCommunityId = positiveIdOrUndefined(form.primarySkillCommunityId);
+  const skills = mergeWizardSkills(form.skills)
+    .map((skill) => {
+      const skillCommunityId = positiveIdOrUndefined(skill.skillCommunityId);
+      if (skillCommunityId == null) return null;
+      return {
+        skillCommunityId,
+        skillName: skill.notes?.trim() || undefined,
+        proficiencyLevel: skill.proficiencyLevel,
+        yearsExperience: finiteNumberOrUndefined(skill.yearsExperience),
+        isPrimary: skill.isPrimary,
+        notes: skill.notes?.trim() || undefined,
+      };
+    })
+    .filter((skill): skill is NonNullable<typeof skill> => skill !== null);
 
   return {
-    firstName: form.firstName,
-    lastName: form.lastName,
-    email: form.email,
-    phone: form.phone ?? undefined,
+    firstName: form.firstName.trim(),
+    lastName: form.lastName.trim(),
+    email: form.email.trim(),
+    phone: emptyToUndefined(form.phone),
     source: form.source,
-    headline: form.headline ?? undefined,
-    summary: form.summary ?? undefined,
-    location: form.location ?? undefined,
-    yearsExperience: form.yearsExperience ?? undefined,
-    availableFrom: form.availableFrom,
-    expectedRate: form.expectedRate ?? undefined,
-    currency: form.currency ?? undefined,
-    linkedinUrl: form.linkedinUrl ?? undefined,
-    githubUrl: form.githubUrl ?? undefined,
-    naukriUrl: form.naukriUrl ?? undefined,
-    displayName: form.displayName ?? undefined,
-    oorwinCandidateId: form.oorwinCandidateId ?? undefined,
-    primaryRole: form.primaryRole ?? undefined,
-    currentCompany: form.currentCompany ?? undefined,
-    education: form.education ?? undefined,
-    clientProfileSummary: form.clientProfileSummary ?? undefined,
-    strengths: form.strengths ?? undefined,
-    weaknesses: form.weaknesses ?? undefined,
-    primarySkillCommunityId: form.primarySkillCommunityId ?? undefined,
-    clientBillRate: form.billRate ?? undefined,
-    candidatePayRate: form.payRate ?? undefined,
-    grossMargin,
-    timezoneOverlap: form.timezone ?? undefined,
+    headline: emptyToUndefined(form.headline) ?? emptyToUndefined(form.primaryRole),
+    summary: emptyToUndefined(form.summary) ?? aiSummary,
+    location: emptyToUndefined(form.location),
+    yearsExperience: finiteNumberOrUndefined(form.yearsExperience),
+    availableFrom: emptyToUndefined(form.availableFrom),
+    expectedRate: finiteNumberOrUndefined(form.expectedRate),
+    currency: emptyToUndefined(form.currency),
+    linkedinUrl: emptyToUndefined(form.linkedinUrl),
+    githubUrl: emptyToUndefined(form.githubUrl),
+    naukriUrl: emptyToUndefined(form.naukriUrl),
+    displayName: emptyToUndefined(form.displayName),
+    oorwinCandidateId: emptyToUndefined(form.oorwinCandidateId),
+    primaryRole: emptyToUndefined(form.primaryRole),
+    currentCompany: emptyToUndefined(form.currentCompany),
+    education: emptyToUndefined(form.education),
+    aiSummary,
+    clientProfileSummary: emptyToUndefined(form.clientProfileSummary) ?? aiSummary,
+    strengths: emptyToUndefined(form.strengths),
+    weaknesses: emptyToUndefined(form.weaknesses),
+    ...(primarySkillCommunityId != null ? { primarySkillCommunityId } : {}),
+    clientBillRate: finiteNumberOrUndefined(form.billRate),
+    candidatePayRate: finiteNumberOrUndefined(form.payRate),
+    grossMargin: finiteNumberOrUndefined(grossMargin),
+    bestalScore: finiteNumberOrUndefined(form.bestalScore),
+    technicalScore: finiteNumberOrUndefined(form.technicalScore),
+    communicationScore: finiteNumberOrUndefined(form.communicationScore),
+    evaluationStatus: emptyToUndefined(form.evaluationRecommendation),
+    bgvStatus: emptyToUndefined(form.bgvStatus),
+    profileStatus: (form.profileStatus ?? undefined) as CandidateProfileStatusValue | undefined,
+    timezoneOverlap: emptyToUndefined(form.timezone),
     availabilityStatus: form.availabilityStatus ?? undefined,
-    preferredShift: form.preferredShift ?? undefined,
-    minHoursPerWeek: form.minHoursPerWeek ?? form.hoursPerWeek ?? undefined,
-    maxHoursPerWeek: form.maxHoursPerWeek ?? form.hoursPerWeek ?? undefined,
-    visibility: 'INTERNAL_ONLY' satisfies CandidateVisibilityStatusValue,
-    skills: mergeWizardSkills(form.skills).map((skill) => ({
-      skillCommunityId: skill.skillCommunityId,
-      skillName: skill.notes?.trim() || undefined,
-      proficiencyLevel: skill.proficiencyLevel,
-      yearsExperience: skill.yearsExperience ?? undefined,
-      isPrimary: skill.isPrimary,
-      notes: skill.notes ?? undefined,
-    })),
+    preferredShift: emptyToUndefined(form.preferredShift),
+    minHoursPerWeek: finiteNumberOrUndefined(
+      form.minHoursPerWeek ?? form.hoursPerWeek ?? undefined,
+    ),
+    maxHoursPerWeek: finiteNumberOrUndefined(
+      form.maxHoursPerWeek ?? form.hoursPerWeek ?? undefined,
+    ),
+    visibility: (form.visibility ?? 'INTERNAL_ONLY') satisfies CandidateVisibilityStatusValue,
+    ...(skills.length > 0 ? { skills } : {}),
   };
+}
+
+function emptyToUndefined(value: string | null | undefined): string | undefined {
+  const trimmed = value?.trim();
+  return trimmed ? trimmed : undefined;
+}
+
+function finiteNumberOrUndefined(value: number | null | undefined): number | undefined {
+  if (value == null || Number.isNaN(value) || !Number.isFinite(value)) return undefined;
+  return value;
+}
+
+/** Omit unset / empty select values (HTML number selects often coerce "" → 0). */
+function positiveIdOrUndefined(value: number | null | undefined): number | undefined {
+  if (value == null || Number.isNaN(value) || value <= 0) return undefined;
+  return value;
 }

@@ -5,6 +5,7 @@ export function CandidatesPage() {
     <CandidateListingView
       basePath="/recruiter/candidates"
       addCandidatePath="/recruiter/candidates/new"
+      importPath="/recruiter/candidates/import"
       title="Candidates"
       enableSubmitForApproval
     />

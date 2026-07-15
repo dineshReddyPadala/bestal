@@ -7,12 +7,15 @@ import { PERMISSIONS } from '../auth/auth.permissions.js';
 import { BackgroundCheckController } from './background-check.controller.js';
 import { BackgroundCheckService } from './background-check.service.js';
 import {
+  assignVendorBodySchema,
   backgroundCheckIdParamSchema,
   backgroundCheckListResponseSchema,
   backgroundCheckMessageResponseSchema,
   backgroundCheckResponseSchema,
+  clarificationBodySchema,
   createBackgroundCheckBodySchema,
   listBackgroundChecksQuerySchema,
+  reviewNotesBodySchema,
   updateBackgroundCheckBodySchema,
 } from './background-check.validator.js';
 
@@ -25,16 +28,26 @@ export async function backgroundCheckRoutes(
   );
   const app = fastify.withTypeProvider<ZodTypeProvider>();
 
+  const writePre = [
+    authenticate,
+    requirePermission(PERMISSIONS.BACKGROUND_CHECKS_WRITE),
+  ];
+  const readPre = [
+    authenticate,
+    requirePermission(PERMISSIONS.BACKGROUND_CHECKS_READ),
+  ];
+  const approvePre = [
+    authenticate,
+    requirePermission(PERMISSIONS.BACKGROUND_CHECKS_APPROVE),
+  ];
+
   app.post(
     '/',
     {
-      preHandler: [
-        authenticate,
-        requirePermission(PERMISSIONS.BACKGROUND_CHECKS_WRITE),
-      ],
+      preHandler: writePre,
       schema: {
         tags: ['Background Checks'],
-        summary: 'Create a new background check',
+        summary: 'Create a new background check (requires EVALUATION_COMPLETE)',
         security: [{ bearerAuth: [] }],
         body: createBackgroundCheckBodySchema,
         response: {
@@ -50,10 +63,7 @@ export async function backgroundCheckRoutes(
   app.get(
     '/',
     {
-      preHandler: [
-        authenticate,
-        requirePermission(PERMISSIONS.BACKGROUND_CHECKS_READ),
-      ],
+      preHandler: readPre,
       schema: {
         tags: ['Background Checks'],
         summary: 'List background checks with pagination and filtering',
@@ -72,10 +82,7 @@ export async function backgroundCheckRoutes(
   app.get(
     '/:id',
     {
-      preHandler: [
-        authenticate,
-        requirePermission(PERMISSIONS.BACKGROUND_CHECKS_READ),
-      ],
+      preHandler: readPre,
       schema: {
         tags: ['Background Checks'],
         summary: 'Get background check details by ID',
@@ -95,13 +102,10 @@ export async function backgroundCheckRoutes(
   app.patch(
     '/:id',
     {
-      preHandler: [
-        authenticate,
-        requirePermission(PERMISSIONS.BACKGROUND_CHECKS_WRITE),
-      ],
+      preHandler: writePre,
       schema: {
         tags: ['Background Checks'],
-        summary: 'Update background check',
+        summary: 'Update background check (disposition statuses require admin approve routes)',
         security: [{ bearerAuth: [] }],
         params: backgroundCheckIdParamSchema,
         body: updateBackgroundCheckBodySchema,
@@ -119,10 +123,7 @@ export async function backgroundCheckRoutes(
   app.delete(
     '/:id',
     {
-      preHandler: [
-        authenticate,
-        requirePermission(PERMISSIONS.BACKGROUND_CHECKS_WRITE),
-      ],
+      preHandler: writePre,
       schema: {
         tags: ['Background Checks'],
         summary: 'Soft delete background check',
@@ -137,5 +138,203 @@ export async function backgroundCheckRoutes(
       },
     },
     backgroundCheckController.remove,
+  );
+
+  app.post(
+    '/:id/confirm-consent',
+    {
+      preHandler: writePre,
+      schema: {
+        tags: ['Background Checks'],
+        summary: 'Confirm candidate consent for BGV',
+        security: [{ bearerAuth: [] }],
+        params: backgroundCheckIdParamSchema,
+        response: {
+          200: backgroundCheckResponseSchema,
+          401: errorResponses[401],
+          404: errorResponses[404],
+        },
+      },
+    },
+    backgroundCheckController.confirmConsent,
+  );
+
+  app.post(
+    '/:id/assign-vendor',
+    {
+      preHandler: writePre,
+      schema: {
+        tags: ['Background Checks'],
+        summary: 'Assign verification vendor',
+        security: [{ bearerAuth: [] }],
+        params: backgroundCheckIdParamSchema,
+        body: assignVendorBodySchema,
+        response: {
+          200: backgroundCheckResponseSchema,
+          401: errorResponses[401],
+          404: errorResponses[404],
+        },
+      },
+    },
+    backgroundCheckController.assignVendor,
+  );
+
+  app.post(
+    '/:id/start-verification',
+    {
+      preHandler: writePre,
+      schema: {
+        tags: ['Background Checks'],
+        summary: 'Mark verification in progress with vendor',
+        security: [{ bearerAuth: [] }],
+        params: backgroundCheckIdParamSchema,
+        response: {
+          200: backgroundCheckResponseSchema,
+          401: errorResponses[401],
+          404: errorResponses[404],
+        },
+      },
+    },
+    backgroundCheckController.startVerification,
+  );
+
+  app.post(
+    '/:id/documents',
+    {
+      preHandler: writePre,
+      schema: {
+        tags: ['Background Checks'],
+        summary: 'Upload consent, supporting, or final report document (multipart field kind)',
+        security: [{ bearerAuth: [] }],
+        consumes: ['multipart/form-data'],
+        params: backgroundCheckIdParamSchema,
+        response: {
+          200: backgroundCheckResponseSchema,
+          401: errorResponses[401],
+          404: errorResponses[404],
+        },
+      },
+    },
+    backgroundCheckController.uploadDocument,
+  );
+
+  app.post(
+    '/:id/extract-ai',
+    {
+      preHandler: writePre,
+      schema: {
+        tags: ['Background Checks'],
+        summary: 'Run AI extraction on uploaded BGV report',
+        security: [{ bearerAuth: [] }],
+        params: backgroundCheckIdParamSchema,
+        response: {
+          200: backgroundCheckResponseSchema,
+          401: errorResponses[401],
+          404: errorResponses[404],
+        },
+      },
+    },
+    backgroundCheckController.extractAi,
+  );
+
+  app.post(
+    '/:id/submit-for-review',
+    {
+      preHandler: writePre,
+      schema: {
+        tags: ['Background Checks'],
+        summary: 'Submit BGV package for admin review',
+        security: [{ bearerAuth: [] }],
+        params: backgroundCheckIdParamSchema,
+        response: {
+          200: backgroundCheckResponseSchema,
+          401: errorResponses[401],
+          404: errorResponses[404],
+        },
+      },
+    },
+    backgroundCheckController.submitForReview,
+  );
+
+  app.post(
+    '/:id/approve',
+    {
+      preHandler: approvePre,
+      schema: {
+        tags: ['Background Checks'],
+        summary: 'Admin approve verification (marks candidate BGV_COMPLETE)',
+        security: [{ bearerAuth: [] }],
+        params: backgroundCheckIdParamSchema,
+        response: {
+          200: backgroundCheckResponseSchema,
+          401: errorResponses[401],
+          403: errorResponses[403],
+          404: errorResponses[404],
+        },
+      },
+    },
+    backgroundCheckController.approve,
+  );
+
+  app.post(
+    '/:id/reject',
+    {
+      preHandler: approvePre,
+      schema: {
+        tags: ['Background Checks'],
+        summary: 'Admin reject verification',
+        security: [{ bearerAuth: [] }],
+        params: backgroundCheckIdParamSchema,
+        body: reviewNotesBodySchema,
+        response: {
+          200: backgroundCheckResponseSchema,
+          401: errorResponses[401],
+          403: errorResponses[403],
+          404: errorResponses[404],
+        },
+      },
+    },
+    backgroundCheckController.reject,
+  );
+
+  app.post(
+    '/:id/request-clarification',
+    {
+      preHandler: approvePre,
+      schema: {
+        tags: ['Background Checks'],
+        summary: 'Admin request clarification (suspends check)',
+        security: [{ bearerAuth: [] }],
+        params: backgroundCheckIdParamSchema,
+        body: clarificationBodySchema,
+        response: {
+          200: backgroundCheckResponseSchema,
+          401: errorResponses[401],
+          403: errorResponses[403],
+          404: errorResponses[404],
+        },
+      },
+    },
+    backgroundCheckController.requestClarification,
+  );
+
+  app.post(
+    '/:id/reopen',
+    {
+      preHandler: approvePre,
+      schema: {
+        tags: ['Background Checks'],
+        summary: 'Admin reopen a closed/suspended verification',
+        security: [{ bearerAuth: [] }],
+        params: backgroundCheckIdParamSchema,
+        response: {
+          200: backgroundCheckResponseSchema,
+          401: errorResponses[401],
+          403: errorResponses[403],
+          404: errorResponses[404],
+        },
+      },
+    },
+    backgroundCheckController.reopen,
   );
 }
