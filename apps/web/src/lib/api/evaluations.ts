@@ -22,8 +22,6 @@ export const backgroundChecksApi = {
     apiAction<BackgroundCheckDto>(`/background-checks/${id}/assign-vendor`, { provider }),
   startVerification: (id: number) =>
     apiAction<BackgroundCheckDto>(`/background-checks/${id}/start-verification`),
-  extractAi: (id: number) =>
-    apiAction<BackgroundCheckDto>(`/background-checks/${id}/extract-ai`),
   submitForReview: (id: number) =>
     apiAction<BackgroundCheckDto>(`/background-checks/${id}/submit-for-review`),
   approve: (id: number) =>
@@ -43,7 +41,7 @@ export const backgroundChecksApi = {
     form.append('file', file, file.name);
     form.append('kind', kind);
     const json = await apiRequest<{ data: BackgroundCheckDto }>(
-      `/background-checks/${id}/documents`,
+      `/background-checks/${id}/documents?kind=${encodeURIComponent(kind)}`,
       { method: 'POST', body: form },
     );
     return json.data;

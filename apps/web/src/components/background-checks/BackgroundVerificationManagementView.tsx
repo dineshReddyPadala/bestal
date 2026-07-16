@@ -1,7 +1,7 @@
-import { formatDate } from '@bestal/shared-utils';
+import { cn, formatDate } from '@bestal/shared-utils';
 import { Button, Dialog, FileUpload, Input, Select, StatusBadge, TanStackDataTable } from '@bestal/ui';
 import { type ColumnDef } from '@tanstack/react-table';
-import { Eye, Plus } from 'lucide-react';
+import { Check, Eye, Loader2, Plus } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
 import { useCandidatesList } from '../../hooks/api/useCandidates';
 import {
@@ -18,6 +18,14 @@ import {
   ListingFiltersRow,
   ListingPageShell,
 } from '../layout/ListingPageShell';
+import { buildBgvAiDummyJson, withBgvAiDummy } from './bgv-ai-dummy';
+import {
+  BGV_RECRUITER_STEPS,
+  bgvStepIndex,
+  getBgvRecruiterStep,
+  isBgvStepComplete,
+  type BgvRecruiterStepId,
+} from './bgv-workflow-steps';
 
 const BGV_TYPES = [
   'CRIMINAL',
@@ -38,6 +46,39 @@ const defaultFilters = {
   status: 'all',
   type: 'all',
 };
+
+function StepRail({
+  detail,
+  currentStep,
+}: {
+  detail: BackgroundCheckDto;
+  currentStep: BgvRecruiterStepId;
+}) {
+  const currentIdx = bgvStepIndex(currentStep);
+  return (
+    <ol className="flex flex-wrap gap-1.5">
+      {BGV_RECRUITER_STEPS.map((step, idx) => {
+        const done = isBgvStepComplete(detail, step.id);
+        const active = step.id === currentStep;
+        return (
+          <li
+            key={step.id}
+            className={cn(
+              'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium',
+              done && !active && 'border-emerald-200 bg-emerald-50 text-emerald-800',
+              active && 'border-brand/40 bg-brand/10 text-foreground',
+              !done && !active && 'border-border bg-muted/40 text-muted-foreground',
+              idx > currentIdx && !done && 'opacity-70',
+            )}
+          >
+            {done && !active ? <Check className="h-3 w-3" /> : <span>{idx + 1}.</span>}
+            {step.label}
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
 
 export function BackgroundVerificationManagementView({
   title = 'Background Verification Management',
@@ -85,50 +126,58 @@ export function BackgroundVerificationManagementView({
 
   const filteredData = useMemo(() => {
     let rows = [...records];
-
-    if (filters.status !== 'all') {
-      rows = rows.filter((r) => r.status === filters.status);
-    }
-    if (filters.type !== 'all') {
-      rows = rows.filter((r) => r.type === filters.type);
-    }
-
+    if (filters.status !== 'all') rows = rows.filter((r) => r.status === filters.status);
+    if (filters.type !== 'all') rows = rows.filter((r) => r.type === filters.type);
     rows.sort((a, b) => {
-      const aTime = (a.initiatedAt ?? a.requestedAt ?? a.createdAt)
-        ? new Date(a.initiatedAt ?? a.requestedAt ?? a.createdAt).getTime()
-        : 0;
-      const bTime = (b.initiatedAt ?? b.requestedAt ?? b.createdAt)
-        ? new Date(b.initiatedAt ?? b.requestedAt ?? b.createdAt).getTime()
-        : 0;
+      const aTime = new Date(a.initiatedAt ?? a.requestedAt ?? a.createdAt).getTime() || 0;
+      const bTime = new Date(b.initiatedAt ?? b.requestedAt ?? b.createdAt).getTime() || 0;
       return bTime - aTime;
     });
-
     return rows;
   }, [records, filters]);
 
-  const applyDetail = useCallback((data: BackgroundCheckDto, options?: { resetLocalFields?: boolean }) => {
-    setDetail(data);
-    // Only seed inputs when first opening — avoid wiping vendor name mid-edit after uploads.
-    if (options?.resetLocalFields) {
-      setVendorName(data.provider ?? '');
-      setReviewNotes(data.reviewNotes ?? '');
-    } else if (data.provider) {
-      setVendorName((current) => current.trim() || data.provider || '');
-    }
-  }, []);
+  const currentStep = detail ? getBgvRecruiterStep(detail) : 'consent';
+  const awaitingAdmin = Boolean(
+    detail &&
+      (detail.status === 'CONSIDER' || detail.status === 'CLEAR' || detail.status === 'FAILED'),
+  );
+  const applyDetail = useCallback(
+    (next: BackgroundCheckDto, options?: { resetLocalFields?: boolean }) => {
+      setDetail(next);
+      if (options?.resetLocalFields) {
+        setVendorName(next.provider ?? '');
+        setReviewNotes(next.reviewNotes ?? '');
+      } else if (next.provider) {
+        setVendorName((current) => current.trim() || next.provider || '');
+      }
+    },
+    [],
+  );
 
-  const openDetail = useCallback(async (id: number) => {
-    setDetailLoading(true);
-    try {
-      const data = await backgroundChecksApi.get(id);
-      applyDetail(data, { resetLocalFields: true });
-    } catch (err) {
-      showError(getApiErrorMessage(err, 'Failed to load verification'));
-      setDetail(null);
-    } finally {
-      setDetailLoading(false);
-    }
-  }, [applyDetail, showError]);
+  const openDetail = useCallback(
+    async (id: number) => {
+      setDetailLoading(true);
+      try {
+        const next = await backgroundChecksApi.get(id);
+        // Seed local placeholder AI JSON when report exists (do not call extract-ai).
+        applyDetail(
+          next.hasReportDocument &&
+            next.status !== 'CONSIDER' &&
+            next.status !== 'CLEAR' &&
+            next.status !== 'FAILED'
+            ? withBgvAiDummy(next)
+            : next,
+          { resetLocalFields: true },
+        );
+      } catch (err) {
+        showError(getApiErrorMessage(err, 'Failed to load verification'));
+        setDetail(null);
+      } finally {
+        setDetailLoading(false);
+      }
+    },
+    [applyDetail, showError],
+  );
 
   const run = useCallback(
     async (action: () => Promise<BackgroundCheckDto | unknown>, success: string) => {
@@ -136,12 +185,10 @@ export function BackgroundVerificationManagementView({
       try {
         const result = await action();
         show(success);
-        // Prefer mutation response — no loading flash / dialog remount.
         if (result && typeof result === 'object' && 'id' in result && 'status' in result) {
           applyDetail(result as BackgroundCheckDto);
         } else if (detail) {
-          const data = await backgroundChecksApi.get(detail.id);
-          applyDetail(data);
+          applyDetail(await backgroundChecksApi.get(detail.id));
         }
       } catch (err) {
         showError(getApiErrorMessage(err, 'Action failed'));
@@ -158,21 +205,20 @@ export function BackgroundVerificationManagementView({
       show('Select a candidate');
       return;
     }
-
     try {
-      await mutations.create.mutateAsync({
+      const created = await mutations.create.mutateAsync({
         candidateId,
         type: selectedType,
       });
-      const candidate = candidateOptions.find((c) => c.id === candidateId);
-      show(`BGV requested — ${candidate?.name ?? 'candidate'} (${selectedType})`);
+      show(`BGV requested — ${created.candidateName}`);
       setRequestOpen(false);
       setSelectedCandidateId('');
       setSelectedType('COMPREHENSIVE');
+      applyDetail(created, { resetLocalFields: true });
     } catch (err) {
       showError(getApiErrorMessage(err, 'Request failed'));
     }
-  }, [candidateOptions, mutations.create, selectedCandidateId, selectedType, show, showError]);
+  }, [applyDetail, mutations.create, selectedCandidateId, selectedType, show, showError]);
 
   const columns = useMemo<ColumnDef<BackgroundCheckListItem>[]>(
     () => [
@@ -189,9 +235,7 @@ export function BackgroundVerificationManagementView({
       {
         id: 'provider',
         header: 'Provider',
-        cell: ({ row }) => (
-          <span>{row.original.provider ?? row.original.vendor ?? '—'}</span>
-        ),
+        cell: ({ row }) => <span>{row.original.provider ?? row.original.vendor ?? '—'}</span>,
       },
       {
         accessorKey: 'type',
@@ -244,10 +288,6 @@ export function BackgroundVerificationManagementView({
     [openDetail],
   );
 
-  const updateFilter = (key: keyof typeof defaultFilters, value: string) => {
-    setFilters((prev) => ({ ...prev, [key]: value }));
-  };
-
   const listError = isError
     ? error instanceof Error
       ? error.message
@@ -285,25 +325,19 @@ export function BackgroundVerificationManagementView({
               <ListingFilterSelect
                 label="STATUS"
                 value={filters.status}
-                onChange={(v) => updateFilter('status', v)}
+                onChange={(v) => setFilters((prev) => ({ ...prev, status: v }))}
                 options={[
                   { value: 'all', label: 'All statuses' },
-                  ...statusOptions.map((s) => ({
-                    value: s,
-                    label: s.replace(/_/g, ' '),
-                  })),
+                  ...statusOptions.map((s) => ({ value: s, label: s.replace(/_/g, ' ') })),
                 ]}
               />
               <ListingFilterSelect
                 label="TYPE"
                 value={filters.type}
-                onChange={(v) => updateFilter('type', v)}
+                onChange={(v) => setFilters((prev) => ({ ...prev, type: v }))}
                 options={[
                   { value: 'all', label: 'All types' },
-                  ...typeOptions.map((t) => ({
-                    value: t,
-                    label: t.replace(/_/g, ' '),
-                  })),
+                  ...typeOptions.map((t) => ({ value: t, label: t.replace(/_/g, ' ') })),
                 ]}
               />
             </ListingFiltersRow>
@@ -312,8 +346,7 @@ export function BackgroundVerificationManagementView({
             const q = String(filterValue).toLowerCase().trim();
             if (!q) return true;
             const r = row.original;
-            const provider = r.provider ?? r.vendor ?? '';
-            return [r.candidateName, provider, r.status, r.type].some((field) =>
+            return [r.candidateName, r.provider ?? r.vendor, r.status, r.type].some((field) =>
               String(field ?? '').toLowerCase().includes(q),
             );
           }}
@@ -338,7 +371,8 @@ export function BackgroundVerificationManagementView({
       >
         <div className="space-y-4">
           <p className="text-sm text-muted-foreground">
-            Candidates must be in Evaluation Complete before BGV can start.
+            Candidate must be Evaluation Complete. After create: Consent → Docs → Vendor → Start →
+            Report → AI (placeholder JSON) → Submit.
           </p>
           <div className="space-y-2">
             <label htmlFor="bgv-candidate" className="text-sm font-medium">
@@ -378,37 +412,245 @@ export function BackgroundVerificationManagementView({
 
       <Dialog
         open={Boolean(detail) || detailLoading}
-        onClose={() => setDetail(null)}
+        onClose={() => {
+          if (busy) return;
+          setDetail(null);
+        }}
         title={detail ? `BGV — ${detail.candidateName}` : 'Background verification'}
         className="max-w-2xl"
       >
         {detailLoading || !detail ? (
-          <p className="text-sm text-muted-foreground">Loading…</p>
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            Loading…
+          </div>
         ) : (
-          <div className="max-h-[70vh] space-y-5 overflow-y-auto pr-1">
+          <div className="max-h-[75vh] space-y-5 overflow-y-auto pr-1">
             <div className="flex flex-wrap items-center gap-2">
               <StatusBadge status={detail.status} />
               {detail.type ? <StatusBadge status={detail.type} /> : null}
-              {detail.provider ? (
-                <span className="text-sm text-muted-foreground">Vendor: {detail.provider}</span>
-              ) : null}
             </div>
 
-            <section className="space-y-2 rounded-lg border border-border/70 p-3">
-              <h3 className="text-sm font-semibold">Progress</h3>
-              <ul className="space-y-1 text-sm text-muted-foreground">
-                <li>Consent: {detail.consentConfirmedAt ? `Confirmed ${formatDate(detail.consentConfirmedAt)}` : 'Pending'}</li>
-                <li>Vendor: {detail.provider || 'Not assigned'}</li>
-                <li>Supporting docs: {detail.supportingDocumentCount ?? 0}</li>
-                <li>Report: {detail.hasReportDocument ? 'Uploaded' : 'Missing'}</li>
-                <li>Completed: {detail.completedAt ? formatDate(detail.completedAt) : '—'}</li>
-              </ul>
-            </section>
+            {(canUploadBgv || canApproveBgv) && (
+              <StepRail detail={detail} currentStep={currentStep} />
+            )}
 
-            {detail.aiSummary ? (
-              <section className="space-y-2 rounded-lg border border-border/70 p-3">
-                <h3 className="text-sm font-semibold">AI summary</h3>
-                <p className="text-sm text-muted-foreground">{detail.aiSummary}</p>
+            {canUploadBgv && !awaitingAdmin ? (
+              <section className="space-y-4 rounded-xl border border-border/80 bg-muted/10 p-4">
+                {currentStep === 'consent' && (
+                  <>
+                    <div>
+                      <h3 className="text-sm font-semibold">1. Confirm candidate consent</h3>
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        Confirm consent first. Optionally upload a signed consent form.
+                      </p>
+                    </div>
+                    <FileUpload
+                      key="consent-upload"
+                      label="Consent form (optional)"
+                      accept=".pdf,.doc,.docx"
+                      hint="PDF or Word"
+                      onFileSelect={(file) =>
+                        void run(
+                          () =>
+                            mutations.uploadDocument.mutateAsync({
+                              id: detail.id,
+                              kind: 'CONSENT',
+                              file,
+                            }),
+                          'Consent document uploaded',
+                        )
+                      }
+                    />
+                    <Button
+                      type="button"
+                      size="sm"
+                      disabled={busy}
+                      onClick={() =>
+                        void run(
+                          () => mutations.confirmConsent.mutateAsync(detail.id),
+                          'Consent confirmed — continue to Docs',
+                        )
+                      }
+                    >
+                      {busy ? 'Working…' : 'Confirm consent'}
+                    </Button>
+                  </>
+                )}
+
+                {currentStep === 'docs' && (
+                  <>
+                    <div>
+                      <h3 className="text-sm font-semibold">2. Upload supporting documents</h3>
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        Upload at least one supporting document to unlock Vendor.
+                        {' '}Currently: {detail.supportingDocumentCount ?? 0}
+                      </p>
+                    </div>
+                    <FileUpload
+                      key="supporting-upload"
+                      label="Supporting document"
+                      accept=".pdf,.doc,.docx,.png,.jpg,.jpeg"
+                      hint="PDF, Word, or image"
+                      onFileSelect={(file) =>
+                        void run(
+                          () =>
+                            mutations.uploadDocument.mutateAsync({
+                              id: detail.id,
+                              kind: 'SUPPORTING',
+                              file,
+                            }),
+                          'Supporting document uploaded',
+                        )
+                      }
+                    />
+                  </>
+                )}
+
+                {currentStep === 'vendor' && (
+                  <>
+                    <div>
+                      <h3 className="text-sm font-semibold">3. Assign verification vendor</h3>
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        Choose the vendor that will run the background check.
+                      </p>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium" htmlFor="bgv-vendor">
+                        Vendor name *
+                      </label>
+                      <Input
+                        id="bgv-vendor"
+                        value={vendorName}
+                        onChange={(e) => setVendorName(e.target.value)}
+                        placeholder="e.g. Checkr, Sterling"
+                      />
+                    </div>
+                    <Button
+                      type="button"
+                      size="sm"
+                      disabled={busy || !vendorName.trim()}
+                      onClick={() =>
+                        void run(
+                          () =>
+                            mutations.assignVendor.mutateAsync({
+                              id: detail.id,
+                              provider: vendorName.trim(),
+                            }),
+                          'Vendor assigned — continue to Start',
+                        )
+                      }
+                    >
+                      {busy ? 'Working…' : 'Assign vendor'}
+                    </Button>
+                  </>
+                )}
+
+                {currentStep === 'start' && (
+                  <>
+                    <div>
+                      <h3 className="text-sm font-semibold">4. Start verification</h3>
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        Vendor <strong>{detail.provider}</strong> is assigned. Mark verification in
+                        progress.
+                      </p>
+                    </div>
+                    <Button
+                      type="button"
+                      size="sm"
+                      disabled={busy}
+                      onClick={() =>
+                        void run(
+                          () => mutations.startVerification.mutateAsync(detail.id),
+                          'Verification started — upload the final report next',
+                        )
+                      }
+                    >
+                      {busy ? 'Working…' : 'Start verification'}
+                    </Button>
+                  </>
+                )}
+
+                {currentStep === 'report' && (
+                  <>
+                    <div>
+                      <h3 className="text-sm font-semibold">5. Upload final BGV report</h3>
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        Upload the vendor’s final report after verification completes.
+                      </p>
+                    </div>
+                    <FileUpload
+                      key="report-upload"
+                      label="Final BGV report"
+                      accept=".pdf,.doc,.docx"
+                      hint="PDF or Word"
+                      onFileSelect={(file) =>
+                        void run(async () => {
+                          const uploaded = await mutations.uploadDocument.mutateAsync({
+                            id: detail.id,
+                            kind: 'REPORT',
+                            file,
+                          });
+                          // BGV AI API is not ready — do not call extract-ai; use local dummy JSON.
+                          return withBgvAiDummy(uploaded);
+                        }, 'Report uploaded — AI summary ready for review')
+                      }
+                    />
+                  </>
+                )}
+
+                {currentStep === 'ai' && (
+                  <>
+                    <div>
+                      <h3 className="text-sm font-semibold">6. AI extraction</h3>
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        BGV AI API is not ready — showing local placeholder JSON (extract-ai is not
+                        called). Review it, then submit for admin review.
+                      </p>
+                    </div>
+                    <pre className="max-h-64 overflow-auto rounded-lg border border-border/70 bg-background p-3 text-xs text-muted-foreground whitespace-pre-wrap">
+                      {detail.aiSummary?.trim() || buildBgvAiDummyJson(detail)}
+                    </pre>
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        type="button"
+                        size="sm"
+                        disabled={busy}
+                        onClick={() => {
+                          // Keep placeholder in local state for the UI; do not call extract-ai.
+                          if (!detail.aiSummary?.trim()) {
+                            applyDetail(withBgvAiDummy(detail));
+                          }
+                          void run(
+                            () => mutations.submitForReview.mutateAsync(detail.id),
+                            'Submitted for admin review',
+                          );
+                        }}
+                      >
+                        {busy ? 'Working…' : 'Submit for review'}
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        disabled={busy}
+                        onClick={() => {
+                          applyDetail(withBgvAiDummy({ ...detail, aiSummary: null }));
+                          show('AI summary refreshed (local placeholder)');
+                        }}
+                      >
+                        Refresh AI summary
+                      </Button>
+                    </div>
+                  </>
+                )}
+              </section>
+            ) : null}
+
+            {awaitingAdmin && detail.status === 'CONSIDER' && canUploadBgv && !canApproveBgv ? (
+              <section className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+                Submitted for admin review. Waiting for approve / reject / clarification.
+                {detail.aiSummary ? <p className="mt-2 text-amber-800">{detail.aiSummary}</p> : null}
               </section>
             ) : null}
 
@@ -419,148 +661,28 @@ export function BackgroundVerificationManagementView({
               </section>
             ) : null}
 
-            {canUploadBgv ? (
-              <section className="space-y-3 rounded-lg border border-border/70 p-3">
-                <h3 className="text-sm font-semibold">Recruiter actions</h3>
-                <div className="flex flex-wrap gap-2">
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    disabled={busy || Boolean(detail.consentConfirmedAt)}
-                    onClick={() =>
-                      void run(
-                        () => mutations.confirmConsent.mutateAsync(detail.id),
-                        'Consent confirmed',
-                      )
-                    }
-                  >
-                    Confirm consent
-                  </Button>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    disabled={busy || !detail.consentConfirmedAt || !vendorName.trim()}
-                    onClick={() =>
-                      void run(
-                        () =>
-                          mutations.assignVendor.mutateAsync({
-                            id: detail.id,
-                            provider: vendorName.trim(),
-                          }),
-                        'Vendor assigned',
-                      )
-                    }
-                  >
-                    Assign vendor
-                  </Button>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    disabled={busy || !detail.provider || detail.status === 'IN_PROGRESS'}
-                    onClick={() =>
-                      void run(
-                        () => mutations.startVerification.mutateAsync(detail.id),
-                        'Verification started',
-                      )
-                    }
-                  >
-                    Start verification
-                  </Button>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    disabled={busy || !detail.hasReportDocument}
-                    onClick={() =>
-                      void run(
-                        () => mutations.extractAi.mutateAsync(detail.id),
-                        'AI extraction complete',
-                      )
-                    }
-                  >
-                    Run AI extraction
-                  </Button>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    disabled={busy || !detail.aiSummary}
-                    onClick={() =>
-                      void run(
-                        () => mutations.submitForReview.mutateAsync(detail.id),
-                        'Submitted for admin review',
-                      )
-                    }
-                  >
-                    Submit for review
-                  </Button>
-                </div>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Vendor name</label>
-                    <Input
-                      value={vendorName}
-                      onChange={(e) => setVendorName(e.target.value)}
-                      placeholder="e.g. Checkr"
-                    />
-                  </div>
-                </div>
-                <div className="grid gap-3 sm:grid-cols-3">
-                  <FileUpload
-                    label="Consent form"
-                    accept=".pdf,.doc,.docx"
-                    onFileSelect={(file) =>
-                      void run(
-                        () =>
-                          mutations.uploadDocument.mutateAsync({
-                            id: detail.id,
-                            kind: 'CONSENT',
-                            file,
-                          }),
-                        'Consent document uploaded',
-                      )
-                    }
-                  />
-                  <FileUpload
-                    label="Supporting doc"
-                    accept=".pdf,.doc,.docx,.png,.jpg,.jpeg"
-                    onFileSelect={(file) =>
-                      void run(
-                        () =>
-                          mutations.uploadDocument.mutateAsync({
-                            id: detail.id,
-                            kind: 'SUPPORTING',
-                            file,
-                          }),
-                        'Supporting document uploaded',
-                      )
-                    }
-                  />
-                  <FileUpload
-                    label="Final report"
-                    accept=".pdf,.doc,.docx"
-                    onFileSelect={(file) =>
-                      void run(
-                        () =>
-                          mutations.uploadDocument.mutateAsync({
-                            id: detail.id,
-                            kind: 'REPORT',
-                            file,
-                          }),
-                        'Final report uploaded',
-                      )
-                    }
-                  />
-                </div>
-              </section>
-            ) : null}
-
-            {canApproveBgv ? (
-              <section className="space-y-3 rounded-lg border border-border/70 p-3">
+            {canApproveBgv &&
+            (detail.status === 'CONSIDER' ||
+              detail.status === 'IN_PROGRESS' ||
+              detail.status === 'SUSPENDED' ||
+              detail.status === 'CLEAR' ||
+              detail.status === 'FAILED') ? (
+              <section className="space-y-3 rounded-xl border border-border/80 p-4">
                 <h3 className="text-sm font-semibold">Admin review</h3>
+                {detail.status === 'CLEAR' ? (
+                  <p className="text-sm text-emerald-700">
+                    Approved — Background Verified
+                    {detail.completedAt ? ` on ${formatDate(detail.completedAt)}` : ''}.
+                  </p>
+                ) : null}
+                {detail.status === 'FAILED' ? (
+                  <p className="text-sm text-destructive">Verification rejected.</p>
+                ) : null}
+                {detail.aiSummary ? (
+                  <div className="rounded-lg border border-border/70 bg-muted/20 p-3 text-sm text-muted-foreground">
+                    {detail.aiSummary}
+                  </div>
+                ) : null}
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Notes</label>
                   <textarea
@@ -572,77 +694,90 @@ export function BackgroundVerificationManagementView({
                   />
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  <Button
-                    type="button"
-                    size="sm"
-                    disabled={busy}
-                    onClick={() =>
-                      void run(
-                        () => mutations.approve.mutateAsync(detail.id),
-                        'Verification approved — candidate marked Background Verified',
-                      )
-                    }
-                  >
-                    Approve
-                  </Button>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    disabled={busy}
-                    onClick={() =>
-                      void run(
-                        () =>
-                          mutations.reject.mutateAsync({
-                            id: detail.id,
-                            notes: reviewNotes || undefined,
-                          }),
-                        'Verification rejected',
-                      )
-                    }
-                  >
-                    Reject
-                  </Button>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    disabled={busy || !reviewNotes.trim()}
-                    onClick={() =>
-                      void run(
-                        () =>
-                          mutations.requestClarification.mutateAsync({
-                            id: detail.id,
-                            notes: reviewNotes.trim(),
-                          }),
-                        'Clarification requested',
-                      )
-                    }
-                  >
-                    Request clarification
-                  </Button>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="ghost"
-                    disabled={busy}
-                    onClick={() =>
-                      void run(
-                        () => mutations.reopen.mutateAsync(detail.id),
-                        'Verification reopened',
-                      )
-                    }
-                  >
-                    Reopen
-                  </Button>
+                  {(detail.status === 'CONSIDER' || detail.status === 'IN_PROGRESS') && (
+                    <>
+                      <Button
+                        type="button"
+                        size="sm"
+                        disabled={busy}
+                        onClick={() =>
+                          void run(
+                            () => mutations.approve.mutateAsync(detail.id),
+                            'Verification approved',
+                          )
+                        }
+                      >
+                        Approve
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        disabled={busy}
+                        onClick={() =>
+                          void run(
+                            () =>
+                              mutations.reject.mutateAsync({
+                                id: detail.id,
+                                notes: reviewNotes || undefined,
+                              }),
+                            'Verification rejected',
+                          )
+                        }
+                      >
+                        Reject
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        disabled={busy || !reviewNotes.trim()}
+                        onClick={() =>
+                          void run(
+                            () =>
+                              mutations.requestClarification.mutateAsync({
+                                id: detail.id,
+                                notes: reviewNotes.trim(),
+                              }),
+                            'Clarification requested',
+                          )
+                        }
+                      >
+                        Request clarification
+                      </Button>
+                    </>
+                  )}
+                  {(detail.status === 'FAILED' ||
+                    detail.status === 'SUSPENDED' ||
+                    detail.status === 'CLEAR') && (
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      disabled={busy}
+                      onClick={() =>
+                        void run(
+                          () => mutations.reopen.mutateAsync(detail.id),
+                          'Verification reopened',
+                        )
+                      }
+                    >
+                      Reopen
+                    </Button>
+                  )}
                 </div>
               </section>
             ) : null}
 
             {!canUploadBgv && !canApproveBgv ? (
-              <p className="text-sm text-muted-foreground">
-                Sales view: status, vendor, completion date, and AI summary only.
-              </p>
+              <div className="space-y-2 text-sm text-muted-foreground">
+                <p>
+                  Status: <StatusBadge status={detail.status} />
+                </p>
+                <p>Vendor: {detail.provider || '—'}</p>
+                <p>Completed: {detail.completedAt ? formatDate(detail.completedAt) : '—'}</p>
+                {detail.aiSummary ? <p>AI summary: {detail.aiSummary}</p> : null}
+              </div>
             ) : null}
           </div>
         )}

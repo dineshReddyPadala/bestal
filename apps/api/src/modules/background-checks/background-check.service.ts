@@ -257,8 +257,13 @@ export class BackgroundCheckService {
       }
     }
     if (kind === 'REPORT') {
-      patch.reportDocumentId = bigintToNumber(document.id);
       assertBgvVendorAssigned(existing, 'Upload final report');
+      assertBgvStatusIn(
+        existing.status,
+        ['IN_PROGRESS', 'SUSPENDED'],
+        'Upload final report',
+      );
+      patch.reportDocumentId = bigintToNumber(document.id);
     }
 
     const record = await this.backgroundCheckRepository.update(
@@ -270,6 +275,10 @@ export class BackgroundCheckService {
     return this.toDetailDto(organizationId, record);
   }
 
+  /**
+   * Placeholder until the real BGV AI extraction service is ready.
+   * Intentionally does not require a report document or call an external AI API.
+   */
   async extractAi(
     authUser: AuthenticatedUser,
     id: number,
@@ -278,39 +287,36 @@ export class BackgroundCheckService {
     const existing = await this.getBackgroundCheckOrThrow(organizationId, id);
     assertBgvStatusIn(
       existing.status,
-      ['IN_PROGRESS', 'CONSIDER', 'SUSPENDED'],
+      ['PENDING', 'IN_PROGRESS', 'CONSIDER', 'SUSPENDED'],
       'AI extraction',
     );
-    assertBgvReportUploaded(existing, 'AI extraction');
 
-    const docs = await this.backgroundCheckRepository.listDocuments(
-      organizationId,
-      id,
+    const summary = JSON.stringify(
+      {
+        status: 'CLEAR_RECOMMENDED',
+        confidence: 0.86,
+        provider: existing.provider ?? 'assigned vendor',
+        package: existing.type,
+        checks: [
+          { name: 'Identity', result: 'CLEAR' },
+          { name: 'Employment', result: 'CLEAR' },
+          { name: 'Education', result: 'CLEAR' },
+          { name: 'Criminal', result: 'CLEAR' },
+        ],
+        summary:
+          'Placeholder AI extraction — BGV AI API is not ready. Simulated pass with no critical flags. Admin review required before verification can be marked clear.',
+        generatedAt: new Date().toISOString(),
+      },
+      null,
+      2,
     );
-    const report = docs.find((d) => d.description === 'REPORT');
-    const summary = [
-      `Automated BGV extraction for ${existing.provider ?? 'assigned vendor'}.`,
-      `Package: ${existing.type}.`,
-      report ? `Report reviewed: ${report.originalName}.` : null,
-      'Preliminary outcomes: identity and employment checks processed; no critical flags detected in automated pass.',
-      'Admin review required before verification can be marked clear.',
-    ]
-      .filter(Boolean)
-      .join(' ');
 
     const record = await this.backgroundCheckRepository.update(organizationId, id, {
       aiSummary: summary,
       resultSummary: existing.resultSummary?.trim()
         ? existing.resultSummary
         : summary,
-      status: 'CONSIDER',
     });
-
-    await this.syncCandidateBgv(
-      organizationId,
-      bigintToNumber(existing.candidateId),
-      'CONSIDER',
-    );
 
     return this.toDetailDto(organizationId, record);
   }
@@ -322,12 +328,8 @@ export class BackgroundCheckService {
     const organizationId = requireOrganization(authUser);
     const existing = await this.getBackgroundCheckOrThrow(organizationId, id);
     assertBgvStatusIn(existing.status, ['IN_PROGRESS', 'SUSPENDED'], 'Submit for review');
-    assertBgvReportUploaded(existing, 'Submit for review');
-    if (!existing.aiSummary?.trim()) {
-      throw new BadRequestError(
-        'Submit for review requires AI extraction of verification outcomes first',
-      );
-    }
+    // Report + AI extract-ai are not required while BGV AI API is still in progress.
+    // Recruiters can submit after reviewing the local/placeholder AI JSON.
 
     const record = await this.backgroundCheckRepository.update(organizationId, id, {
       status: 'CONSIDER',

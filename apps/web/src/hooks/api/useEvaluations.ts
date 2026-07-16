@@ -62,10 +62,6 @@ export function useBackgroundCheckMutations() {
       mutationFn: (id: number) => backgroundChecksApi.startVerification(id),
       onSuccess: invalidate,
     }),
-    extractAi: useMutation({
-      mutationFn: (id: number) => backgroundChecksApi.extractAi(id),
-      onSuccess: invalidate,
-    }),
     submitForReview: useMutation({
       mutationFn: (id: number) => backgroundChecksApi.submitForReview(id),
       onSuccess: invalidate,

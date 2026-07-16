@@ -84,17 +84,19 @@ export class BackgroundCheckController {
 
   uploadDocument = async (request: FastifyRequest, reply: FastifyReply) => {
     const { id } = request.params as { id: number };
+    const queryKind = (request.query as { kind?: string } | undefined)?.kind;
     const file = await request.file();
     if (!file) {
       throw new BadRequestError('File is required');
     }
 
     const kindField = file.fields?.kind;
-    const kindValue =
-      kindField && !Array.isArray(kindField) && 'value' in kindField
-        ? String((kindField as { value: unknown }).value)
+    const kindEntry = Array.isArray(kindField) ? kindField[0] : kindField;
+    const kindFromField =
+      kindEntry && typeof kindEntry === 'object' && 'value' in kindEntry
+        ? String((kindEntry as { value: unknown }).value)
         : undefined;
-    const kind = (kindValue ?? 'SUPPORTING') as BgvDocumentKindLabel;
+    const kind = (kindFromField ?? queryKind ?? 'SUPPORTING') as BgvDocumentKindLabel;
     if (!['CONSENT', 'SUPPORTING', 'REPORT'].includes(kind)) {
       throw new BadRequestError('kind must be CONSENT, SUPPORTING, or REPORT');
     }
