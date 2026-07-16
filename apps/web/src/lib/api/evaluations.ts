@@ -1,5 +1,11 @@
 import { apiAction, apiCreate, apiGet, apiList, apiRequest, apiUpdate, type ListQuery } from './client';
+import type { EvaluationExtractionResponse } from './ai/evaluation-extraction.types';
 import type { BackgroundCheckDto, BackgroundCheckListItem, EvaluationListItem } from './types';
+
+export type EvaluationExtractResult = {
+  extraction: EvaluationExtractionResponse;
+  liveAi: boolean;
+};
 
 export const evaluationsApi = {
   list: (query?: ListQuery) => apiList<EvaluationListItem>('/evaluations', query),
@@ -7,6 +13,22 @@ export const evaluationsApi = {
   create: (body: Record<string, unknown>) => apiCreate<EvaluationListItem>('/evaluations', body),
   update: (id: number, body: Record<string, unknown>) =>
     apiUpdate<EvaluationListItem>(`/evaluations/${id}`, body),
+  /** Node uploads file payload to Python evaluater (or static stub) and returns extraction. */
+  extractEvaluation: async (
+    file: File,
+    candidateId?: number,
+  ): Promise<EvaluationExtractResult> => {
+    const form = new FormData();
+    form.append('file', file, file.name);
+    if (candidateId != null && candidateId > 0) {
+      form.append('candidateId', String(candidateId));
+    }
+    const json = await apiRequest<{ data: EvaluationExtractResult }>(
+      '/evaluations/extract-evaluation',
+      { method: 'POST', body: form },
+    );
+    return json.data;
+  },
 };
 
 export const backgroundChecksApi = {

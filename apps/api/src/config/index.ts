@@ -41,6 +41,7 @@ export const envSchema = z
     SMTP_PORT: z.coerce.number().int().positive().default(587),
     WEB_APP_URL: z.string().url().default('http://localhost:5173'),
     AI_EXTRACTION_URL: z.string().url().optional(),
+    AI_EVALUATION_URL: z.string().url().optional(),
   })
   .superRefine((env, ctx) => {
     if (env.STORAGE_DRIVER === 's3') {
@@ -106,6 +107,7 @@ export interface AppConfig {
   corsOrigins: string[];
   mail: MailConfig;
   aiExtractionUrl: string | null;
+  aiEvaluationUrl: string | null;
   isProduction: boolean;
   isDevelopment: boolean;
 }
@@ -157,6 +159,7 @@ function mapEnvToConfig(env: EnvSchema): AppConfig {
       enabled: Boolean(mailFrom && mailPassword),
     },
     aiExtractionUrl: env.AI_EXTRACTION_URL ?? null,
+    aiEvaluationUrl: env.AI_EVALUATION_URL ?? null,
     isProduction: env.NODE_ENV === 'production',
     isDevelopment: env.NODE_ENV === 'development',
   };
