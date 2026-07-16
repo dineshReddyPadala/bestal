@@ -8,7 +8,8 @@ services:
       POSTGRES_PASSWORD: bestal
       POSTGRES_DB: bestal
     ports:
-      - '5432:5432'
+      # Host 5432 is often taken by system Postgres; publish on 5433 instead.
+      - '5433:5432'
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
