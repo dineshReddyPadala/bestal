@@ -6,7 +6,7 @@ import { evaluationsApi } from '../evaluations';
 
 /**
  * @deprecated Prefer evaluationsApi.extractEvaluation — extraction now runs via Node API
- * (same pattern as resume_analyser → candidatesApi.extractResume).
+ * (same pattern as ai-service resume → candidatesApi.extractResume).
  */
 export async function extractEvaluationFromFile(
   file: File,

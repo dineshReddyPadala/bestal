@@ -19,7 +19,7 @@ export const evaluationsApi = {
   create: (body: Record<string, unknown>) => apiCreate<EvaluationListItem>('/evaluations', body),
   update: (id: number, body: Record<string, unknown>) =>
     apiUpdate<EvaluationListItem>(`/evaluations/${id}`, body),
-  /** Node uploads file payload to Python evaluater (or static stub) and returns extraction. */
+  /** Node uploads file payload to Python ai-service (or static stub) and returns extraction. */
   extractEvaluation: async (
     file: File,
     candidateId?: number,
@@ -44,7 +44,7 @@ export const backgroundChecksApi = {
     apiCreate<BackgroundCheckDto>('/background-checks', body),
   update: (id: number, body: Record<string, unknown>) =>
     apiUpdate<BackgroundCheckDto>(`/background-checks/${id}`, body),
-  /** Node → Python bg_verifier (or static stub). */
+  /** Node → Python ai-service background route (or static stub). */
   extractBgv: async (file: File, candidateId?: number): Promise<BgvExtractResult> => {
     const form = new FormData();
     form.append('file', file, file.name);

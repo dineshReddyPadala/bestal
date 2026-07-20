@@ -73,7 +73,7 @@ export class BackgroundCheckService {
   }
 
   /**
-   * Calls Python bg_verifier (or static stub). Does not persist a BGV row —
+   * Calls Python ai-service BGV route (or static stub). Does not persist a BGV row —
    * UI reviews fields then POSTs /background-checks.
    */
   async extractBgvDocument(

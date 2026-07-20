@@ -117,7 +117,7 @@ export class BgvExtractionClient {
 
   /**
    * - No AI_BGV_URL → hardcoded static response.
-   * - AI_BGV_URL set → POST to Python bg_verifier and normalize.
+   * - AI_BGV_URL set → POST to Python ai-service and normalize.
    */
   async extract(request: BgvExtractionRequestBody): Promise<BgvExtractionResponse> {
     if (!this.aiBgvUrl) {

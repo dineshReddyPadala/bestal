@@ -6,7 +6,7 @@ export type BgvExtractionRequestBody = {
   jobId?: string;
 };
 
-/** Unified BGV extraction response (camelCase) matching bg_verifier + web form. */
+/** Unified BGV extraction response (camelCase) matching ai-service + web form. */
 export type BgvExtractionResponse = {
   jobId: string;
   confidence: number;

@@ -39,5 +39,3 @@ AI_EXTRACTION_URL=http://localhost:8001/api/v1/ai/resume/analyze
 AI_EVALUATION_URL=http://localhost:8001/api/v1/ai/evaluation/analyze
 AI_BGV_URL=http://localhost:8001/api/v1/ai/background/analyze
 ```
-
-The older `apps/resume_analyser`, `apps/evaluater`, and `apps/bg_verifier` folders are deprecated in favor of this service.

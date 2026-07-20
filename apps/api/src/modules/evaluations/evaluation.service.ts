@@ -71,7 +71,7 @@ export class EvaluationService {
   }
 
   /**
-   * Calls Python evaluater (or static stub) with the uploaded evaluation document.
+   * Calls Python ai-service (or static stub) with the uploaded evaluation document.
    * Does not persist an evaluation row — UI reviews fields then POSTs /evaluations.
    */
   async extractEvaluationDocument(
