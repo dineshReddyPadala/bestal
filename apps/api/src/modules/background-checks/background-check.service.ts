@@ -10,6 +10,11 @@ import {
 } from '../../utils/index.js';
 import { StorageService } from '../../services/storage.service.js';
 import { UPLOAD_CATEGORIES } from '../../services/storage/storage.constants.js';
+import {
+  bufferToBase64,
+  BgvExtractionClient,
+  type BgvExtractionResponse,
+} from '../../services/bgv-extraction.client.js';
 import { buildPaginationMeta } from '../../validators/common.validator.js';
 import { PERMISSIONS, roleHasPermission } from '../auth/auth.permissions.js';
 import { assertCanCreateBackgroundCheck } from '../candidates/candidate-pipeline.js';
@@ -45,10 +50,16 @@ function deriveCandidateBgvProfileStatus(
   return 'BGV_PENDING';
 }
 
+export type BgvExtractResult = {
+  extraction: BgvExtractionResponse;
+  liveAi: boolean;
+};
+
 export class BackgroundCheckService {
   private readonly backgroundCheckRepository: BackgroundCheckRepository;
   private readonly prisma: PrismaClient;
   private readonly storageService: StorageService;
+  private readonly bgvExtractionClient: BgvExtractionClient;
 
   constructor(
     fastify: FastifyInstance,
@@ -58,6 +69,61 @@ export class BackgroundCheckService {
       backgroundCheckRepository ?? new BackgroundCheckRepository(fastify.prisma);
     this.prisma = fastify.prisma;
     this.storageService = new StorageService(fastify.config);
+    this.bgvExtractionClient = new BgvExtractionClient(fastify.config.aiBgvUrl);
+  }
+
+  /**
+   * Calls Python bg_verifier (or static stub). Does not persist a BGV row —
+   * UI reviews fields then POSTs /background-checks.
+   */
+  async extractBgvDocument(
+    authUser: AuthenticatedUser,
+    file: UploadBgvAssetInput,
+    candidateId?: number,
+  ): Promise<BgvExtractResult> {
+    const organizationId = requireOrganization(authUser);
+
+    if (candidateId != null && candidateId > 0) {
+      const candidate = await this.prisma.candidate.findFirst({
+        where: {
+          id: BigInt(candidateId),
+          organizationId: BigInt(organizationId),
+          deletedAt: null,
+        },
+        select: { id: true },
+      });
+      if (!candidate) {
+        throw new BadRequestError('Candidate not found');
+      }
+    }
+
+    try {
+      const extraction = await this.bgvExtractionClient.extract({
+        fileName: file.originalName,
+        mimeType: file.mimeType,
+        content: bufferToBase64(file.buffer),
+        ...(candidateId != null && candidateId > 0
+          ? { candidateId: String(candidateId) }
+          : {}),
+      });
+
+      if (!extraction.aiBgvSummary?.trim()) {
+        throw new BadRequestError(
+          'AI did not return a background verification summary for this document.',
+        );
+      }
+
+      return {
+        extraction,
+        liveAi: this.bgvExtractionClient.isLiveAiConfigured,
+      };
+    } catch (error) {
+      throw error instanceof BadRequestError
+        ? error
+        : new BadRequestError(
+            error instanceof Error ? error.message : 'BGV extraction failed',
+          );
+    }
   }
 
   async create(

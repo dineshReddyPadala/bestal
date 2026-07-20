@@ -570,7 +570,8 @@ export function mergeWizardSkills<
       .flatMap((value) => (value ? value.split(/,\s*/) : []))
       .map((value) => value.trim())
       .filter(Boolean);
-    const uniqueNotes = [...new Set(mergedNotes)].join(', ');
+    // skillName API field is VarChar(150); keep merged labels within that limit
+    const uniqueNotes = [...new Set(mergedNotes)].join(', ').slice(0, 150);
 
     byCommunity.set(skill.skillCommunityId, {
       ...existing,
@@ -600,13 +601,14 @@ export function mapWizardToApiCreateBody(
     .map((skill) => {
       const skillCommunityId = positiveIdOrUndefined(skill.skillCommunityId);
       if (skillCommunityId == null) return null;
+      const label = skill.notes?.trim() || undefined;
       return {
         skillCommunityId,
-        skillName: skill.notes?.trim() || undefined,
+        skillName: label ? label.slice(0, 150) : undefined,
         proficiencyLevel: skill.proficiencyLevel,
         yearsExperience: finiteNumberOrUndefined(skill.yearsExperience),
         isPrimary: skill.isPrimary,
-        notes: skill.notes?.trim() || undefined,
+        notes: label,
       };
     })
     .filter((skill): skill is NonNullable<typeof skill> => skill !== null);

@@ -18,5 +18,21 @@ services:
       timeout: 5s
       retries: 5
 
+  ai-service:
+    build:
+      context: ./apps/ai-service
+    container_name: bestal-ai-service
+    restart: unless-stopped
+    env_file:
+      - ./apps/ai-service/.env
+    ports:
+      # Single host port for resume, evaluation, and BGV AI routes.
+      - '8001:8000'
+    healthcheck:
+      test: ['CMD-SHELL', 'python -c "import urllib.request; urllib.request.urlopen(\"http://127.0.0.1:8000/health\")"']
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
 volumes:
   postgres_data:

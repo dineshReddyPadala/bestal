@@ -1,5 +1,7 @@
 # Resume Analysis AI API
 
+> **Deprecated.** Use the unified service at [`apps/ai-service`](../ai-service) (port **8001**). This folder is kept only for reference.
+
 Part of the BesTal monorepo (`bestal/resume_analyser`).
 
 REST API that analyzes a base64-encoded resume and returns structured AI extraction + scoring using OpenAI via LangGraph.

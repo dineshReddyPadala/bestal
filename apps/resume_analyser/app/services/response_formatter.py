@@ -25,34 +25,33 @@ class ResponseFormatter:
         seen_skills: set[str] = set()
         for item in payload.get("skills", []) or []:
             if isinstance(item, str):
-                skill_name = item.strip()
-                key = skill_name.lower()
-                if not skill_name or key in seen_skills:
-                    continue
-                seen_skills.add(key)
-                skills.append(
-                    {
-                        "name": skill_name,
-                        "proficiency_level": "INTERMEDIATE",
-                        "years_experience": None,
-                        "is_primary": False,
-                    }
-                )
+                for skill_name in self._split_skill_names(item):
+                    self._append_skill(
+                        skills,
+                        seen_skills,
+                        name=skill_name,
+                        proficiency_level="INTERMEDIATE",
+                        years_experience=None,
+                        is_primary=False,
+                    )
                 continue
 
-            skill_name = (item.get("name") or "").strip()
-            key = skill_name.lower()
-            if not skill_name or key in seen_skills:
+            if not isinstance(item, dict):
                 continue
-            seen_skills.add(key)
-            skills.append(
-                {
-                    "name": skill_name,
-                    "proficiency_level": item.get("proficiencyLevel", "INTERMEDIATE"),
-                    "years_experience": item.get("yearsExperience"),
-                    "is_primary": bool(item.get("isPrimary", False)),
-                }
-            )
+
+            names = self._split_skill_names(item.get("name") or "")
+            proficiency = item.get("proficiencyLevel", "INTERMEDIATE")
+            years = item.get("yearsExperience")
+            is_primary = bool(item.get("isPrimary", False))
+            for index, skill_name in enumerate(names):
+                self._append_skill(
+                    skills,
+                    seen_skills,
+                    name=skill_name,
+                    proficiency_level=proficiency,
+                    years_experience=years,
+                    is_primary=is_primary if index == 0 else False,
+                )
 
         experience = [
             {
@@ -115,6 +114,55 @@ class ResponseFormatter:
                 "education": raw_sections.get("education", "") or "",
             },
         }
+
+    _MAX_SKILL_NAME_LEN = 60
+
+    def _split_skill_names(self, raw: str) -> list[str]:
+        """Split comma/semicolon/pipe dumps into discrete short skill labels."""
+        text = (raw or "").strip()
+        if not text:
+            return []
+
+        if any(sep in text for sep in (",", ";", "|")):
+            parts = []
+            for chunk in text.replace("|", ",").replace(";", ",").split(","):
+                part = chunk.strip()
+                if part:
+                    parts.append(part)
+        else:
+            parts = [text]
+
+        cleaned: list[str] = []
+        for part in parts:
+            label = " ".join(part.split())
+            if not label:
+                continue
+            cleaned.append(label[: self._MAX_SKILL_NAME_LEN].rstrip(" -/,;|"))
+        return cleaned
+
+    def _append_skill(
+        self,
+        skills: list[dict],
+        seen_skills: set[str],
+        *,
+        name: str,
+        proficiency_level: str,
+        years_experience,
+        is_primary: bool,
+    ) -> None:
+        skill_name = (name or "").strip()[: self._MAX_SKILL_NAME_LEN]
+        key = skill_name.lower()
+        if not skill_name or key in seen_skills:
+            return
+        seen_skills.add(key)
+        skills.append(
+            {
+                "name": skill_name,
+                "proficiency_level": proficiency_level or "INTERMEDIATE",
+                "years_experience": years_experience,
+                "is_primary": is_primary,
+            }
+        )
 
     def _normalize_bestal_score(self, value) -> int:
         # New contract: integer. Also accept legacy { score, reason } objects.

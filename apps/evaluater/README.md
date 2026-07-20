@@ -1,5 +1,7 @@
 # Evaluation AI API (BesTal monorepo: apps/evaluater)
 
+> **Deprecated.** Use the unified service at [`apps/ai-service`](../ai-service) (port **8001**). This folder is kept only for reference.
+
 REST API that analyzes a base64-encoded evaluation PDF/DOCX and returns structured scores + summary using OpenAI via LangGraph.
 
 ## Flow (same pattern as resume_analyser)

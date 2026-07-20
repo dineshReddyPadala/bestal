@@ -59,9 +59,12 @@ export function applyResumeExtractionToWizardForm(
 
   const mappedSkills = extraction.skills
     .map((skill, index) => {
+      // Prefer a match for this skill name; only then fall back to the
+      // resume-level community. Using community-first forced every skill into
+      // one row, which blew past the 150-char skillName limit after merge.
       const skillCommunityId =
-        communityIdFromExtraction ??
         matchSkillCommunityId(skill.name, skillCommunities) ??
+        communityIdFromExtraction ??
         fallbackCommunityId;
       if (!skillCommunityId) return null;
       return {
@@ -69,7 +72,7 @@ export function applyResumeExtractionToWizardForm(
         proficiencyLevel: skill.proficiencyLevel,
         yearsExperience: skill.yearsExperience ?? undefined,
         isPrimary: skill.isPrimary || index === 0,
-        notes: skill.name,
+        notes: skill.name.slice(0, 150),
       };
     })
     .filter((skill): skill is NonNullable<typeof skill> => skill !== null);

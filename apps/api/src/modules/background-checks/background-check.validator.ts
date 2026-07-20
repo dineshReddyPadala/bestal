@@ -29,7 +29,10 @@ export const createBackgroundCheckBodySchema = z.object({
   provider: z.string().max(100).optional(),
   externalReferenceId: z.string().max(255).optional(),
   resultSummary: z.string().max(5000).optional(),
+  aiSummary: z.string().max(10000).optional(),
+  reviewNotes: z.string().max(5000).optional(),
   initiatedAt: z.string().datetime().optional(),
+  completedAt: z.string().datetime().optional(),
   expiresAt: z.string().datetime().optional(),
 });
 
@@ -150,5 +153,35 @@ export const backgroundCheckListResponseSchema = z.object({
 export const backgroundCheckMessageResponseSchema = z.object({
   data: z.object({
     message: z.string(),
+  }),
+});
+
+export const bgvExtractionResponseSchema = z.object({
+  data: z.object({
+    liveAi: z.boolean(),
+    extraction: z
+      .object({
+        jobId: z.string(),
+        confidence: z.number(),
+        extractedAt: z.string(),
+        id: z.string().optional(),
+        candidateId: z.string().optional(),
+        vendorName: z.string().optional(),
+        status: z.string().optional(),
+        idCheckStatus: z.string().optional(),
+        addressCheckStatus: z.string().optional(),
+        employmentCheckStatus: z.string().optional(),
+        educationCheckStatus: z.string().optional(),
+        criminalCheckStatus: z.string().optional(),
+        referenceCheckStatus: z.string().optional(),
+        reportUrl: z.string().nullable().optional(),
+        aiBgvSummary: z.string(),
+        concernNotes: z.string().optional(),
+        initiatedDate: z.string().optional(),
+        completedDate: z.string().optional(),
+        checkType: z.string().optional(),
+        warnings: z.array(z.string()),
+      })
+      .passthrough(),
   }),
 });

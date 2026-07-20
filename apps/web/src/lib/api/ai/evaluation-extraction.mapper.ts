@@ -16,20 +16,46 @@ function clampScore(value: number | undefined): number | undefined {
 
 function normalizeEvaluationType(value: string | undefined): EvaluationTypeValue | undefined {
   if (!value) return undefined;
-  const match = EVALUATION_TYPES.find(
-    (t) => t.toLowerCase() === value.toLowerCase(),
-  );
-  return match;
+  const normalized = value.trim().toLowerCase();
+  const exact = EVALUATION_TYPES.find((t) => t.toLowerCase() === normalized);
+  if (exact) return exact;
+
+  const aliases: Record<string, EvaluationTypeValue> = {
+    'technical interview': 'Live Technical Interview',
+    'live interview': 'Live Technical Interview',
+    'coding assessment': 'Coding Test',
+    coding: 'Coding Test',
+    'system design interview': 'System Design',
+    'client fit': 'Communication',
+    'soft skills': 'Communication',
+    overall: 'Manual Scorecard',
+    scorecard: 'Manual Scorecard',
+  };
+  return aliases[normalized];
 }
 
 function normalizeRecommendation(
   value: string | undefined,
 ): EvaluationRecommendationValue | undefined {
   if (!value) return undefined;
-  const match = EVALUATION_RECOMMENDATIONS.find(
-    (r) => r.toLowerCase() === value.toLowerCase(),
-  );
-  return match;
+  const normalized = value.trim().toLowerCase().replace(/[_-]+/g, ' ');
+  const exact = EVALUATION_RECOMMENDATIONS.find((r) => r.toLowerCase() === normalized);
+  if (exact) return exact;
+
+  const aliases: Record<string, EvaluationRecommendationValue> = {
+    rejected: 'Reject',
+    reject: 'Reject',
+    'no hire': 'Reject',
+    'strong no hire': 'Reject',
+    'do not hire': 'Reject',
+    hold: 'Borderline',
+    maybe: 'Borderline',
+    'needs follow up': 'Borderline',
+    'follow up': 'Borderline',
+    'strong hire': 'Strong Hire',
+    hire: 'Hire',
+  };
+  return aliases[normalized];
 }
 
 export function mapEvaluationExtractionToForm(
