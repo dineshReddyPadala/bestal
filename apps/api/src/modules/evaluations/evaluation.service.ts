@@ -8,6 +8,11 @@ import {
 } from '../../utils/index.js';
 import { buildPaginationMeta } from '../../validators/common.validator.js';
 import { notifyEvaluationProcessed } from '../../services/notification-dispatch.service.js';
+import {
+  bufferToBase64,
+  EvaluationExtractionClient,
+  type EvaluationExtractionResponse,
+} from '../../services/evaluation-extraction.client.js';
 import { assertCanCreateEvaluation } from '../candidates/candidate-pipeline.js';
 import { recalculateCandidateScoresFromEvaluations } from './candidate-score.service.js';
 import {
@@ -41,10 +46,16 @@ function wasAiProcessed(input: {
   );
 }
 
+export type EvaluationExtractResult = {
+  extraction: EvaluationExtractionResponse;
+  liveAi: boolean;
+};
+
 export class EvaluationService {
   private readonly evaluationRepository: EvaluationRepository;
   private readonly prisma: PrismaClient;
   private readonly webAppUrl: string;
+  private readonly evaluationExtractionClient: EvaluationExtractionClient;
 
   constructor(
     fastify: FastifyInstance,
@@ -54,6 +65,68 @@ export class EvaluationService {
       evaluationRepository ?? new EvaluationRepository(fastify.prisma);
     this.prisma = fastify.prisma;
     this.webAppUrl = fastify.config.webAppUrl;
+    this.evaluationExtractionClient = new EvaluationExtractionClient(
+      fastify.config.aiEvaluationUrl,
+    );
+  }
+
+  /**
+   * Calls Python evaluater (or static stub) with the uploaded evaluation document.
+   * Does not persist an evaluation row — UI reviews fields then POSTs /evaluations.
+   */
+  async extractEvaluationDocument(
+    authUser: AuthenticatedUser,
+    file: {
+      buffer: Buffer;
+      originalName: string;
+      mimeType: string;
+      size: number;
+    },
+    candidateId?: number,
+  ): Promise<EvaluationExtractResult> {
+    const organizationId = requireOrganization(authUser);
+
+    if (candidateId != null && candidateId > 0) {
+      const candidate = await this.prisma.candidate.findFirst({
+        where: {
+          id: BigInt(candidateId),
+          organizationId: BigInt(organizationId),
+          deletedAt: null,
+        },
+        select: { id: true },
+      });
+      if (!candidate) {
+        throw new BadRequestError('Candidate not found');
+      }
+    }
+
+    try {
+      const extraction = await this.evaluationExtractionClient.extract({
+        fileName: file.originalName,
+        mimeType: file.mimeType,
+        content: bufferToBase64(file.buffer),
+        ...(candidateId != null && candidateId > 0
+          ? { candidateId: String(candidateId) }
+          : {}),
+      });
+
+      if (!extraction.aiEvaluationSummary?.trim()) {
+        throw new BadRequestError(
+          'AI did not return an evaluation summary for this document.',
+        );
+      }
+
+      return {
+        extraction,
+        liveAi: this.evaluationExtractionClient.isLiveAiConfigured,
+      };
+    } catch (error) {
+      throw error instanceof BadRequestError
+        ? error
+        : new BadRequestError(
+            error instanceof Error ? error.message : 'Evaluation extraction failed',
+          );
+    }
   }
 
   async create(

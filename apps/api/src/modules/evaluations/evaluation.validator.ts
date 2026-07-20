@@ -120,3 +120,32 @@ export const evaluationMessageResponseSchema = z.object({
     message: z.string(),
   }),
 });
+
+export const evaluationExtractionResponseSchema = z.object({
+  data: z.object({
+    liveAi: z.boolean(),
+    extraction: z
+      .object({
+        jobId: z.string(),
+        confidence: z.number(),
+        extractedAt: z.string(),
+        extractedText: z.string().optional(),
+        evaluatorName: z.string().optional(),
+        evaluatorCompany: z.string().optional(),
+        evaluationType: z.string().optional(),
+        evaluationDate: z.string().optional(),
+        technicalScore: z.number().optional(),
+        communicationScore: z.number().optional(),
+        problemSolvingScore: z.number().optional(),
+        architectureScore: z.number().optional(),
+        clientReadinessScore: z.number().optional(),
+        recommendation: z.string().optional(),
+        evaluatorComments: z.string().optional(),
+        aiEvaluationSummary: z.string(),
+        recordingUrl: z.string().nullable().optional(),
+        evaluationFileUrl: z.string().nullable().optional(),
+        warnings: z.array(z.string()),
+      })
+      .passthrough(),
+  }),
+});

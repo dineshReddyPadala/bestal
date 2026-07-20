@@ -8,6 +8,7 @@ import { EvaluationController } from './evaluation.controller.js';
 import { EvaluationService } from './evaluation.service.js';
 import {
   createEvaluationBodySchema,
+  evaluationExtractionResponseSchema,
   evaluationIdParamSchema,
   evaluationListResponseSchema,
   evaluationMessageResponseSchema,
@@ -41,6 +42,28 @@ export async function evaluationRoutes(fastify: FastifyInstance): Promise<void> 
       },
     },
     evaluationController.create,
+  );
+
+  app.post(
+    '/extract-evaluation',
+    {
+      preHandler: [
+        authenticate,
+        requirePermission(PERMISSIONS.EVALUATIONS_WRITE),
+      ],
+      schema: {
+        tags: ['Evaluations'],
+        summary:
+          'Upload evaluation PDF/DOCX and extract scores via Python AI (or static stub)',
+        security: [{ bearerAuth: [] }],
+        consumes: ['multipart/form-data'],
+        response: {
+          200: evaluationExtractionResponseSchema,
+          401: errorResponses[401],
+        },
+      },
+    },
+    evaluationController.extractEvaluation,
   );
 
   app.get(

@@ -32,7 +32,9 @@ import {
 import { useSkillCommunitiesList } from '../../hooks/api/useSkillCommunities';
 import { usePermissions } from '../../hooks/usePermissions';
 import { applyResumeExtractionToWizardForm } from '../../lib/api/ai/resume-extraction.mapper';
+import { mapEvaluationExtractionToForm } from '../../lib/api/ai/evaluation-extraction.mapper';
 import { candidatesApi } from '../../lib/api/candidates';
+import { evaluationsApi } from '../../lib/api/evaluations';
 import { getApiErrorMessage } from '../../lib/api/errors';
 import type { SkillCommunityListItem } from '../../lib/api/types';
 import { getBgvChecksForType } from '../../lib/entity-field-metadata';
@@ -684,24 +686,141 @@ function PricingTab() {
   );
 }
 
-function EvaluationTab({ pendingUploads }: { pendingUploads: MutableRefObject<CandidateWizardUploads> }) {
+function EvaluationTab({
+  pendingUploads,
+  draftCandidateId,
+  onToast,
+}: {
+  pendingUploads: MutableRefObject<CandidateWizardUploads>;
+  draftCandidateId?: number | null;
+  onToast: (message: string) => void;
+}) {
   const { register, setValue, watch } = useFormContext<CandidateWizardFormValues>();
+  const [extracting, setExtracting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const evaluationFileName = watch('evaluationFileName');
+
+  function handleEvaluationSelect(file: File) {
+    pendingUploads.current.evaluationFile = file;
+    setValue('evaluationFileName', file.name, { shouldDirty: true });
+    setError(null);
+    onToast(`Evaluation "${file.name}" ready — click Run AI Screening`);
+  }
+
+  async function runEvaluationAiScreening() {
+    const file = pendingUploads.current.evaluationFile;
+    if (!file) {
+      setError('Upload an evaluation document first.');
+      return;
+    }
+
+    setExtracting(true);
+    setError(null);
+    try {
+      const { extraction, liveAi } = await evaluationsApi.extractEvaluation(
+        file,
+        draftCandidateId ?? undefined,
+      );
+      const patch = mapEvaluationExtractionToForm(extraction, file.name);
+      if (!patch.aiEvaluationSummary?.trim()) {
+        throw new Error('AI did not return an evaluation summary for this document.');
+      }
+
+      if (patch.evaluatorName) {
+        setValue('evaluatorName', patch.evaluatorName, { shouldDirty: true });
+      }
+      if (patch.evaluatorCompany) {
+        setValue('evaluatorCompany', patch.evaluatorCompany, { shouldDirty: true });
+      }
+      if (patch.evaluationType) {
+        setValue('evaluationType', patch.evaluationType, { shouldDirty: true });
+      }
+      if (patch.evaluationDate) {
+        setValue('evaluationDate', patch.evaluationDate, { shouldDirty: true });
+      }
+      if (patch.recommendation) {
+        setValue('evaluationRecommendation', patch.recommendation, { shouldDirty: true });
+      }
+      if (patch.technicalScore != null) {
+        setValue('technicalScore', patch.technicalScore, { shouldDirty: true });
+      }
+      if (patch.communicationScore != null) {
+        setValue('communicationScore', patch.communicationScore, { shouldDirty: true });
+      }
+      if (patch.problemSolvingScore != null) {
+        setValue('problemSolvingScore', patch.problemSolvingScore, { shouldDirty: true });
+      }
+      if (patch.architectureScore != null) {
+        setValue('architectureScore', patch.architectureScore, { shouldDirty: true });
+      }
+      if (patch.clientReadinessScore != null) {
+        setValue('clientReadinessScore', patch.clientReadinessScore, { shouldDirty: true });
+      }
+      if (patch.evaluatorComments) {
+        setValue('evaluatorComments', patch.evaluatorComments, { shouldDirty: true });
+      }
+      setValue('aiEvaluationSummary', patch.aiEvaluationSummary, { shouldDirty: true });
+      setValue('evaluationFileName', file.name, { shouldDirty: true });
+
+      const confidence = Math.round(extraction.confidence * 100);
+      const modeNote = liveAi ? '' : ' (demo/static AI)';
+      onToast(
+        `Evaluation AI screening complete (${confidence}% confidence)${modeNote} — review fields before saving`,
+      );
+    } catch (err) {
+      setError(getApiErrorMessage(err, 'Evaluation AI screening failed'));
+    } finally {
+      setExtracting(false);
+    }
+  }
 
   return (
     <div className="space-y-4">
       <SectionCard title="Evaluation document">
-        <FileUpload
-          label="Upload evaluation PDF"
-          accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-          hint="PDF or Word"
-          onFileSelect={(file) => {
-            pendingUploads.current.evaluationFile = file;
-            setValue('evaluationFileName', file.name, { shouldDirty: true });
-          }}
-        />
-        {watch('evaluationFileName') ? (
-          <p className="mt-2 text-sm text-emerald-700">Selected: {watch('evaluationFileName')}</p>
-        ) : null}
+        <div className="space-y-4">
+          <FileUpload
+            label="Upload evaluation PDF"
+            accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            hint={
+              extracting
+                ? 'Uploading & extracting via BesTal API…'
+                : 'PDF or Word — upload, then run AI to prefill scores and summary'
+            }
+            onFileSelect={(file) => {
+              if (!extracting) handleEvaluationSelect(file);
+            }}
+          />
+          {evaluationFileName ? (
+            <div className="flex flex-wrap items-center gap-3 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+              <CheckCircle2 className="h-4 w-4 shrink-0" />
+              <span>Evaluation Uploaded — {evaluationFileName}</span>
+            </div>
+          ) : null}
+          {error ? (
+            <p className="text-sm text-destructive" role="alert">
+              {error}
+            </p>
+          ) : null}
+          <Button
+            type="button"
+            variant="primary"
+            size="sm"
+            disabled={!evaluationFileName || extracting}
+            onClick={() => void runEvaluationAiScreening()}
+          >
+            {extracting ? (
+              <>
+                <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                Running AI Screening…
+              </>
+            ) : (
+              <>
+                <Sparkles className="mr-1.5 h-3.5 w-3.5" />
+                Run AI Screening
+              </>
+            )}
+          </Button>
+        </div>
       </SectionCard>
 
       <SectionCard title="Evaluator details">
@@ -1131,8 +1250,13 @@ function TabContent({
     case 'pricing':
       return <PricingTab />;
     case 'evaluation':
-      return <EvaluationTab pendingUploads={pendingUploads} />;
-    case 'background-check':
+      return (
+        <EvaluationTab
+          pendingUploads={pendingUploads}
+          draftCandidateId={draftCandidateId}
+          onToast={onToast}
+        />
+      );    case 'background-check':
       return <BackgroundCheckTab pendingUploads={pendingUploads} />;
     case 'documents':
       return <DocumentsTab pendingUploads={pendingUploads} />;

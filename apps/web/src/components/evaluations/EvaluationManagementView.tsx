@@ -9,7 +9,8 @@ import {
   useEvaluationsList,
 } from '../../hooks/api/useEvaluations';
 import { mapEvaluationExtractionToForm } from '../../lib/api/ai/evaluation-extraction.mapper';
-import { extractEvaluationFromFile } from '../../lib/api/ai/evaluation-extraction.stub';
+import { evaluationsApi } from '../../lib/api/evaluations';
+import { getApiErrorMessage } from '../../lib/api/errors';
 import type { EvaluationListItem } from '../../lib/api/types';
 import { useDemoToast } from '../../lib/use-demo-toast';
 import {
@@ -197,7 +198,10 @@ export function EvaluationManagementView({
       setExtractHint(null);
 
       try {
-        const extraction = await extractEvaluationFromFile(file, candidateId);
+        const { extraction, liveAi } = await evaluationsApi.extractEvaluation(
+          file,
+          candidateId,
+        );
         const patch = mapEvaluationExtractionToForm(extraction, file.name);
         if (!patch.aiEvaluationSummary) {
           throw new Error('AI did not return an evaluation summary for this document.');
@@ -206,13 +210,14 @@ export function EvaluationManagementView({
         const confidence = Math.round(extraction.confidence * 100);
         const warningNote =
           extraction.warnings.length > 0 ? ` ${extraction.warnings[0]}` : '';
+        const modeNote = liveAi ? '' : ' (demo/static AI — set AI_EVALUATION_URL on the API)';
 
         applyExtractedFields(
           patch,
-          `Evaluation extracted (${confidence}% confidence). Review fields, then save to update BesTal score and notify your team.${warningNote}`,
+          `Evaluation extracted (${confidence}% confidence)${modeNote}. Review fields, then save to update BesTal score and notify your team.${warningNote}`,
         );
       } catch (err) {
-        setExtractError(err instanceof Error ? err.message : 'Evaluation extraction failed');
+        setExtractError(getApiErrorMessage(err, 'Evaluation extraction failed'));
       } finally {
         setExtractingPdf(false);
       }
@@ -471,9 +476,9 @@ export function EvaluationManagementView({
             <div className="flex items-start gap-2">
               <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-brand" />
               <p>
-                {import.meta.env.VITE_AI_EVALUATION_URL
-                  ? 'Connected to the AI evaluation service. Upload a PDF to extract scores and summary.'
-                  : 'Demo extraction is active. Set VITE_AI_EVALUATION_URL for live AI processing.'}
+                Upload a PDF/Word evaluation. The BesTal API stores the request and calls the Python
+                evaluater when <code className="rounded bg-white/80 px-1">AI_EVALUATION_URL</code> is
+                configured; otherwise a demo extraction is returned.
               </p>
             </div>
           </div>

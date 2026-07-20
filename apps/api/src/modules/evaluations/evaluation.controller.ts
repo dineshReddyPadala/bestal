@@ -1,4 +1,9 @@
 import type { FastifyReply, FastifyRequest } from 'fastify';
+import { BadRequestError } from '../../utils/index.js';
+import {
+  UPLOAD_CATEGORIES,
+  validateUploadFile,
+} from '../../services/storage.service.js';
 import { EvaluationService } from './evaluation.service.js';
 import type {
   CreateEvaluationBody,
@@ -47,5 +52,41 @@ export class EvaluationController {
     return reply.status(200).send({
       data: { message: 'Evaluation deleted successfully' },
     });
+  };
+
+  extractEvaluation = async (request: FastifyRequest, reply: FastifyReply) => {
+    const file = await request.file();
+    if (!file) {
+      throw new BadRequestError('Evaluation file is required');
+    }
+
+    const buffer = await file.toBuffer();
+    validateUploadFile(UPLOAD_CATEGORIES.EVALUATION, {
+      mimeType: file.mimetype,
+      size: buffer.length,
+      originalName: file.filename,
+    });
+
+    const candidateIdField = file.fields?.candidateId;
+    const candidateIdValue =
+      candidateIdField &&
+      !Array.isArray(candidateIdField) &&
+      'value' in candidateIdField
+        ? String((candidateIdField as { value: unknown }).value)
+        : undefined;
+    const candidateId = candidateIdValue ? Number(candidateIdValue) : undefined;
+
+    const data = await this.evaluationService.extractEvaluationDocument(
+      request.authUser!,
+      {
+        buffer,
+        originalName: file.filename,
+        mimeType: file.mimetype,
+        size: buffer.length,
+      },
+      candidateId && Number.isFinite(candidateId) ? candidateId : undefined,
+    );
+
+    return reply.status(200).send({ data });
   };
 }
