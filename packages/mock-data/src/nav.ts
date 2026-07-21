@@ -10,21 +10,16 @@ export const salesNav = [
   { id: 'margin', label: 'Margin Report', href: '/sales/margin', icon: 'trending-up' },
 ] as const satisfies readonly NavItem[];
 
+/** Daily platform ops for Admin (client admin). Platform extras live on Super Admin. */
 export const adminNav = [
   { id: 'dashboard', label: 'Dashboard', href: '/admin', icon: 'layout-dashboard' },
   { id: 'candidates', label: 'Candidates', href: '/admin/candidates', icon: 'user-check' },
   { id: 'candidate-approvals', label: 'Approvals & Publish', href: '/admin/candidate-approvals', icon: 'check-square' },
-  { id: 'clients', label: 'Clients', href: '/admin/clients', icon: 'briefcase' },
-  { id: 'deployments', label: 'Deployments', href: '/admin/deployments', icon: 'rocket' },
-  { id: 'trials', label: 'Trial Requests', href: '/admin/trials', icon: 'flask-conical', badge: 4 },
-  { id: 'margin', label: 'Margin Report', href: '/admin/margin', icon: 'trending-up' },
-  { id: 'users', label: 'Users', href: '/admin/users', icon: 'users' },
-  { id: 'organizations', label: 'Organizations', href: '/admin/organizations', icon: 'building-2' },
-  { id: 'skill-communities', label: 'Skill Communities', href: '/admin/skill-communities', icon: 'layers' },
-  { id: 'audit-logs', label: 'Audit Logs', href: '/admin/audit-logs', icon: 'scroll-text' },
   { id: 'evaluations', label: 'Evaluations', href: '/admin/evaluations', icon: 'clipboard-check', badge: 2 },
   { id: 'background-checks', label: 'Background Checks', href: '/admin/background-checks', icon: 'shield-check', badge: 3 },
-  { id: 'settings', label: 'Settings', href: '/admin/settings', icon: 'settings' },
+  { id: 'clients', label: 'Clients', href: '/admin/clients', icon: 'briefcase' },
+  { id: 'trials', label: 'Trial Requests', href: '/admin/trials', icon: 'flask-conical', badge: 4 },
+  { id: 'deployments', label: 'Deployments', href: '/admin/deployments', icon: 'rocket' },
 ] as const satisfies readonly NavItem[];
 
 export const recruiterNav = [
@@ -46,6 +41,21 @@ export const clientNav = [
   { id: 'trials', label: 'Trial Requests', href: '/client/trials', icon: 'flask-conical', badge: 1 },
 ] as const satisfies readonly NavItem[];
 
+/** Platform / Super Admin */
+export const superAdminNav = [
+  { id: 'dashboard', label: 'Dashboard', href: '/super-admin/dashboard', icon: 'layout-dashboard' },
+  { id: 'users', label: 'Users', href: '/super-admin/users', icon: 'users' },
+  { id: 'clients', label: 'Clients', href: '/super-admin/clients', icon: 'briefcase' },
+  { id: 'candidates', label: 'Candidates', href: '/super-admin/candidates', icon: 'user-check' },
+  { id: 'pending', label: 'Pending Approvals', href: '/super-admin/candidates/pending', icon: 'check-square' },
+  { id: 'trials', label: 'Trials', href: '/super-admin/trials', icon: 'flask-conical' },
+  { id: 'deployments', label: 'Deployments', href: '/super-admin/deployments', icon: 'rocket' },
+  { id: 'data-import', label: 'Data import (Oorwin)', href: '/super-admin/data-import', icon: 'file-up' },
+  { id: 'reports', label: 'Reports', href: '/super-admin/reports', icon: 'trending-up' },
+  { id: 'audit-logs', label: 'Audit Logs', href: '/super-admin/audit-logs', icon: 'scroll-text' },
+  { id: 'platform-settings', label: 'Platform Settings', href: '/super-admin/platform-settings', icon: 'settings' },
+] as const satisfies readonly NavItem[];
+
 export const publicNav = [
   { id: 'home', label: 'Home', href: '/' },
   { id: 'how-it-works', label: 'How It Works', href: '/how-it-works' },
@@ -60,4 +70,5 @@ export type SalesNav = typeof salesNav;
 export type AdminNav = typeof adminNav;
 export type RecruiterNav = typeof recruiterNav;
 export type ClientNav = typeof clientNav;
+export type SuperAdminNav = typeof superAdminNav;
 export type PublicNav = typeof publicNav;

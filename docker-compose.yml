@@ -18,5 +18,16 @@ services:
       timeout: 5s
       retries: 5
 
+  resume-analyser:
+    build:
+      context: ./apps/resume_analyser
+      dockerfile: Dockerfile
+    container_name: bestal-resume-analyser
+    restart: unless-stopped
+    env_file:
+      - ./apps/resume_analyser/.env
+    ports:
+      - '8001:8000'
+
 volumes:
   postgres_data:

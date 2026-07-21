@@ -9,11 +9,11 @@ import {
   StatusBadge,
 } from '@bestal/ui';
 import {
-  Building2,
-  Calendar,
+  Brain,
   ClipboardCheck,
   FlaskConical,
   Rocket,
+  ShieldCheck,
   UserCheck,
   Users,
 } from 'lucide-react';
@@ -21,26 +21,38 @@ import { Link } from 'react-router-dom';
 import { useCandidatesList } from '../../hooks/api/useCandidates';
 import { useClientsList } from '../../hooks/api/useClients';
 import { useDeploymentsList } from '../../hooks/api/useDeployments';
-import { useInterviewsList } from '../../hooks/api/useInterviews';
+import { useBackgroundChecksList, useEvaluationsList } from '../../hooks/api/useEvaluations';
 import { useTrialsList } from '../../hooks/api/useTrials';
-import { useUsersList } from '../../hooks/api/useUsers';
 
 export function DashboardPage() {
   const candidates = useCandidatesList({ limit: 100, sort: '-createdAt' });
   const clients = useClientsList({ limit: 100 });
   const deployments = useDeploymentsList({ limit: 100 });
   const trials = useTrialsList({ limit: 100 });
-  const interviews = useInterviewsList({ limit: 20, sort: '-createdAt' });
-  const users = useUsersList({ limit: 100 });
+  const evaluations = useEvaluationsList({ limit: 100 });
+  const bgv = useBackgroundChecksList({ limit: 100 });
 
   const candidateRows = candidates.data?.data ?? [];
   const clientRows = clients.data?.data ?? [];
   const deploymentRows = deployments.data?.data ?? [];
   const trialRows = trials.data?.data ?? [];
-  const interviewRows = interviews.data?.data ?? [];
+  const evaluationRows = evaluations.data?.data ?? [];
+  const bgvRows = bgv.data?.data ?? [];
 
   const pendingApprovals = candidateRows.filter((c) => c.approvalStatus === 'PENDING').length;
   const published = candidateRows.filter((c) => c.visibility === 'CLIENT_VISIBLE').length;
+  const aiScreeningPending = candidateRows.filter((c) => {
+    const status = (c.profileStatus ?? '').toUpperCase();
+    return status.includes('AI') || status === 'DRAFT' || status === 'SCREENING';
+  }).length;
+  const pendingEvals = evaluationRows.filter((e) =>
+    ['PENDING', 'IN_REVIEW', 'SUBMITTED', 'DRAFT'].includes(String(e.status ?? '').toUpperCase()),
+  ).length;
+  const pendingBgv = bgvRows.filter((b) =>
+    !['APPROVED', 'CLEARED', 'COMPLETED', 'REJECTED'].includes(
+      String(b.status ?? '').toUpperCase(),
+    ),
+  ).length;
   const openTrials = trialRows.filter((t) =>
     ['REQUESTED', 'APPROVED', 'IN_PROGRESS', 'SCHEDULED'].includes(t.status),
   ).length;
@@ -51,13 +63,14 @@ export function DashboardPage() {
     clients.isLoading ||
     deployments.isLoading ||
     trials.isLoading ||
-    interviews.isLoading;
+    evaluations.isLoading ||
+    bgv.isLoading;
 
   return (
     <div className="min-h-full bg-muted/10">
       <PageHeader
         title="Admin Dashboard"
-        description="Live platform overview from your organization data"
+        description="Manage daily platform operations and ensure candidate quality"
         actions={
           <div className="flex flex-wrap gap-2">
             <Link
@@ -67,10 +80,10 @@ export function DashboardPage() {
               Add candidate
             </Link>
             <Link
-              to="/admin/users"
+              to="/admin/candidate-approvals"
               className="inline-flex h-9 items-center rounded-md border border-border bg-background px-4 text-sm font-medium hover:bg-muted"
             >
-              Manage users
+              Review approvals
             </Link>
           </div>
         }
@@ -80,48 +93,69 @@ export function DashboardPage() {
         {isLoading ? (
           <p className="text-sm text-muted-foreground">Loading live metrics…</p>
         ) : (
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <StatCard
-              label="Candidates"
-              value={candidateRows.length}
-              icon={<Users className="h-5 w-5" />}
-            />
-            <StatCard
-              label="Pending approvals"
-              value={pendingApprovals}
-              icon={<ClipboardCheck className="h-5 w-5" />}
-            />
-            <StatCard
-              label="Published talent"
-              value={published}
-              icon={<UserCheck className="h-5 w-5" />}
-            />
-            <StatCard
-              label="Active clients"
-              value={clientRows.filter((c) => c.status === 'ACTIVE').length}
-              icon={<Building2 className="h-5 w-5" />}
-            />
-            <StatCard
-              label="Open trials"
-              value={openTrials}
-              icon={<FlaskConical className="h-5 w-5" />}
-            />
-            <StatCard
-              label="Active deployments"
-              value={activeDeployments}
-              icon={<Rocket className="h-5 w-5" />}
-            />
-            <StatCard
-              label="Recent interviews"
-              value={interviewRows.length}
-              icon={<Calendar className="h-5 w-5" />}
-            />
-            <StatCard
-              label="Team users"
-              value={users.data?.data.length ?? 0}
-              icon={<Users className="h-5 w-5" />}
-            />
-          </div>
+          <>
+            <div>
+              <h2 className="mb-3 text-sm font-semibold text-muted-foreground">Operations monitors</h2>
+              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                <Link to="/admin/candidates">
+                  <StatCard
+                    label="AI screening queue"
+                    value={aiScreeningPending}
+                    icon={<Brain className="h-5 w-5" />}
+                  />
+                </Link>
+                <Link to="/admin/candidate-approvals">
+                  <StatCard
+                    label="Pending approvals"
+                    value={pendingApprovals}
+                    icon={<ClipboardCheck className="h-5 w-5" />}
+                  />
+                </Link>
+                <Link to="/admin/background-checks">
+                  <StatCard
+                    label="BGV in progress"
+                    value={pendingBgv}
+                    icon={<ShieldCheck className="h-5 w-5" />}
+                  />
+                </Link>
+                <Link to="/admin/evaluations">
+                  <StatCard
+                    label="Evaluations pending"
+                    value={pendingEvals}
+                    icon={<ClipboardCheck className="h-5 w-5" />}
+                  />
+                </Link>
+              </div>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+              <StatCard
+                label="Candidates"
+                value={candidateRows.length}
+                icon={<Users className="h-5 w-5" />}
+              />
+              <StatCard
+                label="Published talent"
+                value={published}
+                icon={<UserCheck className="h-5 w-5" />}
+              />
+              <StatCard
+                label="Active clients"
+                value={clientRows.filter((c) => c.status === 'ACTIVE').length}
+                icon={<Users className="h-5 w-5" />}
+              />
+              <StatCard
+                label="Open trials"
+                value={openTrials}
+                icon={<FlaskConical className="h-5 w-5" />}
+              />
+              <StatCard
+                label="Active deployments"
+                value={activeDeployments}
+                icon={<Rocket className="h-5 w-5" />}
+              />
+            </div>
+          </>
         )}
 
         <div className="grid gap-6 lg:grid-cols-2">
@@ -156,28 +190,34 @@ export function DashboardPage() {
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle>Recent interviews</CardTitle>
+              <CardTitle>Open trials</CardTitle>
               <Link to="/admin/trials" className="text-sm font-medium text-brand hover:underline">
-                View trials
+                View all
               </Link>
             </CardHeader>
             <CardContent className="space-y-3">
-              {interviewRows.slice(0, 6).map((i) => (
-                <div
-                  key={i.id}
-                  className="flex items-center justify-between rounded-lg border border-border/70 px-3 py-2"
-                >
-                  <div>
-                    <p className="text-sm font-medium">{i.candidateName}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {i.clientName} · {i.scheduledAt ? formatDate(i.scheduledAt) : 'Unscheduled'}
-                    </p>
+              {trialRows
+                .filter((t) =>
+                  ['REQUESTED', 'APPROVED', 'IN_PROGRESS', 'SCHEDULED'].includes(t.status),
+                )
+                .slice(0, 6)
+                .map((t) => (
+                  <div
+                    key={t.id}
+                    className="flex items-center justify-between rounded-lg border border-border/70 px-3 py-2"
+                  >
+                    <div>
+                      <p className="text-sm font-medium">{t.candidateName}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {t.clientName}
+                        {t.createdAt ? ` · ${formatDate(t.createdAt)}` : ''}
+                      </p>
+                    </div>
+                    <StatusBadge status={t.status} />
                   </div>
-                  <StatusBadge status={i.status} />
-                </div>
-              ))}
-              {interviewRows.length === 0 && (
-                <p className="text-sm text-muted-foreground">No interviews yet.</p>
+                ))}
+              {openTrials === 0 && (
+                <p className="text-sm text-muted-foreground">No open trials.</p>
               )}
             </CardContent>
           </Card>

@@ -4,6 +4,7 @@ export const ROLES = {
   RECRUITER: 'RECRUITER',
   SALES: 'SALES',
   CLIENT: 'CLIENT',
+  VIEWER: 'VIEWER',
 } as const;
 
 export type Role = (typeof ROLES)[keyof typeof ROLES];
@@ -39,6 +40,7 @@ export const ROLE_PORTAL: Record<Role, Portal> = {
   [ROLES.RECRUITER]: PORTALS.RECRUITER,
   [ROLES.SALES]: PORTALS.SALES,
   [ROLES.CLIENT]: PORTALS.CLIENT,
+  [ROLES.VIEWER]: PORTALS.ADMIN,
 };
 
 export const API_PREFIX = '/api/v1';

@@ -1,0 +1,209 @@
+import { Button, PageHeader, StatusBadge } from '@bestal/ui';
+import { Loader2 } from 'lucide-react';
+import { useParams } from 'react-router-dom';
+import { useAdminCandidate, useAdminMutations } from '../../hooks/api/useAdmin';
+import { useDemoToast } from '../../lib/use-demo-toast';
+
+export function SuperAdminCandidateDetailPage() {
+  const { id } = useParams();
+  const candidateId = Number(id);
+  const { data, isLoading, isError, error, refetch } = useAdminCandidate(candidateId);
+  const mutations = useAdminMutations();
+  const { message, show, showError } = useDemoToast();
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center gap-2 p-6 text-sm text-muted-foreground">
+        <Loader2 className="h-4 w-4 animate-spin" />
+        Loading…
+      </div>
+    );
+  }
+
+  if (isError || !data) {
+    return (
+      <div className="m-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        {error instanceof Error ? error.message : 'Candidate not found'}
+      </div>
+    );
+  }
+
+  const c = data.candidate as Record<string, unknown>;
+  const skills = (data.skills as Array<Record<string, unknown>>) ?? [];
+  const evaluations = (data.evaluations as Array<Record<string, unknown>>) ?? [];
+  const bgvs = (data.backgroundChecks as Array<Record<string, unknown>>) ?? [];
+  const documents = (data.documents as Array<Record<string, unknown>>) ?? [];
+  const activity = (data.activityTimeline as Array<Record<string, unknown>>) ?? [];
+
+  async function run(action: () => Promise<unknown>, ok: string) {
+    try {
+      await action();
+      show(ok);
+      await refetch();
+    } catch (e) {
+      showError(e instanceof Error ? e.message : 'Action failed');
+    }
+  }
+
+  return (
+    <div>
+      <PageHeader
+        title={`${c.firstName} ${c.lastName}`}
+        description={String(c.primaryRole ?? c.email ?? '')}
+      />
+      {message && (
+        <div className="mx-6 mb-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+          {message}
+        </div>
+      )}
+
+      <div className="flex flex-wrap gap-2 px-6 pb-4">
+        <Button size="sm" onClick={() => void run(() => mutations.approveCandidate.mutateAsync(candidateId), 'Approved & published')}>
+          Approve and publish
+        </Button>
+        <Button size="sm" variant="outline" onClick={() => void run(() => mutations.approveCandidateInternal.mutateAsync(candidateId), 'Approved (internal)')}>
+          Approve internal only
+        </Button>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => {
+            const reason = window.prompt('Send back reason (optional)') ?? undefined;
+            void run(() => mutations.sendBackCandidate.mutateAsync({ id: candidateId, reason }), 'Sent back');
+          }}
+        >
+          Send back to recruiter
+        </Button>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => {
+            const reason = window.prompt('Rejection reason');
+            if (!reason) return;
+            void run(() => mutations.rejectCandidate.mutateAsync({ id: candidateId, reason }), 'Rejected');
+          }}
+        >
+          Reject
+        </Button>
+      </div>
+
+      <div className="grid gap-4 px-6 pb-8 lg:grid-cols-2">
+        <Section title="Basic details">
+          <KV label="Email" value={String(c.email ?? '')} />
+          <KV label="Phone" value={String(c.phone ?? '—')} />
+          <KV label="Location" value={String(c.location ?? '—')} />
+          <KV label="Experience" value={String(c.yearsExperience ?? '—')} />
+          <KV label="Community" value={String(c.community ?? '—')} />
+          <div className="flex flex-wrap gap-2 pt-1">
+            {c.profileStatus ? <StatusBadge status={String(c.profileStatus)} /> : null}
+            {c.visibilityStatus ? <StatusBadge status={String(c.visibilityStatus)} /> : null}
+            {c.approvalStatus ? <StatusBadge status={String(c.approvalStatus)} /> : null}
+          </div>
+        </Section>
+
+        <Section title="AI summary">
+          <p className="whitespace-pre-wrap text-sm text-muted-foreground">
+            {String(c.aiSummary || c.summary || 'No summary')}
+          </p>
+        </Section>
+
+        <Section title="Skills">
+          {skills.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No skills</p>
+          ) : (
+            <ul className="space-y-1 text-sm">
+              {skills.map((s) => (
+                <li key={String(s.id)}>
+                  {String(s.name)} {s.proficiencyLevel ? `(${String(s.proficiencyLevel)})` : ''}
+                </li>
+              ))}
+            </ul>
+          )}
+        </Section>
+
+        <Section title="Pricing (internal)">
+          <KV label="Bill rate" value={c.clientBillRate != null ? `$${c.clientBillRate}` : '—'} />
+          <KV label="Pay rate" value={c.candidatePayRate != null ? `$${c.candidatePayRate}` : '—'} />
+          <KV label="Gross margin" value={c.grossMargin != null ? `$${c.grossMargin}` : '—'} />
+        </Section>
+
+        <Section title="Availability">
+          <KV label="Status" value={String(c.availabilityStatus ?? '—')} />
+        </Section>
+
+        <Section title="Evaluation">
+          {evaluations.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No evaluations</p>
+          ) : (
+            evaluations.map((e) => (
+              <div key={String(e.id)} className="border-b border-border/60 py-2 text-sm last:border-0">
+                {String(e.evaluatorName)} · tech {String(e.technicalScore ?? '—')}
+              </div>
+            ))
+          )}
+        </Section>
+
+        <Section title="Background verification">
+          {bgvs.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No BGV records</p>
+          ) : (
+            bgvs.map((b) => (
+              <div key={String(b.id)} className="flex items-center gap-2 py-1 text-sm">
+                <StatusBadge status={String(b.status)} />
+                <span>{String(b.type)}</span>
+              </div>
+            ))
+          )}
+        </Section>
+
+        <Section title="Documents">
+          {documents.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No documents</p>
+          ) : (
+            documents.map((d) => (
+              <div key={String(d.id)} className="text-sm">
+                {String(d.originalName)} ({String(d.kind)})
+              </div>
+            ))
+          )}
+        </Section>
+
+        <Section title="Activity timeline">
+          {activity.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No activity</p>
+          ) : (
+            activity.map((a) => (
+              <div key={String(a.id)} className="border-b border-border/60 py-2 text-sm last:border-0">
+                <div className="font-medium">
+                  {String(a.action)} · {String(a.actorName ?? 'System')}
+                </div>
+                <div className="text-muted-foreground">{String(a.description ?? '')}</div>
+                <div className="text-xs text-muted-foreground">
+                  {new Date(String(a.createdAt)).toLocaleString()}
+                </div>
+              </div>
+            ))
+          )}
+        </Section>
+      </div>
+    </div>
+  );
+}
+
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <section className="rounded-xl border border-border/80 p-4">
+      <h3 className="mb-3 text-sm font-semibold">{title}</h3>
+      {children}
+    </section>
+  );
+}
+
+function KV({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex justify-between gap-4 py-1 text-sm">
+      <span className="text-muted-foreground">{label}</span>
+      <span className="font-medium text-right">{value}</span>
+    </div>
+  );
+}

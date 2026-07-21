@@ -1,6 +1,6 @@
 export type Portal = 'ADMIN' | 'RECRUITER' | 'SALES' | 'CLIENT';
 
-export type Role = 'SUPER_ADMIN' | 'ADMIN' | 'RECRUITER' | 'SALES' | 'CLIENT';
+export type Role = 'SUPER_ADMIN' | 'ADMIN' | 'RECRUITER' | 'SALES' | 'CLIENT' | 'VIEWER';
 
 export type PaginationMeta = {
   page: number;

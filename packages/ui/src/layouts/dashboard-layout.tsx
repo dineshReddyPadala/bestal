@@ -44,7 +44,7 @@ type DashboardChromeContextValue = {
 const DashboardChromeContext = createContext<DashboardChromeContextValue | null>(null);
 
 /**
- * Render content in the top bar, to the left of the profile menu.
+ * Render content in the top bar leading slot (page actions, breadcrumbs, etc.).
  * Returns true when inside DashboardLayout (leading slot is active).
  */
 export function useDashboardHeaderLeading(node: ReactNode | null): boolean {
@@ -292,10 +292,6 @@ export function DashboardLayout({
             </button>
 
             <div className="flex min-w-0 flex-1 items-center">{headerLeading}</div>
-
-            <div className="shrink-0">
-              <ProfileMenu user={user} onLogout={onLogout} />
-            </div>
           </header>
 
           <main className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden bg-background">

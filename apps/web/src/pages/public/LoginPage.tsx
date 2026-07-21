@@ -5,7 +5,7 @@ const portals = [
   {
     id: 'admin',
     name: 'Admin Portal',
-    description: 'Platform administration, organizations, users, and audit logs.',
+    description: 'Daily platform operations: candidates, evaluations, BGV, clients, and trials.',
     href: '/admin/login',
     icon: Building2,
     color: 'bg-violet-100 text-violet-700',

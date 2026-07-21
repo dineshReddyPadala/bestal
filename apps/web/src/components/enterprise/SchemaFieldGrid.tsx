@@ -117,7 +117,6 @@ export function candidateUserFields(c: import('@bestal/mock-data').SchemaCandida
 export function candidateSystemFields(c: import('@bestal/mock-data').SchemaCandidate): SchemaFieldDef[] {
   return [
     { key: 'id', label: 'ID', value: c.id },
-    { key: 'organizationId', label: 'Organization ID', value: c.organizationId },
     { key: 'status', label: 'Status', value: c.status, format: 'badge' },
     { key: 'visibility', label: 'Visibility', value: c.visibility, format: 'badge' },
     { key: 'approvalStatus', label: 'Approval Status', value: c.approvalStatus, format: 'badge' },
@@ -160,7 +159,6 @@ export function clientUserFields(c: import('@bestal/mock-data').SchemaClient): S
 export function clientSystemFields(c: import('@bestal/mock-data').SchemaClient): SchemaFieldDef[] {
   return [
     { key: 'id', label: 'ID', value: c.id },
-    { key: 'organizationId', label: 'Organization ID', value: c.organizationId },
     { key: 'slug', label: 'Slug', value: c.slug },
     { key: 'status', label: 'Status', value: c.status, format: 'badge' },
     { key: 'activeDeployments', label: 'Active Deployments', value: c.activeDeployments },

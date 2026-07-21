@@ -20,6 +20,7 @@ enum Role {
   RECRUITER
   SALES
   CLIENT
+  VIEWER
 }
 
 enum Portal {
@@ -280,6 +281,8 @@ model User {
   candidatesCreated        Candidate[]         @relation("CandidateCreatedBy")
   notifications            Notification[]
   auditLogs                AuditLog[]          @relation("AuditLogActor")
+  systemSettingsUpdated    SystemSetting[]     @relation("SystemSettingUpdatedBy")
+  oorwinImportBatches      OorwinImportBatch[] @relation("OorwinImportBatchCreator")
 
   @@index([deletedAt])
   @@index([isActive, deletedAt])
@@ -307,6 +310,7 @@ model Organization {
   documents         Document[]
   notifications     Notification[]
   auditLogs         AuditLog[]
+  oorwinImportBatches OorwinImportBatch[]
 
   @@index([deletedAt])
   @@index([isActive, deletedAt])
@@ -911,4 +915,69 @@ model AuditLog {
   @@index([action, createdAt])
   @@index([createdAt])
   @@map("audit_logs")
+}
+
+// ---------------------------------------------------------------------------
+// Platform settings & Oorwin import (Super Admin)
+// ---------------------------------------------------------------------------
+
+model SystemSetting {
+  id          BigInt   @id @default(autoincrement())
+  key         String   @unique @db.VarChar(100)
+  value       Json     @db.JsonB
+  updatedById BigInt?  @map("updated_by_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  updatedBy User? @relation("SystemSettingUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+
+  @@map("system_settings")
+}
+
+enum OorwinImportStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+model OorwinImportBatch {
+  id             BigInt             @id @default(autoincrement())
+  organizationId BigInt             @map("organization_id")
+  createdById    BigInt             @map("created_by_id")
+  fileName       String             @map("file_name") @db.VarChar(255)
+  status         OorwinImportStatus @default(PENDING)
+  createdCount   Int                @default(0) @map("created_count")
+  updatedCount   Int                @default(0) @map("updated_count")
+  skippedCount   Int                @default(0) @map("skipped_count")
+  failedCount    Int                @default(0) @map("failed_count")
+  errorSummary   String?            @map("error_summary") @db.Text
+  createdAt      DateTime           @default(now()) @map("created_at")
+  completedAt    DateTime?          @map("completed_at")
+
+  organization Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdBy    User               @relation("OorwinImportBatchCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  rows         OorwinImportRow[]
+
+  @@index([organizationId, createdAt])
+  @@index([status, createdAt])
+  @@map("oorwin_import_batches")
+}
+
+model OorwinImportRow {
+  id            BigInt  @id @default(autoincrement())
+  batchId       BigInt  @map("batch_id")
+  rowNumber     Int     @map("row_number")
+  email         String? @db.VarChar(255)
+  phone         String? @db.VarChar(30)
+  oorwinId      String? @map("oorwin_id") @db.VarChar(100)
+  candidateId   BigInt? @map("candidate_id")
+  action        String  @db.VarChar(20)
+  errorMessage  String? @map("error_message") @db.Text
+  rawPayload    Json?   @map("raw_payload") @db.JsonB
+
+  batch OorwinImportBatch @relation(fields: [batchId], references: [id], onDelete: Cascade)
+
+  @@index([batchId, rowNumber])
+  @@map("oorwin_import_rows")
 }

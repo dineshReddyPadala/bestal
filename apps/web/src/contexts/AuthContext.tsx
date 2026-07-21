@@ -109,7 +109,12 @@ export function usePortalLogin(portal: Portal) {
       setError(null);
       try {
         await login({ email, password, portal });
-        navigate(PORTAL_HOME[portal]);
+        const profile = await getMe();
+        if (portal === 'ADMIN' && profile.role === 'SUPER_ADMIN') {
+          navigate('/super-admin/dashboard');
+        } else {
+          navigate(PORTAL_HOME[portal]);
+        }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Login failed');
       } finally {

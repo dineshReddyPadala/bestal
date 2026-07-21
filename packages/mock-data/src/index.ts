@@ -233,10 +233,12 @@ export {
   recruiterNav,
   clientNav,
   salesNav,
+  superAdminNav,
   publicNav,
   type AdminNav,
   type RecruiterNav,
   type ClientNav,
   type SalesNav,
+  type SuperAdminNav,
   type PublicNav,
 } from './nav.js';

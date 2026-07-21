@@ -1,5 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import { API_PREFIX } from '../constants/index.js';
+import { adminRoutes } from '../modules/admin/index.js';
 import { authRoutes } from '../modules/auth/auth.routes.js';
 import { backgroundCheckRoutes } from '../modules/background-checks/background-check.routes.js';
 import { candidateRoutes } from '../modules/candidates/candidate.routes.js';
@@ -22,6 +23,7 @@ export async function registerRoutes(fastify: FastifyInstance): Promise<void> {
     async (api) => {
       await api.register(healthRoutes, { prefix: '/health' });
       await api.register(authRoutes, { prefix: '/auth' });
+      await api.register(adminRoutes, { prefix: '/admin' });
       await api.register(userRoutes, { prefix: '/users' });
       await api.register(skillCommunityRoutes, { prefix: '/skill-communities' });
       await api.register(candidateRoutes, { prefix: '/candidates' });

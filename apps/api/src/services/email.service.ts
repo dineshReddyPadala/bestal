@@ -27,6 +27,8 @@ function portalLabel(role: Role): string {
     case 'SALES':
       return 'Sales Portal';
     case 'ADMIN':
+    case 'SUPER_ADMIN':
+    case 'VIEWER':
       return 'Admin Portal';
     case 'CLIENT':
       return 'Client Portal';

@@ -32,6 +32,25 @@ export const queryKeys = {
     list: (params?: Record<string, unknown>) => ['shortlists', 'list', params] as const,
     detail: (id: number) => ['shortlists', id] as const,
   },
+  admin: {
+    all: ['admin'] as const,
+    dashboard: ['admin', 'dashboard'] as const,
+    users: (params?: Record<string, unknown>) => ['admin', 'users', params] as const,
+    user: (id: number) => ['admin', 'users', id] as const,
+    clients: (params?: Record<string, unknown>) => ['admin', 'clients', params] as const,
+    client: (id: number) => ['admin', 'clients', id] as const,
+    candidates: (params?: Record<string, unknown>) => ['admin', 'candidates', params] as const,
+    candidate: (id: number) => ['admin', 'candidates', id] as const,
+    skillCommunities: (params?: Record<string, unknown>) =>
+      ['admin', 'skill-communities', params] as const,
+    trials: (params?: Record<string, unknown>) => ['admin', 'trials', params] as const,
+    deployments: (params?: Record<string, unknown>) => ['admin', 'deployments', params] as const,
+    oorwinHistory: (params?: Record<string, unknown>) =>
+      ['admin', 'oorwin-history', params] as const,
+    reports: (kind: string) => ['admin', 'reports', kind] as const,
+    auditLogs: (params?: Record<string, unknown>) => ['admin', 'audit-logs', params] as const,
+    settings: ['admin', 'settings'] as const,
+  },
   evaluations: {
     all: ['evaluations'] as const,
     list: (params?: Record<string, unknown>) => ['evaluations', 'list', params] as const,

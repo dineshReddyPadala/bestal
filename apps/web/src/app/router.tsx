@@ -1,6 +1,6 @@
 import { publicNav } from '@bestal/mock-data';
 import { AuthLayout, MarketingLayout } from '@bestal/ui';
-import { createBrowserRouter, Outlet, RouterProvider } from 'react-router-dom';
+import { createBrowserRouter, Navigate, Outlet, RouterProvider } from 'react-router-dom';
 import { AdminShell } from '../layouts/AdminShell';
 import { ClientShell } from '../layouts/ClientShell';
 import { RecruiterShell } from '../layouts/RecruiterShell';
@@ -15,13 +15,7 @@ import { DashboardPage as AdminDashboardPage } from '../pages/admin/DashboardPag
 import { DeploymentsPage as AdminDeploymentsPage } from '../pages/admin/DeploymentsPage';
 import { EvaluationsPage as AdminEvaluationsPage } from '../pages/admin/EvaluationsPage';
 import { LoginPage as AdminLoginPage } from '../pages/admin/LoginPage';
-import { MarginReportPage as AdminMarginReportPage } from '../pages/admin/MarginReportPage';
-import { SettingsPage } from '../pages/admin/SettingsPage';
 import { TrialsPage } from '../pages/admin/TrialsPage';
-import { UsersPage } from '../pages/admin/UsersPage';
-import { OrganizationsPage } from '../pages/admin/OrganizationsPage';
-import { AuditLogsPage } from '../pages/admin/AuditLogsPage';
-import { SkillCommunitiesPage } from '../pages/admin/SkillCommunitiesPage';
 import { CandidateDetailPage as ClientCandidateDetailPage } from '../pages/client/CandidateDetailPage';
 import { CandidateSearchPage } from '../pages/client/CandidateSearchPage';
 import { DashboardPage as ClientDashboardPage } from '../pages/client/DashboardPage';
@@ -66,11 +60,54 @@ import { PortalAuthShell } from '../components/auth/PortalAuthShell';
 import { PORTAL_AUTH_CONFIG } from '../lib/auth-portal-config';
 import { PortalForgotPasswordPage } from '../pages/shared/PortalForgotPasswordPage';
 import { PortalResetPasswordPage } from '../pages/shared/PortalResetPasswordPage';
+import { SuperAdminShell } from '../layouts/SuperAdminShell';
+import { SuperAdminDashboardPage } from '../pages/super-admin/DashboardPage';
+import { SuperAdminUsersPage } from '../pages/super-admin/UsersPage';
+import { SuperAdminUserFormPage } from '../pages/super-admin/UserFormPage';
+import { SuperAdminClientsPage } from '../pages/super-admin/ClientsPage';
+import { SuperAdminClientFormPage } from '../pages/super-admin/ClientFormPage';
+import {
+  SuperAdminCandidatesPage,
+  SuperAdminPendingCandidatesPage,
+} from '../pages/super-admin/CandidatesPage';
+import { SuperAdminCandidateDetailPage } from '../pages/super-admin/CandidateDetailPage';
+import { SuperAdminTrialsPage } from '../pages/super-admin/TrialsPage';
+import { SuperAdminDeploymentsPage } from '../pages/super-admin/DeploymentsPage';
+import { SuperAdminDataImportPage } from '../pages/super-admin/OorwinSyncPage';
+import { SuperAdminReportsPage } from '../pages/super-admin/ReportsPage';
+import { SuperAdminAuditLogsPage } from '../pages/super-admin/AuditLogsPage';
+import { SuperAdminSettingsPage } from '../pages/super-admin/SettingsPage';
+import { useAuth } from '../contexts/AuthContext';
+import { usePermissions } from '../hooks/usePermissions';
 
 function ProtectedAdminShell() {
   return (
     <ProtectedRoute portal="ADMIN">
       <AdminShell />
+    </ProtectedRoute>
+  );
+}
+
+function ProtectedSuperAdminShell() {
+  const { user, isLoading } = useAuth();
+  const { isPlatformAdmin } = usePermissions();
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-[50vh] items-center justify-center text-sm text-muted-foreground">
+        Loading…
+      </div>
+    );
+  }
+
+  const allowed = user?.role === 'SUPER_ADMIN' || isPlatformAdmin;
+  if (!allowed) {
+    return <Navigate to="/admin" replace />;
+  }
+
+  return (
+    <ProtectedRoute portal="ADMIN">
+      <SuperAdminShell />
     </ProtectedRoute>
   );
 }
@@ -176,16 +213,53 @@ const router = createBrowserRouter([
           { path: 'clients/:id', element: <AdminClientDetailPage /> },
           { path: 'deployments', element: <AdminDeploymentsPage /> },
           { path: 'trials', element: <TrialsPage /> },
-          { path: 'margin', element: <AdminMarginReportPage /> },
           { path: 'evaluations', element: <AdminEvaluationsPage /> },
           { path: 'background-checks', element: <AdminBackgroundChecksPage /> },
-          { path: 'users', element: <UsersPage /> },
-          { path: 'organizations', element: <OrganizationsPage /> },
-          { path: 'skill-communities', element: <SkillCommunitiesPage /> },
-          { path: 'audit-logs', element: <AuditLogsPage /> },
-          { path: 'settings', element: <SettingsPage /> },
+          // Extras moved to Super Admin; Organizations removed for MVP
+          { path: 'margin', element: <Navigate to="/super-admin/reports?tab=margin" replace /> },
+          { path: 'users', element: <Navigate to="/super-admin/users" replace /> },
+          { path: 'organizations', element: <Navigate to="/admin" replace /> },
+          {
+            path: 'skill-communities',
+            element: <Navigate to="/super-admin/platform-settings?tab=communities" replace />,
+          },
+          { path: 'audit-logs', element: <Navigate to="/super-admin/audit-logs" replace /> },
+          {
+            path: 'settings',
+            element: <Navigate to="/super-admin/platform-settings" replace />,
+          },
         ],
       },
+    ],
+  },
+  {
+    path: 'super-admin',
+    element: <ProtectedSuperAdminShell />,
+    children: [
+      { index: true, element: <Navigate to="dashboard" replace /> },
+      { path: 'dashboard', element: <SuperAdminDashboardPage /> },
+      { path: 'users', element: <SuperAdminUsersPage /> },
+      { path: 'users/new', element: <SuperAdminUserFormPage /> },
+      { path: 'users/:id', element: <SuperAdminUserFormPage /> },
+      { path: 'clients', element: <SuperAdminClientsPage /> },
+      { path: 'clients/new', element: <SuperAdminClientFormPage /> },
+      { path: 'clients/:id', element: <SuperAdminClientFormPage /> },
+      { path: 'candidates', element: <SuperAdminCandidatesPage /> },
+      { path: 'candidates/pending', element: <SuperAdminPendingCandidatesPage /> },
+      { path: 'candidates/:id', element: <SuperAdminCandidateDetailPage /> },
+      {
+        path: 'skill-communities',
+        element: <Navigate to="/super-admin/platform-settings?tab=communities" replace />,
+      },
+      { path: 'trials', element: <SuperAdminTrialsPage /> },
+      { path: 'deployments', element: <SuperAdminDeploymentsPage /> },
+      { path: 'data-import', element: <SuperAdminDataImportPage /> },
+      { path: 'oorwin-sync', element: <Navigate to="/super-admin/data-import" replace /> },
+      { path: 'reports', element: <SuperAdminReportsPage /> },
+      { path: 'margin', element: <Navigate to="/super-admin/reports?tab=margin" replace /> },
+      { path: 'audit-logs', element: <SuperAdminAuditLogsPage /> },
+      { path: 'platform-settings', element: <SuperAdminSettingsPage /> },
+      { path: 'settings', element: <Navigate to="/super-admin/platform-settings" replace /> },
     ],
   },
   {

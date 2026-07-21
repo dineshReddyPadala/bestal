@@ -41,7 +41,7 @@ export function CandidatesPage() {
     <div>
       <PageHeader
         title="Candidates"
-        description="Published, approved talent shared with your organization for review"
+        description="Published, approved talent shared with your team for review"
         actions={
           <SearchInput
             placeholder="Search by name, role, or skill…"

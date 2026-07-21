@@ -14,7 +14,7 @@ export function Tabs({ tabs, defaultTab, className }: TabsProps) {
 
   return (
     <div className={className}>
-      <div className="inline-flex h-9 items-center rounded-lg bg-muted p-1 text-muted-foreground">
+      <div className="inline-flex h-auto min-h-9 max-w-full flex-wrap items-center gap-1 rounded-lg bg-muted p-1 text-muted-foreground">
         {tabs.map((tab) => (
           <button
             key={tab.id}

@@ -7,6 +7,7 @@ export { deploymentsApi } from './deployments';
 export { candidatesApi, uploadCandidateFile } from './candidates';
 export { shortlistsApi } from './shortlists';
 export { evaluationsApi, backgroundChecksApi } from './evaluations';
+export { adminApi } from './admin';
 export { searchApi } from './search';
 export { usersApi } from './users';
 export * from './types';

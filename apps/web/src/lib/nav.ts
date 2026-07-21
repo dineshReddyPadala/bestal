@@ -1,4 +1,4 @@
-import { adminNav, clientNav, recruiterNav, salesNav } from '@bestal/mock-data';
+import { adminNav, clientNav, recruiterNav, salesNav, superAdminNav } from '@bestal/mock-data';
 import type { DashboardNavItem } from '@bestal/ui';
 
 function toNavItems(
@@ -8,7 +8,6 @@ function toNavItems(
     label: item.label,
     href: item.href,
     icon: item.icon,
-    // Live badges should come from API counts — omit static mock badges.
   }));
 }
 
@@ -16,6 +15,7 @@ export const adminNavItems = toNavItems(adminNav);
 export const recruiterNavItems = toNavItems(recruiterNav);
 export const clientNavItems = toNavItems(clientNav);
 export const salesNavItems = toNavItems(salesNav);
+export const superAdminNavItems = toNavItems(superAdminNav);
 
 export function resolveActiveNavPath(pathname: string, basePath: string): string {
   if (pathname.startsWith(`${basePath}/`)) {
