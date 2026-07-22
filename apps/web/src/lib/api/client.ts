@@ -31,7 +31,12 @@ type RequestOptions = {
 let refreshPromise: Promise<boolean> | null = null;
 
 function buildUrl(path: string, params?: RequestOptions['params']): string {
-  const url = new URL(`${BASE_URL}${path.startsWith('/') ? path : `/${path}`}`);
+  const joined = `${BASE_URL}${path.startsWith('/') ? path : `/${path}`}`;
+  // Relative bases (e.g. /api/v1) need an origin — resolve against the current page
+  // so Vite can proxy /api/v1 → the Node API.
+  const url = /^https?:\/\//i.test(joined)
+    ? new URL(joined)
+    : new URL(joined, typeof window !== 'undefined' ? window.location.origin : 'http://localhost');
   if (params) {
     for (const [key, value] of Object.entries(params)) {
       if (value !== undefined && value !== null && value !== '') {
