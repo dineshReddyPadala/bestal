@@ -8,18 +8,16 @@ import type { Portal } from '../../lib/api/types';
 type PortalLoginFormProps = {
   portal: Portal;
   defaultEmail: string;
-  demoHint?: string;
   footerLink?: { label: string; href: string };
 };
 
 export function PortalLoginForm({
   portal,
   defaultEmail,
-  demoHint,
   footerLink,
 }: PortalLoginFormProps) {
   const [email, setEmail] = useState(defaultEmail);
-  const [password, setPassword] = useState('Password123!');
+  const [password, setPassword] = useState('');
   const { handleLogin, error, submitting } = usePortalLogin(portal);
   const forgotPasswordHref = isSelfServicePortal(portal)
     ? `/${portal.toLowerCase()}/forgot-password`
@@ -50,11 +48,6 @@ export function PortalLoginForm({
           autoComplete="email"
           required
         />
-        {demoHint && (
-          <p className="text-xs text-muted-foreground">
-            Demo account: <span className="font-medium">{demoHint}</span>
-          </p>
-        )}
       </div>
 
       <div className="space-y-2">

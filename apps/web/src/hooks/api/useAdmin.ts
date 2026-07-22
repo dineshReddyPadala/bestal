@@ -122,6 +122,28 @@ export function useAdminSettings() {
   });
 }
 
+export function useAdminRoles() {
+  return useQuery({
+    queryKey: queryKeys.admin.roles,
+    queryFn: () => adminApi.listRoles(),
+  });
+}
+
+export function useAdminRole(code: string | undefined) {
+  return useQuery({
+    queryKey: queryKeys.admin.role(code ?? ''),
+    queryFn: () => adminApi.getRole(code!),
+    enabled: Boolean(code),
+  });
+}
+
+export function useAdminRoleCatalog() {
+  return useQuery({
+    queryKey: queryKeys.admin.roleCatalog,
+    queryFn: () => adminApi.getRoleCatalog(),
+  });
+}
+
 export function useAdminMutations() {
   const qc = useQueryClient();
   const invalidate = () => qc.invalidateQueries({ queryKey: queryKeys.admin.all });
@@ -279,6 +301,19 @@ export function useAdminMutations() {
           | 'commercials';
         body: unknown;
       }) => adminApi.putSetting(key, body),
+      onSuccess: invalidate,
+    }),
+    createRole: useMutation({
+      mutationFn: (body: Record<string, unknown>) => adminApi.createRole(body),
+      onSuccess: invalidate,
+    }),
+    updateRole: useMutation({
+      mutationFn: ({ code, body }: { code: string; body: Record<string, unknown> }) =>
+        adminApi.updateRole(code, body),
+      onSuccess: invalidate,
+    }),
+    deleteRole: useMutation({
+      mutationFn: (code: string) => adminApi.deleteRole(code),
       onSuccess: invalidate,
     }),
   };

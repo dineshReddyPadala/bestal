@@ -16,9 +16,10 @@ import {
 } from '../../utils/index.js';
 import { EmailService } from '../../services/email.service.js';
 import {
-  getPermissionsForRole,
+  getPermissionsForRole as staticPermissionsForRole,
   type Permission,
 } from './auth.permissions.js';
+import { resolvePermissionsForMembership } from '../admin/admin-roles.service.js';
 import type {
   AuthTokenResponse,
   AuthUserProfile,
@@ -267,7 +268,11 @@ export class AuthService {
         bigintToNumber(m.organizationId) === session.organizationId,
     );
 
-    const permissions = getPermissionsForRole(session.role);
+    const permissions = await resolvePermissionsForMembership(
+      this.fastify.prisma,
+      session.role,
+      null,
+    );
 
     let clientId: number | null = null;
     let clientName: string | null = null;
@@ -294,13 +299,13 @@ export class AuthService {
       clientName,
       role: session.role,
       portal: session.portal,
-      permissions: [...permissions],
+      permissions: permissions as Permission[],
       lastLoginAt: user.lastLoginAt?.toISOString() ?? null,
     };
   }
 
   getPermissionsForRole(role: Role): Permission[] {
-    return [...getPermissionsForRole(role)];
+    return [...staticPermissionsForRole(role)];
   }
 
   private resolveSession(

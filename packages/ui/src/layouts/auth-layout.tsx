@@ -12,7 +12,7 @@ export type AuthLayoutProps = {
 export function AuthLayout({
   children,
   title = 'Welcome back',
-  subtitle = 'Sign in to your Bestal account',
+  subtitle,
   className,
 }: AuthLayoutProps) {
   return (
@@ -29,19 +29,14 @@ export function AuthLayout({
             <h1 className="text-2xl font-semibold tracking-tight text-foreground">
               {title}
             </h1>
-            <p className="mt-2 text-sm text-muted-foreground">{subtitle}</p>
+            {subtitle ? (
+              <p className="mt-2 text-sm text-muted-foreground">{subtitle}</p>
+            ) : null}
           </div>
 
           <Card className="shadow-elevated">
             <CardContent className="p-8">{children}</CardContent>
           </Card>
-
-          <p className="mt-6 text-center text-sm text-muted-foreground">
-            Need help?{' '}
-            <a href="/contact" className="font-medium text-brand hover:underline">
-              Contact support
-            </a>
-          </p>
         </div>
       </div>
     </div>

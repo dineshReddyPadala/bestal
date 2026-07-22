@@ -50,6 +50,9 @@ export const queryKeys = {
     reports: (kind: string) => ['admin', 'reports', kind] as const,
     auditLogs: (params?: Record<string, unknown>) => ['admin', 'audit-logs', params] as const,
     settings: ['admin', 'settings'] as const,
+    roles: ['admin', 'roles'] as const,
+    role: (code: string) => ['admin', 'roles', code] as const,
+    roleCatalog: ['admin', 'roles', 'catalog'] as const,
   },
   evaluations: {
     all: ['evaluations'] as const,

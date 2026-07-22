@@ -2,12 +2,14 @@ import type { FastifyReply, FastifyRequest } from 'fastify';
 import { BadRequestError } from '../../utils/index.js';
 import { requestAuditContext } from './admin.auth.js';
 import { AdminOpsService } from './admin-ops.service.js';
+import { AdminRolesService } from './admin-roles.service.js';
 import { AdminService } from './admin.service.js';
 
 export class AdminController {
   constructor(
     private readonly admin: AdminService,
     private readonly ops: AdminOpsService,
+    private readonly roles: AdminRolesService,
   ) {}
 
   private ctx(request: FastifyRequest) {
@@ -531,7 +533,19 @@ export class AdminController {
   };
 
   putSetting =
-    (key: 'ai' | 'oorwin' | 'email' | 'security' | 'scoring') =>
+    (
+      key:
+        | 'ai'
+        | 'oorwin'
+        | 'email'
+        | 'security'
+        | 'scoring'
+        | 'prompts'
+        | 'pricing'
+        | 'notifications'
+        | 'integrations'
+        | 'commercials',
+    ) =>
     async (request: FastifyRequest, reply: FastifyReply) => {
       const data = await this.ops.putSetting(
         request.authUser!,
@@ -541,4 +555,50 @@ export class AdminController {
       );
       return reply.send({ data });
     };
+
+  listRoles = async (_request: FastifyRequest, reply: FastifyReply) => {
+    const result = await this.roles.listRoles();
+    return reply.send(result);
+  };
+
+  getRoleCatalog = async (_request: FastifyRequest, reply: FastifyReply) => {
+    const result = await this.roles.listCatalog();
+    return reply.send(result);
+  };
+
+  getRole = async (request: FastifyRequest, reply: FastifyReply) => {
+    const { code } = request.params as { code: string };
+    const data = await this.roles.getRole(code);
+    return reply.send({ data });
+  };
+
+  createRole = async (request: FastifyRequest, reply: FastifyReply) => {
+    const data = await this.roles.createRole(
+      request.authUser!,
+      request.body as never,
+      this.ctx(request),
+    );
+    return reply.status(201).send({ data });
+  };
+
+  updateRole = async (request: FastifyRequest, reply: FastifyReply) => {
+    const { code } = request.params as { code: string };
+    const data = await this.roles.updateRole(
+      request.authUser!,
+      code,
+      request.body as never,
+      this.ctx(request),
+    );
+    return reply.send({ data });
+  };
+
+  deleteRole = async (request: FastifyRequest, reply: FastifyReply) => {
+    const { code } = request.params as { code: string };
+    const data = await this.roles.deleteRole(
+      request.authUser!,
+      code,
+      this.ctx(request),
+    );
+    return reply.send({ data });
+  };
 }

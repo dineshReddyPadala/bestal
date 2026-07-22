@@ -1,7 +1,9 @@
-import { Button, StatusBadge, TanStackDataTable } from '@bestal/ui';
+import { StatusBadge, TanStackDataTable } from '@bestal/ui';
 import { type ColumnDef } from '@tanstack/react-table';
 import { useMemo } from 'react';
 import { ListingPageShell } from '../../components/layout/ListingPageShell';
+import { ActionMenu, type ActionMenuItem } from '../../components/super-admin/ActionMenu';
+import { useConfirmAction } from '../../components/super-admin/useConfirmAction';
 import { useAdminDeployments, useAdminMutations } from '../../hooks/api/useAdmin';
 import { useDemoToast } from '../../lib/use-demo-toast';
 
@@ -17,8 +19,159 @@ type Row = {
   status: string;
 };
 
+function deploymentActions(
+  r: Row,
+  helpers: {
+    mutations: ReturnType<typeof useAdminMutations>;
+    show: (m: string) => void;
+    showError: (m: string) => void;
+    requestConfirm: ReturnType<typeof useConfirmAction>['requestConfirm'];
+  },
+): ActionMenuItem[] {
+  const { mutations, show, showError, requestConfirm } = helpers;
+  const status = r.status.toUpperCase();
+  const label = `${r.candidateName} · ${r.clientName}`;
+  const view: ActionMenuItem = { id: 'view', label: 'View Deployment' };
+
+  if (status === 'ACTIVE') {
+    return [
+      view,
+      {
+        id: 'extend',
+        label: 'Extend Deployment',
+        onSelect: () => {
+          const endDate = window.prompt('New end date (YYYY-MM-DD)');
+          if (!endDate) return;
+          void mutations.extendDeployment
+            .mutateAsync({ id: r.id, endDate })
+            .then(() => show('Deployment extended'))
+            .catch((e) => showError(e instanceof Error ? e.message : 'Failed'));
+        },
+      },
+      {
+        id: 'pause',
+        label: 'Pause Deployment',
+        onSelect: () =>
+          requestConfirm({
+            title: 'Pause Deployment?',
+            description: `${label} will be paused. Billing and availability may be affected.`,
+            confirmLabel: 'Pause Deployment',
+            onConfirm: async () => {
+              await mutations.pauseDeployment.mutateAsync(r.id);
+              show('Deployment paused');
+            },
+          }),
+      },
+      {
+        id: 'complete',
+        label: 'Complete Deployment',
+        separatorBefore: true,
+        onSelect: () =>
+          requestConfirm({
+            title: 'Complete Deployment?',
+            description: `${label} will be marked completed.`,
+            confirmLabel: 'Complete Deployment',
+            onConfirm: async () => {
+              await mutations.completeDeployment.mutateAsync(r.id);
+              show('Deployment completed');
+            },
+          }),
+      },
+      {
+        id: 'terminate',
+        label: 'Terminate Deployment',
+        destructive: true,
+        onSelect: () => {
+          const reason = window.prompt('Terminate reason') ?? 'Terminated';
+          requestConfirm({
+            title: 'Terminate Deployment?',
+            description: `${label} will be terminated. Reason: ${reason}`,
+            confirmLabel: 'Terminate Deployment',
+            destructive: true,
+            onConfirm: async () => {
+              await mutations.terminateDeployment.mutateAsync({ id: r.id, reason });
+              show('Deployment terminated');
+            },
+          });
+        },
+      },
+    ];
+  }
+
+  if (status === 'PAUSED') {
+    return [
+      view,
+      {
+        id: 'extend',
+        label: 'Extend Deployment',
+        onSelect: () => {
+          const endDate = window.prompt('New end date (YYYY-MM-DD)');
+          if (!endDate) return;
+          void mutations.extendDeployment
+            .mutateAsync({ id: r.id, endDate })
+            .then(() => show('Extended'))
+            .catch((e) => showError(e instanceof Error ? e.message : 'Failed'));
+        },
+      },
+      {
+        id: 'complete',
+        label: 'Complete Deployment',
+        onSelect: () =>
+          void mutations.completeDeployment
+            .mutateAsync(r.id)
+            .then(() => show('Completed'))
+            .catch((e) => showError(e instanceof Error ? e.message : 'Failed')),
+      },
+      {
+        id: 'terminate',
+        label: 'Terminate Deployment',
+        destructive: true,
+        separatorBefore: true,
+        onSelect: () => {
+          const reason = window.prompt('Terminate reason') ?? 'Terminated';
+          requestConfirm({
+            title: 'Terminate Deployment?',
+            description: `${label} will be terminated.`,
+            confirmLabel: 'Terminate Deployment',
+            destructive: true,
+            onConfirm: async () => {
+              await mutations.terminateDeployment.mutateAsync({ id: r.id, reason });
+              show('Terminated');
+            },
+          });
+        },
+      },
+    ];
+  }
+
+  if (status === 'COMPLETED') {
+    return [view, { id: 'commercials', label: 'View Commercials', href: '/super-admin/reports?tab=margin' }];
+  }
+
+  if (status === 'TERMINATED') {
+    return [view];
+  }
+
+  return [
+    view,
+    {
+      id: 'extend',
+      label: 'Extend Deployment',
+      onSelect: () => {
+        const endDate = window.prompt('New end date (YYYY-MM-DD)');
+        if (!endDate) return;
+        void mutations.extendDeployment
+          .mutateAsync({ id: r.id, endDate })
+          .then(() => show('Extended'))
+          .catch((e) => showError(e instanceof Error ? e.message : 'Failed'));
+      },
+    },
+  ];
+}
+
 export function SuperAdminDeploymentsPage() {
   const { message, show, showError } = useDemoToast();
+  const { requestConfirm, confirmDialog } = useConfirmAction();
   const { data, isLoading, isError, error } = useAdminDeployments({ limit: 100 });
   const mutations = useAdminMutations();
   const rows = (data?.data ?? []) as unknown as Row[];
@@ -74,31 +227,43 @@ export function SuperAdminDeploymentsPage() {
       },
       {
         id: 'actions',
-        header: '',
+        header: 'Actions',
         cell: ({ row }) => (
-          <div className="flex flex-wrap gap-1">
-            <Button size="sm" variant="outline" onClick={() => { const endDate = window.prompt('New end date (YYYY-MM-DD)'); if (!endDate) return; void mutations.extendDeployment.mutateAsync({ id: row.original.id, endDate }).then(() => show('Extended')).catch((e) => showError(e instanceof Error ? e.message : 'Failed')); }}>
-              Extend
-            </Button>
-            <Button size="sm" variant="outline" onClick={() => void mutations.pauseDeployment.mutateAsync(row.original.id).then(() => show('Paused')).catch((e) => showError(e instanceof Error ? e.message : 'Failed'))}>
-              Pause
-            </Button>
-            <Button size="sm" variant="outline" onClick={() => void mutations.completeDeployment.mutateAsync(row.original.id).then(() => show('Completed')).catch((e) => showError(e instanceof Error ? e.message : 'Failed'))}>
-              Complete
-            </Button>
-            <Button size="sm" variant="outline" onClick={() => { const reason = window.prompt('Terminate reason') ?? 'Terminated'; void mutations.terminateDeployment.mutateAsync({ id: row.original.id, reason }).then(() => show('Terminated')).catch((e) => showError(e instanceof Error ? e.message : 'Failed')); }}>
-              Terminate
-            </Button>
-          </div>
+          <ActionMenu
+            items={deploymentActions(row.original, {
+              mutations,
+              show,
+              showError,
+              requestConfirm,
+            })}
+            label={`Actions for deployment ${row.original.id}`}
+          />
         ),
       },
     ],
-    [mutations, show, showError],
+    [mutations, requestConfirm, show, showError],
   );
 
   return (
-    <ListingPageShell title="Deployments" message={message} error={isError ? (error instanceof Error ? error.message : 'Failed') : null} loading={isLoading} loadingLabel="Loading deployments…">
-      <TanStackDataTable columns={columns} data={rows} searchPlaceholder="Search deployments…" pageSize={12} stickyHeader fillHeight dense />
-    </ListingPageShell>
+    <>
+      <ListingPageShell
+        title="Deployments"
+        message={message}
+        error={isError ? (error instanceof Error ? error.message : 'Failed') : null}
+        loading={isLoading}
+        loadingLabel="Loading deployments…"
+      >
+        <TanStackDataTable
+          columns={columns}
+          data={rows}
+          searchPlaceholder="Search deployments…"
+          pageSize={12}
+          stickyHeader
+          fillHeight
+          dense
+        />
+      </ListingPageShell>
+      {confirmDialog}
+    </>
   );
 }

@@ -71,10 +71,6 @@ export function UserInviteForm({
         </div>
       </div>
 
-      <p className="text-xs text-muted-foreground">
-        Login credentials will be emailed to this address automatically.
-      </p>
-
       <div className="flex justify-end gap-2 border-t border-border pt-4">
         <Button type="button" variant="outline" onClick={onCancel} disabled={submitting}>
           Cancel

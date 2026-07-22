@@ -3,6 +3,7 @@ import { type ColumnDef } from '@tanstack/react-table';
 import { Upload } from 'lucide-react';
 import { useMemo, useRef } from 'react';
 import { ListingPageShell } from '../../components/layout/ListingPageShell';
+import { ActionMenu, type ActionMenuItem } from '../../components/super-admin/ActionMenu';
 import { useAdminMutations, useAdminOorwinHistory } from '../../hooks/api/useAdmin';
 import { useDemoToast } from '../../lib/use-demo-toast';
 
@@ -17,7 +18,6 @@ type Row = {
   createdAt: string;
 };
 
-/** Data import from Oorwin (CSV). Replaces the old “Oorwin Sync” label. */
 export function SuperAdminDataImportPage() {
   const { message, show, showError } = useDemoToast();
   const { data, isLoading, isError, error } = useAdminOorwinHistory({ limit: 50 });
@@ -42,8 +42,52 @@ export function SuperAdminDataImportPage() {
         header: 'Imported',
         cell: ({ getValue }) => new Date(getValue() as string).toLocaleString(),
       },
+      {
+        id: 'actions',
+        header: 'Actions',
+        cell: ({ row }) => {
+          const r = row.original;
+          const items: ActionMenuItem[] = [
+            {
+              id: 'details',
+              label: 'View Import Details',
+              onSelect: () =>
+                show(
+                  `${r.fileName}: created ${r.createdCount}, updated ${r.updatedCount}, failed ${r.failedCount}`,
+                ),
+            },
+            {
+              id: 'imported',
+              label: 'View Imported Records',
+              href: '/super-admin/candidates',
+            },
+            {
+              id: 'failed',
+              label: 'View Failed Records',
+              disabled: r.failedCount === 0,
+              disabledReason: 'No failed records for this import',
+              onSelect: () => show(`${r.failedCount} failed row(s) in ${r.fileName}`),
+            },
+            {
+              id: 'retry',
+              label: 'Retry Failed Records',
+              separatorBefore: true,
+              disabled: r.failedCount === 0,
+              disabledReason: 'No failed records to retry',
+              onSelect: () =>
+                showError('Retry failed records is not available yet — re-upload the CSV'),
+            },
+            {
+              id: 'history',
+              label: 'View Import History',
+              onSelect: () => show('You are viewing import history'),
+            },
+          ];
+          return <ActionMenu items={items} label={`Actions for ${r.fileName}`} />;
+        },
+      },
     ],
-    [],
+    [show, showError],
   );
 
   return (
@@ -98,5 +142,4 @@ export function SuperAdminDataImportPage() {
   );
 }
 
-/** @deprecated Use SuperAdminDataImportPage */
 export const SuperAdminOorwinSyncPage = SuperAdminDataImportPage;

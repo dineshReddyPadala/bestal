@@ -283,6 +283,8 @@ model User {
   auditLogs                AuditLog[]          @relation("AuditLogActor")
   systemSettingsUpdated    SystemSetting[]     @relation("SystemSettingUpdatedBy")
   oorwinImportBatches      OorwinImportBatch[] @relation("OorwinImportBatchCreator")
+  platformRolesCreated     PlatformRole[]      @relation("PlatformRoleCreator")
+  platformRolesUpdated     PlatformRole[]      @relation("PlatformRoleUpdatedBy")
 
   @@index([deletedAt])
   @@index([isActive, deletedAt])
@@ -322,16 +324,19 @@ model Membership {
   userId         BigInt   @map("user_id")
   organizationId BigInt   @map("organization_id")
   role           Role
+  platformRoleId BigInt?  @map("platform_role_id")
   isActive       Boolean  @default(true) @map("is_active")
   createdAt      DateTime @default(now()) @map("created_at")
   updatedAt      DateTime @updatedAt @map("updated_at")
 
-  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  platformRole PlatformRole? @relation(fields: [platformRoleId], references: [id], onDelete: SetNull)
 
   @@unique([userId, organizationId])
   @@index([organizationId, role])
   @@index([userId, isActive])
+  @@index([platformRoleId])
   @@map("memberships")
 }
 
@@ -932,6 +937,35 @@ model SystemSetting {
   updatedBy User? @relation("SystemSettingUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
 
   @@map("system_settings")
+}
+
+/// Super Admin–managed role definitions (system + custom) with editable permissions.
+model PlatformRole {
+  id           BigInt   @id @default(autoincrement())
+  code         String   @unique @db.VarChar(64)
+  name         String   @db.VarChar(120)
+  description  String?  @db.Text
+  /// Portal login mapping: ADMIN | RECRUITER | SALES | CLIENT
+  portal       String   @db.VarChar(30)
+  /// Base Membership.role enum used when assigning this role to a user
+  baseRole     Role     @map("base_role")
+  permissions  Json     @db.JsonB
+  isSystem     Boolean  @default(false) @map("is_system")
+  isProtected  Boolean  @default(false) @map("is_protected")
+  isActive     Boolean  @default(true) @map("is_active")
+  createdById  BigInt?  @map("created_by_id")
+  updatedById  BigInt?  @map("updated_by_id")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+  deletedAt    DateTime? @map("deleted_at")
+
+  createdBy   User?        @relation("PlatformRoleCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  updatedBy   User?        @relation("PlatformRoleUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+  memberships Membership[]
+
+  @@index([isActive, deletedAt])
+  @@index([portal])
+  @@map("platform_roles")
 }
 
 enum OorwinImportStatus {

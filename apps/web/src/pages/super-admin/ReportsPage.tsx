@@ -17,6 +17,7 @@ import { type ColumnDef } from '@tanstack/react-table';
 import { Loader2 } from 'lucide-react';
 import { useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { ActionMenu } from '../../components/super-admin/ActionMenu';
 import { useAdminReport } from '../../hooks/api/useAdmin';
 
 function pct(n: number | null | undefined) {
@@ -475,6 +476,33 @@ export function SuperAdminReportsPage() {
       <PageHeader
         title="Reports"
         description="Revenue, margin, pipeline, client activity, recruiter performance, and AI"
+        actions={
+          <ActionMenu
+            label="Report actions"
+            items={[
+              { id: 'open', label: 'Open Report', href: '/super-admin/reports' },
+              {
+                id: 'export',
+                label: 'Export',
+                disabled: true,
+                disabledReason: 'Export is not available yet',
+              },
+              {
+                id: 'download',
+                label: 'Download',
+                disabled: true,
+                disabledReason: 'Download is not available yet',
+              },
+              {
+                id: 'schedule',
+                label: 'Schedule Report',
+                separatorBefore: true,
+                disabled: true,
+                disabledReason: 'Scheduling is not available yet',
+              },
+            ]}
+          />
+        }
       />
       <div className="p-6">
         <Tabs
