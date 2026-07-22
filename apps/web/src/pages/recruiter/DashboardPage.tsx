@@ -30,7 +30,6 @@ export function DashboardPage() {
     <div>
       <PageHeader
         title="Dashboard"
-        description="Your recruiting pipeline at a glance"
         actions={
           <Link
             to="/recruiter/candidates"

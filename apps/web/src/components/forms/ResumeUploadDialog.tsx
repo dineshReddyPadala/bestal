@@ -1,6 +1,5 @@
-import { cn } from '@bestal/shared-utils';
 import { Button, Dialog, FileUpload } from '@bestal/ui';
-import { AlertCircle, FileText, Loader2, Sparkles } from 'lucide-react';
+import { AlertCircle, FileText, Loader2 } from 'lucide-react';
 import { useState } from 'react';
 import { useSkillCommunitiesList } from '../../hooks/api/useSkillCommunities';
 import { getApiErrorMessage } from '../../lib/api/errors';
@@ -105,7 +104,6 @@ export function ResumeUploadDialog({ open, onClose, onSuccess }: ResumeUploadDia
       open={open}
       onClose={handleClose}
       title="Upload resume"
-      description="Upload a PDF or Word resume. BesTal stores the file, runs AI extraction, and creates a draft candidate."
       className="max-w-lg"
       footer={
         <Button type="button" variant="outline" onClick={handleClose} disabled={extracting}>
@@ -114,22 +112,6 @@ export function ResumeUploadDialog({ open, onClose, onSuccess }: ResumeUploadDia
       }
     >
       <div className="space-y-4">
-        <div
-          className={cn(
-            'rounded-xl border border-brand/20 bg-brand/5 px-4 py-3 text-sm text-muted-foreground',
-            extracting && 'opacity-80',
-          )}
-        >
-          <div className="flex items-start gap-2">
-            <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-brand" />
-            <p>
-              Resume is uploaded to storage and linked on a draft candidate. AI fields use a
-              static response until <code className="rounded bg-white/80 px-1">AI_EXTRACTION_URL</code>{' '}
-              is configured on the API.
-            </p>
-          </div>
-        </div>
-
         {communitiesLoading ? (
           <div className="flex items-center justify-center gap-2 py-10 text-sm text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" />

@@ -23,12 +23,9 @@ function Textarea({ className, ...props }: TextareaHTMLAttributes<HTMLTextAreaEl
 
 type SettingsKey =
   | 'ai'
-  | 'email'
   | 'security'
   | 'scoring'
-  | 'prompts'
   | 'pricing'
-  | 'notifications'
   | 'integrations'
   | 'commercials';
 
@@ -47,12 +44,6 @@ export function SuperAdminPlatformSettingsPage() {
   const [saving, setSaving] = useState<SettingsKey | null>(null);
 
   const [ai, setAi] = useState({ model: 'gpt-4o-mini', enabled: true, maxRetries: '2' });
-  const [email, setEmail] = useState({
-    fromName: 'BesTal',
-    fromEmail: 'noreply@bestal.com',
-    notifyApprovals: true,
-    notifyTrials: true,
-  });
   const [security, setSecurity] = useState({
     sessionTimeoutMinutes: '480',
     requireMfaForAdmins: false,
@@ -64,27 +55,15 @@ export function SuperAdminPlatformSettingsPage() {
     weightCommunication: '30',
     weightReliability: '30',
   });
-  const [prompts, setPrompts] = useState({
-    resumeExtraction: '',
-    screening: '',
-    evaluationSummary: '',
-  });
   const [pricing, setPricing] = useState({
     defaultPayRate: '',
     defaultBillRate: '',
     minMarginPercent: '20',
     currency: 'USD',
   });
-  const [notifications, setNotifications] = useState({
-    approvalTemplate: '',
-    trialTemplate: '',
-    deploymentTemplate: '',
-    bgvTemplate: '',
-  });
   const [integrations, setIntegrations] = useState({
     oorwinEnabled: false,
     oorwinApiUrl: '',
-    emailProvider: 'smtp',
     webhookUrl: '',
   });
   const [commercials, setCommercials] = useState({
@@ -100,12 +79,9 @@ export function SuperAdminPlatformSettingsPage() {
   useEffect(() => {
     if (!data) return;
     const a = asObj(data.ai);
-    const e = asObj(data.email);
     const s = asObj(data.security);
     const sc = asObj(data.scoring);
-    const p = asObj(data.prompts);
     const pr = asObj(data.pricing);
-    const n = asObj(data.notifications);
     const i = asObj(data.integrations);
     const c = asObj(data.commercials);
 
@@ -113,12 +89,6 @@ export function SuperAdminPlatformSettingsPage() {
       model: String(a.model ?? 'gpt-4o-mini'),
       enabled: a.enabled === undefined ? true : Boolean(a.enabled),
       maxRetries: String(a.maxRetries ?? '2'),
-    });
-    setEmail({
-      fromName: String(e.fromName ?? 'BesTal'),
-      fromEmail: String(e.fromEmail ?? 'noreply@bestal.com'),
-      notifyApprovals: e.notifyApprovals === undefined ? true : Boolean(e.notifyApprovals),
-      notifyTrials: e.notifyTrials === undefined ? true : Boolean(e.notifyTrials),
     });
     setSecurity({
       sessionTimeoutMinutes: String(s.sessionTimeoutMinutes ?? '480'),
@@ -131,27 +101,15 @@ export function SuperAdminPlatformSettingsPage() {
       weightCommunication: String(sc.weightCommunication ?? '30'),
       weightReliability: String(sc.weightReliability ?? '30'),
     });
-    setPrompts({
-      resumeExtraction: String(p.resumeExtraction ?? ''),
-      screening: String(p.screening ?? ''),
-      evaluationSummary: String(p.evaluationSummary ?? ''),
-    });
     setPricing({
       defaultPayRate: String(pr.defaultPayRate ?? ''),
       defaultBillRate: String(pr.defaultBillRate ?? ''),
       minMarginPercent: String(pr.minMarginPercent ?? '20'),
       currency: String(pr.currency ?? 'USD'),
     });
-    setNotifications({
-      approvalTemplate: String(n.approvalTemplate ?? ''),
-      trialTemplate: String(n.trialTemplate ?? ''),
-      deploymentTemplate: String(n.deploymentTemplate ?? ''),
-      bgvTemplate: String(n.bgvTemplate ?? ''),
-    });
     setIntegrations({
       oorwinEnabled: Boolean(i.oorwinEnabled),
       oorwinApiUrl: String(i.oorwinApiUrl ?? ''),
-      emailProvider: String(i.emailProvider ?? 'smtp'),
       webhookUrl: String(i.webhookUrl ?? ''),
     });
     setCommercials({
@@ -186,7 +144,6 @@ export function SuperAdminPlatformSettingsPage() {
     <div>
       <PageHeader
         title="Platform Settings"
-        description="Commercials, system configuration, scoring, communities, and integrations"
       />
       {message && (
         <div className="mx-6 mb-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
@@ -246,45 +203,6 @@ export function SuperAdminPlatformSettingsPage() {
                     </label>
                   </Section>
                   <Section
-                    title="Email"
-                    busy={saving === 'email'}
-                    onSave={() => void save('email', { ...email }, 'Email settings')}
-                  >
-                    <Field label="From name">
-                      <Input
-                        value={email.fromName}
-                        onChange={(e) => setEmail((p) => ({ ...p, fromName: e.target.value }))}
-                      />
-                    </Field>
-                    <Field label="From email">
-                      <Input
-                        type="email"
-                        value={email.fromEmail}
-                        onChange={(e) => setEmail((p) => ({ ...p, fromEmail: e.target.value }))}
-                      />
-                    </Field>
-                    <label className="flex items-center gap-2 text-sm">
-                      <input
-                        type="checkbox"
-                        checked={email.notifyApprovals}
-                        onChange={(e) =>
-                          setEmail((p) => ({ ...p, notifyApprovals: e.target.checked }))
-                        }
-                      />
-                      Notify on candidate approvals
-                    </label>
-                    <label className="flex items-center gap-2 text-sm">
-                      <input
-                        type="checkbox"
-                        checked={email.notifyTrials}
-                        onChange={(e) =>
-                          setEmail((p) => ({ ...p, notifyTrials: e.target.checked }))
-                        }
-                      />
-                      Notify on trial updates
-                    </label>
-                  </Section>
-                  <Section
                     title="Security"
                     busy={saving === 'security'}
                     onSave={() =>
@@ -332,46 +250,6 @@ export function SuperAdminPlatformSettingsPage() {
                     </label>
                   </Section>
                 </div>
-              ),
-            },
-            {
-              id: 'prompts',
-              label: 'AI prompts',
-              content: (
-                <Section
-                  title="Configure AI prompts"
-                  busy={saving === 'prompts'}
-                  onSave={() => void save('prompts', { ...prompts }, 'AI prompts')}
-                >
-                  <Field label="Resume extraction prompt" className="sm:col-span-2">
-                    <Textarea
-                      rows={4}
-                      value={prompts.resumeExtraction}
-                      onChange={(e) =>
-                        setPrompts((p) => ({ ...p, resumeExtraction: e.target.value }))
-                      }
-                      placeholder="System prompt used when extracting candidate data from resumes"
-                    />
-                  </Field>
-                  <Field label="Screening prompt" className="sm:col-span-2">
-                    <Textarea
-                      rows={4}
-                      value={prompts.screening}
-                      onChange={(e) => setPrompts((p) => ({ ...p, screening: e.target.value }))}
-                      placeholder="Prompt for AI screening recommendations"
-                    />
-                  </Field>
-                  <Field label="Evaluation summary prompt" className="sm:col-span-2">
-                    <Textarea
-                      rows={4}
-                      value={prompts.evaluationSummary}
-                      onChange={(e) =>
-                        setPrompts((p) => ({ ...p, evaluationSummary: e.target.value }))
-                      }
-                      placeholder="Prompt for summarizing evaluation forms"
-                    />
-                  </Field>
-                </Section>
               ),
             },
             {
@@ -510,39 +388,6 @@ export function SuperAdminPlatformSettingsPage() {
               ),
             },
             {
-              id: 'notifications',
-              label: 'Notification templates',
-              content: (
-                <Section
-                  title="Configure notification templates"
-                  busy={saving === 'notifications'}
-                  onSave={() =>
-                    void save('notifications', { ...notifications }, 'Notification templates')
-                  }
-                >
-                  {(
-                    [
-                      ['approvalTemplate', 'Approval template'],
-                      ['trialTemplate', 'Trial template'],
-                      ['deploymentTemplate', 'Deployment template'],
-                      ['bgvTemplate', 'BGV template'],
-                    ] as const
-                  ).map(([key, label]) => (
-                    <Field key={key} label={label} className="sm:col-span-2">
-                      <Textarea
-                        rows={3}
-                        value={notifications[key]}
-                        onChange={(e) =>
-                          setNotifications((p) => ({ ...p, [key]: e.target.value }))
-                        }
-                        placeholder={`Email / in-app template for ${label.toLowerCase()}`}
-                      />
-                    </Field>
-                  ))}
-                </Section>
-              ),
-            },
-            {
               id: 'integrations',
               label: 'Integrations',
               content: (
@@ -571,18 +416,6 @@ export function SuperAdminPlatformSettingsPage() {
                       }
                       placeholder="https://…"
                     />
-                  </Field>
-                  <Field label="Email provider">
-                    <Select
-                      value={integrations.emailProvider}
-                      onChange={(e) =>
-                        setIntegrations((p) => ({ ...p, emailProvider: e.target.value }))
-                      }
-                    >
-                      <option value="smtp">SMTP</option>
-                      <option value="sendgrid">SendGrid</option>
-                      <option value="ses">Amazon SES</option>
-                    </Select>
                   </Field>
                   <Field label="Webhook URL">
                     <Input

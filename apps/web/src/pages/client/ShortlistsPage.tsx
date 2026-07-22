@@ -17,7 +17,6 @@ export function ShortlistsPage() {
     <div>
       <PageHeader
         title="Shortlists"
-        description="Review vetted candidate shortlists prepared by your BesTal team"
       />
 
       <div className="p-6">
@@ -25,7 +24,6 @@ export function ShortlistsPage() {
           <EmptyState
             icon={<ListChecks className="h-8 w-8" />}
             title="No shortlists yet"
-            description="Your account manager will share shortlists here when candidates are ready for review."
           />
         ) : (
           <div className="grid gap-4">

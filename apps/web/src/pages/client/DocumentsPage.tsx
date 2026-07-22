@@ -59,7 +59,6 @@ export function DocumentsPage() {
     <div>
       <PageHeader
         title="Documents"
-        description="Contracts, compliance files, and engagement documentation"
       />
 
       <div className="p-6">
@@ -67,7 +66,6 @@ export function DocumentsPage() {
           <EmptyState
             icon={<FileText className="h-8 w-8" />}
             title="No documents"
-            description="Shared documents from your BesTal account team will appear here."
           />
         ) : (
           <Card>

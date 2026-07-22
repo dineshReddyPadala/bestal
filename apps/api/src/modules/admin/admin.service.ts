@@ -865,28 +865,16 @@ export class AdminService {
     body: string,
     actionPath: string,
   ) {
-    const memberships = await this.prisma.membership.findMany({
-      where: {
-        organizationId: BigInt(organizationId),
-        isActive: true,
-        role: { in: ['SUPER_ADMIN', 'ADMIN', 'RECRUITER'] },
-        user: { deletedAt: null, isActive: true },
-      },
-      select: { userId: true },
-    });
-    const ids = new Set<number>([triggeredByUserId, ...memberships.map((m) => Number(m.userId))]);
-    await this.prisma.notification.createMany({
-      data: [...ids].map((userId) => ({
-        organizationId: BigInt(organizationId),
-        userId: BigInt(userId),
-        type: 'SYSTEM' as const,
-        channel: 'IN_APP' as const,
-        status: 'SENT' as const,
-        title,
-        body,
-        actionUrl: `${this.fastify.config.webAppUrl.replace(/\/$/, '')}${actionPath}`,
-        sentAt: new Date(),
-      })),
+    const { notifyOrgRoles } = await import('../../services/notification-dispatch.service.js');
+    await notifyOrgRoles(this.prisma, this.fastify.config, {
+      organizationId,
+      roles: ['SUPER_ADMIN', 'ADMIN', 'RECRUITER'],
+      includeUserIds: [triggeredByUserId],
+      type: 'SYSTEM',
+      title,
+      body,
+      actionUrl: `${this.fastify.config.webAppUrl.replace(/\/$/, '')}${actionPath}`,
+      sendEmail: true,
     });
   }
 

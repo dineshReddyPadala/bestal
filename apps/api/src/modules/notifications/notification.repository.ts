@@ -40,6 +40,7 @@ export class NotificationRepository extends BaseRepository {
           userId: BigInt(userId),
           deletedAt: null,
           readAt: null,
+          channel: 'IN_APP',
         },
         data: {
           status: 'READ',
@@ -74,6 +75,8 @@ export class NotificationRepository extends BaseRepository {
     const where: Prisma.NotificationWhereInput = {
       userId: BigInt(filters.userId),
       deletedAt: null,
+      // Inbox shows in-app notifications only; EMAIL channel is for delivery audit.
+      channel: 'IN_APP',
     };
 
     if (filters.organizationId !== null) {

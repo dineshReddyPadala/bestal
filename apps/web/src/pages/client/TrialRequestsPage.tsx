@@ -85,7 +85,6 @@ export function TrialRequestsPage() {
     <div>
       <PageHeader
         title="Trial Requests"
-        description="Manage trial engagements before full deployment"
         actions={
           <Button onClick={() => setPickerOpen(true)}>
             <Plus className="mr-2 h-4 w-4" />
@@ -105,7 +104,6 @@ export function TrialRequestsPage() {
           <EmptyState
             icon={<FlaskConical className="h-8 w-8" />}
             title="No trial requests"
-            description="Choose a trial-eligible candidate and submit a pilot request."
             action={{ label: 'Request trial', onClick: () => setPickerOpen(true) }}
           />
         ) : (

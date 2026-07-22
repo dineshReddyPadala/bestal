@@ -457,7 +457,6 @@ export function EvaluationManagementView({
         open={createOpen}
         onClose={() => setCreateOpen(false)}
         title="Add evaluation"
-        description="Upload a PDF to auto-fill scores, or enter details manually."
         scrollable
         className="max-w-2xl"
         footer={

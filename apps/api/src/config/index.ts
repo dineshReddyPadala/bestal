@@ -153,7 +153,8 @@ function mapEnvToConfig(env: EnvSchema): AppConfig {
     corsOrigins: env.CORS_ORIGINS,
     mail: {
       from: mailFrom,
-      password: mailPassword,
+      // Gmail app passwords often include spaces; SMTP auth expects them stripped.
+      password: mailPassword ? mailPassword.replace(/\s+/g, '') : null,
       host: env.SMTP_HOST,
       port: env.SMTP_PORT,
       enabled: Boolean(mailFrom && mailPassword),

@@ -41,7 +41,6 @@ export function CandidatesPage() {
     <div>
       <PageHeader
         title="Candidates"
-        description="Published, approved talent shared with your team for review"
         actions={
           <SearchInput
             placeholder="Search by name, role, or skill…"
@@ -57,11 +56,6 @@ export function CandidatesPage() {
           <EmptyState
             icon={<Users className="h-8 w-8" />}
             title="No candidates found"
-            description={
-              query
-                ? 'Try adjusting your search terms.'
-                : 'Approved candidates from your shortlists will appear here.'
-            }
           />
         ) : (
           <div className="grid gap-4 lg:grid-cols-2">

@@ -85,7 +85,6 @@ export function ShortlistsPage() {
     <div>
       <PageHeader
         title="Shortlists"
-        description="Curated candidate lists for client engagements"
       />
 
       {isError && (
@@ -101,10 +100,7 @@ export function ShortlistsPage() {
         </div>
       ) : shortlists.length === 0 ? (
         <div className="p-6">
-          <EmptyState
-            title="No shortlists yet"
-            description="Create shortlists for clients when candidates are ready for review."
-          />
+          <EmptyState title="No shortlists yet" />
         </div>
       ) : (
         <div className="grid gap-4 p-6 md:grid-cols-2 xl:grid-cols-3">

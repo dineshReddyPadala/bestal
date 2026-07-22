@@ -1,7 +1,8 @@
 import { DashboardLayout } from '@bestal/ui';
 import { Outlet, useLocation } from 'react-router-dom';
-import { recruiterNavItems, resolveActiveNavPath } from '../lib/nav';
+import { NotificationBell } from '../components/notifications/NotificationBell';
 import { useDashboardUser } from '../hooks/useDashboardUser';
+import { recruiterNavItems, resolveActiveNavPath } from '../lib/nav';
 
 export function RecruiterShell() {
   const { pathname } = useLocation();
@@ -17,6 +18,7 @@ export function RecruiterShell() {
       user={user}
       currentPath={currentPath}
       onLogout={handleLogout}
+      headerActions={<NotificationBell />}
     >
       <Outlet />
     </DashboardLayout>

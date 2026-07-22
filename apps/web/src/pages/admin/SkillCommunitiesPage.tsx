@@ -7,7 +7,6 @@ export function SkillCommunitiesPage() {
     <div>
       <PageHeader
         title="Skill Communities"
-        description="Talent verticals and specialization groups"
       />
 
       <div className="grid gap-4 p-6 sm:grid-cols-2 lg:grid-cols-3">

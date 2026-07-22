@@ -70,7 +70,6 @@ export function DashboardPage() {
     <div className="min-h-full bg-muted/10">
       <PageHeader
         title="Admin Dashboard"
-        description="Manage daily platform operations and ensure candidate quality"
         actions={
           <div className="flex flex-wrap gap-2">
             <Link

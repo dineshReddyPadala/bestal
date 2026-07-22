@@ -19,7 +19,7 @@ import { useDashboardUser } from '../../hooks/useDashboardUser';
 
 export function DashboardPage() {
   const navigate = useNavigate();
-  const { user, authUser } = useDashboardUser();
+  const { user } = useDashboardUser();
   const [searchQuery, setSearchQuery] = useState('');
 
   const candidates = useCandidatesList({ limit: 20, sort: '-createdAt' });
@@ -42,14 +42,7 @@ export function DashboardPage() {
 
   return (
     <div className="min-h-full bg-muted/10">
-      <PageHeader
-        title={`Welcome back, ${firstName}`}
-        description={
-          authUser?.clientName
-            ? `${authUser.clientName} — your talent engagement hub`
-            : 'Your talent engagement hub'
-        }
-      />
+      <PageHeader title={`Welcome back, ${firstName}`} />
 
       <div className="space-y-8 p-4 sm:p-6">
         <section>

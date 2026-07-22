@@ -62,7 +62,6 @@ export function CandidateSearchPage() {
     <div className="min-h-full bg-muted/10">
       <PageHeader
         title="Candidate Search"
-        description="Premium talent discovery — filter, sort, and engage vetted candidates"
       />
 
       {message && (
@@ -128,7 +127,6 @@ export function CandidateSearchPage() {
           <EmptyState
             icon={<Users className="h-8 w-8" />}
             title="No candidates match your filters"
-            description="Try adjusting community, rate, score, or trial eligibility filters."
           />
         ) : viewMode === 'grid' ? (
           <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">

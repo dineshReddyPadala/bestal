@@ -156,6 +156,57 @@ export class EmailService {
 
     return { sent: true };
   }
+
+  async sendNotificationEmail(payload: {
+    to: string;
+    firstName?: string | null;
+    title: string;
+    body: string;
+    actionUrl?: string | null;
+  }): Promise<{ sent: boolean }> {
+    const greeting = payload.firstName ? `Hi ${payload.firstName},` : 'Hi,';
+    const text = [
+      greeting,
+      '',
+      payload.title,
+      '',
+      payload.body,
+      ...(payload.actionUrl ? ['', `Open: ${payload.actionUrl}`] : []),
+      '',
+      '— BesTal / Amnet Digital',
+    ].join('\n');
+
+    const html = `
+      <p>${escapeHtml(greeting)}</p>
+      <p><strong>${escapeHtml(payload.title)}</strong></p>
+      <p>${escapeHtml(payload.body)}</p>
+      ${
+        payload.actionUrl
+          ? `<p><a href="${escapeHtml(payload.actionUrl)}">View details</a></p>`
+          : ''
+      }
+      <p>— BesTal / Amnet Digital</p>
+    `;
+
+    if (!this.transporter || !this.config.mail.from) {
+      console.info('[email] Mail not configured — notification (dev):', {
+        to: payload.to,
+        title: payload.title,
+        actionUrl: payload.actionUrl,
+      });
+      return { sent: false };
+    }
+
+    await this.transporter.sendMail({
+      from: `"${this.config.appName}" <${this.config.mail.from}>`,
+      to: payload.to,
+      subject: payload.title,
+      text,
+      html,
+    });
+
+    return { sent: true };
+  }
 }
 
 function escapeHtml(value: string): string {

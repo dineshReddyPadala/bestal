@@ -475,7 +475,6 @@ export function SuperAdminReportsPage() {
     <div>
       <PageHeader
         title="Reports"
-        description="Revenue, margin, pipeline, client activity, recruiter performance, and AI"
         actions={
           <ActionMenu
             label="Report actions"

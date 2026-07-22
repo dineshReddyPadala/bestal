@@ -115,7 +115,6 @@ export function InterviewRequestsPage() {
     <div>
       <PageHeader
         title="Interview Requests"
-        description="Track scheduled interviews and pending requests"
         actions={
           <Button onClick={() => setPickerOpen(true)}>
             <Plus className="mr-2 h-4 w-4" />
@@ -135,7 +134,6 @@ export function InterviewRequestsPage() {
           <EmptyState
             icon={<Calendar className="h-8 w-8" />}
             title="No interview requests"
-            description="Choose a published candidate and submit an interview request."
             action={{ label: 'Request interview', onClick: () => setPickerOpen(true) }}
           />
         ) : (

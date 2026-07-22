@@ -35,6 +35,8 @@ export type DashboardLayoutProps = {
   children: ReactNode;
   currentPath?: string;
   onLogout?: () => void | Promise<void>;
+  /** Optional top-right actions (e.g. notification bell) rendered before the profile menu */
+  headerActions?: ReactNode;
 };
 
 type DashboardChromeContextValue = {
@@ -98,18 +100,13 @@ function NavLink({
 function ProfileMenu({
   user,
   onLogout,
-  variant = 'light',
-  align = 'right',
 }: {
   user: DashboardUser;
   onLogout?: () => void | Promise<void>;
-  variant?: 'light' | 'dark';
-  align?: 'left' | 'right';
 }) {
   const [open, setOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
-  const isDark = variant === 'dark';
 
   useEffect(() => {
     if (!open) return;
@@ -145,39 +142,19 @@ function ProfileMenu({
       <button
         type="button"
         onClick={() => setOpen((value) => !value)}
-        className={cn(
-          'flex items-center gap-2 rounded-md text-left transition-colors',
-          isDark
-            ? 'w-full px-1 py-1 text-white hover:bg-white/5'
-            : 'px-2 py-1.5 hover:bg-muted/60',
-        )}
+        className="flex items-center gap-2 rounded-md px-2 py-1.5 text-left transition-colors hover:bg-muted/60"
         aria-expanded={open}
         aria-haspopup="menu"
+        aria-label="Open profile menu"
       >
         <Avatar name={user.name} size="sm" />
-        <div className={cn('min-w-0 flex-1', !isDark && 'hidden sm:block')}>
-          <p
-            className={cn(
-              'truncate text-sm font-medium leading-tight',
-              isDark ? 'text-white' : 'text-foreground',
-            )}
-          >
-            {user.name}
-          </p>
-          <p
-            className={cn(
-              'truncate text-xs leading-tight',
-              isDark ? 'text-white/60' : 'text-muted-foreground',
-            )}
-          >
-            {isDark ? user.role : user.email}
-          </p>
+        <div className="hidden min-w-0 sm:block">
+          <p className="truncate text-sm font-medium leading-tight text-foreground">{user.name}</p>
+          <p className="truncate text-xs leading-tight text-muted-foreground">{user.email}</p>
         </div>
         <ChevronDown
           className={cn(
-            'h-4 w-4 shrink-0 transition-transform',
-            isDark ? 'text-white/60' : 'text-muted-foreground',
-            !isDark && 'hidden sm:block',
+            'hidden h-4 w-4 shrink-0 text-muted-foreground transition-transform sm:block',
             open && 'rotate-180',
           )}
         />
@@ -186,11 +163,7 @@ function ProfileMenu({
       {open && (
         <div
           role="menu"
-          className={cn(
-            'absolute z-50 min-w-[12rem] overflow-hidden rounded-md border bg-background py-1 shadow-lg',
-            align === 'right' ? 'right-0' : 'left-0',
-            isDark ? 'bottom-full mb-2' : 'top-full mt-2',
-          )}
+          className="absolute right-0 top-full z-50 mt-2 min-w-[12rem] overflow-hidden rounded-md border bg-background py-1 shadow-lg"
         >
           <div className="border-b border-border px-3 py-2">
             <p className="truncate text-sm font-medium text-foreground">{user.name}</p>
@@ -222,6 +195,7 @@ export function DashboardLayout({
   children,
   currentPath = '',
   onLogout,
+  headerActions,
 }: DashboardLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [headerLeading, setHeaderLeading] = useState<ReactNode | null>(null);
@@ -259,7 +233,7 @@ export function DashboardLayout({
             </button>
           </div>
 
-          <nav className="flex flex-1 flex-col justify-start gap-0.5 overflow-hidden px-2 py-3">
+          <nav className="flex flex-1 flex-col justify-start gap-0.5 overflow-y-auto overflow-x-hidden px-2 py-3">
             {navItems.map((item) => (
               <NavLink
                 key={item.href}
@@ -269,15 +243,6 @@ export function DashboardLayout({
               />
             ))}
           </nav>
-
-          <div className="shrink-0 border-t border-white/10 px-3 py-3">
-            <ProfileMenu
-              user={user}
-              onLogout={onLogout}
-              variant="dark"
-              align="left"
-            />
-          </div>
         </aside>
 
         <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
@@ -292,6 +257,11 @@ export function DashboardLayout({
             </button>
 
             <div className="flex min-w-0 flex-1 items-center">{headerLeading}</div>
+
+            <div className="flex shrink-0 items-center gap-1 sm:gap-2">
+              {headerActions}
+              <ProfileMenu user={user} onLogout={onLogout} />
+            </div>
           </header>
 
           <main className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden bg-background">

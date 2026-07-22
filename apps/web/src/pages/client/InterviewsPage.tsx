@@ -33,7 +33,6 @@ export function InterviewsPage() {
     <div>
       <PageHeader
         title="Interviews"
-        description="Scheduled and upcoming interviews with shortlisted candidates"
       />
 
       <div className="p-6">
@@ -41,7 +40,6 @@ export function InterviewsPage() {
           <EmptyState
             icon={<Calendar className="h-8 w-8" />}
             title="No interviews scheduled"
-            description="Interview requests will appear here once your team confirms availability."
           />
         ) : (
           <div className="grid gap-4">

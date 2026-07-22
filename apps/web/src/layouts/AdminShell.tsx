@@ -1,7 +1,8 @@
 import { DashboardLayout } from '@bestal/ui';
 import { Outlet, useLocation } from 'react-router-dom';
-import { adminNavItems } from '../lib/nav';
+import { NotificationBell } from '../components/notifications/NotificationBell';
 import { useDashboardUser } from '../hooks/useDashboardUser';
+import { adminNavItems } from '../lib/nav';
 
 export function AdminShell() {
   const { pathname } = useLocation();
@@ -21,6 +22,7 @@ export function AdminShell() {
       user={user}
       currentPath={currentPath}
       onLogout={handleLogout}
+      headerActions={<NotificationBell />}
     >
       <Outlet />
     </DashboardLayout>

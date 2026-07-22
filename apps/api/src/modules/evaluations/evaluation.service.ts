@@ -55,6 +55,7 @@ export class EvaluationService {
   private readonly evaluationRepository: EvaluationRepository;
   private readonly prisma: PrismaClient;
   private readonly webAppUrl: string;
+  private readonly config: FastifyInstance['config'];
   private readonly evaluationExtractionClient: EvaluationExtractionClient;
 
   constructor(
@@ -64,6 +65,7 @@ export class EvaluationService {
     this.evaluationRepository =
       evaluationRepository ?? new EvaluationRepository(fastify.prisma);
     this.prisma = fastify.prisma;
+    this.config = fastify.config;
     this.webAppUrl = fastify.config.webAppUrl;
     this.evaluationExtractionClient = new EvaluationExtractionClient(
       fastify.config.aiEvaluationUrl,
@@ -246,7 +248,7 @@ export class EvaluationService {
       Number(candidateId),
     );
 
-    await notifyEvaluationProcessed(this.prisma, {
+    await notifyEvaluationProcessed(this.prisma, this.config, {
       organizationId,
       candidateId: Number(candidateId),
       candidateName: `${firstName} ${lastName}`.trim(),

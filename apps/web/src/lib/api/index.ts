@@ -8,6 +8,7 @@ export { candidatesApi, uploadCandidateFile } from './candidates';
 export { shortlistsApi } from './shortlists';
 export { evaluationsApi, backgroundChecksApi } from './evaluations';
 export { adminApi } from './admin';
+export { notificationsApi } from './notifications';
 export { searchApi } from './search';
 export { usersApi } from './users';
 export * from './types';

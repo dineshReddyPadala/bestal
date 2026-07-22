@@ -36,7 +36,6 @@ export function ShortlistedCandidatesPage() {
     <div>
       <PageHeader
         title="Shortlisted Candidates"
-        description="Your saved talent and recruiter-prepared shortlists"
       />
 
       {message && (
@@ -62,7 +61,6 @@ export function ShortlistedCandidatesPage() {
             <EmptyState
               icon={<Heart className="h-8 w-8" />}
               title="No shortlisted candidates"
-              description="Browse published talent and save candidates to your shortlist."
               action={{ label: 'Add candidate', onClick: () => setPickerOpen(true) }}
             />
           ) : (
@@ -90,7 +88,6 @@ export function ShortlistedCandidatesPage() {
             <EmptyState
               icon={<ListChecks className="h-8 w-8" />}
               title="No recruiter shortlists"
-              description="Your BesTal team will share curated shortlists here."
             />
           ) : (
             <div className="grid gap-4">

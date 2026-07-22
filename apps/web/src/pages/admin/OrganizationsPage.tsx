@@ -65,7 +65,6 @@ export function OrganizationsPage() {
         open={createOpen}
         onClose={() => setCreateOpen(false)}
         title="Add organization"
-        description="Enter the organization name. Slug, counts, and timestamps are generated automatically."
         className="max-w-md"
       >
         <OrganizationForm onSubmit={handleCreate} onCancel={() => setCreateOpen(false)} />

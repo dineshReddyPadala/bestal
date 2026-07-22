@@ -20,7 +20,6 @@ export function ApprovalsPage() {
     <div>
       <PageHeader
         title="Approvals"
-        description="Review and action pending requests from your BesTal account team"
       />
 
       <div className="space-y-8 p-6">
@@ -32,7 +31,6 @@ export function ApprovalsPage() {
             <EmptyState
               icon={<CheckSquare className="h-8 w-8" />}
               title="All caught up"
-              description="You have no pending approval requests at this time."
             />
           ) : (
             <div className="grid gap-4">

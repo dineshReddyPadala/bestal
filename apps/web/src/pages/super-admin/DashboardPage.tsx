@@ -32,7 +32,7 @@ export function SuperAdminDashboardPage() {
 
   return (
     <div>
-      <PageHeader title="Super Admin Dashboard" description="Platform overview" />
+      <PageHeader title="Super Admin Dashboard" />
       <div className="grid gap-4 p-6 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard label="Total candidates" value={String(d.totalCandidates ?? 0)} />
         <StatCard label="Client visible" value={String(d.clientVisibleCandidates ?? 0)} />

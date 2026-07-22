@@ -69,6 +69,10 @@ export const queryKeys = {
     all: ['users'] as const,
     list: (params?: Record<string, unknown>) => ['users', 'list', params] as const,
   },
+  notifications: {
+    all: ['notifications'] as const,
+    list: (params?: Record<string, unknown>) => ['notifications', 'list', params] as const,
+  },
   skillCommunities: {
     all: ['skill-communities'] as const,
   },

@@ -28,7 +28,6 @@ export function DeploymentsPage() {
     <div>
       <PageHeader
         title="Active Deployments"
-        description="Track engaged talent placements and upcoming starts"
       />
 
       <div className="space-y-6 p-6">
@@ -54,7 +53,6 @@ export function DeploymentsPage() {
           <EmptyState
             icon={<Rocket className="h-8 w-8" />}
             title="No deployments"
-            description="Active talent engagements will be listed here once placements begin."
           />
         ) : (
           <Card>

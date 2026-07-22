@@ -56,7 +56,6 @@ export function DashboardPage() {
     <div>
       <PageHeader
         title="Sales Dashboard"
-        description="Client accounts, trials, and deployments from live data"
       />
 
       <div className="grid gap-4 p-6 md:grid-cols-4">

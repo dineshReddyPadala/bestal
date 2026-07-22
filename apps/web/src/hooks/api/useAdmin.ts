@@ -291,12 +291,9 @@ export function useAdminMutations() {
         key:
           | 'ai'
           | 'oorwin'
-          | 'email'
           | 'security'
           | 'scoring'
-          | 'prompts'
           | 'pricing'
-          | 'notifications'
           | 'integrations'
           | 'commercials';
         body: unknown;
