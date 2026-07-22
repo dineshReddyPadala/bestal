@@ -263,4 +263,26 @@ export const adminApi = {
     });
     return json.data;
   },
+
+  listRoles: () => apiList<Record<string, unknown>>('/admin/roles'),
+  getRoleCatalog: () =>
+    apiGet<{
+      permissions: string[];
+      portals: string[];
+      baseRoles: string[];
+    }>('/admin/roles/catalog'),
+  getRole: (code: string) => apiGet<Record<string, unknown>>(`/admin/roles/${encodeURIComponent(code)}`),
+  createRole: (body: Record<string, unknown>) =>
+    apiCreate<Record<string, unknown>>('/admin/roles', body),
+  updateRole: async (code: string, body: Record<string, unknown>) => {
+    const json = await apiRequest<{ data: Record<string, unknown> }>(
+      `/admin/roles/${encodeURIComponent(code)}`,
+      { method: 'PUT', body },
+    );
+    return json.data;
+  },
+  deleteRole: (code: string) =>
+    apiRequest<{ data: { message: string } }>(`/admin/roles/${encodeURIComponent(code)}`, {
+      method: 'DELETE',
+    }),
 };

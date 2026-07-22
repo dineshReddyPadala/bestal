@@ -20,6 +20,8 @@ export function SuperAdminShell() {
             ? '/super-admin/candidates'
             : pathname.startsWith('/super-admin/users')
               ? '/super-admin/users'
+              : pathname.startsWith('/super-admin/roles')
+                ? '/super-admin/roles'
               : pathname.startsWith('/super-admin/clients')
                 ? '/super-admin/clients'
                 : pathname.startsWith('/super-admin/data-import') ||

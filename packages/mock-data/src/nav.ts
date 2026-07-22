@@ -41,13 +41,16 @@ export const clientNav = [
   { id: 'trials', label: 'Trial Requests', href: '/client/trials', icon: 'flask-conical', badge: 1 },
 ] as const satisfies readonly NavItem[];
 
-/** Platform / Super Admin */
+/** Platform / Super Admin — includes daily ops (same as Admin) plus platform controls */
 export const superAdminNav = [
   { id: 'dashboard', label: 'Dashboard', href: '/super-admin/dashboard', icon: 'layout-dashboard' },
-  { id: 'users', label: 'Users', href: '/super-admin/users', icon: 'users' },
+  { id: 'users', label: 'User Management', href: '/super-admin/users', icon: 'users' },
+  { id: 'roles', label: 'Role Management', href: '/super-admin/roles', icon: 'shield' },
   { id: 'clients', label: 'Clients', href: '/super-admin/clients', icon: 'briefcase' },
   { id: 'candidates', label: 'Candidates', href: '/super-admin/candidates', icon: 'user-check' },
   { id: 'pending', label: 'Pending Approvals', href: '/super-admin/candidates/pending', icon: 'check-square' },
+  { id: 'evaluations', label: 'Evaluations', href: '/super-admin/evaluations', icon: 'clipboard-check' },
+  { id: 'background-checks', label: 'Background Checks', href: '/super-admin/background-checks', icon: 'shield-check' },
   { id: 'trials', label: 'Trials', href: '/super-admin/trials', icon: 'flask-conical' },
   { id: 'deployments', label: 'Deployments', href: '/super-admin/deployments', icon: 'rocket' },
   { id: 'data-import', label: 'Data import (Oorwin)', href: '/super-admin/data-import', icon: 'file-up' },

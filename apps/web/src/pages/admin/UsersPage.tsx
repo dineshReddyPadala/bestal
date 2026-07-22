@@ -174,7 +174,6 @@ export function UsersPage() {
         open={inviteOpen}
         onClose={() => setInviteOpen(false)}
         title="Invite user"
-        description="Create a Sales or Recruiter account and email login credentials."
         className="max-w-lg"
       >
         <UserInviteForm
@@ -191,7 +190,6 @@ export function UsersPage() {
           setBulkPreview(null);
         }}
         title="Bulk invite users"
-        description="Upload a CSV with firstName, lastName, email, phone, role (RECRUITER | SALES | ADMIN)."
         scrollable
         className="max-w-xl"
         footer={

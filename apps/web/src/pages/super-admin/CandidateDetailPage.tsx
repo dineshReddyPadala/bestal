@@ -1,6 +1,9 @@
 import { Button, PageHeader, StatusBadge } from '@bestal/ui';
 import { Loader2 } from 'lucide-react';
+import { useMemo } from 'react';
 import { useParams } from 'react-router-dom';
+import { ActionMenu, type ActionMenuItem } from '../../components/super-admin/ActionMenu';
+import { useConfirmAction } from '../../components/super-admin/useConfirmAction';
 import { useAdminCandidate, useAdminMutations } from '../../hooks/api/useAdmin';
 import { useDemoToast } from '../../lib/use-demo-toast';
 
@@ -10,6 +13,138 @@ export function SuperAdminCandidateDetailPage() {
   const { data, isLoading, isError, error, refetch } = useAdminCandidate(candidateId);
   const mutations = useAdminMutations();
   const { message, show, showError } = useDemoToast();
+  const { requestConfirm, confirmDialog } = useConfirmAction();
+
+  const c = (data?.candidate ?? {}) as Record<string, unknown>;
+  const skills = (data?.skills as Array<Record<string, unknown>>) ?? [];
+  const evaluations = (data?.evaluations as Array<Record<string, unknown>>) ?? [];
+  const bgvs = (data?.backgroundChecks as Array<Record<string, unknown>>) ?? [];
+  const documents = (data?.documents as Array<Record<string, unknown>>) ?? [];
+  const activity = (data?.activityTimeline as Array<Record<string, unknown>>) ?? [];
+
+  const name = `${c.firstName ?? ''} ${c.lastName ?? ''}`.trim() || 'Candidate';
+  const approval = String(c.approvalStatus ?? '').toUpperCase();
+  const visibility = String(c.visibilityStatus ?? '').toUpperCase();
+  const isPending = approval === 'PENDING';
+  const isPublished = visibility === 'CLIENT_VISIBLE';
+
+  async function run(action: () => Promise<unknown>, ok: string) {
+    try {
+      await action();
+      show(ok);
+      await refetch();
+    } catch (e) {
+      showError(e instanceof Error ? e.message : 'Action failed');
+    }
+  }
+
+  const menuItems = useMemo<ActionMenuItem[]>(() => {
+    if (!data) return [];
+    return [
+      {
+        id: 'approve-internal',
+        label: 'Approve Internal Only',
+        hidden: !isPending,
+        onSelect: () =>
+          void run(
+            () => mutations.approveCandidateInternal.mutateAsync(candidateId),
+            'Approved (internal)',
+          ),
+      },
+      {
+        id: 'return',
+        label: 'Return to Recruiter',
+        hidden: !isPending,
+        onSelect: () => {
+          const reason = window.prompt('Send back reason (optional)') ?? undefined;
+          void run(
+            () => mutations.sendBackCandidate.mutateAsync({ id: candidateId, reason }),
+            'Sent back',
+          );
+        },
+      },
+      {
+        id: 'publish',
+        label: 'Publish',
+        hidden: isPublished || isPending,
+        onSelect: () =>
+          void run(() => mutations.publishCandidate.mutateAsync(candidateId), 'Published'),
+      },
+      {
+        id: 'hide',
+        label: 'Hide from Clients',
+        hidden: !isPublished,
+        onSelect: () =>
+          requestConfirm({
+            title: 'Hide from Clients?',
+            description: `${name} will no longer appear in the client portal.`,
+            confirmLabel: 'Hide from Clients',
+            destructive: true,
+            onConfirm: async () => {
+              await mutations.hideCandidate.mutateAsync(candidateId);
+              show('Hidden');
+              await refetch();
+            },
+          }),
+      },
+      {
+        id: 'reject',
+        label: 'Reject',
+        destructive: true,
+        separatorBefore: true,
+        hidden: !isPending,
+        onSelect: () => {
+          const reason = window.prompt('Rejection reason');
+          if (!reason) return;
+          requestConfirm({
+            title: 'Reject Candidate?',
+            description: `${name} will be rejected.`,
+            confirmLabel: 'Reject',
+            destructive: true,
+            onConfirm: async () => {
+              await mutations.rejectCandidate.mutateAsync({ id: candidateId, reason });
+              show('Rejected');
+              await refetch();
+            },
+          });
+        },
+      },
+      {
+        id: 'archive',
+        label: 'Archive Candidate',
+        destructive: true,
+        separatorBefore: true,
+        onSelect: () =>
+          requestConfirm({
+            title: 'Archive Candidate?',
+            description: `${name} will be archived.`,
+            confirmLabel: 'Archive Candidate',
+            destructive: true,
+            onConfirm: async () => {
+              await mutations.archiveCandidate.mutateAsync(candidateId);
+              show('Archived');
+              await refetch();
+            },
+          }),
+      },
+      {
+        id: 'audit',
+        label: 'View Audit History',
+        href: '/super-admin/audit-logs',
+        separatorBefore: true,
+      },
+    ];
+  }, [
+    candidateId,
+    data,
+    isPending,
+    isPublished,
+    mutations,
+    name,
+    refetch,
+    requestConfirm,
+    show,
+  ]);
 
   if (isLoading) {
     return (
@@ -28,64 +163,35 @@ export function SuperAdminCandidateDetailPage() {
     );
   }
 
-  const c = data.candidate as Record<string, unknown>;
-  const skills = (data.skills as Array<Record<string, unknown>>) ?? [];
-  const evaluations = (data.evaluations as Array<Record<string, unknown>>) ?? [];
-  const bgvs = (data.backgroundChecks as Array<Record<string, unknown>>) ?? [];
-  const documents = (data.documents as Array<Record<string, unknown>>) ?? [];
-  const activity = (data.activityTimeline as Array<Record<string, unknown>>) ?? [];
-
-  async function run(action: () => Promise<unknown>, ok: string) {
-    try {
-      await action();
-      show(ok);
-      await refetch();
-    } catch (e) {
-      showError(e instanceof Error ? e.message : 'Action failed');
-    }
-  }
-
   return (
     <div>
       <PageHeader
-        title={`${c.firstName} ${c.lastName}`}
+        title={name}
         description={String(c.primaryRole ?? c.email ?? '')}
+        actions={
+          <>
+            {isPending ? (
+              <Button
+                size="sm"
+                onClick={() =>
+                  void run(
+                    () => mutations.approveCandidate.mutateAsync(candidateId),
+                    'Approved & published',
+                  )
+                }
+              >
+                Approve & Publish
+              </Button>
+            ) : null}
+            <ActionMenu items={menuItems} label={`Actions for ${name}`} />
+          </>
+        }
       />
       {message && (
         <div className="mx-6 mb-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
           {message}
         </div>
       )}
-
-      <div className="flex flex-wrap gap-2 px-6 pb-4">
-        <Button size="sm" onClick={() => void run(() => mutations.approveCandidate.mutateAsync(candidateId), 'Approved & published')}>
-          Approve and publish
-        </Button>
-        <Button size="sm" variant="outline" onClick={() => void run(() => mutations.approveCandidateInternal.mutateAsync(candidateId), 'Approved (internal)')}>
-          Approve internal only
-        </Button>
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={() => {
-            const reason = window.prompt('Send back reason (optional)') ?? undefined;
-            void run(() => mutations.sendBackCandidate.mutateAsync({ id: candidateId, reason }), 'Sent back');
-          }}
-        >
-          Send back to recruiter
-        </Button>
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={() => {
-            const reason = window.prompt('Rejection reason');
-            if (!reason) return;
-            void run(() => mutations.rejectCandidate.mutateAsync({ id: candidateId, reason }), 'Rejected');
-          }}
-        >
-          Reject
-        </Button>
-      </div>
 
       <div className="grid gap-4 px-6 pb-8 lg:grid-cols-2">
         <Section title="Basic details">
@@ -186,6 +292,7 @@ export function SuperAdminCandidateDetailPage() {
           )}
         </Section>
       </div>
+      {confirmDialog}
     </div>
   );
 }
@@ -203,7 +310,7 @@ function KV({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex justify-between gap-4 py-1 text-sm">
       <span className="text-muted-foreground">{label}</span>
-      <span className="font-medium text-right">{value}</span>
+      <span className="text-right font-medium">{value}</span>
     </div>
   );
 }

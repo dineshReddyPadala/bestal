@@ -5,7 +5,6 @@ export function LoginPage() {
     <PortalLoginForm
       portal="ADMIN"
       defaultEmail="admin@bestal.com"
-      demoHint="admin@bestal.com / Password123!"
       footerLink={{ label: 'Back to portal selector', href: '/login' }}
     />
   );

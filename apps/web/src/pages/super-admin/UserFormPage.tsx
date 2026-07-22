@@ -1,6 +1,9 @@
 import { Button, Input, PageHeader, Select } from '@bestal/ui';
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { ActionMenu, type ActionMenuItem } from '../../components/super-admin/ActionMenu';
+import { useConfirmAction } from '../../components/super-admin/useConfirmAction';
+import { useAuth } from '../../contexts/AuthContext';
 import { useAdminMutations, useAdminUser } from '../../hooks/api/useAdmin';
 import { useDemoToast } from '../../lib/use-demo-toast';
 
@@ -11,7 +14,9 @@ export function SuperAdminUserFormPage() {
   const isNew = !id || id === 'new';
   const userId = isNew ? 0 : Number(id);
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { show, showError } = useDemoToast();
+  const { requestConfirm, confirmDialog } = useConfirmAction();
   const { data, isLoading } = useAdminUser(userId);
   const mutations = useAdminMutations();
 
@@ -65,11 +70,83 @@ export function SuperAdminUserFormPage() {
     return <p className="p-6 text-sm text-muted-foreground">Loading…</p>;
   }
 
+  const isSelf = !isNew && user?.id === userId;
+  const displayName = `${firstName} ${lastName}`.trim() || email || 'User';
+  const headerActions: ActionMenuItem[] = isNew
+    ? []
+    : [
+        {
+          id: 'activate',
+          label: 'Activate',
+          hidden: isActive || isSelf,
+          onSelect: () =>
+            void mutations.setUserStatus
+              .mutateAsync({ id: userId, isActive: true })
+              .then(() => {
+                setIsActive(true);
+                show('User activated');
+              })
+              .catch((e) => showError(e instanceof Error ? e.message : 'Failed')),
+        },
+        {
+          id: 'deactivate',
+          label: 'Deactivate',
+          hidden: !isActive || isSelf,
+          destructive: true,
+          onSelect: () =>
+            requestConfirm({
+              title: 'Deactivate User?',
+              description: `${displayName} will no longer be able to access the platform.`,
+              confirmLabel: 'Deactivate User',
+              destructive: true,
+              onConfirm: async () => {
+                await mutations.setUserStatus.mutateAsync({ id: userId, isActive: false });
+                setIsActive(false);
+                show('User deactivated');
+              },
+            }),
+        },
+        {
+          id: 'reset',
+          label: 'Reset Password',
+          separatorBefore: true,
+          onSelect: () =>
+            requestConfirm({
+              title: 'Reset Password?',
+              description: `A reset email will be sent to ${email}.`,
+              confirmLabel: 'Reset Password',
+              onConfirm: async () => {
+                await mutations.resetUserPassword.mutateAsync(userId);
+                show('Password reset emailed');
+              },
+            }),
+        },
+        {
+          id: 'resend',
+          label: 'Resend Invitation',
+          onSelect: () =>
+            void mutations.resendInvite
+              .mutateAsync(userId)
+              .then(() => show('Invitation resent'))
+              .catch((e) => showError(e instanceof Error ? e.message : 'Failed')),
+        },
+        {
+          id: 'audit',
+          label: 'View Audit History',
+          href: '/super-admin/audit-logs',
+          separatorBefore: true,
+        },
+      ];
+
   return (
     <div>
       <PageHeader
         title={isNew ? 'Create user' : 'Edit user'}
-        description="ADMIN, RECRUITER, SALES, or VIEWER"
+        actions={
+          headerActions.length > 0 ? (
+            <ActionMenu items={headerActions} label={`Actions for ${displayName}`} />
+          ) : undefined
+        }
       />
       <form onSubmit={onSubmit} className="max-w-xl space-y-4 p-6">
         <div className="grid gap-4 sm:grid-cols-2">
@@ -94,7 +171,7 @@ export function SuperAdminUserFormPage() {
         </label>
         <label className="block space-y-1 text-sm">
           <span className="font-medium">Role</span>
-          <Select value={role} onChange={(e) => setRole(e.target.value)}>
+          <Select value={role} onChange={(e) => setRole(e.target.value)} disabled={isSelf}>
             {ROLES.map((r) => (
               <option key={r} value={r}>
                 {r}
@@ -117,6 +194,7 @@ export function SuperAdminUserFormPage() {
             type="checkbox"
             checked={isActive}
             onChange={(e) => setIsActive(e.target.checked)}
+            disabled={isSelf}
           />
           Active
         </label>
@@ -129,6 +207,7 @@ export function SuperAdminUserFormPage() {
           </Button>
         </div>
       </form>
+      {confirmDialog}
     </div>
   );
 }

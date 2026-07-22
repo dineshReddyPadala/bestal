@@ -1,6 +1,8 @@
 import { Button, Input, PageHeader, Select } from '@bestal/ui';
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { ActionMenu, type ActionMenuItem } from '../../components/super-admin/ActionMenu';
+import { useConfirmAction } from '../../components/super-admin/useConfirmAction';
 import { useAdminClient, useAdminMutations, useAdminUsers } from '../../hooks/api/useAdmin';
 import { useDemoToast } from '../../lib/use-demo-toast';
 
@@ -10,6 +12,7 @@ export function SuperAdminClientFormPage() {
   const clientId = isNew ? 0 : Number(id);
   const navigate = useNavigate();
   const { show, showError } = useDemoToast();
+  const { requestConfirm, confirmDialog } = useConfirmAction();
   const { data, isLoading } = useAdminClient(clientId);
   const { data: usersData } = useAdminUsers({ limit: 100 });
   const mutations = useAdminMutations();
@@ -80,9 +83,68 @@ export function SuperAdminClientFormPage() {
 
   if (!isNew && isLoading) return <p className="p-6 text-sm text-muted-foreground">Loading…</p>;
 
+  const active = form.status === 'ACTIVE';
+  const headerActions: ActionMenuItem[] = isNew
+    ? []
+    : [
+        {
+          id: 'activate',
+          label: 'Activate',
+          hidden: active,
+          onSelect: () =>
+            void mutations.setClientStatus
+              .mutateAsync({ id: clientId, status: 'ACTIVE' })
+              .then(() => {
+                set('status', 'ACTIVE');
+                show('Client activated');
+              })
+              .catch((e) => showError(e instanceof Error ? e.message : 'Failed')),
+        },
+        {
+          id: 'suspend',
+          label: 'Suspend',
+          hidden: !active,
+          destructive: true,
+          onSelect: () =>
+            requestConfirm({
+              title: 'Suspend Client?',
+              description: `${form.companyName || 'This client'} will lose portal access until reactivated.`,
+              confirmLabel: 'Suspend Client',
+              destructive: true,
+              onConfirm: async () => {
+                await mutations.setClientStatus.mutateAsync({
+                  id: clientId,
+                  status: 'SUSPENDED',
+                });
+                set('status', 'SUSPENDED');
+                show('Client suspended');
+              },
+            }),
+        },
+        {
+          id: 'trials',
+          label: 'View Trials',
+          href: '/super-admin/trials',
+          separatorBefore: true,
+        },
+        { id: 'deployments', label: 'View Deployments', href: '/super-admin/deployments' },
+        { id: 'revenue', label: 'View Revenue', href: '/super-admin/reports?tab=revenue' },
+        { id: 'audit', label: 'View Audit History', href: '/super-admin/audit-logs' },
+      ];
+
   return (
     <div>
-      <PageHeader title={isNew ? 'Create client' : 'Edit client'} />
+      <PageHeader
+        title={isNew ? 'Create client' : 'Edit client'}
+        actions={
+          headerActions.length > 0 ? (
+            <ActionMenu
+              items={headerActions}
+              label={`Actions for ${form.companyName || 'client'}`}
+            />
+          ) : undefined
+        }
+      />
       <form onSubmit={onSubmit} className="grid max-w-3xl gap-4 p-6 sm:grid-cols-2">
         {(
           [
@@ -99,7 +161,11 @@ export function SuperAdminClientFormPage() {
         ).map(([key, label, required]) => (
           <label key={key} className="space-y-1 text-sm">
             <span className="font-medium">{label}</span>
-            <Input value={form[key]} onChange={(e) => set(key, e.target.value)} required={required} />
+            <Input
+              value={form[key]}
+              onChange={(e) => set(key, e.target.value)}
+              required={required}
+            />
           </label>
         ))}
         <label className="space-y-1 text-sm">
@@ -143,6 +209,7 @@ export function SuperAdminClientFormPage() {
           </Button>
         </div>
       </form>
+      {confirmDialog}
     </div>
   );
 }

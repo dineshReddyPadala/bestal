@@ -4,13 +4,15 @@ import { z } from 'zod';
 import { requireSuperAdmin } from './admin.auth.js';
 import { AdminController } from './admin.controller.js';
 import { AdminOpsService } from './admin-ops.service.js';
+import { AdminRolesService } from './admin-roles.service.js';
 import { AdminService } from './admin.service.js';
 import { adminIdParamSchema, adminListQuerySchema } from './admin.validators.js';
 
 export async function adminRoutes(fastify: FastifyInstance): Promise<void> {
   const admin = new AdminService(fastify);
   const ops = new AdminOpsService(fastify);
-  const controller = new AdminController(admin, ops);
+  const roles = new AdminRolesService(fastify);
+  const controller = new AdminController(admin, ops, roles);
   const app = fastify.withTypeProvider<ZodTypeProvider>();
   const secure = { preHandler: [...requireSuperAdmin] };
 
@@ -106,6 +108,14 @@ export async function adminRoutes(fastify: FastifyInstance): Promise<void> {
   app.put('/settings/notifications', { ...secure, schema: { tags: ['Admin'], security: [{ bearerAuth: [] }] } }, controller.putSetting('notifications'));
   app.put('/settings/integrations', { ...secure, schema: { tags: ['Admin'], security: [{ bearerAuth: [] }] } }, controller.putSetting('integrations'));
   app.put('/settings/commercials', { ...secure, schema: { tags: ['Admin'], security: [{ bearerAuth: [] }] } }, controller.putSetting('commercials'));
+
+  // Roles & permissions
+  app.get('/roles', { ...secure, schema: { tags: ['Admin'], security: [{ bearerAuth: [] }] } }, controller.listRoles);
+  app.get('/roles/catalog', { ...secure, schema: { tags: ['Admin'], security: [{ bearerAuth: [] }] } }, controller.getRoleCatalog);
+  app.get('/roles/:code', { ...secure, schema: { tags: ['Admin'], params: z.object({ code: z.string().min(1) }), security: [{ bearerAuth: [] }] } }, controller.getRole);
+  app.post('/roles', { ...secure, schema: { tags: ['Admin'], security: [{ bearerAuth: [] }] } }, controller.createRole);
+  app.put('/roles/:code', { ...secure, schema: { tags: ['Admin'], params: z.object({ code: z.string().min(1) }), security: [{ bearerAuth: [] }] } }, controller.updateRole);
+  app.delete('/roles/:code', { ...secure, schema: { tags: ['Admin'], params: z.object({ code: z.string().min(1) }), security: [{ bearerAuth: [] }] } }, controller.deleteRole);
 }
 
 export { adminRoutes as default };

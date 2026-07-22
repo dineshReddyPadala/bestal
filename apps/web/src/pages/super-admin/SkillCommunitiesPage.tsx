@@ -3,6 +3,8 @@ import { type ColumnDef } from '@tanstack/react-table';
 import { Plus } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { ListingPageShell } from '../../components/layout/ListingPageShell';
+import { ActionMenu, type ActionMenuItem } from '../../components/super-admin/ActionMenu';
+import { useConfirmAction } from '../../components/super-admin/useConfirmAction';
 import { useAdminMutations, useAdminSkillCommunities } from '../../hooks/api/useAdmin';
 import { useDemoToast } from '../../lib/use-demo-toast';
 
@@ -12,10 +14,12 @@ type Row = {
   slug: string;
   description: string | null;
   isActive: boolean;
+  candidateCount?: number;
 };
 
 export function SuperAdminSkillCommunitiesPage() {
   const { message, show, showError } = useDemoToast();
+  const { requestConfirm, confirmDialog } = useConfirmAction();
   const { data, isLoading, isError, error } = useAdminSkillCommunities({ limit: 100 });
   const mutations = useAdminMutations();
   const rows = (data?.data ?? []) as unknown as Row[];
@@ -26,48 +30,84 @@ export function SuperAdminSkillCommunitiesPage() {
 
   const columns = useMemo<ColumnDef<Row>[]>(
     () => [
-      { accessorKey: 'name', header: 'Name', cell: ({ getValue }) => <span className="font-medium">{getValue() as string}</span> },
+      {
+        accessorKey: 'name',
+        header: 'Name',
+        cell: ({ getValue }) => <span className="font-medium">{getValue() as string}</span>,
+      },
       { accessorKey: 'slug', header: 'Slug' },
-      { accessorKey: 'description', header: 'Description', cell: ({ getValue }) => (getValue() as string) || '—' },
+      {
+        accessorKey: 'description',
+        header: 'Description',
+        cell: ({ getValue }) => (getValue() as string) || '—',
+      },
       {
         accessorKey: 'isActive',
         header: 'Status',
-        cell: ({ getValue }) => <StatusBadge status={(getValue() as boolean) ? 'ACTIVE' : 'INACTIVE'} />,
+        cell: ({ getValue }) => (
+          <StatusBadge status={(getValue() as boolean) ? 'ACTIVE' : 'INACTIVE'} />
+        ),
       },
       {
         id: 'actions',
-        header: '',
-        cell: ({ row }) => (
-          <div className="flex gap-1">
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() =>
+        header: 'Actions',
+        cell: ({ row }) => {
+          const r = row.original;
+          const hasCandidates = (r.candidateCount ?? 0) > 0;
+          const items: ActionMenuItem[] = [
+            { id: 'view', label: 'View Community' },
+            {
+              id: 'activate',
+              label: 'Activate',
+              hidden: r.isActive,
+              onSelect: () =>
                 void mutations.setSkillCommunityStatus
-                  .mutateAsync({ id: row.original.id, isActive: !row.original.isActive })
-                  .then(() => show('Updated'))
-                  .catch((e) => showError(e instanceof Error ? e.message : 'Failed'))
-              }
-            >
-              {row.original.isActive ? 'Deactivate' : 'Activate'}
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() =>
-                void mutations.deleteSkillCommunity
-                  .mutateAsync(row.original.id)
-                  .then(() => show('Deleted'))
-                  .catch((e) => showError(e instanceof Error ? e.message : 'Failed'))
-              }
-            >
-              Delete
-            </Button>
-          </div>
-        ),
+                  .mutateAsync({ id: r.id, isActive: true })
+                  .then(() => show('Activated'))
+                  .catch((e) => showError(e instanceof Error ? e.message : 'Failed')),
+            },
+            {
+              id: 'deactivate',
+              label: 'Deactivate',
+              hidden: !r.isActive,
+              onSelect: () =>
+                void mutations.setSkillCommunityStatus
+                  .mutateAsync({ id: r.id, isActive: false })
+                  .then(() => show('Deactivated'))
+                  .catch((e) => showError(e instanceof Error ? e.message : 'Failed')),
+            },
+            {
+              id: 'candidates',
+              label: 'View Candidates',
+              href: '/super-admin/candidates',
+              separatorBefore: true,
+            },
+            {
+              id: 'delete',
+              label: 'Delete',
+              destructive: true,
+              separatorBefore: true,
+              disabled: hasCandidates,
+              disabledReason:
+                'Cannot delete this community because candidates are currently assigned to it.',
+              onSelect: () =>
+                requestConfirm({
+                  title: 'Delete Community?',
+                  description: `${r.name} will be permanently deleted.`,
+                  confirmLabel: 'Delete',
+                  destructive: true,
+                  onConfirm: async () => {
+                    await mutations.deleteSkillCommunity.mutateAsync(r.id);
+                    show('Deleted');
+                  },
+                }),
+            },
+          ];
+          return <ActionMenu items={items} label={`Actions for ${r.name}`} />;
+        },
       },
     ],
-    [mutations, show, showError],
+    [mutations, requestConfirm, show, showError],
   );
 
   return (
@@ -85,9 +125,17 @@ export function SuperAdminSkillCommunitiesPage() {
           </Button>
         }
       >
-        <TanStackDataTable columns={columns} data={rows} searchPlaceholder="Search…" pageSize={12} stickyHeader fillHeight dense />
+        <TanStackDataTable
+          columns={columns}
+          data={rows}
+          searchPlaceholder="Search…"
+          pageSize={12}
+          stickyHeader
+          fillHeight
+          dense
+        />
       </ListingPageShell>
-
+      {confirmDialog}
       <Dialog
         open={open}
         onClose={() => setOpen(false)}
@@ -100,7 +148,11 @@ export function SuperAdminSkillCommunitiesPage() {
             <Button
               onClick={() =>
                 void mutations.createSkillCommunity
-                  .mutateAsync({ name, slug: slug || name.toLowerCase().replace(/\s+/g, '-'), description })
+                  .mutateAsync({
+                    name,
+                    slug: slug || name.toLowerCase().replace(/\s+/g, '-'),
+                    description,
+                  })
                   .then(() => {
                     show('Created');
                     setOpen(false);
@@ -119,7 +171,11 @@ export function SuperAdminSkillCommunitiesPage() {
         <div className="space-y-3">
           <Input placeholder="Name" value={name} onChange={(e) => setName(e.target.value)} />
           <Input placeholder="Slug" value={slug} onChange={(e) => setSlug(e.target.value)} />
-          <Input placeholder="Description" value={description} onChange={(e) => setDescription(e.target.value)} />
+          <Input
+            placeholder="Description"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+          />
         </div>
       </Dialog>
     </>

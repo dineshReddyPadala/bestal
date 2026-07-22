@@ -16,6 +16,7 @@ import { ToastHost } from '../../components/ui/ToastHost';
 
 function usePortalBasePath() {
   const { pathname } = useLocation();
+  if (pathname.startsWith('/super-admin')) return '/super-admin';
   if (pathname.startsWith('/admin')) return '/admin';
   return '/recruiter';
 }

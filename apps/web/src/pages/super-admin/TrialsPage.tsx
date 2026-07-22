@@ -1,7 +1,9 @@
-import { Button, StatusBadge, TanStackDataTable } from '@bestal/ui';
+import { StatusBadge, TanStackDataTable } from '@bestal/ui';
 import { type ColumnDef } from '@tanstack/react-table';
 import { useMemo } from 'react';
 import { ListingPageShell } from '../../components/layout/ListingPageShell';
+import { ActionMenu, type ActionMenuItem } from '../../components/super-admin/ActionMenu';
+import { useConfirmAction } from '../../components/super-admin/useConfirmAction';
 import { useAdminMutations, useAdminTrials } from '../../hooks/api/useAdmin';
 import { useDemoToast } from '../../lib/use-demo-toast';
 
@@ -16,8 +18,168 @@ type Row = {
   convertedToPaid?: boolean;
 };
 
+function trialActions(
+  r: Row,
+  helpers: {
+    mutations: ReturnType<typeof useAdminMutations>;
+    show: (m: string) => void;
+    showError: (m: string) => void;
+    requestConfirm: ReturnType<typeof useConfirmAction>['requestConfirm'];
+  },
+): ActionMenuItem[] {
+  const { mutations, show, showError, requestConfirm } = helpers;
+  const status = r.status.toUpperCase();
+  const label = `${r.candidateName} · ${r.clientName}`;
+
+  const view: ActionMenuItem = { id: 'view', label: 'View Trial' };
+
+  if (status === 'REQUESTED') {
+    return [
+      view,
+      {
+        id: 'approve',
+        label: 'Approve Trial',
+        onSelect: () =>
+          void mutations.approveTrial
+            .mutateAsync({ id: r.id })
+            .then(() => show('Trial approved'))
+            .catch((e) => showError(e instanceof Error ? e.message : 'Failed')),
+      },
+      {
+        id: 'assign',
+        label: 'Assign Recruiter',
+        onSelect: () => {
+          const raw = window.prompt('Recruiter user id');
+          const recruiterId = Number(raw);
+          if (!recruiterId) return;
+          void mutations.assignTrial
+            .mutateAsync({ id: r.id, recruiterId })
+            .then(() => show('Recruiter assigned'))
+            .catch((e) => showError(e instanceof Error ? e.message : 'Failed'));
+        },
+      },
+      {
+        id: 'reject',
+        label: 'Reject Trial',
+        destructive: true,
+        separatorBefore: true,
+        onSelect: () => {
+          const reason = window.prompt('Reject reason') ?? 'Rejected';
+          requestConfirm({
+            title: 'Reject Trial?',
+            description: `${label} will be rejected.`,
+            confirmLabel: 'Reject Trial',
+            destructive: true,
+            onConfirm: async () => {
+              await mutations.rejectTrial.mutateAsync({ id: r.id, reason });
+              show('Trial rejected');
+            },
+          });
+        },
+      },
+    ];
+  }
+
+  if (status === 'APPROVED') {
+    return [
+      view,
+      {
+        id: 'assign',
+        label: 'Assign Recruiter',
+        onSelect: () => {
+          const raw = window.prompt('Recruiter user id');
+          const recruiterId = Number(raw);
+          if (!recruiterId) return;
+          void mutations.assignTrial
+            .mutateAsync({ id: r.id, recruiterId })
+            .then(() => show('Recruiter assigned'))
+            .catch((e) => showError(e instanceof Error ? e.message : 'Failed'));
+        },
+      },
+      {
+        id: 'convert',
+        label: 'Mark Converted',
+        separatorBefore: true,
+        onSelect: () =>
+          requestConfirm({
+            title: 'Mark Trial Converted?',
+            description: `${label} will be marked as converted to paid engagement.`,
+            confirmLabel: 'Mark Converted',
+            onConfirm: async () => {
+              await mutations.convertTrial.mutateAsync(r.id);
+              show('Trial converted');
+            },
+          }),
+      },
+    ];
+  }
+
+  if (['IN_PROGRESS', 'ACTIVE', 'STARTED'].includes(status)) {
+    return [
+      view,
+      {
+        id: 'convert',
+        label: 'Complete / Convert Trial',
+        onSelect: () =>
+          void mutations.convertTrial
+            .mutateAsync(r.id)
+            .then(() => show('Trial converted'))
+            .catch((e) => showError(e instanceof Error ? e.message : 'Failed')),
+      },
+      {
+        id: 'reject',
+        label: 'Cancel Trial',
+        destructive: true,
+        separatorBefore: true,
+        onSelect: () => {
+          const reason = window.prompt('Cancel reason') ?? 'Cancelled';
+          requestConfirm({
+            title: 'Cancel Trial?',
+            description: `${label} will be cancelled.`,
+            confirmLabel: 'Cancel Trial',
+            destructive: true,
+            onConfirm: async () => {
+              await mutations.rejectTrial.mutateAsync({ id: r.id, reason });
+              show('Trial cancelled');
+            },
+          });
+        },
+      },
+    ];
+  }
+
+  if (status === 'COMPLETED' || r.convertedToPaid) {
+    return [
+      view,
+      {
+        id: 'convert',
+        label: 'Mark Converted',
+        hidden: Boolean(r.convertedToPaid),
+        onSelect: () =>
+          void mutations.convertTrial
+            .mutateAsync(r.id)
+            .then(() => show('Converted'))
+            .catch((e) => showError(e instanceof Error ? e.message : 'Failed')),
+      },
+      {
+        id: 'deployment',
+        label: 'View Deployments',
+        href: '/super-admin/deployments',
+        separatorBefore: true,
+      },
+    ];
+  }
+
+  if (status === 'CONVERTED') {
+    return [view, { id: 'deployment', label: 'View Deployment', href: '/super-admin/deployments' }];
+  }
+
+  return [view];
+}
+
 export function SuperAdminTrialsPage() {
   const { message, show, showError } = useDemoToast();
+  const { requestConfirm, confirmDialog } = useConfirmAction();
   const { data, isLoading, isError, error } = useAdminTrials({ limit: 100 });
   const mutations = useAdminMutations();
   const rows = (data?.data ?? []) as unknown as Row[];
@@ -26,7 +188,11 @@ export function SuperAdminTrialsPage() {
     () => [
       { accessorKey: 'clientName', header: 'Client' },
       { accessorKey: 'candidateName', header: 'Candidate' },
-      { accessorKey: 'requestedByName', header: 'Requested by', cell: ({ getValue }) => (getValue() as string) || '—' },
+      {
+        accessorKey: 'requestedByName',
+        header: 'Requested by',
+        cell: ({ getValue }) => (getValue() as string) || '—',
+      },
       {
         accessorKey: 'createdAt',
         header: 'Requested',
@@ -52,31 +218,38 @@ export function SuperAdminTrialsPage() {
       },
       {
         id: 'actions',
-        header: '',
+        header: 'Actions',
         cell: ({ row }) => (
-          <div className="flex flex-wrap gap-1">
-            <Button size="sm" variant="outline" onClick={() => void mutations.approveTrial.mutateAsync({ id: row.original.id }).then(() => show('Approved')).catch((e) => showError(e instanceof Error ? e.message : 'Failed'))}>
-              Approve
-            </Button>
-            <Button size="sm" variant="outline" onClick={() => { const reason = window.prompt('Reject reason') ?? 'Rejected'; void mutations.rejectTrial.mutateAsync({ id: row.original.id, reason }).then(() => show('Rejected')).catch((e) => showError(e instanceof Error ? e.message : 'Failed')); }}>
-              Reject
-            </Button>
-            <Button size="sm" variant="outline" onClick={() => { const raw = window.prompt('Recruiter user id'); const recruiterId = Number(raw); if (!recruiterId) return; void mutations.assignTrial.mutateAsync({ id: row.original.id, recruiterId }).then(() => show('Assigned')).catch((e) => showError(e instanceof Error ? e.message : 'Failed')); }}>
-              Assign
-            </Button>
-            <Button size="sm" variant="outline" onClick={() => void mutations.convertTrial.mutateAsync(row.original.id).then(() => show('Converted')).catch((e) => showError(e instanceof Error ? e.message : 'Failed'))}>
-              Convert
-            </Button>
-          </div>
+          <ActionMenu
+            items={trialActions(row.original, { mutations, show, showError, requestConfirm })}
+            label={`Actions for trial ${row.original.id}`}
+          />
         ),
       },
     ],
-    [mutations, show, showError],
+    [mutations, requestConfirm, show, showError],
   );
 
   return (
-    <ListingPageShell title="Trials" message={message} error={isError ? (error instanceof Error ? error.message : 'Failed') : null} loading={isLoading} loadingLabel="Loading trials…">
-      <TanStackDataTable columns={columns} data={rows} searchPlaceholder="Search trials…" pageSize={12} stickyHeader fillHeight dense />
-    </ListingPageShell>
+    <>
+      <ListingPageShell
+        title="Trials"
+        message={message}
+        error={isError ? (error instanceof Error ? error.message : 'Failed') : null}
+        loading={isLoading}
+        loadingLabel="Loading trials…"
+      >
+        <TanStackDataTable
+          columns={columns}
+          data={rows}
+          searchPlaceholder="Search trials…"
+          pageSize={12}
+          stickyHeader
+          fillHeight
+          dense
+        />
+      </ListingPageShell>
+      {confirmDialog}
+    </>
   );
 }

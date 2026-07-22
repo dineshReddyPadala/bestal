@@ -5,7 +5,6 @@ const portals = [
   {
     id: 'admin',
     name: 'Admin Portal',
-    description: 'Daily platform operations: candidates, evaluations, BGV, clients, and trials.',
     href: '/admin/login',
     icon: Building2,
     color: 'bg-violet-100 text-violet-700',
@@ -13,7 +12,6 @@ const portals = [
   {
     id: 'sales',
     name: 'Sales Portal',
-    description: 'Client accounts, trial requests, deployments, and margin tracking.',
     href: '/sales/login',
     icon: TrendingUp,
     color: 'bg-amber-100 text-amber-700',
@@ -21,7 +19,6 @@ const portals = [
   {
     id: 'recruiter',
     name: 'Recruiter Portal',
-    description: 'Candidate pipeline, evaluations, interviews, and shortlists.',
     href: '/recruiter/login',
     icon: Users,
     color: 'bg-blue-100 text-blue-700',
@@ -29,7 +26,6 @@ const portals = [
   {
     id: 'client',
     name: 'Client Portal',
-    description: 'Review shortlists, schedule interviews, and manage deployments.',
     href: '/client/login',
     icon: Briefcase,
     color: 'bg-emerald-100 text-emerald-700',
@@ -39,10 +35,7 @@ const portals = [
 export function PortalLoginPage() {
   return (
     <div className="space-y-4">
-      <p className="text-center text-sm text-muted-foreground">
-        Select the portal that matches your role
-      </p>
-      {portals.map(({ id, name, description, href, icon: Icon, color }) => (
+      {portals.map(({ id, name, href, icon: Icon, color }) => (
         <Link
           key={id}
           to={href}
@@ -53,7 +46,6 @@ export function PortalLoginPage() {
           </div>
           <div className="min-w-0 flex-1">
             <p className="font-semibold text-foreground">{name}</p>
-            <p className="text-sm text-muted-foreground">{description}</p>
           </div>
           <ArrowUpRight className="h-5 w-5 shrink-0 text-muted-foreground transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-brand" />
         </Link>

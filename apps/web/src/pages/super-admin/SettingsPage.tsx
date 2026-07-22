@@ -3,6 +3,8 @@ import { type ColumnDef } from '@tanstack/react-table';
 import { Plus } from 'lucide-react';
 import { useEffect, useMemo, useState, type TextareaHTMLAttributes } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { ActionMenu, type ActionMenuItem } from '../../components/super-admin/ActionMenu';
+import { useConfirmAction } from '../../components/super-admin/useConfirmAction';
 import {
   useAdminMutations,
   useAdminSettings,
@@ -701,6 +703,7 @@ export const SuperAdminSettingsPage = SuperAdminPlatformSettingsPage;
 
 function SkillCommunitiesPanel() {
   const { message, show, showError } = useDemoToast();
+  const { requestConfirm, confirmDialog } = useConfirmAction();
   const { data, isLoading, isError, error } = useAdminSkillCommunities({ limit: 100 });
   const mutations = useAdminMutations();
   const rows = (data?.data ?? []) as Array<{
@@ -709,6 +712,7 @@ function SkillCommunitiesPanel() {
     slug: string;
     description: string | null;
     isActive: boolean;
+    candidateCount?: number;
   }>;
   const [open, setOpen] = useState(false);
   const [name, setName] = useState('');
@@ -737,38 +741,64 @@ function SkillCommunitiesPanel() {
       },
       {
         id: 'actions',
-        header: '',
-        cell: ({ row }) => (
-          <div className="flex gap-1">
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() =>
+        header: 'Actions',
+        cell: ({ row }) => {
+          const r = row.original;
+          const hasCandidates = (r.candidateCount ?? 0) > 0;
+          const items: ActionMenuItem[] = [
+            { id: 'view', label: 'View Community' },
+            {
+              id: 'activate',
+              label: 'Activate',
+              hidden: r.isActive,
+              onSelect: () =>
                 void mutations.setSkillCommunityStatus
-                  .mutateAsync({ id: row.original.id, isActive: !row.original.isActive })
-                  .then(() => show('Updated'))
-                  .catch((e) => showError(e instanceof Error ? e.message : 'Failed'))
-              }
-            >
-              {row.original.isActive ? 'Deactivate' : 'Activate'}
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() =>
-                void mutations.deleteSkillCommunity
-                  .mutateAsync(row.original.id)
-                  .then(() => show('Deleted'))
-                  .catch((e) => showError(e instanceof Error ? e.message : 'Failed'))
-              }
-            >
-              Delete
-            </Button>
-          </div>
-        ),
+                  .mutateAsync({ id: r.id, isActive: true })
+                  .then(() => show('Community activated'))
+                  .catch((e) => showError(e instanceof Error ? e.message : 'Failed')),
+            },
+            {
+              id: 'deactivate',
+              label: 'Deactivate',
+              hidden: !r.isActive,
+              onSelect: () =>
+                void mutations.setSkillCommunityStatus
+                  .mutateAsync({ id: r.id, isActive: false })
+                  .then(() => show('Community deactivated'))
+                  .catch((e) => showError(e instanceof Error ? e.message : 'Failed')),
+            },
+            {
+              id: 'candidates',
+              label: 'View Candidates',
+              href: '/super-admin/candidates',
+              separatorBefore: true,
+            },
+            {
+              id: 'delete',
+              label: 'Delete',
+              destructive: true,
+              separatorBefore: true,
+              disabled: hasCandidates,
+              disabledReason:
+                'Cannot delete this community because candidates are currently assigned to it.',
+              onSelect: () =>
+                requestConfirm({
+                  title: 'Delete Community?',
+                  description: `${r.name} will be permanently deleted.`,
+                  confirmLabel: 'Delete',
+                  destructive: true,
+                  onConfirm: async () => {
+                    await mutations.deleteSkillCommunity.mutateAsync(r.id);
+                    show('Community deleted');
+                  },
+                }),
+            },
+          ];
+          return <ActionMenu items={items} label={`Actions for ${r.name}`} />;
+        },
       },
     ],
-    [mutations, show, showError],
+    [mutations, requestConfirm, show, showError],
   );
 
   return (
@@ -804,6 +834,7 @@ function SkillCommunitiesPanel() {
           dense
         />
       )}
+      {confirmDialog}
       <Dialog
         open={open}
         onClose={() => setOpen(false)}

@@ -64,6 +64,9 @@ import { SuperAdminShell } from '../layouts/SuperAdminShell';
 import { SuperAdminDashboardPage } from '../pages/super-admin/DashboardPage';
 import { SuperAdminUsersPage } from '../pages/super-admin/UsersPage';
 import { SuperAdminUserFormPage } from '../pages/super-admin/UserFormPage';
+import { SuperAdminRolesPage } from '../pages/super-admin/RolesPage';
+import { SuperAdminRoleDetailPage } from '../pages/super-admin/RoleDetailPage';
+import { SuperAdminPermissionMatrixPage } from '../pages/super-admin/PermissionMatrixPage';
 import { SuperAdminClientsPage } from '../pages/super-admin/ClientsPage';
 import { SuperAdminClientFormPage } from '../pages/super-admin/ClientFormPage';
 import {
@@ -71,6 +74,9 @@ import {
   SuperAdminPendingCandidatesPage,
 } from '../pages/super-admin/CandidatesPage';
 import { SuperAdminCandidateDetailPage } from '../pages/super-admin/CandidateDetailPage';
+import { SuperAdminCandidateCsvImportPage } from '../pages/super-admin/CandidateCsvImportPage';
+import { SuperAdminEvaluationsPage } from '../pages/super-admin/EvaluationsPage';
+import { SuperAdminBackgroundChecksPage } from '../pages/super-admin/BackgroundChecksPage';
 import { SuperAdminTrialsPage } from '../pages/super-admin/TrialsPage';
 import { SuperAdminDeploymentsPage } from '../pages/super-admin/DeploymentsPage';
 import { SuperAdminDataImportPage } from '../pages/super-admin/OorwinSyncPage';
@@ -148,7 +154,7 @@ function MarketingShell() {
 
 function PortalSelectorShell() {
   return (
-    <AuthLayout title="Welcome to BesTal" subtitle="Select your portal to continue">
+    <AuthLayout title="Welcome to BesTal">
       <Outlet />
     </AuthLayout>
   );
@@ -156,7 +162,7 @@ function PortalSelectorShell() {
 
 function AdminAuthShell() {
   return (
-    <AuthLayout title="Admin Portal" subtitle="Sign in to manage the BesTal platform">
+    <AuthLayout title="Admin Portal">
       <Outlet />
     </AuthLayout>
   );
@@ -241,12 +247,24 @@ const router = createBrowserRouter([
       { path: 'users', element: <SuperAdminUsersPage /> },
       { path: 'users/new', element: <SuperAdminUserFormPage /> },
       { path: 'users/:id', element: <SuperAdminUserFormPage /> },
+      {
+        path: 'roles',
+        children: [
+          { index: true, element: <SuperAdminRolesPage /> },
+          { path: 'permission-matrix', element: <SuperAdminPermissionMatrixPage /> },
+          { path: ':role', element: <SuperAdminRoleDetailPage /> },
+        ],
+      },
       { path: 'clients', element: <SuperAdminClientsPage /> },
       { path: 'clients/new', element: <SuperAdminClientFormPage /> },
       { path: 'clients/:id', element: <SuperAdminClientFormPage /> },
       { path: 'candidates', element: <SuperAdminCandidatesPage /> },
       { path: 'candidates/pending', element: <SuperAdminPendingCandidatesPage /> },
+      { path: 'candidates/import', element: <SuperAdminCandidateCsvImportPage /> },
+      { path: 'candidates/new', element: <AddCandidatePage /> },
       { path: 'candidates/:id', element: <SuperAdminCandidateDetailPage /> },
+      { path: 'evaluations', element: <SuperAdminEvaluationsPage /> },
+      { path: 'background-checks', element: <SuperAdminBackgroundChecksPage /> },
       {
         path: 'skill-communities',
         element: <Navigate to="/super-admin/platform-settings?tab=communities" replace />,

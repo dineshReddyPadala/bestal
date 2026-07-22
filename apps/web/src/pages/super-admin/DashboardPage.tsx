@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle, PageHeader, StatCard } from '@bestal/ui';
 import { Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { ActionMenu, type ActionMenuItem } from '../../components/super-admin/ActionMenu';
 import { useAdminDashboard } from '../../hooks/api/useAdmin';
 
 export function SuperAdminDashboardPage() {
@@ -57,6 +58,14 @@ export function SuperAdminDashboardPage() {
             label: String(r.name),
             meta: String(r.role ?? r.profileStatus ?? ''),
             href: `/super-admin/candidates/${r.id}`,
+            actions: [
+              { id: 'view', label: 'View Profile', href: `/super-admin/candidates/${r.id}` },
+              {
+                id: 'review',
+                label: 'Review Candidate',
+                href: `/super-admin/candidates/${r.id}`,
+              },
+            ],
           }))}
         />
         <ActivityCard
@@ -66,6 +75,18 @@ export function SuperAdminDashboardPage() {
             label: String(r.name),
             meta: String(r.approvedAt ?? ''),
             href: `/super-admin/candidates/${r.id}`,
+            actions: [
+              {
+                id: 'review',
+                label: 'Review Candidate',
+                href: `/super-admin/candidates/${r.id}`,
+              },
+              {
+                id: 'pending',
+                label: 'Open Approvals Queue',
+                href: '/super-admin/candidates/pending',
+              },
+            ],
           }))}
         />
         <ActivityCard
@@ -74,7 +95,11 @@ export function SuperAdminDashboardPage() {
             id: Number(r.id),
             label: `${r.candidateName} · ${r.clientName}`,
             meta: String(r.status ?? ''),
-            href: `/super-admin/trials`,
+            href: '/super-admin/trials',
+            actions: [
+              { id: 'view', label: 'View Trial', href: '/super-admin/trials' },
+              { id: 'all', label: 'Open Trials', href: '/super-admin/trials' },
+            ],
           }))}
         />
         <ActivityCard
@@ -83,7 +108,11 @@ export function SuperAdminDashboardPage() {
             id: Number(r.id),
             label: `${r.candidateName} · ${r.clientName}`,
             meta: String(r.status ?? ''),
-            href: `/super-admin/deployments`,
+            href: '/super-admin/deployments',
+            actions: [
+              { id: 'view', label: 'View Deployment', href: '/super-admin/deployments' },
+              { id: 'all', label: 'Open Deployments', href: '/super-admin/deployments' },
+            ],
           }))}
         />
       </div>
@@ -96,7 +125,13 @@ function ActivityCard({
   rows,
 }: {
   title: string;
-  rows: Array<{ id: number; label: string; meta: string; href: string }>;
+  rows: Array<{
+    id: number;
+    label: string;
+    meta: string;
+    href: string;
+    actions: ActionMenuItem[];
+  }>;
 }) {
   return (
     <Card>
@@ -108,14 +143,16 @@ function ActivityCard({
           <p className="text-sm text-muted-foreground">No recent activity</p>
         ) : (
           rows.map((row) => (
-            <Link
+            <div
               key={row.id}
-              to={row.href}
-              className="flex items-center justify-between rounded-md bg-muted/40 px-3 py-2 text-sm hover:bg-muted/70"
+              className="flex items-center justify-between gap-2 rounded-md bg-muted/40 px-3 py-2 text-sm"
             >
-              <span className="font-medium">{row.label}</span>
-              <span className="text-xs text-muted-foreground">{row.meta}</span>
-            </Link>
+              <Link to={row.href} className="min-w-0 flex-1 hover:underline">
+                <span className="font-medium">{row.label}</span>
+                <span className="ml-2 text-xs text-muted-foreground">{row.meta}</span>
+              </Link>
+              <ActionMenu items={row.actions} label={`Quick actions for ${row.label}`} />
+            </div>
           ))
         )}
       </CardContent>
