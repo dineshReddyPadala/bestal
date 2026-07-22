@@ -9,6 +9,10 @@ import type {
   UpdateBackgroundCheckBody,
 } from './background-check.validator.js';
 import { BadRequestError } from '../../utils/index.js';
+import {
+  UPLOAD_CATEGORIES,
+  validateUploadFile,
+} from '../../services/storage.service.js';
 
 export class BackgroundCheckController {
   constructor(private readonly backgroundCheckService: BackgroundCheckService) {}
@@ -19,6 +23,42 @@ export class BackgroundCheckController {
       request.body as CreateBackgroundCheckBody,
     );
     return reply.status(201).send({ data });
+  };
+
+  extractBgv = async (request: FastifyRequest, reply: FastifyReply) => {
+    const file = await request.file();
+    if (!file) {
+      throw new BadRequestError('Background verification file is required');
+    }
+
+    const buffer = await file.toBuffer();
+    validateUploadFile(UPLOAD_CATEGORIES.BACKGROUND_CHECK, {
+      mimeType: file.mimetype,
+      size: buffer.length,
+      originalName: file.filename,
+    });
+
+    const candidateIdField = file.fields?.candidateId;
+    const candidateIdValue =
+      candidateIdField &&
+      !Array.isArray(candidateIdField) &&
+      'value' in candidateIdField
+        ? String((candidateIdField as { value: unknown }).value)
+        : undefined;
+    const candidateId = candidateIdValue ? Number(candidateIdValue) : undefined;
+
+    const data = await this.backgroundCheckService.extractBgvDocument(
+      request.authUser!,
+      {
+        buffer,
+        originalName: file.filename,
+        mimeType: file.mimetype,
+        size: buffer.length,
+      },
+      candidateId && Number.isFinite(candidateId) ? candidateId : undefined,
+    );
+
+    return reply.status(200).send({ data });
   };
 
   list = async (request: FastifyRequest, reply: FastifyReply) => {

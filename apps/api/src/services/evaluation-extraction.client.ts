@@ -57,7 +57,7 @@ function pick(
 }
 
 /**
- * Normalizes Python evaluater JSON (camelCase or snake_case) into the web contract.
+ * Normalizes Python ai-service evaluation JSON (camelCase or snake_case) into the web contract.
  */
 export function normalizeEvaluationExtractionResponse(
   raw: unknown,
@@ -123,7 +123,7 @@ export class EvaluationExtractionClient {
   /**
    * Returns unified extract JSON.
    * - No AI_EVALUATION_URL → hardcoded static response (no Python dependency).
-   * - AI_EVALUATION_URL set → POST file payload to Python evaluater and normalize.
+   * - AI_EVALUATION_URL set → POST file payload to Python ai-service and normalize.
    */
   async extract(
     request: EvaluationExtractionRequestBody,

@@ -37,7 +37,7 @@ export function normalizeCandidateSkills(
     if (!existing) {
       byCommunity.set(skill.skillCommunityId, {
         ...skill,
-        skillName: label || skill.skillName,
+        skillName: (label || skill.skillName)?.slice(0, 150),
       });
       continue;
     }

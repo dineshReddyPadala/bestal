@@ -35,9 +35,19 @@ const candidateSourceEnum = z.enum([
 
 const proficiencyLevelEnum = z.enum(['BEGINNER', 'INTERMEDIATE', 'ADVANCED', 'EXPERT']);
 
+const optionalSkillNameField = z
+  .string()
+  .optional()
+  .transform((value) => {
+    const trimmed = value?.trim();
+    if (!trimmed) return undefined;
+    // Resume AI can merge many labels into one field; clamp to DB VarChar(150).
+    return trimmed.slice(0, 150);
+  });
+
 export const candidateSkillBodySchema = z.object({
   skillCommunityId: z.coerce.number().int().positive(),
-  skillName: z.string().max(150).optional(),
+  skillName: optionalSkillNameField,
   skillCategory: z.string().max(100).optional(),
   proficiencyLevel: proficiencyLevelEnum.optional(),
   yearsExperience: z.coerce.number().int().min(0).max(60).optional(),

@@ -12,6 +12,7 @@ import {
   backgroundCheckListResponseSchema,
   backgroundCheckMessageResponseSchema,
   backgroundCheckResponseSchema,
+  bgvExtractionResponseSchema,
   clarificationBodySchema,
   createBackgroundCheckBodySchema,
   listBackgroundChecksQuerySchema,
@@ -58,6 +59,25 @@ export async function backgroundCheckRoutes(
       },
     },
     backgroundCheckController.create,
+  );
+
+  app.post(
+    '/extract-bgv',
+    {
+      preHandler: writePre,
+      schema: {
+        tags: ['Background Checks'],
+        summary:
+          'Upload BGV PDF/DOCX and extract fields via Python AI (or static stub)',
+        security: [{ bearerAuth: [] }],
+        consumes: ['multipart/form-data'],
+        response: {
+          200: bgvExtractionResponseSchema,
+          401: errorResponses[401],
+        },
+      },
+    },
+    backgroundCheckController.extractBgv,
   );
 
   app.get(

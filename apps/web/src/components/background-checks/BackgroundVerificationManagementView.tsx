@@ -1,7 +1,7 @@
 import { cn, formatDate } from '@bestal/shared-utils';
 import { Button, Dialog, FileUpload, Input, Select, StatusBadge, TanStackDataTable } from '@bestal/ui';
 import { type ColumnDef } from '@tanstack/react-table';
-import { Check, Eye, Loader2, Plus } from 'lucide-react';
+import { AlertCircle, Check, Eye, Loader2, Plus, Sparkles } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
 import { useCandidatesList } from '../../hooks/api/useCandidates';
 import {
@@ -9,6 +9,7 @@ import {
   useBackgroundChecksList,
 } from '../../hooks/api/useEvaluations';
 import { usePermissions } from '../../hooks/usePermissions';
+import { mapBgvExtractionToForm } from '../../lib/api/ai/bgv-extraction.mapper';
 import { getApiErrorMessage } from '../../lib/api/errors';
 import { backgroundChecksApi } from '../../lib/api/evaluations';
 import type { BackgroundCheckDto, BackgroundCheckListItem } from '../../lib/api/types';
@@ -95,6 +96,14 @@ export function BackgroundVerificationManagementView({
   const [requestOpen, setRequestOpen] = useState(false);
   const [selectedCandidateId, setSelectedCandidateId] = useState('');
   const [selectedType, setSelectedType] = useState<string>('COMPREHENSIVE');
+  const [requestVendorName, setRequestVendorName] = useState('');
+  const [aiBgvSummary, setAiBgvSummary] = useState('');
+  const [concernNotes, setConcernNotes] = useState('');
+  const [resultSummary, setResultSummary] = useState('');
+  const [extractingPdf, setExtractingPdf] = useState(false);
+  const [extractHint, setExtractHint] = useState<string | null>(null);
+  const [extractError, setExtractError] = useState<string | null>(null);
+  const [pendingReportFile, setPendingReportFile] = useState<File | null>(null);
   const [detail, setDetail] = useState<BackgroundCheckDto | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [vendorName, setVendorName] = useState('');
@@ -199,6 +208,68 @@ export function BackgroundVerificationManagementView({
     [applyDetail, detail, show, showError],
   );
 
+  const resetRequestForm = useCallback(() => {
+    setSelectedCandidateId('');
+    setSelectedType('COMPREHENSIVE');
+    setRequestVendorName('');
+    setAiBgvSummary('');
+    setConcernNotes('');
+    setResultSummary('');
+    setExtractHint(null);
+    setExtractError(null);
+    setPendingReportFile(null);
+  }, []);
+
+  const handleBgvPdfUpload = useCallback(
+    async (file: File) => {
+      const candidateId = Number(selectedCandidateId);
+      if (!candidateId) {
+        setExtractError('Select a candidate before uploading the BGV report.');
+        return;
+      }
+
+      const ext = file.name.split('.').pop()?.toLowerCase();
+      if (!ext || !['pdf', 'doc', 'docx'].includes(ext)) {
+        setExtractError('Please upload a PDF or Word document (.pdf, .doc, .docx).');
+        return;
+      }
+
+      setExtractingPdf(true);
+      setExtractError(null);
+      setExtractHint(null);
+      setPendingReportFile(file);
+
+      try {
+        const { extraction, liveAi } = await backgroundChecksApi.extractBgv(file, candidateId);
+        const patch = mapBgvExtractionToForm(extraction);
+        if (!patch.aiBgvSummary) {
+          throw new Error('AI did not return a background verification summary.');
+        }
+
+        if (patch.vendorName) setRequestVendorName(patch.vendorName);
+        if (patch.checkType) setSelectedType(patch.checkType);
+        if (patch.aiBgvSummary) setAiBgvSummary(patch.aiBgvSummary);
+        if (patch.concernNotes) setConcernNotes(patch.concernNotes);
+        if (patch.resultSummary) setResultSummary(patch.resultSummary);
+
+        const confidence = Math.round(extraction.confidence * 100);
+        const warningNote =
+          extraction.warnings.length > 0 ? ` ${extraction.warnings[0]}` : '';
+        const modeNote = liveAi ? '' : ' (demo/static AI — set AI_BGV_URL on the API)';
+
+        setExtractHint(
+          `BGV extracted (${confidence}% confidence)${modeNote}. Review fields, then Request BGV.${warningNote}`,
+        );
+      } catch (err) {
+        setExtractError(getApiErrorMessage(err, 'BGV extraction failed'));
+        setPendingReportFile(null);
+      } finally {
+        setExtractingPdf(false);
+      }
+    },
+    [selectedCandidateId],
+  );
+
   const handleRequest = useCallback(async () => {
     const candidateId = Number(selectedCandidateId);
     if (!candidateId) {
@@ -209,16 +280,41 @@ export function BackgroundVerificationManagementView({
       const created = await mutations.create.mutateAsync({
         candidateId,
         type: selectedType,
+        ...(requestVendorName.trim() ? { provider: requestVendorName.trim() } : {}),
+        ...(resultSummary.trim() ? { resultSummary: resultSummary.trim() } : {}),
+        ...(aiBgvSummary.trim() ? { aiSummary: aiBgvSummary.trim() } : {}),
+        ...(concernNotes.trim() ? { reviewNotes: concernNotes.trim() } : {}),
       });
+
+      if (pendingReportFile) {
+        try {
+          await backgroundChecksApi.uploadDocument(created.id, 'REPORT', pendingReportFile);
+        } catch {
+          // Report upload is optional after create; workflow can upload later.
+        }
+      }
+
       show(`BGV requested — ${created.candidateName}`);
       setRequestOpen(false);
-      setSelectedCandidateId('');
-      setSelectedType('COMPREHENSIVE');
-      applyDetail(created, { resetLocalFields: true });
+      resetRequestForm();
+      applyDetail(await backgroundChecksApi.get(created.id), { resetLocalFields: true });
     } catch (err) {
       showError(getApiErrorMessage(err, 'Request failed'));
     }
-  }, [applyDetail, mutations.create, selectedCandidateId, selectedType, show, showError]);
+  }, [
+    aiBgvSummary,
+    applyDetail,
+    concernNotes,
+    mutations.create,
+    pendingReportFile,
+    requestVendorName,
+    resetRequestForm,
+    resultSummary,
+    selectedCandidateId,
+    selectedType,
+    show,
+    showError,
+  ]);
 
   const columns = useMemo<ColumnDef<BackgroundCheckListItem>[]>(
     () => [
@@ -355,58 +451,165 @@ export function BackgroundVerificationManagementView({
 
       <Dialog
         open={requestOpen}
-        onClose={() => setRequestOpen(false)}
+        onClose={() => {
+          if (extractingPdf) return;
+          setRequestOpen(false);
+        }}
         title="Request background verification"
-        className="max-w-md"
+        description="Upload a BGV PDF to auto-fill vendor and summary, or enter details manually."
+        scrollable
+        className="max-w-2xl"
         footer={
           <>
-            <Button type="button" variant="outline" onClick={() => setRequestOpen(false)}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setRequestOpen(false)}
+              disabled={extractingPdf}
+            >
               Cancel
             </Button>
-            <Button type="button" onClick={() => void handleRequest()}>
+            <Button type="button" onClick={() => void handleRequest()} disabled={extractingPdf}>
               Request BGV
             </Button>
           </>
         }
       >
-        <div className="space-y-4">
-          <p className="text-sm text-muted-foreground">
-            Candidate must be Evaluation Complete. After create: Consent → Docs → Vendor → Start →
-            Report → AI (placeholder JSON) → Submit.
-          </p>
-          <div className="space-y-2">
-            <label htmlFor="bgv-candidate" className="text-sm font-medium">
-              Candidate *
-            </label>
-            <Select
-              id="bgv-candidate"
-              value={selectedCandidateId}
-              onChange={(e) => setSelectedCandidateId(e.target.value)}
-            >
-              <option value="">— Select —</option>
-              {candidateOptions.map((c) => (
-                <option key={c.id} value={String(c.id)}>
-                  {c.name}
-                </option>
-              ))}
-            </Select>
+        <div className="space-y-6">
+          <div className="rounded-xl border border-brand/20 bg-brand/5 px-4 py-3 text-sm text-muted-foreground">
+            <div className="flex items-start gap-2">
+              <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-brand" />
+              <p>
+                Upload a PDF/Word BGV report. The BesTal API calls Python{' '}
+                <code className="rounded bg-white/80 px-1">ai-service</code> when{' '}
+                <code className="rounded bg-white/80 px-1">AI_BGV_URL</code> is configured;
+                otherwise a demo extraction is returned.
+              </p>
+            </div>
           </div>
-          <div className="space-y-2">
-            <label htmlFor="bgv-type" className="text-sm font-medium">
-              Check type *
-            </label>
-            <Select
-              id="bgv-type"
-              value={selectedType}
-              onChange={(e) => setSelectedType(e.target.value)}
-            >
-              {BGV_TYPES.map((t) => (
-                <option key={t} value={t}>
-                  {t.replace(/_/g, ' ')}
-                </option>
-              ))}
-            </Select>
-          </div>
+
+          <section className="space-y-4">
+            <h3 className="text-sm font-semibold text-foreground">Candidate & document</h3>
+            <div className="space-y-2">
+              <label htmlFor="bgv-candidate" className="text-sm font-medium">
+                Candidate *
+              </label>
+              <Select
+                id="bgv-candidate"
+                className="h-10"
+                value={selectedCandidateId}
+                onChange={(e) => setSelectedCandidateId(e.target.value)}
+              >
+                <option value="">— Select —</option>
+                {candidateOptions.map((c) => (
+                  <option key={c.id} value={String(c.id)}>
+                    {c.name}
+                  </option>
+                ))}
+              </Select>
+            </div>
+
+            <FileUpload
+              label="Upload BGV report PDF"
+              accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+              hint={
+                extractingPdf
+                  ? 'Extracting BGV fields via AI…'
+                  : 'PDF or Word · select candidate first'
+              }
+              onFileSelect={(file) => {
+                if (!extractingPdf) void handleBgvPdfUpload(file);
+              }}
+            />
+            {extractingPdf && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin text-brand" />
+                Processing background verification document…
+              </div>
+            )}
+            {extractHint && (
+              <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+                {extractHint}
+              </div>
+            )}
+            {extractError && (
+              <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                <span>{extractError}</span>
+              </div>
+            )}
+          </section>
+
+          <section className="space-y-4 border-t border-border pt-6">
+            <h3 className="text-sm font-semibold text-foreground">BGV details</h3>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <label htmlFor="bgv-type" className="text-sm font-medium">
+                  Check type *
+                </label>
+                <Select
+                  id="bgv-type"
+                  className="h-10"
+                  value={selectedType}
+                  onChange={(e) => setSelectedType(e.target.value)}
+                >
+                  {BGV_TYPES.map((t) => (
+                    <option key={t} value={t}>
+                      {t.replace(/_/g, ' ')}
+                    </option>
+                  ))}
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="bgv-vendor" className="text-sm font-medium">
+                  Vendor name
+                </label>
+                <Input
+                  id="bgv-vendor"
+                  value={requestVendorName}
+                  onChange={(e) => setRequestVendorName(e.target.value)}
+                  placeholder="e.g. VerifyCorp Screening"
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <label htmlFor="bgv-result-summary" className="text-sm font-medium">
+                Check statuses summary
+              </label>
+              <textarea
+                id="bgv-result-summary"
+                rows={4}
+                className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                value={resultSummary}
+                onChange={(e) => setResultSummary(e.target.value)}
+                placeholder="Per-check statuses from AI extraction"
+              />
+            </div>
+            <div className="space-y-2">
+              <label htmlFor="bgv-ai-summary" className="text-sm font-medium">
+                AI BGV summary
+              </label>
+              <textarea
+                id="bgv-ai-summary"
+                rows={3}
+                className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                value={aiBgvSummary}
+                onChange={(e) => setAiBgvSummary(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <label htmlFor="bgv-concerns" className="text-sm font-medium">
+                Concern notes
+              </label>
+              <textarea
+                id="bgv-concerns"
+                rows={2}
+                className="flex min-h-[60px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                value={concernNotes}
+                onChange={(e) => setConcernNotes(e.target.value)}
+              />
+            </div>
+          </section>
         </div>
       </Dialog>
 

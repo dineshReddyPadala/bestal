@@ -84,7 +84,10 @@ export interface CreateBackgroundCheckInput {
   provider?: string;
   externalReferenceId?: string;
   resultSummary?: string;
+  aiSummary?: string;
+  reviewNotes?: string;
   initiatedAt?: string;
+  completedAt?: string;
   expiresAt?: string;
 }
 

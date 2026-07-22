@@ -3,7 +3,7 @@ import { Button, Dialog, FileUpload, Input, Select, StatusBadge, TanStackDataTab
 import { type ColumnDef } from '@tanstack/react-table';
 import { AlertCircle, Loader2, Plus, Sparkles } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
-import { useCandidatesList } from '../../hooks/api/useCandidates';
+import { useCandidatesList, useCandidateMutations } from '../../hooks/api/useCandidates';
 import {
   useEvaluationMutations,
   useEvaluationsList,
@@ -32,6 +32,9 @@ const defaultFilters = {
   recommendation: 'all',
 };
 
+/** Technical evaluation create requires exactly RECRUITER_SCREENED (API pipeline gate). */
+const EVALUATION_CREATE_STATUS = 'RECRUITER_SCREENED';
+
 function ScoreCell({ value }: { value: number | null | undefined }) {
   if (value == null) {
     return <span className="text-muted-foreground">—</span>;
@@ -53,6 +56,7 @@ export function EvaluationManagementView({
   const { data, isLoading, isError, error } = useEvaluationsList({ limit: 100, sort: '-createdAt' });
   const { data: candidatesData } = useCandidatesList({ limit: 100 });
   const mutations = useEvaluationMutations();
+  const candidateMutations = useCandidateMutations();
   const [filters, setFilters] = useState(defaultFilters);
   const [createOpen, setCreateOpen] = useState(false);
   const [selectedCandidateId, setSelectedCandidateId] = useState('');
@@ -72,6 +76,8 @@ export function EvaluationManagementView({
   const [extractingPdf, setExtractingPdf] = useState(false);
   const [extractHint, setExtractHint] = useState<string | null>(null);
   const [extractError, setExtractError] = useState<string | null>(null);
+  const [createError, setCreateError] = useState<string | null>(null);
+  const [advancingPipeline, setAdvancingPipeline] = useState(false);
 
   const records = useMemo(() => data?.data ?? [], [data]);
 
@@ -80,9 +86,18 @@ export function EvaluationManagementView({
       (candidatesData?.data ?? []).map((c) => ({
         id: c.id,
         name: `${c.firstName} ${c.lastName}`.trim(),
+        profileStatus: c.profileStatus,
       })),
     [candidatesData],
   );
+
+  const selectedCandidate = useMemo(
+    () => candidateOptions.find((c) => String(c.id) === selectedCandidateId) ?? null,
+    [candidateOptions, selectedCandidateId],
+  );
+
+  const canCreateEvaluation = selectedCandidate?.profileStatus === EVALUATION_CREATE_STATUS;
+  const needsRecruiterReview = selectedCandidate?.profileStatus === 'AI_SCREENED';
 
   const candidateNames = useMemo(
     () => [...new Set(records.map((r) => r.candidateName))].sort(),
@@ -150,6 +165,7 @@ export function EvaluationManagementView({
     setEvaluationFileUrl('');
     setExtractHint(null);
     setExtractError(null);
+    setCreateError(null);
   }, []);
 
   const applyExtractedFields = useCallback(
@@ -228,11 +244,23 @@ export function EvaluationManagementView({
   const handleCreate = useCallback(async () => {
     const candidateId = Number(selectedCandidateId);
     const name = evaluatorName.trim();
+    setCreateError(null);
     if (!candidateId) {
+      setCreateError('Select a candidate');
       show('Select a candidate');
       return;
     }
+    if (!canCreateEvaluation) {
+      const status = selectedCandidate?.profileStatus ?? 'unset';
+      const message = needsRecruiterReview
+        ? 'Complete recruiter review first (AI_SCREENED → RECRUITER_SCREENED), then create the evaluation.'
+        : `Technical evaluation requires profile status RECRUITER_SCREENED, current status is ${status}`;
+      setCreateError(message);
+      show(message);
+      return;
+    }
     if (!name) {
+      setCreateError('Enter evaluator name');
       show('Enter evaluator name');
       return;
     }
@@ -262,12 +290,15 @@ export function EvaluationManagementView({
       setCreateOpen(false);
       resetCreateForm();
     } catch (err) {
-      show(err instanceof Error ? err.message : 'Create failed');
+      const message = getApiErrorMessage(err, 'Create failed');
+      setCreateError(message);
+      show(message);
     }
   }, [
     aiEvaluationSummary,
     evaluationFileUrl,
     architectureScore,
+    canCreateEvaluation,
     candidateOptions,
     clientReadinessScore,
     communicationScore,
@@ -277,12 +308,37 @@ export function EvaluationManagementView({
     evaluatorCompany,
     evaluatorName,
     mutations.create,
+    needsRecruiterReview,
     problemSolvingScore,
     recommendation,
     resetCreateForm,
+    selectedCandidate?.profileStatus,
     selectedCandidateId,
     show,
     technicalScore,
+  ]);
+
+  const handleCompleteRecruiterReview = useCallback(async () => {
+    const candidateId = Number(selectedCandidateId);
+    if (!candidateId || !needsRecruiterReview) return;
+
+    setAdvancingPipeline(true);
+    setCreateError(null);
+    try {
+      await candidateMutations.completeRecruiterReview.mutateAsync({ id: candidateId });
+      show('Recruiter review complete — candidate is ready for technical evaluation');
+    } catch (err) {
+      const message = getApiErrorMessage(err, 'Could not complete recruiter review');
+      setCreateError(message);
+      show(message);
+    } finally {
+      setAdvancingPipeline(false);
+    }
+  }, [
+    candidateMutations.completeRecruiterReview,
+    needsRecruiterReview,
+    selectedCandidateId,
+    show,
   ]);
 
   const columns = useMemo<ColumnDef<EvaluationListItem>[]>(
@@ -465,7 +521,11 @@ export function EvaluationManagementView({
             <Button type="button" variant="outline" onClick={() => setCreateOpen(false)}>
               Cancel
             </Button>
-            <Button type="button" onClick={() => void handleCreate()} disabled={extractingPdf}>
+            <Button
+              type="button"
+              onClick={() => void handleCreate()}
+              disabled={extractingPdf || advancingPipeline || !canCreateEvaluation}
+            >
               Create evaluation
             </Button>
           </>
@@ -477,7 +537,7 @@ export function EvaluationManagementView({
               <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-brand" />
               <p>
                 Upload a PDF/Word evaluation. The BesTal API stores the request and calls the Python
-                evaluater when <code className="rounded bg-white/80 px-1">AI_EVALUATION_URL</code> is
+                ai-service when <code className="rounded bg-white/80 px-1">AI_EVALUATION_URL</code> is
                 configured; otherwise a demo extraction is returned.
               </p>
             </div>
@@ -493,16 +553,49 @@ export function EvaluationManagementView({
                 id="eval-candidate"
                 className="h-10"
                 value={selectedCandidateId}
-                onChange={(e) => setSelectedCandidateId(e.target.value)}
+                onChange={(e) => {
+                  setSelectedCandidateId(e.target.value);
+                  setCreateError(null);
+                }}
               >
                 <option value="">— Select —</option>
                 {candidateOptions.map((c) => (
                   <option key={c.id} value={String(c.id)}>
                     {c.name}
+                    {c.profileStatus ? ` (${c.profileStatus})` : ''}
                   </option>
                 ))}
               </Select>
             </div>
+
+            {needsRecruiterReview ? (
+              <div className="flex flex-col gap-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-3 text-sm text-amber-900 sm:flex-row sm:items-center sm:justify-between">
+                <p>
+                  Candidate is <strong>AI_SCREENED</strong>. Complete recruiter review to reach{' '}
+                  <strong>RECRUITER_SCREENED</strong> before creating a technical evaluation.
+                </p>
+                <Button
+                  type="button"
+                  size="sm"
+                  className="shrink-0"
+                  disabled={advancingPipeline}
+                  onClick={() => void handleCompleteRecruiterReview()}
+                >
+                  {advancingPipeline ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : null}
+                  Complete recruiter review
+                </Button>
+              </div>
+            ) : null}
+
+            {selectedCandidate && !canCreateEvaluation && !needsRecruiterReview ? (
+              <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+                Technical evaluation requires profile status{' '}
+                <strong>RECRUITER_SCREENED</strong>. Current status:{' '}
+                <strong>{selectedCandidate.profileStatus ?? 'unset'}</strong>.
+              </div>
+            ) : null}
 
             <FileUpload
               label="Upload evaluation PDF"
@@ -666,6 +759,13 @@ export function EvaluationManagementView({
               />
             </div>
           </section>
+
+          {createError && (
+            <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+              <span>{createError}</span>
+            </div>
+          )}
         </div>
       </Dialog>
     </>

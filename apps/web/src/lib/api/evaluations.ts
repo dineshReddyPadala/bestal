@@ -1,9 +1,15 @@
 import { apiAction, apiCreate, apiGet, apiList, apiRequest, apiUpdate, type ListQuery } from './client';
 import type { EvaluationExtractionResponse } from './ai/evaluation-extraction.types';
+import type { BgvExtractionResponse } from './ai/bgv-extraction.types';
 import type { BackgroundCheckDto, BackgroundCheckListItem, EvaluationListItem } from './types';
 
 export type EvaluationExtractResult = {
   extraction: EvaluationExtractionResponse;
+  liveAi: boolean;
+};
+
+export type BgvExtractResult = {
+  extraction: BgvExtractionResponse;
   liveAi: boolean;
 };
 
@@ -13,7 +19,7 @@ export const evaluationsApi = {
   create: (body: Record<string, unknown>) => apiCreate<EvaluationListItem>('/evaluations', body),
   update: (id: number, body: Record<string, unknown>) =>
     apiUpdate<EvaluationListItem>(`/evaluations/${id}`, body),
-  /** Node uploads file payload to Python evaluater (or static stub) and returns extraction. */
+  /** Node uploads file payload to Python ai-service (or static stub) and returns extraction. */
   extractEvaluation: async (
     file: File,
     candidateId?: number,
@@ -38,6 +44,19 @@ export const backgroundChecksApi = {
     apiCreate<BackgroundCheckDto>('/background-checks', body),
   update: (id: number, body: Record<string, unknown>) =>
     apiUpdate<BackgroundCheckDto>(`/background-checks/${id}`, body),
+  /** Node → Python ai-service background route (or static stub). */
+  extractBgv: async (file: File, candidateId?: number): Promise<BgvExtractResult> => {
+    const form = new FormData();
+    form.append('file', file, file.name);
+    if (candidateId != null && candidateId > 0) {
+      form.append('candidateId', String(candidateId));
+    }
+    const json = await apiRequest<{ data: BgvExtractResult }>(
+      '/background-checks/extract-bgv',
+      { method: 'POST', body: form },
+    );
+    return json.data;
+  },
   confirmConsent: (id: number) =>
     apiAction<BackgroundCheckDto>(`/background-checks/${id}/confirm-consent`),
   assignVendor: (id: number, provider: string) =>

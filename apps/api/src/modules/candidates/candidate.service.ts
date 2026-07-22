@@ -312,18 +312,20 @@ export class CandidateService {
     const fallbackCommunityId = communities[0] ? Number(communities[0].id) : null;
     const mappedSkills = (extraction.skills ?? [])
       .map((skill, index) => {
+        // Match each skill first; community-wide fallback only when no name match.
         const skillCommunityId =
-          communityFromExtraction ??
           matchCommunityId(skill.name) ??
+          communityFromExtraction ??
           fallbackCommunityId;
         if (!skillCommunityId) return null;
+        const skillLabel = skill.name.trim().slice(0, 150);
         return {
           skillCommunityId,
-          skillName: skill.name,
+          skillName: skillLabel,
           proficiencyLevel: skill.proficiencyLevel,
           yearsExperience: skill.yearsExperience ?? undefined,
           isPrimary: skill.isPrimary || index === 0,
-          notes: skill.name,
+          notes: skillLabel,
         };
       })
       .filter((skill): skill is NonNullable<typeof skill> => skill !== null);
