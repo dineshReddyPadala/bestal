@@ -96,5 +96,9 @@ export function useBackgroundCheckMutations() {
       }) => backgroundChecksApi.uploadDocument(id, kind, file),
       onSuccess: invalidate,
     }),
+    extractAi: useMutation({
+      mutationFn: (id: number) => backgroundChecksApi.extractAi(id),
+      onSuccess: invalidate,
+    }),
   };
 }

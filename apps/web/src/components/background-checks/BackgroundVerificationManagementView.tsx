@@ -19,7 +19,6 @@ import {
   ListingFiltersRow,
   ListingPageShell,
 } from '../layout/ListingPageShell';
-import { buildBgvAiDummyJson, withBgvAiDummy } from './bgv-ai-dummy';
 import {
   BGV_RECRUITER_STEPS,
   bgvStepIndex,
@@ -168,16 +167,7 @@ export function BackgroundVerificationManagementView({
       setDetailLoading(true);
       try {
         const next = await backgroundChecksApi.get(id);
-        // Seed local placeholder AI JSON when report exists (do not call extract-ai).
-        applyDetail(
-          next.hasReportDocument &&
-            next.status !== 'CONSIDER' &&
-            next.status !== 'CLEAR' &&
-            next.status !== 'FAILED'
-            ? withBgvAiDummy(next)
-            : next,
-          { resetLocalFields: true },
-        );
+        applyDetail(next, { resetLocalFields: true });
       } catch (err) {
         showError(getApiErrorMessage(err, 'Failed to load verification'));
         setDetail(null);
@@ -789,14 +779,12 @@ export function BackgroundVerificationManagementView({
                       hint="PDF or Word"
                       onFileSelect={(file) =>
                         void run(async () => {
-                          const uploaded = await mutations.uploadDocument.mutateAsync({
+                          return mutations.uploadDocument.mutateAsync({
                             id: detail.id,
                             kind: 'REPORT',
                             file,
                           });
-                          // BGV AI API is not ready — do not call extract-ai; use local dummy JSON.
-                          return withBgvAiDummy(uploaded);
-                        }, 'Report uploaded — AI summary ready for review')
+                        }, 'Report uploaded — AI extraction started')
                       }
                     />
                   </>
@@ -807,23 +795,20 @@ export function BackgroundVerificationManagementView({
                     <div>
                       <h3 className="text-sm font-semibold">6. AI extraction</h3>
                       <p className="mt-1 text-sm text-muted-foreground">
-                        BGV AI API is not ready — showing local placeholder JSON (extract-ai is not
-                        called). Review it, then submit for admin review.
+                        Review the AI summary from the final BGV report, then submit for admin
+                        review. Use refresh to re-run extraction if needed.
                       </p>
                     </div>
                     <pre className="max-h-64 overflow-auto rounded-lg border border-border/70 bg-background p-3 text-xs text-muted-foreground whitespace-pre-wrap">
-                      {detail.aiSummary?.trim() || buildBgvAiDummyJson(detail)}
+                      {detail.aiSummary?.trim() ||
+                        'No AI summary yet. Upload a report or click Refresh AI summary.'}
                     </pre>
                     <div className="flex flex-wrap gap-2">
                       <Button
                         type="button"
                         size="sm"
-                        disabled={busy}
+                        disabled={busy || !detail.aiSummary?.trim()}
                         onClick={() => {
-                          // Keep placeholder in local state for the UI; do not call extract-ai.
-                          if (!detail.aiSummary?.trim()) {
-                            applyDetail(withBgvAiDummy(detail));
-                          }
                           void run(
                             () => mutations.submitForReview.mutateAsync(detail.id),
                             'Submitted for admin review',
@@ -836,10 +821,12 @@ export function BackgroundVerificationManagementView({
                         type="button"
                         size="sm"
                         variant="outline"
-                        disabled={busy}
+                        disabled={busy || !detail.hasReportDocument}
                         onClick={() => {
-                          applyDetail(withBgvAiDummy({ ...detail, aiSummary: null }));
-                          show('AI summary refreshed (local placeholder)');
+                          void run(
+                            () => mutations.extractAi.mutateAsync(detail.id),
+                            'AI summary refreshed',
+                          );
                         }}
                       >
                         Refresh AI summary

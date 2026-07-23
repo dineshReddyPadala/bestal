@@ -13,6 +13,8 @@ import { UPLOAD_CATEGORIES } from '../../services/storage/storage.constants.js';
 import {
   bufferToBase64,
   BgvExtractionClient,
+  formatBgvAiSummaryJson,
+  formatBgvCheckStatusesSummary,
   type BgvExtractionResponse,
 } from '../../services/bgv-extraction.client.js';
 import { buildPaginationMeta } from '../../validators/common.validator.js';
@@ -330,6 +332,24 @@ export class BackgroundCheckService {
         'Upload final report',
       );
       patch.reportDocumentId = bigintToNumber(document.id);
+
+      // Best-effort live AI extract on report upload (ai-service or static stub).
+      try {
+        const extraction = await this.bgvExtractionClient.extract({
+          fileName: file.originalName,
+          mimeType: file.mimeType,
+          content: bufferToBase64(file.buffer),
+          candidateId: String(bigintToNumber(existing.candidateId)),
+        });
+        patch.aiSummary = formatBgvAiSummaryJson(extraction, {
+          provider: existing.provider,
+          checkType: existing.type,
+          liveAi: this.bgvExtractionClient.isLiveAiConfigured,
+        });
+        patch.resultSummary = formatBgvCheckStatusesSummary(extraction);
+      } catch {
+        // Keep the uploaded report even if AI fails; recruiter can retry via extract-ai.
+      }
     }
 
     const record = await this.backgroundCheckRepository.update(
@@ -342,8 +362,7 @@ export class BackgroundCheckService {
   }
 
   /**
-   * Placeholder until the real BGV AI extraction service is ready.
-   * Intentionally does not require a report document or call an external AI API.
+   * Runs BGV AI extraction against the uploaded final report (AI_BGV_URL → ai-service).
    */
   async extractAi(
     authUser: AuthenticatedUser,
@@ -356,35 +375,78 @@ export class BackgroundCheckService {
       ['PENDING', 'IN_PROGRESS', 'CONSIDER', 'SUSPENDED'],
       'AI extraction',
     );
+    assertBgvReportUploaded(existing, 'AI extraction');
 
-    const summary = JSON.stringify(
-      {
-        status: 'CLEAR_RECOMMENDED',
-        confidence: 0.86,
-        provider: existing.provider ?? 'assigned vendor',
-        package: existing.type,
-        checks: [
-          { name: 'Identity', result: 'CLEAR' },
-          { name: 'Employment', result: 'CLEAR' },
-          { name: 'Education', result: 'CLEAR' },
-          { name: 'Criminal', result: 'CLEAR' },
-        ],
-        summary:
-          'Placeholder AI extraction — BGV AI API is not ready. Simulated pass with no critical flags. Admin review required before verification can be marked clear.',
-        generatedAt: new Date().toISOString(),
+    const reportDoc = await this.prisma.document.findFirst({
+      where: {
+        id: existing.reportDocumentId!,
+        organizationId: BigInt(organizationId),
+        entityType: 'BACKGROUND_CHECK',
+        entityId: BigInt(id),
+        deletedAt: null,
       },
-      null,
-      2,
-    );
-
-    const record = await this.backgroundCheckRepository.update(organizationId, id, {
-      aiSummary: summary,
-      resultSummary: existing.resultSummary?.trim()
-        ? existing.resultSummary
-        : summary,
     });
+    if (!reportDoc?.s3Key || !reportDoc.s3Bucket) {
+      throw new BadRequestError('BGV report document is missing storage metadata');
+    }
 
-    return this.toDetailDto(organizationId, record);
+    const downloadUrl = await this.storageService.resolveFileUrl(
+      reportDoc.s3Key,
+      reportDoc.s3Bucket,
+      reportDoc.mimeType ?? undefined,
+    );
+    if (!downloadUrl) {
+      throw new BadRequestError('Unable to download BGV report for AI extraction');
+    }
+
+    let fileBuffer: Buffer;
+    try {
+      const fileResponse = await fetch(downloadUrl);
+      if (!fileResponse.ok) {
+        throw new Error(`HTTP ${fileResponse.status}`);
+      }
+      fileBuffer = Buffer.from(await fileResponse.arrayBuffer());
+    } catch (error) {
+      throw new BadRequestError(
+        error instanceof Error
+          ? `Failed to download BGV report: ${error.message}`
+          : 'Failed to download BGV report for AI extraction',
+      );
+    }
+
+    try {
+      const extraction = await this.bgvExtractionClient.extract({
+        fileName: reportDoc.originalName || reportDoc.fileName || 'bgv-report.pdf',
+        mimeType: reportDoc.mimeType || 'application/pdf',
+        content: bufferToBase64(fileBuffer),
+        candidateId: String(bigintToNumber(existing.candidateId)),
+      });
+
+      if (!extraction.aiBgvSummary?.trim()) {
+        throw new BadRequestError(
+          'AI did not return a background verification summary for this report.',
+        );
+      }
+
+      const summary = formatBgvAiSummaryJson(extraction, {
+        provider: existing.provider,
+        checkType: existing.type,
+        liveAi: this.bgvExtractionClient.isLiveAiConfigured,
+      });
+
+      const record = await this.backgroundCheckRepository.update(organizationId, id, {
+        aiSummary: summary,
+        resultSummary: formatBgvCheckStatusesSummary(extraction),
+      });
+
+      return this.toDetailDto(organizationId, record);
+    } catch (error) {
+      throw error instanceof BadRequestError
+        ? error
+        : new BadRequestError(
+            error instanceof Error ? error.message : 'BGV AI extraction failed',
+          );
+    }
   }
 
   async submitForReview(
@@ -394,8 +456,12 @@ export class BackgroundCheckService {
     const organizationId = requireOrganization(authUser);
     const existing = await this.getBackgroundCheckOrThrow(organizationId, id);
     assertBgvStatusIn(existing.status, ['IN_PROGRESS', 'SUSPENDED'], 'Submit for review');
-    // Report + AI extract-ai are not required while BGV AI API is still in progress.
-    // Recruiters can submit after reviewing the local/placeholder AI JSON.
+    assertBgvReportUploaded(existing, 'Submit for review');
+    if (!existing.aiSummary?.trim()) {
+      throw new BadRequestError(
+        'Submit for review requires AI extraction on the final BGV report first',
+      );
+    }
 
     const record = await this.backgroundCheckRepository.update(organizationId, id, {
       status: 'CONSIDER',
