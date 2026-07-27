@@ -10,6 +10,7 @@ import {
   createTrialBodySchema,
   listTrialsQuerySchema,
   rejectTrialBodySchema,
+  trialFeedbackBodySchema,
   trialIdParamSchema,
   trialListResponseSchema,
   trialResponseSchema,
@@ -139,5 +140,46 @@ export async function trialRoutes(fastify: FastifyInstance): Promise<void> {
       },
     },
     trialController.reject,
+  );
+
+  app.post(
+    '/:id/confirm-candidate',
+    {
+      preHandler: [authenticate, requirePermission(PERMISSIONS.TRIALS_WRITE)],
+      schema: {
+        tags: ['Trials'],
+        summary: 'Mark candidate confirmed for trial',
+        security: [{ bearerAuth: [] }],
+        params: trialIdParamSchema,
+        response: {
+          200: trialResponseSchema,
+          401: errorResponses[401],
+          404: errorResponses[404],
+          422: errorResponses[422],
+        },
+      },
+    },
+    trialController.confirmCandidate,
+  );
+
+  app.post(
+    '/:id/feedback',
+    {
+      preHandler: [authenticate, requirePermission(PERMISSIONS.TRIALS_WRITE)],
+      schema: {
+        tags: ['Trials'],
+        summary: 'Submit client feedback after trial completion',
+        security: [{ bearerAuth: [] }],
+        params: trialIdParamSchema,
+        body: trialFeedbackBodySchema,
+        response: {
+          200: trialResponseSchema,
+          401: errorResponses[401],
+          404: errorResponses[404],
+          422: errorResponses[422],
+        },
+      },
+    },
+    trialController.submitFeedback,
   );
 }

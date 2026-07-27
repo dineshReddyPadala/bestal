@@ -30,6 +30,8 @@ type CandidateListingViewProps = {
   readOnly?: boolean;
   /** Recruiter listing: row + multi-select Submit for approval */
   enableSubmitForApproval?: boolean;
+  /** Sales listing: add candidate to a client shortlist */
+  onAddToShortlist?: (candidate: CandidateListItem) => void;
 };
 
 type ListFilters = {
@@ -62,7 +64,14 @@ function VisibilityBadge({ value }: { value: string }) {
 }
 
 function canSubmitCandidate(row: ApiCandidateRow): boolean {
-  return row.profileStatus === 'PROFILE_DRAFT' && !row.submittedForApprovalAt;
+  return (
+    row.profileStatus === 'PROFILE_DRAFT' &&
+    !row.submittedForApprovalAt &&
+    row.evaluationStatus === 'COMPLETED' &&
+    Boolean(row.bgvStatus) &&
+    row.bgvStatus !== 'NOT_STARTED' &&
+    row.bgvStatus !== 'FAILED'
+  );
 }
 
 function profileStatusLabel(status: string | null): string {
@@ -148,6 +157,7 @@ export function CandidateListingView({
   title = 'Candidates',
   readOnly = false,
   enableSubmitForApproval = false,
+  onAddToShortlist,
 }: CandidateListingViewProps) {
   const navigate = useNavigate();
   const { canWriteCandidates } = usePermissions();
@@ -345,10 +355,28 @@ export function CandidateListingView({
         ),
         enableSorting: false,
       });
+    } else if (onAddToShortlist) {
+      cols.push({
+        id: 'shortlist',
+        header: '',
+        cell: ({ row }) => (
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={(e) => {
+              e.stopPropagation();
+              onAddToShortlist(row.original);
+            }}
+          >
+            Shortlist
+          </Button>
+        ),
+        enableSorting: false,
+      });
     }
 
     return cols;
-  }, [basePath, showSubmitActions, submitOne, submitting]);
+  }, [basePath, onAddToShortlist, showSubmitActions, submitOne, submitting]);
 
   return (
     <>

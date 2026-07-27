@@ -140,26 +140,6 @@ enum ShortlistStatus {
   ARCHIVED
 }
 
-enum InterviewRequestStatus {
-  REQUESTED
-  SCHEDULED
-  CONFIRMED
-  COMPLETED
-  CANCELLED
-  NO_SHOW
-  RESCHEDULED
-}
-
-enum InterviewType {
-  PHONE
-  VIDEO
-  IN_PERSON
-  TECHNICAL
-  PANEL
-  FINAL
-  HR
-}
-
 enum TrialRequestStatus {
   REQUESTED
   APPROVED
@@ -271,9 +251,8 @@ model User {
   backgroundChecksReviewed BackgroundCheck[] @relation("BackgroundCheckReviewer")
   shortlistsCreated        Shortlist[]         @relation("ShortlistCreator")
   shortlistEntriesAdded    ShortlistCandidate[] @relation("ShortlistEntryAddedBy")
-  interviewRequestsCreated InterviewRequest[]  @relation("InterviewRequestCreator")
-  interviewRequestsAssigned InterviewRequest[] @relation("InterviewRequestAssignee")
   trialRequestsCreated     TrialRequest[]      @relation("TrialRequestCreator")
+  trialRequestsAssigned    TrialRequest[]      @relation("TrialRequestAssignedRecruiter")
   deploymentsCreated       Deployment[]        @relation("DeploymentCreator")
   documentsUploaded        Document[]          @relation("DocumentUploader")
   candidatesApproved       Candidate[]         @relation("CandidateApprovedBy")
@@ -306,7 +285,6 @@ model Organization {
   evaluations       Evaluation[]
   backgroundChecks  BackgroundCheck[]
   shortlists        Shortlist[]
-  interviewRequests InterviewRequest[]
   trialRequests     TrialRequest[]
   deployments       Deployment[]
   documents         Document[]
@@ -405,7 +383,6 @@ model Client {
   organization      Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   accountManager    User?              @relation("ClientAccountManager", fields: [accountManagerId], references: [id], onDelete: SetNull)
   shortlists        Shortlist[]
-  interviewRequests InterviewRequest[]
   trialRequests     TrialRequest[]
   deployments       Deployment[]
 
@@ -514,7 +491,6 @@ model Candidate {
   evaluations           Evaluation[]
   backgroundChecks      BackgroundCheck[]
   shortlistEntries      ShortlistCandidate[]
-  interviewRequests     InterviewRequest[]
   trialRequests         TrialRequest[]
   deployments           Deployment[]
 
@@ -651,7 +627,6 @@ model Shortlist {
   client            Client               @relation(fields: [clientId], references: [id], onDelete: Cascade)
   createdBy         User                 @relation("ShortlistCreator", fields: [createdById], references: [id], onDelete: Restrict)
   candidates        ShortlistCandidate[]
-  interviewRequests InterviewRequest[]
 
   @@index([organizationId, status, deletedAt])
   @@index([clientId, deletedAt])
@@ -686,49 +661,8 @@ model ShortlistCandidate {
 }
 
 // ---------------------------------------------------------------------------
-// Interviews & Trials
+// Trials
 // ---------------------------------------------------------------------------
-
-model InterviewRequest {
-  id             BigInt                 @id @default(autoincrement())
-  organizationId BigInt                 @map("organization_id")
-  candidateId    BigInt                 @map("candidate_id")
-  clientId       BigInt                 @map("client_id")
-  shortlistId    BigInt?                @map("shortlist_id")
-  requestedById  BigInt                 @map("requested_by_id")
-  assignedToId   BigInt?                @map("assigned_to_id")
-  type           InterviewType
-  status         InterviewRequestStatus @default(REQUESTED)
-  scheduledAt    DateTime?              @map("scheduled_at")
-  durationMinutes Int?                  @map("duration_minutes")
-  timezone       String?                @db.VarChar(50)
-  location       String?                @db.VarChar(500)
-  meetingLink    String?                @map("meeting_link") @db.VarChar(500)
-  notes          String?                @db.Text
-  feedback       String?                @db.Text
-  completedAt    DateTime?              @map("completed_at")
-  cancelledAt    DateTime?              @map("cancelled_at")
-  cancelReason   String?                @map("cancel_reason") @db.VarChar(500)
-  createdAt      DateTime               @default(now()) @map("created_at")
-  updatedAt      DateTime               @updatedAt @map("updated_at")
-  deletedAt      DateTime?              @map("deleted_at")
-
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  candidate    Candidate    @relation(fields: [candidateId], references: [id], onDelete: Cascade)
-  client       Client       @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  shortlist    Shortlist?   @relation(fields: [shortlistId], references: [id], onDelete: SetNull)
-  requestedBy  User         @relation("InterviewRequestCreator", fields: [requestedById], references: [id], onDelete: Restrict)
-  assignedTo   User?        @relation("InterviewRequestAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
-
-  @@index([organizationId, status, deletedAt])
-  @@index([candidateId, scheduledAt])
-  @@index([clientId, status, deletedAt])
-  @@index([shortlistId])
-  @@index([requestedById])
-  @@index([assignedToId])
-  @@index([organizationId, scheduledAt])
-  @@map("interview_requests")
-}
 
 model TrialRequest {
   id             BigInt             @id @default(autoincrement())
@@ -737,6 +671,7 @@ model TrialRequest {
   clientId       BigInt             @map("client_id")
   deploymentId   BigInt?            @map("deployment_id")
   requestedById    BigInt             @map("requested_by_id")
+  assignedRecruiterId BigInt?         @map("assigned_recruiter_id")
   status           TrialRequestStatus @default(REQUESTED)
   trialType        String?            @map("trial_type") @db.VarChar(100)
   maxTrialHours    Int?               @default(20) @map("max_trial_hours")
@@ -751,6 +686,7 @@ model TrialRequest {
   convertedToPaid Boolean           @default(false) @map("converted_to_paid")
   outcome        String?            @db.VarChar(500)
   approvedAt     DateTime?          @map("approved_at")
+  candidateConfirmedAt DateTime?     @map("candidate_confirmed_at")
   rejectedAt     DateTime?          @map("rejected_at")
   rejectReason   String?            @map("reject_reason") @db.VarChar(500)
   createdAt      DateTime           @default(now()) @map("created_at")
@@ -762,12 +698,14 @@ model TrialRequest {
   client       Client       @relation(fields: [clientId], references: [id], onDelete: Cascade)
   deployment   Deployment?  @relation(fields: [deploymentId], references: [id], onDelete: SetNull)
   requestedBy  User         @relation("TrialRequestCreator", fields: [requestedById], references: [id], onDelete: Restrict)
+  assignedRecruiter User?    @relation("TrialRequestAssignedRecruiter", fields: [assignedRecruiterId], references: [id], onDelete: SetNull)
 
   @@index([organizationId, status, deletedAt])
   @@index([candidateId, deletedAt])
   @@index([clientId, status, deletedAt])
   @@index([deploymentId])
   @@index([requestedById])
+  @@index([assignedRecruiterId])
   @@index([organizationId, startDate])
   @@map("trial_requests")
 }

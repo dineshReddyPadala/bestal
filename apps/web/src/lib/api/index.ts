@@ -1,7 +1,6 @@
 export { login, logout, getMe, forgotPassword, resetPassword, apiRequest } from './client';
 export { ApiError } from './types';
 export { trialsApi } from './trials';
-export { interviewsApi } from './interviews';
 export { clientsApi } from './clients';
 export { deploymentsApi } from './deployments';
 export { candidatesApi, uploadCandidateFile } from './candidates';

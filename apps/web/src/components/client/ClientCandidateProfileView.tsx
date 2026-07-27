@@ -8,7 +8,6 @@ type ClientCandidateProfileViewProps = {
   profile: ClientCandidateProfile;
   shortlisted: boolean;
   onShortlist: () => void;
-  onInterview: () => void;
   onPilot: () => void;
 };
 
@@ -89,7 +88,6 @@ export function ClientCandidateProfileView({
   profile,
   shortlisted,
   onShortlist,
-  onInterview,
   onPilot,
 }: ClientCandidateProfileViewProps) {
   const rateLabel = `${formatCurrency(profile.billRate, profile.currency)}/hr`;
@@ -270,10 +268,7 @@ export function ClientCandidateProfileView({
                 <Heart className={`mr-1.5 h-4 w-4 ${shortlisted ? 'fill-current' : ''}`} />
                 {shortlisted ? 'Shortlisted' : 'Shortlist'}
               </Button>
-              <Button variant="primary" onClick={onInterview}>
-                Interview
-              </Button>
-              <Button variant="outline" onClick={onPilot}>
+              <Button variant="primary" onClick={onPilot}>
                 <FlaskConical className="mr-1.5 h-4 w-4" />
                 Request Pilot
               </Button>

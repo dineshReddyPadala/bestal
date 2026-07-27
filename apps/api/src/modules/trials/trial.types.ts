@@ -10,6 +10,8 @@ export interface TrialDto {
   deploymentId: number | null;
   requestedById: number;
   requestedByName: string;
+  assignedRecruiterId: number | null;
+  assignedRecruiterName: string | null;
   status: TrialRequestStatus;
   roleTitle: string | null;
   startDate: string | null;
@@ -24,6 +26,7 @@ export interface TrialDto {
   convertedToPaid: boolean;
   outcome: string | null;
   approvedAt: string | null;
+  candidateConfirmedAt: string | null;
   rejectedAt: string | null;
   rejectReason: string | null;
   createdAt: string;
@@ -40,6 +43,12 @@ export interface TrialListItemDto {
   roleTitle: string | null;
   startDate: string | null;
   endDate: string | null;
+  assignedRecruiterId: number | null;
+  assignedRecruiterName: string | null;
+  candidateConfirmedAt: string | null;
+  feedback: string | null;
+  clientRating: number | null;
+  outcome: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -90,4 +99,10 @@ export interface UpdateTrialInput {
 
 export interface RejectTrialInput {
   reason?: string;
+}
+
+export interface TrialFeedbackInput {
+  feedback: string;
+  clientRating: number;
+  decision: 'CONTINUE' | 'DO_NOT_CONTINUE';
 }

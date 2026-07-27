@@ -45,6 +45,8 @@ export function assertSalesLimitedCandidateUpdate(input: UpdateCandidateInput): 
 export function redactCandidatePayFields<T extends {
   candidatePayRate?: number | null;
   grossMargin?: number | null;
+  riskFlags?: string | null;
+  weaknesses?: string | null;
 }>(dto: T, role: Role): T {
   if (canViewCandidatePayRate(role)) {
     return dto;
@@ -53,5 +55,23 @@ export function redactCandidatePayFields<T extends {
     ...dto,
     candidatePayRate: null,
     grossMargin: null,
+  };
+}
+
+/** Client-facing candidate payloads: no pay, margin, risk flags, or internal notes. */
+export function redactCandidateForClient<T extends {
+  candidatePayRate?: number | null;
+  grossMargin?: number | null;
+  riskFlags?: string | null;
+  weaknesses?: string | null;
+  rejectionReason?: string | null;
+}>(dto: T): T {
+  return {
+    ...dto,
+    candidatePayRate: null,
+    grossMargin: null,
+    riskFlags: null,
+    weaknesses: null,
+    rejectionReason: null,
   };
 }

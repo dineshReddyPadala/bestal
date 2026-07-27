@@ -54,7 +54,7 @@ export function DashboardPage() {
     ),
   ).length;
   const openTrials = trialRows.filter((t) =>
-    ['REQUESTED', 'APPROVED', 'IN_PROGRESS', 'SCHEDULED'].includes(t.status),
+    ['REQUESTED', 'APPROVED', 'IN_PROGRESS'].includes(t.status),
   ).length;
   const activeDeployments = deploymentRows.filter((d) => d.status === 'ACTIVE').length;
 
@@ -197,7 +197,7 @@ export function DashboardPage() {
             <CardContent className="space-y-3">
               {trialRows
                 .filter((t) =>
-                  ['REQUESTED', 'APPROVED', 'IN_PROGRESS', 'SCHEDULED'].includes(t.status),
+                  ['REQUESTED', 'APPROVED', 'IN_PROGRESS'].includes(t.status),
                 )
                 .slice(0, 6)
                 .map((t) => (

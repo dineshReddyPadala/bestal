@@ -1,47 +1,112 @@
-import { shortlists } from '@bestal/mock-data';
-import { useCallback, useEffect, useState } from 'react';
-import { DEMO_CLIENT_ID } from '../lib/demo-client';
+import { useCallback, useMemo } from 'react';
+import { useAuth } from '../contexts/AuthContext';
+import {
+  useShortlist,
+  useShortlistMutations,
+  useShortlistsList,
+} from './api/useShortlists';
 
-const STORAGE_KEY = `bestal-client-shortlist-${DEMO_CLIENT_ID}`;
+const DEFAULT_TITLE = 'My Shortlist';
 
-function getSeedIds(): number[] {
-  const ids = new Set<number>();
-  shortlists
-    .filter((s) => s.clientId === DEMO_CLIENT_ID)
-    .forEach((s) => s.entries.forEach((e) => ids.add(e.candidateId)));
-  return [...ids];
-}
-
-function readIds(): number[] {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) return JSON.parse(raw) as number[];
-    return getSeedIds();
-  } catch {
-    return getSeedIds();
-  }
-}
-
+/**
+ * Client portal shortlist helpers backed by the shortlists API.
+ */
 export function useClientShortlist() {
-  const [ids, setIds] = useState<number[]>(() => readIds());
+  const { user } = useAuth();
+  const clientId = user?.clientId ?? undefined;
+  const listQuery = useShortlistsList(
+    clientId ? { clientId, limit: 50 } : undefined,
+  );
+  const mutations = useShortlistMutations();
 
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(ids));
-  }, [ids]);
+  const shortlists = listQuery.data?.data ?? [];
+  const primaryMeta = useMemo(() => {
+    const open = shortlists.find(
+      (s) => s.status === 'ACTIVE' || s.status === 'DRAFT',
+    );
+    return open ?? shortlists[0] ?? null;
+  }, [shortlists]);
 
-  const isShortlisted = useCallback((id: number) => ids.includes(id), [ids]);
+  const detailQuery = useShortlist(primaryMeta?.id ?? 0);
+  const primary = detailQuery.data ?? null;
 
-  const toggleShortlist = useCallback((id: number) => {
-    setIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
-  }, []);
+  const shortlistedIds = useMemo(
+    () => primary?.candidates.map((c) => c.candidateId) ?? [],
+    [primary],
+  );
 
-  const addToShortlist = useCallback((id: number) => {
-    setIds((prev) => (prev.includes(id) ? prev : [...prev, id]));
-  }, []);
+  const isShortlisted = useCallback(
+    (id: number) => shortlistedIds.includes(id),
+    [shortlistedIds],
+  );
 
-  const removeFromShortlist = useCallback((id: number) => {
-    setIds((prev) => prev.filter((x) => x !== id));
-  }, []);
+  const ensurePrimary = useCallback(async () => {
+    if (!clientId) {
+      throw new Error('Client account is required to manage shortlists');
+    }
+    if (primary) return primary;
+    if (primaryMeta) {
+      const { shortlistsApi } = await import('../lib/api/shortlists');
+      return shortlistsApi.get(primaryMeta.id);
+    }
+    return mutations.create.mutateAsync({
+      clientId,
+      title: DEFAULT_TITLE,
+      description: 'Default client shortlist',
+    });
+  }, [clientId, primary, primaryMeta, mutations.create]);
 
-  return { shortlistedIds: ids, isShortlisted, toggleShortlist, addToShortlist, removeFromShortlist };
+  const addToShortlist = useCallback(
+    async (candidateId: number) => {
+      const list = await ensurePrimary();
+      if (list.candidates?.some((c) => c.candidateId === candidateId)) return;
+      await mutations.addCandidate.mutateAsync({
+        shortlistId: list.id,
+        body: { candidateId },
+      });
+    },
+    [ensurePrimary, mutations.addCandidate],
+  );
+
+  const removeFromShortlist = useCallback(
+    async (candidateId: number) => {
+      const list = await ensurePrimary();
+      await mutations.removeCandidate.mutateAsync({
+        shortlistId: list.id,
+        candidateId,
+      });
+    },
+    [ensurePrimary, mutations.removeCandidate],
+  );
+
+  const toggleShortlist = useCallback(
+    async (candidateId: number) => {
+      if (!clientId) return;
+      const list = await ensurePrimary();
+      const existing = list.candidates?.some((c) => c.candidateId === candidateId);
+      if (existing) {
+        await mutations.removeCandidate.mutateAsync({
+          shortlistId: list.id,
+          candidateId,
+        });
+      } else {
+        await mutations.addCandidate.mutateAsync({
+          shortlistId: list.id,
+          body: { candidateId },
+        });
+      }
+    },
+    [clientId, ensurePrimary, mutations.addCandidate, mutations.removeCandidate],
+  );
+
+  return {
+    shortlistedIds,
+    isShortlisted,
+    toggleShortlist,
+    addToShortlist,
+    removeFromShortlist,
+    primaryShortlistId: primary?.id ?? primaryMeta?.id ?? null,
+    isLoading: listQuery.isLoading || detailQuery.isLoading,
+    shortlists,
+  };
 }

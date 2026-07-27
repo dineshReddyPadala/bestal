@@ -101,6 +101,8 @@ export type TrialDto = {
   deploymentId: number | null;
   requestedById: number;
   requestedByName: string;
+  assignedRecruiterId?: number | null;
+  assignedRecruiterName?: string | null;
   status: string;
   roleTitle: string | null;
   startDate: string | null;
@@ -115,6 +117,7 @@ export type TrialDto = {
   convertedToPaid: boolean;
   outcome: string | null;
   approvedAt: string | null;
+  candidateConfirmedAt?: string | null;
   rejectedAt: string | null;
   rejectReason: string | null;
   createdAt: string;
@@ -131,6 +134,12 @@ export type TrialListItem = {
   roleTitle: string | null;
   startDate: string | null;
   endDate: string | null;
+  assignedRecruiterId?: number | null;
+  assignedRecruiterName?: string | null;
+  candidateConfirmedAt?: string | null;
+  feedback?: string | null;
+  clientRating?: number | null;
+  outcome?: string | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -264,6 +273,8 @@ export type DeploymentListItem = {
   startDate: string | null;
   endDate: string | null;
   billingRate: number | null;
+  candidatePayRate?: number | null;
+  expectedHoursPerWeek?: number | null;
   currency: string | null;
   createdAt: string;
   updatedAt: string;
@@ -307,7 +318,17 @@ export type CandidateListItem = {
   location: string | null;
   yearsExperience: number | null;
   primarySkillCommunityName: string | null;
+  primaryRole?: string | null;
+  bestalScore?: number | null;
+  clientBillRate?: number | null;
+  currency?: string | null;
+  availabilityStatus?: string | null;
+  timezoneOverlap?: string | null;
   hasResume?: boolean;
+  hasAiSummary?: boolean;
+  hasSkills?: boolean;
+  hasAvailability?: boolean;
+  hasCommercials?: boolean;
   profileStatus: string | null;
   evaluationStatus: string | null;
   bgvStatus: string | null;

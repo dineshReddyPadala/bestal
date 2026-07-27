@@ -8,8 +8,6 @@ import {
   CandidateApprovalStatus,
   CandidateSource,
   TrialRequestStatus,
-  InterviewType,
-  InterviewRequestStatus,
 } from '@prisma/client';
 
 const prisma = new PrismaClient();
@@ -208,23 +206,7 @@ async function main() {
     },
   });
 
-  await prisma.interviewRequest.upsert({
-    where: { id: BigInt(1) },
-    update: {},
-    create: {
-      id: BigInt(1),
-      organizationId: orgId,
-      candidateId: candidate.id,
-      clientId: client.id,
-      requestedById: userIds['client@bestal.com'],
-      type: InterviewType.TECHNICAL,
-      status: InterviewRequestStatus.REQUESTED,
-      durationMinutes: 60,
-      notes: 'Technical interview for payments platform role',
-    },
-  });
-
-  console.log('Seed completed with demo client, candidate, trial, and interview.');
+  console.log('Seed completed with demo client, candidate, and trial.');
 }
 
 main()

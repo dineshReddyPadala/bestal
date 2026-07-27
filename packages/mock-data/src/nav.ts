@@ -5,7 +5,6 @@ export const salesNav = [
   { id: 'clients', label: 'Client Accounts', href: '/sales/clients', icon: 'briefcase' },
   { id: 'candidates', label: 'Candidate Search', href: '/sales/candidates', icon: 'search' },
   { id: 'trials', label: 'Trial Requests', href: '/sales/trials', icon: 'flask-conical', badge: 3 },
-  { id: 'interviews', label: 'Interview Requests', href: '/sales/interviews', icon: 'calendar', badge: 2 },
   { id: 'deployments', label: 'Deployments', href: '/sales/deployments', icon: 'rocket' },
   { id: 'margin', label: 'Margin Report', href: '/sales/margin', icon: 'trending-up' },
 ] as const satisfies readonly NavItem[];
@@ -27,9 +26,9 @@ export const recruiterNav = [
   { id: 'candidates', label: 'Candidates', href: '/recruiter/candidates', icon: 'user-check', badge: 3 },
   { id: 'evaluations', label: 'Evaluations', href: '/recruiter/evaluations', icon: 'clipboard-check', badge: 2 },
   { id: 'shortlists', label: 'Shortlists', href: '/recruiter/shortlists', icon: 'list-checks' },
-  { id: 'interviews', label: 'Interviews', href: '/recruiter/interviews', icon: 'calendar', badge: 4 },
   { id: 'background-checks', label: 'Background Checks', href: '/recruiter/background-checks', icon: 'shield-check' },
   { id: 'clients', label: 'Clients', href: '/recruiter/clients', icon: 'briefcase' },
+  { id: 'trials', label: 'Trials', href: '/recruiter/trials', icon: 'flask-conical' },
   { id: 'deployments', label: 'Deployments', href: '/recruiter/deployments', icon: 'rocket' },
 ] as const satisfies readonly NavItem[];
 
@@ -37,8 +36,8 @@ export const clientNav = [
   { id: 'dashboard', label: 'Dashboard', href: '/client', icon: 'layout-dashboard' },
   { id: 'search', label: 'Candidate Search', href: '/client/search', icon: 'search' },
   { id: 'shortlisted', label: 'Shortlisted', href: '/client/shortlisted', icon: 'list-checks', badge: 2 },
-  { id: 'interviews', label: 'Interview Requests', href: '/client/interviews', icon: 'calendar', badge: 2 },
   { id: 'trials', label: 'Trial Requests', href: '/client/trials', icon: 'flask-conical', badge: 1 },
+  { id: 'deployments', label: 'Deployments', href: '/client/deployments', icon: 'rocket' },
 ] as const satisfies readonly NavItem[];
 
 /** Platform / Super Admin — includes daily ops (same as Admin) plus platform controls */

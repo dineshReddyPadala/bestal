@@ -41,6 +41,10 @@ export interface DeploymentListItemDto {
   roleTitle: string;
   startDate: string | null;
   endDate: string | null;
+  billingRate: number | null;
+  candidatePayRate: number | null;
+  expectedHoursPerWeek: number | null;
+  currency: string | null;
   createdAt: string;
   updatedAt: string;
 }

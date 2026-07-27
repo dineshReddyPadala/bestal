@@ -8,8 +8,7 @@ export type ToptalCandidateCardProps = {
   shortlisted: boolean;
   onView: () => void;
   onShortlist: () => void;
-  onInterview: () => void;
-  onPilot: () => void;
+  onPilot?: () => void;
   layout?: 'grid' | 'list';
   className?: string;
 };
@@ -36,15 +35,13 @@ function CardActions({
   shortlisted,
   onView,
   onShortlist,
-  onInterview,
   onPilot,
   horizontal = false,
 }: {
   shortlisted: boolean;
   onView: () => void;
   onShortlist: () => void;
-  onInterview: () => void;
-  onPilot: () => void;
+  onPilot?: () => void;
   horizontal?: boolean;
 }) {
   return (
@@ -61,12 +58,11 @@ function CardActions({
         <Heart className={cn('mr-1.5 h-3.5 w-3.5', shortlisted && 'fill-current')} />
         Shortlist
       </Button>
-      <Button variant="outline" size="sm" onClick={onInterview} className={cn(!horizontal && 'sm:flex-1')}>
-        Interview
-      </Button>
-      <Button variant="outline" size="sm" onClick={onPilot} className={cn(!horizontal && 'sm:flex-1')}>
-        Pilot
-      </Button>
+      {onPilot ? (
+        <Button variant="outline" size="sm" onClick={onPilot} className={cn(!horizontal && 'sm:flex-1')}>
+          Request Pilot
+        </Button>
+      ) : null}
     </div>
   );
 }
@@ -76,7 +72,6 @@ export function ToptalCandidateCard({
   shortlisted,
   onView,
   onShortlist,
-  onInterview,
   onPilot,
   layout = 'grid',
   className,
@@ -139,7 +134,6 @@ export function ToptalCandidateCard({
             shortlisted={shortlisted}
             onView={onView}
             onShortlist={onShortlist}
-            onInterview={onInterview}
             onPilot={onPilot}
             horizontal
           />
@@ -237,7 +231,6 @@ export function ToptalCandidateCard({
           shortlisted={shortlisted}
           onView={onView}
           onShortlist={onShortlist}
-          onInterview={onInterview}
           onPilot={onPilot}
         />
       </div>

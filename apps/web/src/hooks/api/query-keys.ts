@@ -7,11 +7,6 @@ export const queryKeys = {
     list: (params?: Record<string, unknown>) => ['trials', 'list', params] as const,
     detail: (id: number) => ['trials', id] as const,
   },
-  interviews: {
-    all: ['interviews'] as const,
-    list: (params?: Record<string, unknown>) => ['interviews', 'list', params] as const,
-    detail: (id: number) => ['interviews', id] as const,
-  },
   clients: {
     all: ['clients'] as const,
     list: (params?: Record<string, unknown>) => ['clients', 'list', params] as const,

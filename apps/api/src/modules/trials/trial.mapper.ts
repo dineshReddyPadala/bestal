@@ -24,6 +24,15 @@ export function mapTrialToDto(trial: TrialRecord): TrialDto {
       trial.requestedBy.firstName,
       trial.requestedBy.lastName,
     ),
+    assignedRecruiterId: trial.assignedRecruiterId
+      ? bigintToNumber(trial.assignedRecruiterId)
+      : null,
+    assignedRecruiterName: trial.assignedRecruiter
+      ? formatPersonName(
+          trial.assignedRecruiter.firstName,
+          trial.assignedRecruiter.lastName,
+        )
+      : null,
     status: trial.status,
     roleTitle: trial.roleTitle,
     startDate: trial.startDate?.toISOString().slice(0, 10) ?? null,
@@ -38,6 +47,7 @@ export function mapTrialToDto(trial: TrialRecord): TrialDto {
     convertedToPaid: trial.convertedToPaid,
     outcome: trial.outcome,
     approvedAt: trial.approvedAt?.toISOString() ?? null,
+    candidateConfirmedAt: trial.candidateConfirmedAt?.toISOString() ?? null,
     rejectedAt: trial.rejectedAt?.toISOString() ?? null,
     rejectReason: trial.rejectReason,
     createdAt: trial.createdAt.toISOString(),
@@ -59,6 +69,19 @@ export function mapTrialToListItem(trial: TrialRecord): TrialListItemDto {
     roleTitle: trial.roleTitle,
     startDate: trial.startDate?.toISOString().slice(0, 10) ?? null,
     endDate: trial.endDate?.toISOString().slice(0, 10) ?? null,
+    assignedRecruiterId: trial.assignedRecruiterId
+      ? bigintToNumber(trial.assignedRecruiterId)
+      : null,
+    assignedRecruiterName: trial.assignedRecruiter
+      ? formatPersonName(
+          trial.assignedRecruiter.firstName,
+          trial.assignedRecruiter.lastName,
+        )
+      : null,
+    candidateConfirmedAt: trial.candidateConfirmedAt?.toISOString() ?? null,
+    feedback: trial.feedback,
+    clientRating: trial.clientRating,
+    outcome: trial.outcome,
     createdAt: trial.createdAt.toISOString(),
     updatedAt: trial.updatedAt.toISOString(),
   };

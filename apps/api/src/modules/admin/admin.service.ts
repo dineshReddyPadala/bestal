@@ -623,6 +623,8 @@ export class AdminService {
         bgvStatus: c.bgvStatus,
         profileStatus: c.profileStatus,
         visibilityStatus: c.visibility,
+        approvalStatus: c.approvalStatus,
+        submittedForApprovalAt: c.submittedForApprovalAt?.toISOString() ?? null,
         topSkills: c.skills.map((s) => s.skillCommunity.name),
         updatedAt: c.updatedAt.toISOString(),
       })),

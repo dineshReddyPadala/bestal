@@ -16,7 +16,7 @@ import {
   ListingPageShell,
 } from '../layout/ListingPageShell';
 
-type DeploymentAction = 'Activate' | 'Terminate';
+type DeploymentAction = 'Activate' | 'Pause' | 'Resume' | 'Complete' | 'Extend' | 'Terminate';
 
 type DeploymentManagementViewProps = {
   title?: string;
@@ -90,7 +90,14 @@ function DeploymentRowActions({
   if (record.status === 'PENDING') {
     actions.push({ label: 'Activate' });
     actions.push({ label: 'Terminate', variant: 'danger' });
-  } else if (record.status === 'ACTIVE' || record.status === 'ON_HOLD') {
+  } else if (record.status === 'ACTIVE') {
+    actions.push({ label: 'Pause' });
+    actions.push({ label: 'Extend' });
+    actions.push({ label: 'Complete' });
+    actions.push({ label: 'Terminate', variant: 'danger' });
+  } else if (record.status === 'ON_HOLD') {
+    actions.push({ label: 'Resume' });
+    actions.push({ label: 'Extend' });
     actions.push({ label: 'Terminate', variant: 'danger' });
   }
 
@@ -206,16 +213,28 @@ export function DeploymentManagementView({
       try {
         if (action === 'Activate') {
           await mutations.activate.mutateAsync(record.id);
-          show(`Activated — ${record.candidateName} @ ${record.clientName}`);
+        } else if (action === 'Pause') {
+          await mutations.pause.mutateAsync(record.id);
+        } else if (action === 'Resume') {
+          await mutations.resume.mutateAsync(record.id);
+        } else if (action === 'Complete') {
+          await mutations.complete.mutateAsync(record.id);
+        } else if (action === 'Extend') {
+          const next = window.prompt(
+            'New end date (YYYY-MM-DD)',
+            record.endDate?.slice(0, 10) ?? '',
+          );
+          if (!next?.trim()) return;
+          await mutations.extend.mutateAsync({ id: record.id, endDate: next.trim() });
         } else {
           await mutations.terminate.mutateAsync({ id: record.id });
-          show(`Terminated — ${record.candidateName} @ ${record.clientName}`);
         }
+        show(`${action} — ${record.candidateName} @ ${record.clientName}`);
       } catch (err) {
         show(err instanceof Error ? err.message : `${action} failed`);
       }
     },
-    [mutations.activate, mutations.terminate, show],
+    [mutations, show],
   );
 
   const handleCreateSubmit = useCallback(

@@ -10,4 +10,9 @@ export const deploymentsApi = {
   activate: (id: number) => apiAction<DeploymentDto>(`/deployments/${id}/activate`),
   terminate: (id: number, reason?: string) =>
     apiAction<DeploymentDto>(`/deployments/${id}/terminate`, reason ? { reason } : {}),
+  pause: (id: number) => apiAction<DeploymentDto>(`/deployments/${id}/pause`),
+  resume: (id: number) => apiAction<DeploymentDto>(`/deployments/${id}/resume`),
+  complete: (id: number) => apiAction<DeploymentDto>(`/deployments/${id}/complete`),
+  extend: (id: number, endDate: string) =>
+    apiAction<DeploymentDto>(`/deployments/${id}/extend`, { endDate }),
 };

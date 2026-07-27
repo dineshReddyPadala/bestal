@@ -13,6 +13,7 @@ import {
   listCandidatesQuerySchema,
   messageResponseSchema,
   rejectCandidateBodySchema,
+  sendBackCandidateBodySchema,
   runAiScreeningBodySchema,
   completeRecruiterReviewBodySchema,
   resumeExtractionDraftResponseSchema,
@@ -53,6 +54,20 @@ export async function candidateRoutes(fastify: FastifyInstance): Promise<void> {
       },
     },
     candidateController.extractResume,
+  );
+
+  app.post(
+    '/import-csv',
+    {
+      preHandler: [authenticate, requirePermission(PERMISSIONS.CANDIDATES_WRITE)],
+      schema: {
+        tags: ['Candidates'],
+        summary: 'Import candidates from Oorwin/BesTal CSV template',
+        security: [{ bearerAuth: [] }],
+        consumes: ['multipart/form-data'],
+      },
+    },
+    candidateController.importCsv,
   );
 
   app.get(
@@ -229,6 +244,22 @@ export async function candidateRoutes(fastify: FastifyInstance): Promise<void> {
       },
     },
     candidateController.reject,
+  );
+
+  app.post(
+    '/:id/send-back',
+    {
+      preHandler: [authenticate, requirePermission(PERMISSIONS.CANDIDATES_APPROVE)],
+      schema: {
+        tags: ['Candidates'],
+        summary: 'Send candidate back to recruiter for revisions',
+        security: [{ bearerAuth: [] }],
+        params: candidateIdParamSchema,
+        body: sendBackCandidateBodySchema,
+        response: { 200: candidateResponseSchema },
+      },
+    },
+    candidateController.sendBack,
   );
 
   app.post(

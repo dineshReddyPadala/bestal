@@ -96,6 +96,47 @@ export class DeploymentService {
     return mapDeploymentToDto(deployment);
   }
 
+  async pause(authUser: AuthenticatedUser, id: number): Promise<DeploymentDto> {
+    const organizationId = requireOrganization(authUser);
+    await this.getDeploymentOrThrow(organizationId, id);
+    const deployment = await this.deploymentRepository.update(organizationId, id, {
+      status: 'ON_HOLD',
+    });
+    return mapDeploymentToDto(deployment);
+  }
+
+  async resume(authUser: AuthenticatedUser, id: number): Promise<DeploymentDto> {
+    const organizationId = requireOrganization(authUser);
+    await this.getDeploymentOrThrow(organizationId, id);
+    const deployment = await this.deploymentRepository.update(organizationId, id, {
+      status: 'ACTIVE',
+    });
+    return mapDeploymentToDto(deployment);
+  }
+
+  async complete(authUser: AuthenticatedUser, id: number): Promise<DeploymentDto> {
+    const organizationId = requireOrganization(authUser);
+    await this.getDeploymentOrThrow(organizationId, id);
+    const deployment = await this.deploymentRepository.update(organizationId, id, {
+      status: 'COMPLETED',
+      endDate: new Date().toISOString().slice(0, 10),
+    });
+    return mapDeploymentToDto(deployment);
+  }
+
+  async extend(
+    authUser: AuthenticatedUser,
+    id: number,
+    endDate: string,
+  ): Promise<DeploymentDto> {
+    const organizationId = requireOrganization(authUser);
+    await this.getDeploymentOrThrow(organizationId, id);
+    const deployment = await this.deploymentRepository.update(organizationId, id, {
+      endDate,
+    });
+    return mapDeploymentToDto(deployment);
+  }
+
   async delete(authUser: AuthenticatedUser, id: number): Promise<void> {
     const organizationId = requireOrganization(authUser);
     await this.getDeploymentOrThrow(organizationId, id);

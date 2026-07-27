@@ -147,7 +147,7 @@ export class AdminOpsService {
     await this.trials.getById(authUser, id);
     await this.prisma.trialRequest.updateMany({
       where: { id: BigInt(id), organizationId: BigInt(organizationId) },
-      data: { outcome: `Assigned recruiter:${recruiterId}` },
+      data: { assignedRecruiterId: BigInt(recruiterId) },
     });
     await this.auditWrite(authUser, 'ASSIGN', 'TrialRequest', id, `Assigned recruiter ${recruiterId}`, { recruiterId }, ctx);
     return this.trials.getById(authUser, id);
@@ -405,8 +405,40 @@ export class AdminOpsService {
                 lastName,
                 ...(phone ? { phone } : {}),
                 ...(oorwinId ? { oorwinCandidateId: oorwinId } : {}),
-                ...(row.primaryrole || row.role
-                  ? { primaryRole: row.primaryrole ?? row.role }
+                ...(row.primaryrole || row.role || row.primary_role
+                  ? { primaryRole: row.primaryrole ?? row.role ?? row.primary_role }
+                  : {}),
+                ...(row.headline || row.title ? { headline: row.headline ?? row.title } : {}),
+                ...(row.location || row.city ? { location: row.location ?? row.city } : {}),
+                ...(row.aisummary || row.ai_summary || row.summary
+                  ? {
+                      aiSummary: row.aisummary ?? row.ai_summary ?? row.summary,
+                      summary: row.summary ?? row.aisummary ?? row.ai_summary,
+                    }
+                  : {}),
+                ...(row.strengths ? { strengths: row.strengths } : {}),
+                ...(row.weaknesses ? { weaknesses: row.weaknesses } : {}),
+                ...(row.yearsexperience || row.years_experience
+                  ? {
+                      yearsExperience: Number(
+                        row.yearsexperience ?? row.years_experience,
+                      ),
+                    }
+                  : {}),
+                ...(row.bestalscore || row.bestal_score
+                  ? { bestalScore: Number(row.bestalscore ?? row.bestal_score) }
+                  : {}),
+                ...(row.clientbillrate || row.bill_rate || row.expected_rate
+                  ? {
+                      clientBillRate: Number(
+                        row.clientbillrate ?? row.bill_rate ?? row.expected_rate,
+                      ),
+                    }
+                  : {}),
+                ...(row.candidatepayrate || row.pay_rate
+                  ? {
+                      candidatePayRate: Number(row.candidatepayrate ?? row.pay_rate),
+                    }
                   : {}),
               },
             });
@@ -436,9 +468,31 @@ export class AdminOpsService {
                 email,
                 phone,
                 oorwinCandidateId: oorwinId,
-                primaryRole: row.primaryrole ?? row.role ?? null,
-                source: 'OTHER',
+                primaryRole: row.primaryrole ?? row.role ?? row.primary_role ?? null,
+                headline: row.headline ?? row.title ?? null,
+                location: row.location ?? row.city ?? null,
+                summary: row.summary ?? row.aisummary ?? row.ai_summary ?? null,
+                aiSummary: row.aisummary ?? row.ai_summary ?? row.summary ?? null,
+                strengths: row.strengths ?? null,
+                weaknesses: row.weaknesses ?? null,
+                yearsExperience: row.yearsexperience || row.years_experience
+                  ? Number(row.yearsexperience ?? row.years_experience)
+                  : null,
+                bestalScore: row.bestalscore || row.bestal_score
+                  ? Number(row.bestalscore ?? row.bestal_score)
+                  : null,
+                clientBillRate: row.clientbillrate || row.bill_rate || row.expected_rate
+                  ? Number(row.clientbillrate ?? row.bill_rate ?? row.expected_rate)
+                  : null,
+                candidatePayRate: row.candidatepayrate || row.pay_rate
+                  ? Number(row.candidatepayrate ?? row.pay_rate)
+                  : null,
+                currency: row.currency ?? 'USD',
+                availabilityStatus: (row.availabilitystatus ?? row.availability_status ?? null) as never,
+                timezoneOverlap: row.timezone ?? row.timezone_overlap ?? null,
+                source: ((row.source ?? 'OTHER').toUpperCase() as never) || 'OTHER',
                 profileStatus: 'SOURCED',
+                approvalStatus: 'PENDING',
               },
             });
             createdCount += 1;

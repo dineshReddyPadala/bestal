@@ -2,8 +2,8 @@ import type { ClientSearchRecord } from '@bestal/mock-data';
 import { Avatar, Dialog, SearchInput } from '@bestal/ui';
 import { Heart, Users } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
-import { subscribeApprovalChanges } from '../../lib/candidate-approval-overrides';
-import { getClientSearchRecordsLive } from '../../lib/client-search-overrides';
+import { useCandidatesList } from '../../hooks/api/useCandidates';
+import { mapApiCandidateToClientSearchRecord } from '../../lib/client-search-api';
 
 export type PickCandidateDialogProps = {
   open: boolean;
@@ -26,16 +26,16 @@ export function PickCandidateDialog({
   excludeIds = [],
 }: PickCandidateDialogProps) {
   const [query, setQuery] = useState('');
-  const [approvalTick, setApprovalTick] = useState(0);
-
-  useEffect(() => subscribeApprovalChanges(() => setApprovalTick((t) => t + 1)), []);
+  const { data: apiCandidates } = useCandidatesList({ limit: 100 });
 
   useEffect(() => {
     if (!open) setQuery('');
   }, [open]);
 
   const candidates = useMemo(() => {
-    let rows = getClientSearchRecordsLive().filter((c) => !excludeIds.includes(c.id));
+    let rows = (apiCandidates?.data ?? [])
+      .map(mapApiCandidateToClientSearchRecord)
+      .filter((c) => !excludeIds.includes(c.id));
     if (trialEligibleOnly) {
       rows = rows.filter((c) => c.trialEligible);
     }
@@ -58,7 +58,7 @@ export function PickCandidateDialog({
       if (aShort !== bShort) return aShort - bShort;
       return b.bestalScore - a.bestalScore;
     });
-  }, [approvalTick, query, trialEligibleOnly, shortlistedIds, excludeIds]);
+  }, [apiCandidates, query, trialEligibleOnly, shortlistedIds, excludeIds]);
 
   return (
     <Dialog open={open} onClose={onClose} title={title} scrollable className="max-w-lg">

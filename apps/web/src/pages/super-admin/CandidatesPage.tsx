@@ -31,6 +31,7 @@ type Row = {
   profileStatus: string | null;
   visibilityStatus: string | null;
   approvalStatus?: string | null;
+  submittedForApprovalAt?: string | null;
   updatedAt: string;
 };
 
@@ -56,9 +57,8 @@ function buildCandidateActions(
   const isArchived = profile.includes('ARCHIVE') || visibility === 'ARCHIVED';
   const isPending =
     pendingOnly ||
-    approval === 'PENDING' ||
-    profile.includes('PENDING') ||
-    profile === 'SUBMITTED_FOR_APPROVAL';
+    (approval === 'PENDING' && Boolean(r.submittedForApprovalAt)) ||
+    (profile === 'PROFILE_DRAFT' && Boolean(r.submittedForApprovalAt));
   const isPublished = visibility === 'CLIENT_VISIBLE';
   const isApproved =
     approval === 'APPROVED' ||

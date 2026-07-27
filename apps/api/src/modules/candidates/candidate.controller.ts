@@ -4,6 +4,7 @@ import {
   UPLOAD_CATEGORIES,
   validateUploadFile,
 } from '../../services/storage.service.js';
+import { AdminOpsService } from '../admin/admin-ops.service.js';
 import { CandidateService } from './candidate.service.js';
 import type {
   CreateCandidateBody,
@@ -140,6 +141,17 @@ export class CandidateController {
     return reply.status(200).send({ data });
   };
 
+  sendBack = async (request: FastifyRequest, reply: FastifyReply) => {
+    const { id } = request.params as { id: number };
+    const body = (request.body ?? {}) as { reason?: string };
+    const data = await this.candidateService.sendBack(
+      request.authUser!,
+      id,
+      body.reason,
+    );
+    return reply.status(200).send({ data });
+  };
+
   runAiScreening = async (request: FastifyRequest, reply: FastifyReply) => {
     const { id } = request.params as { id: number };
     const data = await this.candidateService.runAiScreening(
@@ -212,5 +224,20 @@ export class CandidateController {
     );
 
     return reply.status(200).send({ data });
-  }
+  };
+
+  importCsv = async (request: FastifyRequest, reply: FastifyReply) => {
+    const file = await request.file();
+    if (!file) {
+      throw new BadRequestError('CSV file is required');
+    }
+    const buffer = await file.toBuffer();
+    const ops = new AdminOpsService(request.server);
+    const data = await ops.importOorwinCsv(
+      request.authUser!,
+      file.filename,
+      buffer.toString('utf8'),
+    );
+    return reply.send({ data });
+  };
 }

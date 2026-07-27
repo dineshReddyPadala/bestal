@@ -45,7 +45,23 @@ export function useTrialMutations() {
     onSuccess: invalidate,
   });
 
-  return { approve, reject, update, create };
+  const confirmCandidate = useMutation({
+    mutationFn: (id: number) => trialsApi.confirmCandidate(id),
+    onSuccess: invalidate,
+  });
+
+  const submitFeedback = useMutation({
+    mutationFn: ({
+      id,
+      body,
+    }: {
+      id: number;
+      body: { feedback: string; clientRating: number; decision: 'CONTINUE' | 'DO_NOT_CONTINUE' };
+    }) => trialsApi.submitFeedback(id, body),
+    onSuccess: invalidate,
+  });
+
+  return { approve, reject, update, create, confirmCandidate, submitFeedback };
 }
 
 /** Map API trial list + detail fields to management view row shape */
@@ -72,10 +88,15 @@ export function toTrialRow(item: TrialListItem, detail?: TrialDto) {
     startDate: item.startDate,
     endDate: item.endDate,
     status: item.status,
-    outcome: detail?.outcome ?? null,
-    feedback: detail?.feedback ?? null,
+    outcome: detail?.outcome ?? item.outcome ?? null,
+    feedback: detail?.feedback ?? item.feedback ?? null,
+    clientRating: detail?.clientRating ?? item.clientRating ?? null,
     rejectReason: detail?.rejectReason ?? null,
-    converted: Boolean(detail?.deploymentId),
+    converted: Boolean(detail?.deploymentId) || detail?.convertedToPaid === true,
+    assignedRecruiterName:
+      detail?.assignedRecruiterName ?? item.assignedRecruiterName ?? null,
+    candidateConfirmedAt:
+      detail?.candidateConfirmedAt ?? item.candidateConfirmedAt ?? null,
     requestedAt: item.createdAt,
   };
 }

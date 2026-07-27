@@ -417,13 +417,16 @@ export function isProgressStepComplete(
   }
 }
 
-/** Submit for Approval unlocks after basic+AI, skills, availability, and pricing. */
+/** Submit for Approval unlocks after basic+AI, skills, availability, pricing, evaluation, and BGV. */
 export function canSubmitCandidateForApproval(values: CandidateWizardFormValues): boolean {
   return (
     isProgressStepComplete('basic', values) &&
     isProgressStepComplete('skills', values) &&
     isProgressStepComplete('availability', values) &&
-    isProgressStepComplete('pricing', values)
+    isProgressStepComplete('pricing', values) &&
+    isProgressStepComplete('evaluation', values) &&
+    isProgressStepComplete('background-check', values) &&
+    Boolean(values.resumeFileName?.trim() || values.aiSummary?.trim())
   );
 }
 
@@ -645,8 +648,14 @@ export function mapWizardToApiCreateBody(
     bestalScore: finiteNumberOrUndefined(form.bestalScore),
     technicalScore: finiteNumberOrUndefined(form.technicalScore),
     communicationScore: finiteNumberOrUndefined(form.communicationScore),
-    evaluationStatus: emptyToUndefined(form.evaluationRecommendation),
-    bgvStatus: emptyToUndefined(form.bgvStatus),
+    evaluationStatus:
+      form.technicalScore != null &&
+      !Number.isNaN(form.technicalScore) &&
+      form.communicationScore != null &&
+      !Number.isNaN(form.communicationScore)
+        ? 'COMPLETED'
+        : emptyToUndefined(form.evaluationRecommendation) ?? 'NOT_STARTED',
+    bgvStatus: emptyToUndefined(form.bgvStatus) ?? 'NOT_STARTED',
     profileStatus: (form.profileStatus ?? undefined) as CandidateProfileStatusValue | undefined,
     timezoneOverlap: emptyToUndefined(form.timezone),
     availabilityStatus: form.availabilityStatus ?? undefined,

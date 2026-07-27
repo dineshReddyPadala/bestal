@@ -29,12 +29,13 @@ import { useCallback, useMemo, useRef, useState, type DragEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   downloadTemplateCsv,
-  simulateImport,
   validateCandidateCsv,
   type CsvImportRow,
   type CsvImportSummary,
   type CsvValidationResult,
 } from '../../lib/candidate-csv-import';
+import { candidatesApi } from '../../lib/api/candidates';
+import { getApiErrorMessage } from '../../lib/api/errors';
 
 type LogLevel = 'info' | 'warn' | 'error' | 'success';
 
@@ -107,6 +108,7 @@ export function CsvImportScreen({
   const [dragOver, setDragOver] = useState(false);
   const [fileName, setFileName] = useState<string | null>(null);
   const [fileText, setFileText] = useState<string | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [validation, setValidation] = useState<CsvValidationResult | null>(null);
   const [summary, setSummary] = useState<CsvImportSummary | null>(null);
   const [logs, setLogs] = useState<ImportLogEntry[]>([]);
@@ -140,6 +142,7 @@ export function CsvImportScreen({
         const text = String(reader.result ?? '');
         setFileName(file.name);
         setFileText(text);
+        setSelectedFile(file);
         resetState();
         appendLog('info', `Loaded ${file.name} (${(file.size / 1024).toFixed(1)} KB)`);
       };
@@ -195,6 +198,10 @@ export function CsvImportScreen({
       appendLog('warn', 'Run validation before importing');
       return;
     }
+    if (!selectedFile) {
+      appendLog('error', 'No CSV file selected');
+      return;
+    }
     const importable = validation.rows.filter((r) => r.errors.length === 0);
     if (importable.length === 0) {
       appendLog('error', 'No importable rows — fix errors or remove duplicates');
@@ -204,23 +211,29 @@ export function CsvImportScreen({
     setImporting(true);
     appendLog('info', `Starting import of ${importable.length} candidate(s)…`);
 
-    await new Promise((r) => setTimeout(r, 900));
-
-    const importSummary = simulateImport(validation);
-    setSummary(importSummary);
-    setImporting(false);
-
-    appendLog('success', `Imported ${importSummary.imported} candidate(s) successfully`);
-    if (importSummary.skippedDuplicates > 0) {
-      appendLog('warn', `Skipped ${importSummary.skippedDuplicates} duplicate(s)`);
-    }
-    if (importSummary.failed > 0) {
-      appendLog('error', `${importSummary.failed} row(s) failed`);
-    }
-
-    // After a successful demo import, return to the candidates list.
-    if (importSummary.imported > 0) {
-      setTimeout(() => navigate(cancelPath), 800);
+    try {
+      const result = await candidatesApi.importCsv(selectedFile);
+      const importSummary: CsvImportSummary = {
+        imported: result.created + result.updated,
+        skippedDuplicates: result.skipped,
+        failed: result.failed,
+        totalProcessed: validation.totalRows,
+      };
+      setSummary(importSummary);
+      appendLog('success', `Imported ${result.created} new, updated ${result.updated}`);
+      if (result.skipped > 0) {
+        appendLog('warn', `Skipped ${result.skipped} row(s)`);
+      }
+      if (result.failed > 0) {
+        appendLog('error', `${result.failed} row(s) failed`);
+      }
+      if (importSummary.imported > 0) {
+        setTimeout(() => navigate(cancelPath), 800);
+      }
+    } catch (err) {
+      appendLog('error', getApiErrorMessage(err));
+    } finally {
+      setImporting(false);
     }
   };
 
@@ -503,10 +516,10 @@ function PreviewRow({ row }: { row: CsvImportRow }) {
       </DataTableCell>
       <DataTableCell>{row.email || '—'}</DataTableCell>
       <DataTableCell className="max-w-[140px] truncate text-muted-foreground">
-        {row.primarySkill || '—'}
+        {row.primaryRole || '—'}
       </DataTableCell>
       <DataTableCell className="tabular-nums">
-        {row.expectedRate ? `${row.currency || 'USD'} ${row.expectedRate}` : '—'}
+        {row.billRate ? `${row.currency || 'USD'} ${row.billRate}` : '—'}
       </DataTableCell>
       <DataTableCell>
         <div className="space-y-1">

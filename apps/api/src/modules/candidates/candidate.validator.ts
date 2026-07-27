@@ -126,10 +126,19 @@ export const listCandidatesQuerySchema = z.object({
   source: candidateSourceEnum.optional(),
   primarySkillCommunityId: z.coerce.number().int().positive().optional(),
   skillCommunityId: z.coerce.number().int().positive().optional(),
+  /** Pending admin approval queue: submitted + approvalStatus PENDING. */
+  pendingApproval: z
+    .union([z.boolean(), z.enum(['true', 'false', '1', '0'])])
+    .optional()
+    .transform((v) => v === true || v === 'true' || v === '1'),
 });
 
 export const rejectCandidateBodySchema = z.object({
   reason: z.string().min(3).max(500),
+});
+
+export const sendBackCandidateBodySchema = z.object({
+  reason: z.string().min(3).max(500).optional(),
 });
 
 export const runAiScreeningBodySchema = z.object({
@@ -151,6 +160,7 @@ export type CreateCandidateBody = z.infer<typeof createCandidateBodySchema>;
 export type UpdateCandidateBody = z.infer<typeof updateCandidateBodySchema>;
 export type ListCandidatesQuery = z.infer<typeof listCandidatesQuerySchema>;
 export type RejectCandidateBody = z.infer<typeof rejectCandidateBodySchema>;
+export type SendBackCandidateBody = z.infer<typeof sendBackCandidateBodySchema>;
 export type RunAiScreeningBody = z.infer<typeof runAiScreeningBodySchema>;
 export type CompleteRecruiterReviewBody = z.infer<typeof completeRecruiterReviewBodySchema>;
 
@@ -254,6 +264,12 @@ export const candidateListItemSchema = z.object({
   location: z.string().nullable(),
   yearsExperience: z.number().nullable(),
   primarySkillCommunityName: z.string().nullable(),
+  primaryRole: z.string().nullable(),
+  bestalScore: z.number().nullable(),
+  clientBillRate: z.number().nullable(),
+  currency: z.string().nullable(),
+  availabilityStatus: z.string().nullable(),
+  timezoneOverlap: z.string().nullable(),
   hasResume: z.boolean(),
   hasProfileImage: z.boolean(),
   hasIntroVideo: z.boolean(),
@@ -261,6 +277,10 @@ export const candidateListItemSchema = z.object({
   evaluationStatus: z.string().nullable(),
   bgvStatus: z.string().nullable(),
   submittedForApprovalAt: z.string().nullable(),
+  hasAiSummary: z.boolean(),
+  hasSkills: z.boolean(),
+  hasAvailability: z.boolean(),
+  hasCommercials: z.boolean(),
   createdAt: z.string(),
   updatedAt: z.string(),
 });

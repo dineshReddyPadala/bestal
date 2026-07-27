@@ -17,6 +17,8 @@ export const candidatesApi = {
   approve: (id: number) => apiAction<CandidateDto>(`/candidates/${id}/approve`),
   reject: (id: number, reason?: string) =>
     apiAction<CandidateDto>(`/candidates/${id}/reject`, reason ? { reason } : {}),
+  sendBack: (id: number, reason?: string) =>
+    apiAction<CandidateDto>(`/candidates/${id}/send-back`, reason ? { reason } : {}),
   publish: (id: number) => apiAction<CandidateDto>(`/candidates/${id}/publish`),
   hide: (id: number) => apiAction<CandidateDto>(`/candidates/${id}/hide`),
   runAiScreening: (id: number, body?: Record<string, unknown>) =>
@@ -41,7 +43,22 @@ export const candidatesApi = {
       '/candidates/extract-resume',
       { method: 'POST', body: form },
     );
-    console.log('json', json);
+    return json.data;
+  },
+  importCsv: async (file: File) => {
+    const form = new FormData();
+    form.append('file', file, file.name);
+    const json = await apiRequest<{
+      data: {
+        created: number;
+        updated: number;
+        skipped: number;
+        failed: number;
+      };
+    }>('/candidates/import-csv', {
+      method: 'POST',
+      body: form,
+    });
     return json.data;
   },
 };

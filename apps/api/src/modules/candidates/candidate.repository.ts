@@ -329,6 +329,10 @@ export class CandidateRepository extends BaseRepository {
     if (filters.clientView) {
       where.visibility = 'CLIENT_VISIBLE';
       where.approvalStatus = 'APPROVED';
+    } else if (filters.pendingApproval) {
+      where.approvalStatus = 'PENDING';
+      where.submittedForApprovalAt = { not: null };
+      where.profileStatus = 'PROFILE_DRAFT';
     } else {
       if (filters.visibility) {
         where.visibility = filters.visibility;

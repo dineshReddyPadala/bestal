@@ -1,25 +1,31 @@
-import { getClientCandidateProfile } from '@bestal/mock-data';
 import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { ClientCandidateProfileView } from '../../components/client/ClientCandidateProfileView';
-import { RequestInterviewDialog } from '../../components/client/RequestInterviewDialog';
 import { RequestTrialDialog } from '../../components/client/RequestTrialDialog';
-import { useClientInterviewRequests, useClientTrialRequests } from '../../hooks/useClientEngagementRequests';
+import { useCandidate } from '../../hooks/api/useCandidates';
+import { useClientTrialRequests } from '../../hooks/useClientEngagementRequests';
 import { useClientShortlist } from '../../hooks/useClientShortlist';
+import { mapCandidateDtoToClientProfile } from '../../lib/client-candidate-profile';
 import { useDemoToast } from '../../lib/use-demo-toast';
 
 export function CandidateDetailPage() {
   const { id } = useParams();
   const candidateId = Number(id);
-  const profile = getClientCandidateProfile(candidateId);
+  const { data: candidate, isLoading, isError } = useCandidate(candidateId);
   const { isShortlisted, toggleShortlist } = useClientShortlist();
-  const { addRequest: addInterviewRequest } = useClientInterviewRequests();
   const { addRequest: addTrialRequest } = useClientTrialRequests();
   const { show } = useDemoToast();
-  const [interviewOpen, setInterviewOpen] = useState(false);
   const [trialOpen, setTrialOpen] = useState(false);
 
-  if (!profile) {
+  if (isLoading) {
+    return (
+      <div className="p-6">
+        <p className="text-muted-foreground">Loading candidate…</p>
+      </div>
+    );
+  }
+
+  if (isError || !candidate) {
     return (
       <div className="p-6">
         <p className="text-muted-foreground">Candidate not found or not visible to clients.</p>
@@ -33,33 +39,26 @@ export function CandidateDetailPage() {
     );
   }
 
+  const profile = mapCandidateDtoToClientProfile(candidate);
+
   return (
     <>
       <ClientCandidateProfileView
         profile={profile}
         shortlisted={isShortlisted(candidateId)}
-        onShortlist={() => toggleShortlist(candidateId)}
-        onInterview={() => setInterviewOpen(true)}
+        onShortlist={() => {
+          void toggleShortlist(candidateId);
+        }}
         onPilot={() => setTrialOpen(true)}
       />
 
-      <RequestInterviewDialog
-        open={interviewOpen}
-        onClose={() => setInterviewOpen(false)}
-        candidateName={profile.fullName}
-        onSubmit={(values) => {
-          addInterviewRequest(candidateId, profile.fullName, values);
-          show(`Interview requested — ${profile.fullName} (demo)`);
-          setInterviewOpen(false);
-        }}
-      />
       <RequestTrialDialog
         open={trialOpen}
         onClose={() => setTrialOpen(false)}
         candidateName={profile.fullName}
         onSubmit={(values) => {
           addTrialRequest(candidateId, profile.fullName, values);
-          show(`Trial requested — ${profile.fullName} (demo)`);
+          show(`Trial requested — ${profile.fullName}`);
           setTrialOpen(false);
         }}
       />

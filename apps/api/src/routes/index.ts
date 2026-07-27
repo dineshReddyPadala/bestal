@@ -9,7 +9,6 @@ import { deploymentRoutes } from '../modules/deployments/deployment.routes.js';
 import { evaluationRoutes } from '../modules/evaluations/evaluation.routes.js';
 import { notificationRoutes } from '../modules/notifications/notification.routes.js';
 import { searchRoutes } from '../modules/search/search.routes.js';
-import { interviewRoutes } from '../modules/interviews/interview.routes.js';
 import { shortlistRoutes } from '../modules/shortlists/shortlist.routes.js';
 import { trialRoutes } from '../modules/trials/trial.routes.js';
 import { userRoutes } from '../modules/users/user.routes.js';
@@ -32,7 +31,6 @@ export async function registerRoutes(fastify: FastifyInstance): Promise<void> {
       await api.register(backgroundCheckRoutes, { prefix: '/background-checks' });
       await api.register(deploymentRoutes, { prefix: '/deployments' });
       await api.register(trialRoutes, { prefix: '/trials' });
-      await api.register(interviewRoutes, { prefix: '/interviews' });
       await api.register(shortlistRoutes, { prefix: '/shortlists' });
       await api.register(searchRoutes, { prefix: '/search' });
       await api.register(notificationRoutes, { prefix: '/notifications' });

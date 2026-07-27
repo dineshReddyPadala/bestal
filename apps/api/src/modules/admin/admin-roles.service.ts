@@ -41,7 +41,7 @@ const SYSTEM_ROLE_SEED: Array<{
   {
     code: 'RECRUITER',
     name: 'Recruiter',
-    description: 'Candidate pipeline, evaluations, interviews, and shortlists.',
+    description: 'Candidate pipeline, evaluations, and shortlists.',
     portal: 'RECRUITER',
     baseRole: 'RECRUITER',
     permissions: [
@@ -60,8 +60,6 @@ const SYSTEM_ROLE_SEED: Array<{
       PERMISSIONS.BACKGROUND_CHECKS_WRITE,
       PERMISSIONS.SHORTLISTS_READ,
       PERMISSIONS.SHORTLISTS_WRITE,
-      PERMISSIONS.INTERVIEWS_READ,
-      PERMISSIONS.INTERVIEWS_WRITE,
       PERMISSIONS.TRIALS_READ,
       PERMISSIONS.TRIALS_WRITE,
       PERMISSIONS.DEPLOYMENTS_READ,
@@ -89,7 +87,6 @@ const SYSTEM_ROLE_SEED: Array<{
       PERMISSIONS.CANDIDATES_VIEW_PAY_RATE,
       PERMISSIONS.SKILLS_READ,
       PERMISSIONS.SHORTLISTS_READ,
-      PERMISSIONS.INTERVIEWS_READ,
       PERMISSIONS.TRIALS_READ,
       PERMISSIONS.TRIALS_WRITE,
       PERMISSIONS.DEPLOYMENTS_READ,
@@ -107,7 +104,7 @@ const SYSTEM_ROLE_SEED: Array<{
   {
     code: 'CLIENT',
     name: 'Client',
-    description: 'Review shortlists, request interviews/trials, and view deployments.',
+    description: 'Review shortlists, request trials, and view deployments.',
     portal: 'CLIENT',
     baseRole: 'CLIENT',
     permissions: [
@@ -116,8 +113,6 @@ const SYSTEM_ROLE_SEED: Array<{
       PERMISSIONS.ORG_READ,
       PERMISSIONS.CANDIDATES_READ,
       PERMISSIONS.SHORTLISTS_READ,
-      PERMISSIONS.INTERVIEWS_READ,
-      PERMISSIONS.INTERVIEWS_WRITE,
       PERMISSIONS.TRIALS_READ,
       PERMISSIONS.TRIALS_WRITE,
       PERMISSIONS.DEPLOYMENTS_READ,
@@ -143,7 +138,6 @@ const SYSTEM_ROLE_SEED: Array<{
       PERMISSIONS.EVALUATIONS_READ,
       PERMISSIONS.BACKGROUND_CHECKS_READ,
       PERMISSIONS.SHORTLISTS_READ,
-      PERMISSIONS.INTERVIEWS_READ,
       PERMISSIONS.TRIALS_READ,
       PERMISSIONS.DEPLOYMENTS_READ,
       PERMISSIONS.SALES_REPORTS_READ,

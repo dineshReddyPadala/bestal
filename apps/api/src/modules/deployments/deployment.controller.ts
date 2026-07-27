@@ -65,4 +65,33 @@ export class DeploymentController {
     );
     return reply.status(200).send({ data });
   };
+
+  pause = async (request: FastifyRequest, reply: FastifyReply) => {
+    const { id } = request.params as { id: number };
+    const data = await this.deploymentService.pause(request.authUser!, id);
+    return reply.status(200).send({ data });
+  };
+
+  resume = async (request: FastifyRequest, reply: FastifyReply) => {
+    const { id } = request.params as { id: number };
+    const data = await this.deploymentService.resume(request.authUser!, id);
+    return reply.status(200).send({ data });
+  };
+
+  complete = async (request: FastifyRequest, reply: FastifyReply) => {
+    const { id } = request.params as { id: number };
+    const data = await this.deploymentService.complete(request.authUser!, id);
+    return reply.status(200).send({ data });
+  };
+
+  extend = async (request: FastifyRequest, reply: FastifyReply) => {
+    const { id } = request.params as { id: number };
+    const body = request.body as { endDate: string };
+    const data = await this.deploymentService.extend(
+      request.authUser!,
+      id,
+      body.endDate,
+    );
+    return reply.status(200).send({ data });
+  };
 }

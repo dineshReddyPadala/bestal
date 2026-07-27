@@ -8,22 +8,24 @@ import {
   StatCard,
   StatusBadge,
 } from '@bestal/ui';
-import { Calendar, ClipboardCheck, UserCheck, Users } from 'lucide-react';
+import { ClipboardCheck, FlaskConical, UserCheck, Users } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useCandidatesList } from '../../hooks/api/useCandidates';
-import { useInterviewsList } from '../../hooks/api/useInterviews';
+import { useTrialsList } from '../../hooks/api/useTrials';
 
 export function DashboardPage() {
   const candidates = useCandidatesList({ limit: 100, sort: '-createdAt' });
-  const interviews = useInterviewsList({ limit: 100, sort: '-createdAt' });
+  const trials = useTrialsList({ limit: 100, sort: '-createdAt' });
 
   const candidateRows = candidates.data?.data ?? [];
-  const interviewRows = interviews.data?.data ?? [];
+  const trialRows = trials.data?.data ?? [];
 
   const activeCandidates = candidateRows.filter((c) => c.status === 'ACTIVE').length;
-  const pendingApprovals = candidateRows.filter((c) => c.approvalStatus === 'PENDING').length;
-  const upcomingInterviews = interviewRows.filter((i) =>
-    ['REQUESTED', 'SCHEDULED', 'CONFIRMED'].includes(i.status),
+  const pendingApprovals = candidateRows.filter(
+    (c) => c.approvalStatus === 'PENDING' && Boolean(c.submittedForApprovalAt),
+  ).length;
+  const openTrials = trialRows.filter((t) =>
+    ['REQUESTED', 'APPROVED', 'IN_PROGRESS'].includes(t.status),
   );
 
   return (
@@ -41,7 +43,7 @@ export function DashboardPage() {
       />
 
       <div className="space-y-8 p-6">
-        {candidates.isLoading || interviews.isLoading ? (
+        {candidates.isLoading || trials.isLoading ? (
           <p className="text-sm text-muted-foreground">Loading live metrics…</p>
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -56,9 +58,9 @@ export function DashboardPage() {
               icon={<ClipboardCheck className="h-5 w-5" />}
             />
             <StatCard
-              label="Upcoming interviews"
-              value={upcomingInterviews.length}
-              icon={<Calendar className="h-5 w-5" />}
+              label="Open trials"
+              value={openTrials.length}
+              icon={<FlaskConical className="h-5 w-5" />}
             />
             <StatCard
               label="Total pipeline"
@@ -70,31 +72,31 @@ export function DashboardPage() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>Upcoming Interviews</CardTitle>
+            <CardTitle>Open Trials</CardTitle>
             <Link
-              to="/recruiter/interviews"
+              to="/recruiter/trials"
               className="text-sm font-medium text-brand hover:underline"
             >
-              View schedule
+              View trials
             </Link>
           </CardHeader>
           <CardContent className="space-y-3">
-            {upcomingInterviews.slice(0, 8).map((i) => (
+            {openTrials.slice(0, 8).map((t) => (
               <div
-                key={i.id}
+                key={t.id}
                 className="flex items-center justify-between rounded-lg border border-border/70 px-3 py-2"
               >
                 <div>
-                  <p className="text-sm font-medium">{i.candidateName}</p>
+                  <p className="text-sm font-medium">{t.candidateName}</p>
                   <p className="text-xs text-muted-foreground">
-                    {i.clientName} · {i.scheduledAt ? formatDate(i.scheduledAt) : 'Unscheduled'}
+                    {t.clientName} · {t.startDate ? formatDate(t.startDate) : 'TBD'}
                   </p>
                 </div>
-                <StatusBadge status={i.status} />
+                <StatusBadge status={t.status} />
               </div>
             ))}
-            {upcomingInterviews.length === 0 && (
-              <p className="text-sm text-muted-foreground">No upcoming interviews.</p>
+            {openTrials.length === 0 && (
+              <p className="text-sm text-muted-foreground">No open trials.</p>
             )}
           </CardContent>
         </Card>

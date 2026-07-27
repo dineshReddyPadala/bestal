@@ -12,6 +12,7 @@ export type PipelineCandidateSnapshot = {
   resumeDocumentId: bigint | null;
   evaluationStatus: string | null;
   bgvStatus: string | null;
+  aiSummary: string | null;
   clientBillRate: { toString(): string } | null;
   availabilityStatus: string | null;
   availableFrom: Date | null;
@@ -79,6 +80,19 @@ export function assertCanSubmitForApproval(candidate: PipelineCandidateSnapshot)
     throw new BadRequestError(
       'Submit for approval requires client bill rate, availability status, and available-from date',
     );
+  }
+  assertResumeUploaded(candidate, 'Submit for approval');
+  if (!candidate.aiSummary?.trim()) {
+    throw new BadRequestError('Submit for approval requires an AI summary');
+  }
+  if (candidate.evaluationStatus !== 'COMPLETED') {
+    throw new BadRequestError('Evaluation must be completed before submit for approval');
+  }
+  if (!candidate.bgvStatus || candidate.bgvStatus === 'NOT_STARTED') {
+    throw new BadRequestError('Background verification must be started before submit for approval');
+  }
+  if (candidate.bgvStatus === 'FAILED') {
+    throw new BadRequestError('Background verification failed — cannot submit for approval');
   }
   if (candidate.submittedForApprovalAt) {
     throw new BadRequestError('Candidate has already been submitted for approval');
