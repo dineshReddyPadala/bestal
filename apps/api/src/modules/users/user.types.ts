@@ -6,6 +6,7 @@ export type CreateUserInput = {
   lastName: string;
   phone?: string;
   role: Role;
+  clientId?: number;
 };
 
 export type BulkUserInput = CreateUserInput;
@@ -17,6 +18,8 @@ export type UserListItemDto = {
   lastName: string;
   phone: string | null;
   role: Role | null;
+  clientId: number | null;
+  clientName: string | null;
   isActive: boolean;
   lastLoginAt: string | null;
   createdAt: string;

@@ -87,8 +87,10 @@ export async function mapCandidateToDtoAsync(
     introVideo,
     skills: (candidate.skills ?? []).map((skill) => ({
       id: bigintToNumber(skill.id),
-      skillCommunityId: bigintToNumber(skill.skillCommunityId),
-      skillCommunityName: skill.skillCommunity.name,
+      skillCommunityId: skill.skillCommunityId
+        ? bigintToNumber(skill.skillCommunityId)
+        : null,
+      skillCommunityName: skill.skillCommunity?.name ?? null,
       skillName: skill.skillName,
       skillCategory: skill.skillCategory,
       proficiencyLevel: skill.proficiencyLevel,
@@ -118,6 +120,8 @@ export function mapCandidateToListItem(
     yearsExperience: candidate.yearsExperience,
     primarySkillCommunityName: candidate.primarySkillCommunity?.name ?? null,
     primaryRole: candidate.primaryRole ?? null,
+    currentCompany: candidate.currentCompany ?? null,
+    currentTitle: candidate.currentTitle ?? null,
     bestalScore: candidate.bestalScore ?? null,
     clientBillRate: candidate.clientBillRate ? Number(candidate.clientBillRate) : null,
     currency: candidate.currency,

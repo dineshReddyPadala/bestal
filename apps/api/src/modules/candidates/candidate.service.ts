@@ -23,6 +23,7 @@ import {
   isPricingComplete,
   type PipelineCandidateSnapshot,
 } from './candidate-pipeline.js';
+import { isClearBgvStatus } from './candidate-import-status.js';
 import { StorageService } from '../../services/storage.service.js';
 import {
   bufferToBase64,
@@ -410,8 +411,11 @@ export class CandidateService {
           ? {
               skills: {
                 create: normalizedSkills.map((skill) => ({
-                  skillCommunityId: BigInt(skill.skillCommunityId),
-                  skillName: skill.skillName,
+                  skillCommunityId:
+                    skill.skillCommunityId != null
+                      ? BigInt(skill.skillCommunityId)
+                      : null,
+                  skillName: skill.skillName?.trim() || 'Skill',
                   skillCategory: skill.skillCategory,
                   proficiencyLevel: skill.proficiencyLevel ?? 'INTERMEDIATE',
                   yearsExperience: skill.yearsExperience,
@@ -819,7 +823,11 @@ export class CandidateService {
     const updated = await this.candidateRepository.updatePipelineState(
       organizationId,
       id,
-      { submittedForApprovalAt: new Date() },
+      {
+        approvalStatus: 'PENDING',
+        profileStatus: 'PENDING_APPROVAL',
+        submittedForApprovalAt: new Date(),
+      },
     );
 
     return this.toDto(updated, authUser);
@@ -909,7 +917,7 @@ export class CandidateService {
       this.storageService.resolveFileUrl(key, bucket, mimeType),
     );
 
-    const bgvVerified = candidate.bgvStatus === 'CLEAR';
+    const bgvVerified = isClearBgvStatus(candidate.bgvStatus);
     dto.bgvVerified = bgvVerified;
 
     if (bgvVerified) {
@@ -917,7 +925,7 @@ export class CandidateService {
         where: {
           organizationId: candidate.organizationId,
           candidateId: candidate.id,
-          status: 'CLEAR',
+          status: { in: ['CLEAR', 'COMPLETED_CLEAR'] },
           deletedAt: null,
         },
         orderBy: { completedAt: 'desc' },

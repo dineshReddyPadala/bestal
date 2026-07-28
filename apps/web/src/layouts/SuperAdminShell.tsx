@@ -25,16 +25,13 @@ export function SuperAdminShell() {
                 ? '/super-admin/roles'
               : pathname.startsWith('/super-admin/clients')
                 ? '/super-admin/clients'
-                : pathname.startsWith('/super-admin/data-import') ||
-                    pathname.startsWith('/super-admin/oorwin-sync')
-                  ? '/super-admin/data-import'
-                  : pathname.startsWith('/super-admin/platform-settings') ||
-                      pathname.startsWith('/super-admin/settings')
-                    ? '/super-admin/platform-settings'
-                    : pathname.startsWith('/super-admin/reports') ||
-                        pathname.startsWith('/super-admin/margin')
-                      ? '/super-admin/reports'
-                      : currentPath
+                : pathname.startsWith('/super-admin/platform-settings') ||
+                    pathname.startsWith('/super-admin/settings')
+                  ? '/super-admin/platform-settings'
+                  : pathname.startsWith('/super-admin/reports') ||
+                      pathname.startsWith('/super-admin/margin')
+                    ? '/super-admin/reports'
+                    : currentPath
       }
       onLogout={handleLogout}
       headerActions={<NotificationBell />}

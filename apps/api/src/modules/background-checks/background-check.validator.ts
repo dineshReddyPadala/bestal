@@ -4,12 +4,17 @@ import { paginationMetaSchema } from '../../validators/api-responses.validator.j
 const backgroundCheckStatusEnum = z.enum([
   'NOT_STARTED',
   'PENDING',
+  'CONSENT_PENDING',
+  'INITIATED',
   'IN_PROGRESS',
   'CLEAR',
   'CONSIDER',
+  'COMPLETED_CLEAR',
+  'COMPLETED_WITH_CONCERN',
   'SUSPENDED',
   'FAILED',
   'CANCELLED',
+  'EXPIRED',
 ]);
 
 const backgroundCheckTypeEnum = z.enum([

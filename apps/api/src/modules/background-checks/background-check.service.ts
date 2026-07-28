@@ -48,7 +48,7 @@ import type { ListBackgroundChecksQuery } from './background-check.validator.js'
 function deriveCandidateBgvProfileStatus(
   status: string | undefined,
 ): 'BGV_PENDING' | 'BGV_COMPLETE' {
-  if (status === 'CLEAR') return 'BGV_COMPLETE';
+  if (status === 'CLEAR' || status === 'COMPLETED_CLEAR') return 'BGV_COMPLETE';
   return 'BGV_PENDING';
 }
 

@@ -238,6 +238,42 @@ export class ShortlistRepository extends BaseRepository {
       .then(Boolean);
   }
 
+  findClientIdByContactEmail(
+    organizationId: number,
+    email: string,
+  ): Promise<number | null> {
+    return this.prisma.client
+      .findFirst({
+        where: {
+          organizationId: BigInt(organizationId),
+          contactEmail: email.toLowerCase(),
+          deletedAt: null,
+        },
+        select: { id: true },
+      })
+      .then((row) => (row ? Number(row.id) : null));
+  }
+
+  async findClientIdForUser(
+    organizationId: number,
+    userId: number,
+    email: string,
+  ): Promise<number | null> {
+    const membership = await this.prisma.membership.findFirst({
+      where: {
+        userId: BigInt(userId),
+        organizationId: BigInt(organizationId),
+        role: 'CLIENT',
+        isActive: true,
+      },
+      select: { clientId: true },
+    });
+    if (membership?.clientId != null) {
+      return Number(membership.clientId);
+    }
+    return this.findClientIdByContactEmail(organizationId, email);
+  }
+
   candidateExists(organizationId: number, candidateId: number): Promise<boolean> {
     return this.prisma.candidate
       .findFirst({

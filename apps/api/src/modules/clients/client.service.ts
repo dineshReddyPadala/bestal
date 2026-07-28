@@ -37,6 +37,13 @@ export class ClientService {
 
     const slug = await this.generateUniqueSlug(organizationId, input.name);
     const client = await this.clientRepository.create(organizationId, slug, input);
+    if (input.contactEmail) {
+      await this.clientRepository.linkUnlinkedClientMemberships(
+        organizationId,
+        Number(client.id),
+        input.contactEmail,
+      );
+    }
     return mapClientToDto(client);
   }
 
@@ -61,6 +68,14 @@ export class ClientService {
       ...input,
       slug,
     });
+    const contactEmail = input.contactEmail ?? client.contactEmail;
+    if (contactEmail) {
+      await this.clientRepository.linkUnlinkedClientMemberships(
+        organizationId,
+        id,
+        contactEmail,
+      );
+    }
     return mapClientToDto(client);
   }
 

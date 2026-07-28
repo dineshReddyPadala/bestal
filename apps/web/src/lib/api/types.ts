@@ -319,6 +319,8 @@ export type CandidateListItem = {
   yearsExperience: number | null;
   primarySkillCommunityName: string | null;
   primaryRole?: string | null;
+  currentCompany?: string | null;
+  currentTitle?: string | null;
   bestalScore?: number | null;
   clientBillRate?: number | null;
   currency?: string | null;
@@ -353,6 +355,7 @@ export type CandidateDto = CandidateListItem & {
   displayName?: string | null;
   primaryRole?: string | null;
   currentCompany?: string | null;
+  currentTitle?: string | null;
   education?: string | null;
   clientBillRate?: number | null;
   candidatePayRate?: number | null;

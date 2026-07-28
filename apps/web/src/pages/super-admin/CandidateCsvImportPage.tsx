@@ -1,10 +1,12 @@
-import { CsvImportScreen } from '../../components/import/CsvImportScreen';
+import { CandidateImportScreen } from '../../components/import/CandidateImportScreen';
 
-export function SuperAdminCandidateCsvImportPage() {
+export function CandidateCsvImportPage() {
   return (
-    <CsvImportScreen
+    <CandidateImportScreen
       cancelPath="/super-admin/candidates"
-      title="Data Import"
+      title="Candidate Data Import"
     />
   );
 }
+
+export const SuperAdminCandidateCsvImportPage = CandidateCsvImportPage;

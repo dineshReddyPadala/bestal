@@ -17,7 +17,6 @@ import { PickCandidateDialog } from '../../components/client/PickCandidateDialog
 import { RequestTrialDialog } from '../../components/client/RequestTrialDialog';
 import { useTrialMutations } from '../../hooks/api/useTrials';
 import { useClientTrialRequests, trialDurationDays } from '../../hooks/useClientEngagementRequests';
-import { useClientShortlist } from '../../hooks/useClientShortlist';
 import { getApiErrorMessage } from '../../lib/api/errors';
 import { useDemoToast } from '../../lib/use-demo-toast';
 
@@ -90,7 +89,6 @@ function TrialCard({
 
 export function TrialRequestsPage() {
   const { message, show, showError } = useDemoToast();
-  const { shortlistedIds } = useClientShortlist();
   const { trials: clientTrials, addRequest } = useClientTrialRequests();
   const { submitFeedback } = useTrialMutations();
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -210,7 +208,6 @@ export function TrialRequestsPage() {
         onClose={() => setPickerOpen(false)}
         title="Select candidate for trial"
         trialEligibleOnly
-        shortlistedIds={shortlistedIds}
         onSelect={(candidate) => {
           setSelected({ id: candidate.id, name: candidate.fullName });
         }}
@@ -221,10 +218,9 @@ export function TrialRequestsPage() {
           open
           onClose={() => setSelected(null)}
           candidateName={selected.name}
-          onSubmit={(values) => {
-            addRequest(selected.id, selected.name, values);
+          onSubmit={async (values) => {
+            await addRequest(selected.id, selected.name, values);
             show(`Trial requested — ${selected.name}`);
-            setSelected(null);
           }}
         />
       )}

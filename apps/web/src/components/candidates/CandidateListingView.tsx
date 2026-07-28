@@ -24,7 +24,7 @@ import { ToastHost } from '../ui/ToastHost';
 type CandidateListingViewProps = {
   basePath: string;
   addCandidatePath?: string;
-  /** When set, shows a Data Import action that opens the CSV import screen */
+  /** When set, shows Import Candidates beside Add Candidate */
   importPath?: string;
   title?: string;
   readOnly?: boolean;
@@ -86,11 +86,13 @@ function CandidateRowActionsMenu({
   row,
   onSubmit,
   submitting,
+  enableSubmitForApproval,
 }: {
   basePath: string;
   row: ApiCandidateRow;
   onSubmit: (row: ApiCandidateRow) => void;
   submitting: boolean;
+  enableSubmitForApproval?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -122,28 +124,37 @@ function CandidateRowActionsMenu({
             className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-muted"
             onClick={() => setOpen(false)}
           >
-            View
+            View Candidate
           </Link>
-          <button
-            type="button"
-            disabled={!eligible || submitting}
-            title={
-              eligible
-                ? undefined
-                : row.submittedForApprovalAt
-                  ? 'Already submitted for approval'
-                  : 'Requires profile status PROFILE_DRAFT'
-            }
-            className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-muted disabled:cursor-not-allowed disabled:opacity-40"
-            onClick={() => {
-              if (!eligible || submitting) return;
-              onSubmit(row);
-              setOpen(false);
-            }}
+          <Link
+            to={`${basePath}/${row.id}/edit`}
+            className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-muted"
+            onClick={() => setOpen(false)}
           >
-            <Send className="h-3.5 w-3.5" />
-            Submit for approval
-          </button>
+            Edit Candidate
+          </Link>
+          {enableSubmitForApproval ? (
+            <button
+              type="button"
+              disabled={!eligible || submitting}
+              title={
+                eligible
+                  ? undefined
+                  : row.submittedForApprovalAt
+                    ? 'Already submitted for approval'
+                    : 'Requires profile status PROFILE_DRAFT'
+              }
+              className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-muted disabled:cursor-not-allowed disabled:opacity-40"
+              onClick={() => {
+                if (!eligible || submitting) return;
+                onSubmit(row);
+                setOpen(false);
+              }}
+            >
+              <Send className="h-3.5 w-3.5" />
+              Submit for approval
+            </button>
+          ) : null}
         </div>
       ) : null}
     </div>
@@ -320,14 +331,25 @@ export function CandidateListingView({
       {
         accessorKey: 'profileStatus',
         header: 'Pipeline',
-        cell: ({ row }) => (
-          <div className="min-w-[120px]">
-            <StatusBadge status={row.original.profileStatus ?? 'SOURCED'} />
-            {row.original.submittedForApprovalAt ? (
-              <p className="mt-1 text-[10px] text-muted-foreground">Submitted</p>
-            ) : null}
-          </div>
-        ),
+        cell: ({ row }) => {
+          const profile = row.original.profileStatus ?? 'SOURCED';
+          const approval = row.original.approvalStatus;
+          let outcome: string | null = null;
+          if (approval === 'REJECTED') outcome = 'Rejected';
+          else if (profile === 'ADMIN_APPROVED' || approval === 'APPROVED') outcome = 'Approved';
+          else if (profile === 'RECRUITER_SCREENED' && row.original.submittedForApprovalAt == null) {
+            // May be sent-back; list DTO has no rejectionReason — keep badge only
+            outcome = null;
+          }
+          return (
+            <div className="min-w-[120px]">
+              <StatusBadge status={profile} />
+              {outcome ? (
+                <p className="mt-1 text-[10px] text-muted-foreground">{outcome}</p>
+              ) : null}
+            </div>
+          );
+        },
       },
       {
         accessorKey: 'status',
@@ -341,7 +363,7 @@ export function CandidateListingView({
       },
     );
 
-    if (showSubmitActions) {
+    if (!readOnly) {
       cols.push({
         id: 'actions',
         header: '',
@@ -351,6 +373,7 @@ export function CandidateListingView({
             row={row.original}
             onSubmit={submitOne}
             submitting={submitting}
+            enableSubmitForApproval={showSubmitActions}
           />
         ),
         enableSorting: false,
@@ -376,7 +399,7 @@ export function CandidateListingView({
     }
 
     return cols;
-  }, [basePath, onAddToShortlist, showSubmitActions, submitOne, submitting]);
+  }, [basePath, onAddToShortlist, readOnly, showSubmitActions, submitOne, submitting]);
 
   return (
     <>
@@ -388,11 +411,11 @@ export function CandidateListingView({
         error={isError ? (error instanceof Error ? error.message : 'Failed to load candidates') : null}
         actions={
           addCandidatePath || importPath ? (
-            <>
+            <div className="flex flex-wrap items-center gap-2">
               {importPath ? (
-                <Button size="sm" variant="outline" to={importPath}>
+                <Button size="sm" to={importPath}>
                   <FileSpreadsheet className="mr-1.5 h-3.5 w-3.5" />
-                  Data Import
+                  Import Candidates
                 </Button>
               ) : null}
               {addCandidatePath ? (
@@ -401,7 +424,7 @@ export function CandidateListingView({
                   Add Candidate
                 </Button>
               ) : null}
-            </>
+            </div>
           ) : undefined
         }
       >

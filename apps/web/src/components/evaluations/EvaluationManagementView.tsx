@@ -204,8 +204,10 @@ export function EvaluationManagementView({
       }
 
       const ext = file.name.split('.').pop()?.toLowerCase();
-      if (!ext || !['pdf', 'doc', 'docx'].includes(ext)) {
-        setExtractError('Please upload a PDF or Word document (.pdf, .doc, .docx).');
+      if (!ext || !['pdf', 'docx'].includes(ext)) {
+        setExtractError(
+          'Please upload a text-based PDF or DOCX (.pdf, .docx). Legacy .doc and image files are not supported for AI extraction.',
+        );
         return;
       }
 
@@ -598,7 +600,7 @@ export function EvaluationManagementView({
 
             <FileUpload
               label="Upload evaluation PDF"
-              accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+              accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
               hint={
                 extractingPdf
                   ? 'Extracting text and generating AI summary…'

@@ -7,13 +7,14 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ToptalCandidateCard } from '../../components/client/ToptalCandidateCard';
 import { PremiumSearchFilters } from '../../components/client/PremiumSearchFilters';
 import { RequestTrialDialog } from '../../components/client/RequestTrialDialog';
+import { useAuth } from '../../contexts/AuthContext';
 import { useClientTrialRequests } from '../../hooks/useClientEngagementRequests';
-import { useClientShortlist } from '../../hooks/useClientShortlist';
 import {
   countActiveFilters,
   DEFAULT_CLIENT_SEARCH_FILTERS,
   filterClientSearchRecords,
   sortClientSearchRecords,
+  uniqueSorted,
   type ClientSearchFilters,
   type ClientSearchSort,
 } from '../../lib/client-search';
@@ -23,9 +24,10 @@ import { cn } from '@bestal/shared-utils';
 export function CandidateSearchPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const { user } = useAuth();
   const { message, show } = useDemoToast();
-  const { isShortlisted, toggleShortlist } = useClientShortlist();
   const { addRequest: addTrialRequest } = useClientTrialRequests();
+  const canRequestTrial = user?.clientId != null;
 
   const [filters, setFilters] = useState<ClientSearchFilters>(() => ({
     ...DEFAULT_CLIENT_SEARCH_FILTERS,
@@ -37,11 +39,25 @@ export function CandidateSearchPage() {
     null,
   );
 
-  const { data: apiCandidates, isLoading } = useCandidatesList({ limit: 100 });
+  const searchParam = filters.query.trim() || undefined;
+  const { data: apiCandidates, isLoading } = useCandidatesList({
+    limit: 100,
+    search: searchParam,
+  });
 
   const allRecords = useMemo(() => {
     return (apiCandidates?.data ?? []).map(mapApiCandidateToClientSearchRecord);
   }, [apiCandidates]);
+
+  const communityOptions = useMemo(
+    () => uniqueSorted(allRecords.map((r) => r.community)),
+    [allRecords],
+  );
+  const roleOptions = useMemo(() => uniqueSorted(allRecords.map((r) => r.role)), [allRecords]);
+  const timezoneOptions = useMemo(
+    () => uniqueSorted(allRecords.map((r) => r.timezone).filter((tz) => tz !== 'Flexible')),
+    [allRecords],
+  );
 
   const filtered = useMemo(() => {
     const rows = filterClientSearchRecords(allRecords, filters);
@@ -63,6 +79,9 @@ export function CandidateSearchPage() {
           filters={filters}
           onChange={setFilters}
           resultCount={filtered.length}
+          communityOptions={communityOptions}
+          roleOptions={roleOptions}
+          timezoneOptions={timezoneOptions}
         />
 
         <div className="flex flex-wrap items-center justify-between gap-3">
@@ -121,34 +140,28 @@ export function CandidateSearchPage() {
             title="No candidates match your filters"
           />
         ) : viewMode === 'grid' ? (
-          <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
             {filtered.map((record) => (
               <ToptalCandidateCard
                 key={record.id}
                 record={record}
-                shortlisted={isShortlisted(record.id)}
                 layout="grid"
+                canRequestTrial={canRequestTrial}
                 onView={() => navigate(`/client/candidates/${record.id}`)}
-                onShortlist={() => {
-                  void toggleShortlist(record.id);
-                }}
-                onPilot={() => setDialogCandidate({ id: record.id, name: record.fullName })}
+                onTrial={() => setDialogCandidate({ id: record.id, name: record.fullName })}
               />
             ))}
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-3">
             {filtered.map((record) => (
               <ToptalCandidateCard
                 key={record.id}
                 record={record}
-                shortlisted={isShortlisted(record.id)}
                 layout="list"
+                canRequestTrial={canRequestTrial}
                 onView={() => navigate(`/client/candidates/${record.id}`)}
-                onShortlist={() => {
-                  void toggleShortlist(record.id);
-                }}
-                onPilot={() => setDialogCandidate({ id: record.id, name: record.fullName })}
+                onTrial={() => setDialogCandidate({ id: record.id, name: record.fullName })}
               />
             ))}
           </div>
@@ -160,10 +173,9 @@ export function CandidateSearchPage() {
           open
           onClose={() => setDialogCandidate(null)}
           candidateName={dialogCandidate.name}
-          onSubmit={(values) => {
-            addTrialRequest(dialogCandidate.id, dialogCandidate.name, values);
+          onSubmit={async (values) => {
+            await addTrialRequest(dialogCandidate.id, dialogCandidate.name, values);
             show(`Trial requested — ${dialogCandidate.name}`);
-            setDialogCandidate(null);
           }}
         />
       )}

@@ -13,6 +13,7 @@ import {
 
 const candidateStatusEnum = z.enum([
   'NEW',
+  'IMPORTED',
   'ACTIVE',
   'INACTIVE',
   'PLACED',
@@ -21,7 +22,12 @@ const candidateStatusEnum = z.enum([
 
 const candidateVisibilityEnum = z.enum(CANDIDATE_VISIBILITY_STATUSES);
 
-const candidateApprovalStatusEnum = z.enum(['PENDING', 'APPROVED', 'REJECTED']);
+const candidateApprovalStatusEnum = z.enum([
+  'PENDING',
+  'PENDING_REVIEW',
+  'APPROVED',
+  'REJECTED',
+]);
 
 const candidateSourceEnum = z.enum([
   'DIRECT',
@@ -31,6 +37,14 @@ const candidateSourceEnum = z.enum([
   'AGENCY',
   'INTERNAL',
   'OTHER',
+  'OORWIN',
+  'WORKDAY',
+  'GREENHOUSE',
+  'LEVER',
+  'BULLHORN',
+  'ZOHO_RECRUIT',
+  'INDEED',
+  'CAREER_PAGE',
 ]);
 
 const proficiencyLevelEnum = z.enum(['BEGINNER', 'INTERMEDIATE', 'ADVANCED', 'EXPERT']);
@@ -46,7 +60,7 @@ const optionalSkillNameField = z
   });
 
 export const candidateSkillBodySchema = z.object({
-  skillCommunityId: z.coerce.number().int().positive(),
+  skillCommunityId: z.coerce.number().int().positive().optional(),
   skillName: optionalSkillNameField,
   skillCategory: z.string().max(100).optional(),
   proficiencyLevel: proficiencyLevelEnum.optional(),
@@ -211,8 +225,8 @@ export const candidateResponseSchema = z.object({
     skills: z.array(
       z.object({
         id: z.number(),
-        skillCommunityId: z.number(),
-        skillCommunityName: z.string(),
+        skillCommunityId: z.number().nullable(),
+        skillCommunityName: z.string().nullable(),
         proficiencyLevel: z.string(),
         yearsExperience: z.number().nullable(),
         isPrimary: z.boolean(),
@@ -265,6 +279,8 @@ export const candidateListItemSchema = z.object({
   yearsExperience: z.number().nullable(),
   primarySkillCommunityName: z.string().nullable(),
   primaryRole: z.string().nullable(),
+  currentCompany: z.string().nullable(),
+  currentTitle: z.string().nullable(),
   bestalScore: z.number().nullable(),
   clientBillRate: z.number().nullable(),
   currency: z.string().nullable(),

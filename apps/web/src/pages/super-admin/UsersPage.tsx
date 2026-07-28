@@ -17,6 +17,8 @@ type Row = {
   lastName: string;
   email: string;
   role: string | null;
+  clientId?: number | null;
+  clientName?: string | null;
   isActive: boolean;
   createdAt: string;
   lastLoginAt: string | null;
@@ -31,7 +33,7 @@ export function SuperAdminUsersPage() {
   const [searchParams] = useSearchParams();
   const roleFilter = searchParams.get('role');
   const { user } = useAuth();
-  const { message, show, showError } = useDemoToast();
+  const { message, variant, show, showError } = useDemoToast();
   const { requestConfirm, confirmDialog } = useConfirmAction();
   const { data, isLoading, isError, error } = useAdminUsers({ limit: 100, sort: '-createdAt' });
   const mutations = useAdminMutations();
@@ -67,6 +69,19 @@ export function SuperAdminUsersPage() {
         cell: ({ getValue }) => {
           const v = getValue() as string | null;
           return v ? <StatusBadge status={v} /> : '—';
+        },
+      },
+      {
+        id: 'client',
+        header: 'Client',
+        cell: ({ row }) => {
+          if (row.original.role !== 'CLIENT') {
+            return <span className="text-muted-foreground">—</span>;
+          }
+          if (row.original.clientName) {
+            return <span className="text-sm text-foreground">{row.original.clientName}</span>;
+          }
+          return <span className="text-sm text-muted-foreground">Not linked</span>;
         },
       },
       {
@@ -199,6 +214,7 @@ export function SuperAdminUsersPage() {
       <ListingPageShell
         title="User Management"
         message={message}
+        messageVariant={variant}
         error={isError ? (error instanceof Error ? error.message : 'Failed to load') : null}
         loading={isLoading}
         loadingLabel="Loading users…"
@@ -209,26 +225,14 @@ export function SuperAdminUsersPage() {
           </Button>
         }
       >
-        <div className="mb-4 rounded-lg border border-border/70 bg-muted/20 px-4 py-3 text-sm text-muted-foreground">
-          Manage user accounts and assign roles here. Role permissions live under{' '}
-          <Link className="font-medium text-brand hover:underline" to="/super-admin/roles">
-            Role Management
-          </Link>
-          {' · '}
-          <Link
-            className="font-medium text-brand hover:underline"
-            to="/super-admin/roles/permission-matrix"
-          >
-            Permission matrix
-          </Link>
+        <div className="mb-4">
           {roleFilter ? (
-            <>
-              {' · '}
+            <div className="rounded-lg border border-border/70 bg-muted/20 px-4 py-3 text-sm text-muted-foreground">
               Filtered by <StatusBadge status={roleFilter} />{' '}
               <Link className="font-medium text-brand hover:underline" to="/super-admin/users">
                 Clear filter
               </Link>
-            </>
+            </div>
           ) : null}
         </div>
         <TanStackDataTable

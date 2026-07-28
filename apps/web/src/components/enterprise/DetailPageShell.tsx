@@ -22,6 +22,7 @@ type DetailPageShellProps = {
   onAction?: (actionId: string) => void;
   children: ReactNode;
   toast?: string | null;
+  toastVariant?: 'success' | 'error';
 };
 
 export function DetailPageShell({
@@ -34,6 +35,7 @@ export function DetailPageShell({
   onAction,
   children,
   toast,
+  toastVariant = 'success',
 }: DetailPageShellProps) {
   return (
     <div>
@@ -61,7 +63,13 @@ export function DetailPageShell({
       />
 
       {toast && (
-        <div className="mx-6 mt-4 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+        <div
+          className={
+            toastVariant === 'error'
+              ? 'mx-6 mt-4 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive'
+              : 'mx-6 mt-4 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700'
+          }
+        >
           {toast}
         </div>
       )}

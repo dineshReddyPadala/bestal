@@ -12,6 +12,33 @@ export type ApprovalGateResult = {
   blockers: readonly string[];
 };
 
+export function isBgvClear(status: string | null | undefined): boolean {
+  return status === 'CLEAR' || status === 'COMPLETED_CLEAR';
+}
+
+export type TrialEligibilityInput = {
+  evaluationStatus: string | null | undefined;
+  bgvStatus: string | null | undefined;
+  visibility?: string | null;
+  approvalStatus?: string | null;
+};
+
+/** Client can request a trial when evaluation is complete and BGV is clear. */
+export function isTrialEligible(input: TrialEligibilityInput): boolean {
+  const evaluationOk = (input.evaluationStatus ?? 'NOT_STARTED') === 'COMPLETED';
+  if (!evaluationOk || !isBgvClear(input.bgvStatus)) return false;
+  if (input.visibility != null && input.visibility !== 'CLIENT_VISIBLE') return false;
+  if (input.approvalStatus != null && input.approvalStatus !== 'APPROVED') return false;
+  return true;
+}
+
+function isAwaitingAdminApproval(input: ApprovalGateInput): boolean {
+  return (
+    input.profileStatus === 'PENDING_APPROVAL' ||
+    (input.profileStatus === 'PROFILE_DRAFT' && Boolean(input.submittedForApprovalAt))
+  );
+}
+
 /** Admin sign-off — separate from client publish. Requires explicit submit step. */
 export function canApprove(input: ApprovalGateInput): ApprovalGateResult {
   const blockers: string[] = [];
@@ -24,7 +51,7 @@ export function canApprove(input: ApprovalGateInput): ApprovalGateResult {
   if (!input.submittedForApprovalAt) {
     blockers.push('Candidate must be submitted for approval first');
   }
-  if (input.profileStatus !== 'PROFILE_DRAFT') {
+  if (!isAwaitingAdminApproval(input)) {
     blockers.push('Profile must be submitted as draft awaiting review');
   }
   if (evaluationStatus !== 'COMPLETED') {
@@ -58,7 +85,7 @@ export function canPublish(input: ApprovalGateInput): ApprovalGateResult {
   if (evaluationStatus !== 'COMPLETED') {
     blockers.push('Evaluation must be completed');
   }
-  if (bgvStatus !== 'CLEAR') {
+  if (!isBgvClear(bgvStatus)) {
     blockers.push('Background verification must be clear');
   }
 

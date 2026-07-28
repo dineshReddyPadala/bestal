@@ -4,6 +4,7 @@ import type { FastifyInstance } from 'fastify';
 import type { AuthenticatedUser } from '../../types/index.js';
 import type { Role } from '../../constants/index.js';
 import {
+  BadRequestError,
   ConflictError,
   NotFoundError,
   requireOrganization,
@@ -46,12 +47,39 @@ export class UserService {
     this.emailService = new EmailService(fastify.config);
   }
 
+  private async assertClientLink(
+    organizationId: number,
+    role: Role,
+    clientId?: number,
+  ): Promise<number | undefined> {
+    if (role === 'CLIENT') {
+      if (clientId == null) {
+        throw new BadRequestError('clientId is required for CLIENT users');
+      }
+      const exists = await this.userRepository.clientExists(organizationId, clientId);
+      if (!exists) {
+        throw new BadRequestError('Client not found');
+      }
+      return clientId;
+    }
+    if (clientId != null) {
+      throw new BadRequestError('clientId is only allowed for CLIENT users');
+    }
+    return undefined;
+  }
+
   async invite(authUser: AuthenticatedUser, input: CreateUserInput): Promise<UserDto> {
     const organizationId = requireOrganization(authUser);
     const organization = await this.userRepository.findOrganizationById(organizationId);
     if (!organization) {
       throw new NotFoundError('Organization not found');
     }
+
+    const linkedClientId = await this.assertClientLink(
+      organizationId,
+      input.role,
+      input.clientId,
+    );
 
     const existing = await this.userRepository.findByEmail(input.email);
     if (existing) {
@@ -64,7 +92,7 @@ export class UserService {
     const user = await this.userRepository.createWithMembership(
       organizationId,
       passwordHash,
-      input,
+      { ...input, clientId: linkedClientId },
     );
 
     const portalLoginUrl = `${this.fastify.config.webAppUrl}${ROLE_PORTAL_PATH[input.role] ?? '/login'}`;

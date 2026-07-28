@@ -15,7 +15,9 @@ type UserWithMembership = {
   memberships: Array<{
     role: Role;
     organizationId: bigint;
+    clientId?: bigint | null;
     organization: { id: bigint; name: string };
+    client?: { id: bigint; name: string } | null;
   }>;
 };
 
@@ -34,6 +36,8 @@ export function mapUserToListItem(
     lastName: user.lastName,
     phone: user.phone,
     role: membership?.role ?? null,
+    clientId: membership?.clientId != null ? bigintToNumber(membership.clientId) : null,
+    clientName: membership?.client?.name ?? null,
     isActive: user.isActive,
     lastLoginAt: user.lastLoginAt?.toISOString() ?? null,
     createdAt: user.createdAt.toISOString(),

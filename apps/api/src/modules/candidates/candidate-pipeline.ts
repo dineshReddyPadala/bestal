@@ -12,7 +12,7 @@ export type PipelineCandidateSnapshot = {
   resumeDocumentId: bigint | null;
   evaluationStatus: string | null;
   bgvStatus: string | null;
-  aiSummary: string | null;
+  aiSummary?: string | null;
   clientBillRate: { toString(): string } | null;
   availabilityStatus: string | null;
   availableFrom: Date | null;
@@ -54,12 +54,26 @@ export function assertResumeUploaded(
 }
 
 export function assertCanRunAiScreening(candidate: PipelineCandidateSnapshot): void {
-  assertProfileStatus(candidate, 'SOURCED', 'AI screening');
+  if (
+    candidate.profileStatus !== 'SOURCED' &&
+    candidate.profileStatus !== 'IMPORTED'
+  ) {
+    throw new BadRequestError(
+      `AI screening requires profile status SOURCED or IMPORTED, current status is ${candidate.profileStatus ?? 'unset'}`,
+    );
+  }
   assertResumeUploaded(candidate, 'AI screening');
 }
 
 export function assertCanCompleteRecruiterReview(candidate: PipelineCandidateSnapshot): void {
-  assertProfileStatus(candidate, 'AI_SCREENED', 'Recruiter review');
+  if (
+    candidate.profileStatus !== 'AI_SCREENED' &&
+    candidate.profileStatus !== 'IMPORTED'
+  ) {
+    throw new BadRequestError(
+      `Recruiter review requires profile status AI_SCREENED or IMPORTED, current status is ${candidate.profileStatus ?? 'unset'}`,
+    );
+  }
 }
 
 export function assertCanCreateEvaluation(candidate: PipelineCandidateSnapshot): void {
@@ -81,7 +95,12 @@ export function assertCanSubmitForApproval(candidate: PipelineCandidateSnapshot)
       'Submit for approval requires client bill rate, availability status, and available-from date',
     );
   }
-  assertResumeUploaded(candidate, 'Submit for approval');
+  // Imported candidates may proceed with supplied AI summary even without a local resume file.
+  if (!hasResumeUploaded(candidate) && !candidate.aiSummary?.trim()) {
+    throw new BadRequestError(
+      'Submit for approval requires a resume upload or an imported AI summary',
+    );
+  }
   if (!candidate.aiSummary?.trim()) {
     throw new BadRequestError('Submit for approval requires an AI summary');
   }
@@ -99,6 +118,10 @@ export function assertCanSubmitForApproval(candidate: PipelineCandidateSnapshot)
   }
 }
 
+function isBgvClear(status: string | null): boolean {
+  return status === 'CLEAR' || status === 'COMPLETED_CLEAR';
+}
+
 export function assertCanApprove(candidate: PipelineCandidateSnapshot): void {
   if (candidate.approvalStatus === 'APPROVED') {
     throw new BadRequestError('Candidate is already approved');
@@ -109,9 +132,12 @@ export function assertCanApprove(candidate: PipelineCandidateSnapshot): void {
   if (!candidate.submittedForApprovalAt) {
     throw new BadRequestError('Candidate must be submitted for approval first');
   }
-  if (candidate.profileStatus !== 'PROFILE_DRAFT') {
+  if (
+    candidate.profileStatus !== 'PENDING_APPROVAL' &&
+    candidate.profileStatus !== 'PROFILE_DRAFT'
+  ) {
     throw new BadRequestError(
-      'Approve requires profile status PROFILE_DRAFT (submitted, awaiting admin review)',
+      'Approve requires profile status PENDING_APPROVAL (submitted, awaiting admin review)',
     );
   }
   if (candidate.evaluationStatus !== 'COMPLETED') {
@@ -138,7 +164,7 @@ export function assertCanPublish(candidate: PipelineCandidateSnapshot): void {
   if (candidate.evaluationStatus !== 'COMPLETED') {
     throw new BadRequestError('Evaluation must be completed before publishing');
   }
-  if (candidate.bgvStatus !== 'CLEAR') {
+  if (!isBgvClear(candidate.bgvStatus)) {
     throw new BadRequestError('Background verification must be clear before publishing');
   }
 }

@@ -231,7 +231,7 @@ export function EvaluationForm({
           onFileSelect={(file) => setValue('pdfFileName', file.name, { shouldValidate: true })}
         />
         <FileUpload
-          label="Interview recording"
+          label="Evaluation recording"
           accept=".mp4,.webm,.mov"
           onFileSelect={(file) => setValue('recordingFileName', file.name, { shouldValidate: true })}
         />

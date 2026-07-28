@@ -52,8 +52,8 @@ export function useClientTrialRequests() {
   });
 
   const addRequest = useCallback(
-    (candidateId: number, candidateName: string, form: TrialRequestFormValues) => {
-      addMutation.mutate({ candidateId, candidateName, form });
+    async (candidateId: number, candidateName: string, form: TrialRequestFormValues) => {
+      return addMutation.mutateAsync({ candidateId, candidateName, form });
     },
     [addMutation],
   );

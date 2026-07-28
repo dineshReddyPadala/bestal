@@ -5,6 +5,7 @@ import {
   validateUploadFile,
 } from '../../services/storage.service.js';
 import { AdminOpsService } from '../admin/admin-ops.service.js';
+import { CandidateImportService } from './candidate-import.service.js';
 import { CandidateService } from './candidate.service.js';
 import type {
   CreateCandidateBody,
@@ -21,7 +22,10 @@ const ASSET_UPLOAD_CATEGORY = {
 } as const;
 
 export class CandidateController {
-  constructor(private readonly candidateService: CandidateService) {}
+  constructor(
+    private readonly candidateService: CandidateService,
+    private readonly candidateImportService: CandidateImportService,
+  ) {}
 
   create = async (request: FastifyRequest, reply: FastifyReply) => {
     const data = await this.candidateService.create(
@@ -239,5 +243,109 @@ export class CandidateController {
       buffer.toString('utf8'),
     );
     return reply.send({ data });
+  };
+
+  downloadImportTemplate = async (_request: FastifyRequest, reply: FastifyReply) => {
+    const buffer = await this.candidateImportService.getTemplateBuffer();
+    reply.header(
+      'Content-Type',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    );
+    reply.header(
+      'Content-Disposition',
+      'attachment; filename="bestal-candidate-import-template.xlsx"',
+    );
+    return reply.send(buffer);
+  };
+
+  enqueueImport = async (request: FastifyRequest, reply: FastifyReply) => {
+    const file = await request.file();
+    if (!file) {
+      throw new BadRequestError('Excel workbook (.xlsx) is required');
+    }
+    const buffer = await file.toBuffer();
+    const data = await this.candidateImportService.enqueue(
+      request.authUser!,
+      file.filename,
+      buffer,
+    );
+    return reply.status(202).send({ data });
+  };
+
+  listImportHistory = async (request: FastifyRequest, reply: FastifyReply) => {
+    const query = request.query as { page?: number; limit?: number };
+    const result = await this.candidateImportService.listHistory(request.authUser!, query);
+    return reply.status(200).send(result);
+  };
+
+  listImportErrors = async (request: FastifyRequest, reply: FastifyReply) => {
+    const { batchId } = request.params as { batchId: number };
+    const query = request.query as { page?: number; limit?: number };
+    const result = await this.candidateImportService.listErrors(
+      request.authUser!,
+      batchId,
+      query,
+    );
+    return reply.status(200).send(result);
+  };
+
+  previewImport = async (request: FastifyRequest, reply: FastifyReply) => {
+    const file = await request.file();
+    if (!file) {
+      throw new BadRequestError('Excel workbook (.xlsx) is required');
+    }
+    const buffer = await file.toBuffer();
+    const data = await this.candidateImportService.preview(
+      request.authUser!,
+      file.filename,
+      buffer,
+    );
+    return reply.status(200).send({ data });
+  };
+
+  confirmImport = async (request: FastifyRequest, reply: FastifyReply) => {
+    const { batchId } = request.params as { batchId: number };
+    const data = await this.candidateImportService.confirm(request.authUser!, batchId);
+    return reply.status(202).send({ data });
+  };
+
+  getImportBatch = async (request: FastifyRequest, reply: FastifyReply) => {
+    const { batchId } = request.params as { batchId: number };
+    const data = await this.candidateImportService.getBatch(request.authUser!, batchId);
+    return reply.status(200).send({ data });
+  };
+
+  downloadImportErrorReport = async (request: FastifyRequest, reply: FastifyReply) => {
+    const { batchId } = request.params as { batchId: number };
+    const report = await this.candidateImportService.getErrorReport(
+      request.authUser!,
+      batchId,
+    );
+    reply.header(
+      'Content-Type',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    );
+    reply.header(
+      'Content-Disposition',
+      `attachment; filename="${report.fileName}"`,
+    );
+    return reply.send(report.buffer);
+  };
+
+  downloadImportSourceFile = async (request: FastifyRequest, reply: FastifyReply) => {
+    const { batchId } = request.params as { batchId: number };
+    const file = await this.candidateImportService.getSourceFile(
+      request.authUser!,
+      batchId,
+    );
+    reply.header(
+      'Content-Type',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    );
+    reply.header(
+      'Content-Disposition',
+      `attachment; filename="${file.fileName}"`,
+    );
+    return reply.send(file.buffer);
   };
 }

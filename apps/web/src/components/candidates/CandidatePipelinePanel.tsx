@@ -2,14 +2,15 @@ import {
   CANDIDATE_PROFILE_STATUS_LABELS,
   type CandidateProfileStatusValue,
 } from '@bestal/shared-utils';
-import { Badge, Button, Card, CardContent, CardHeader, CardTitle, StatusBadge } from '@bestal/ui';
+import { Button, Card, CardContent, CardHeader, CardTitle, StatusBadge } from '@bestal/ui';
 import { CheckCircle2, Circle, Loader2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useCandidate, useCandidateMutations } from '../../hooks/api/useCandidates';
 import { usePermissions } from '../../hooks/usePermissions';
-import { canApprove, canPublish } from '../../lib/candidate-approval-gates';
 import { getApiErrorMessage } from '../../lib/api/errors';
+import { canApprove, canPublish } from '../../lib/candidate-approval-gates';
 import { useDemoToast } from '../../lib/use-demo-toast';
+import { ToastHost } from '../ui/ToastHost';
 
 const PIPELINE_STEPS: CandidateProfileStatusValue[] = [
   'SOURCED',
@@ -20,6 +21,7 @@ const PIPELINE_STEPS: CandidateProfileStatusValue[] = [
   'BGV_PENDING',
   'BGV_COMPLETE',
   'PROFILE_DRAFT',
+  'PENDING_APPROVAL',
   'ADMIN_APPROVED',
   'CLIENT_VISIBLE',
 ];
@@ -30,15 +32,28 @@ function stepIndex(status: string | null | undefined): number {
   return idx >= 0 ? idx : -1;
 }
 
+function formatWhen(value: string | null | undefined): string {
+  if (!value) return '';
+  try {
+    return new Date(value).toLocaleString();
+  } catch {
+    return value;
+  }
+}
+
 type CandidatePipelinePanelProps = {
   candidateId: number;
+  basePath?: '/admin/candidates' | '/recruiter/candidates' | '/super-admin/candidates';
 };
 
-export function CandidatePipelinePanel({ candidateId }: CandidatePipelinePanelProps) {
+export function CandidatePipelinePanel({
+  candidateId,
+  basePath = '/recruiter/candidates',
+}: CandidatePipelinePanelProps) {
   const { data: candidate, isLoading, isError, error } = useCandidate(candidateId);
   const mutations = useCandidateMutations();
   const { canWriteCandidates, canApproveCandidates } = usePermissions();
-  const { show, showError } = useDemoToast();
+  const { message, variant, show, showError, dismiss } = useDemoToast();
   const [busy, setBusy] = useState<string | null>(null);
 
   const gateInput = useMemo(
@@ -96,17 +111,60 @@ export function CandidatePipelinePanel({ candidateId }: CandidatePipelinePanelPr
   const publishGate = gateInput ? canPublish(gateInput) : null;
 
   return (
+    <>
+      <ToastHost message={message} variant={variant} onDismiss={dismiss} />
     <Card>
       <CardHeader className="pb-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <CardTitle className="text-base">Candidate pipeline</CardTitle>
           <div className="flex flex-wrap items-center gap-2">
             <StatusBadge status={candidate.profileStatus ?? 'SOURCED'} />
-            {candidate.submittedForApprovalAt ? (
-              <Badge variant="outline">Submitted for approval</Badge>
-            ) : null}
           </div>
         </div>
+        {candidate.profileStatus === 'PENDING_APPROVAL' ||
+        candidate.approvalStatus === 'APPROVED' ||
+        candidate.approvalStatus === 'REJECTED' ||
+        (candidate.profileStatus === 'RECRUITER_SCREENED' && candidate.rejectionReason) ? (
+          <div
+            className={`mt-3 rounded-lg border px-3 py-2 text-xs ${
+              candidate.approvalStatus === 'REJECTED'
+                ? 'border-red-200 bg-red-50 text-red-800'
+                : candidate.approvalStatus === 'APPROVED'
+                  ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
+                  : candidate.profileStatus === 'PENDING_APPROVAL'
+                    ? 'border-amber-200 bg-amber-50 text-amber-900'
+                    : 'border-amber-200 bg-amber-50 text-amber-900'
+            }`}
+          >
+            {candidate.profileStatus === 'PENDING_APPROVAL' ? (
+              <p>
+                Awaiting admin review
+                {candidate.submittedForApprovalAt
+                  ? ` since ${formatWhen(candidate.submittedForApprovalAt)}`
+                  : ''}
+                .
+              </p>
+            ) : null}
+            {candidate.approvalStatus === 'APPROVED' ? (
+              <p>
+                Approved by admin
+                {candidate.approvedAt ? ` on ${formatWhen(candidate.approvedAt)}` : ''}.
+              </p>
+            ) : null}
+            {candidate.approvalStatus === 'REJECTED' ? (
+              <p>
+                Rejected by admin
+                {candidate.rejectedAt ? ` on ${formatWhen(candidate.rejectedAt)}` : ''}.
+                {candidate.rejectionReason ? ` Reason: ${candidate.rejectionReason}` : ''}
+              </p>
+            ) : null}
+            {candidate.profileStatus === 'RECRUITER_SCREENED' &&
+            candidate.rejectionReason &&
+            candidate.approvalStatus !== 'REJECTED' ? (
+              <p>Sent back to recruiter. Reason: {candidate.rejectionReason}</p>
+            ) : null}
+          </div>
+        ) : null}
       </CardHeader>
       <CardContent className="space-y-5">
         <ol className="grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
@@ -137,6 +195,14 @@ export function CandidatePipelinePanel({ candidateId }: CandidatePipelinePanelPr
 
         {canWriteCandidates ? (
           <div className="flex flex-wrap gap-2">
+            {['SOURCED', 'AI_SCREENED', 'RECRUITER_SCREENED', 'PROFILE_DRAFT'].includes(
+              candidate.profileStatus ?? '',
+            ) ? (
+              <Button size="sm" variant="outline" to={`${basePath}/${candidateId}/edit`}>
+                Edit profile
+              </Button>
+            ) : null}
+
             {candidate.profileStatus === 'SOURCED' ? (
               <Button
                 size="sm"
@@ -246,5 +312,6 @@ export function CandidatePipelinePanel({ candidateId }: CandidatePipelinePanelPr
         </p>
       </CardContent>
     </Card>
+    </>
   );
 }

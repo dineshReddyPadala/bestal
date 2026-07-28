@@ -216,6 +216,35 @@ export class TrialRepository extends BaseRepository {
       .then(Boolean);
   }
 
+  async findClientIdForUser(
+    organizationId: number,
+    userId: number,
+    email: string,
+  ): Promise<number | null> {
+    const membership = await this.prisma.membership.findFirst({
+      where: {
+        userId: BigInt(userId),
+        organizationId: BigInt(organizationId),
+        role: 'CLIENT',
+        isActive: true,
+      },
+      select: { clientId: true },
+    });
+    if (membership?.clientId != null) {
+      return Number(membership.clientId);
+    }
+
+    const client = await this.prisma.client.findFirst({
+      where: {
+        organizationId: BigInt(organizationId),
+        contactEmail: email.toLowerCase(),
+        deletedAt: null,
+      },
+      select: { id: true },
+    });
+    return client ? Number(client.id) : null;
+  }
+
   deploymentExists(organizationId: number, deploymentId: number): Promise<boolean> {
     return this.prisma.deployment
       .findFirst({

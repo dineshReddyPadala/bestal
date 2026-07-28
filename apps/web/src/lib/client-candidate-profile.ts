@@ -1,5 +1,6 @@
 import type { ClientCandidateProfile, ClientGroupedSkill } from '@bestal/mock-data';
 import type { CandidateDto } from './api/types';
+import { isTrialEligible } from './candidate-approval-gates';
 
 function splitLines(value: string | null | undefined): string[] {
   if (!value?.trim()) return [];
@@ -32,6 +33,8 @@ export function mapCandidateDtoToClientProfile(
   const { primary, secondary } = mapSkills(candidate);
   const fullName = `${candidate.firstName} ${candidate.lastName}`.trim();
   const billRate = candidate.clientBillRate ?? candidate.expectedRate ?? 0;
+  const evaluationStatus = candidate.evaluationStatus ?? 'NOT_STARTED';
+  const bgvStatus = candidate.bgvStatus ?? 'NOT_STARTED';
 
   return {
     candidateId: candidate.id,
@@ -41,6 +44,8 @@ export function mapCandidateDtoToClientProfile(
     role: candidate.primaryRole ?? candidate.headline ?? 'Technology Consultant',
     location: candidate.location ?? '',
     yearsExperience: candidate.yearsExperience ?? 0,
+    currentCompany: candidate.currentCompany ?? '',
+    currentTitle: candidate.currentTitle ?? '',
     bestalScore: candidate.bestalScore ?? 0,
     availability: candidate.availabilityStatus ?? 'Available',
     billRate,
@@ -57,10 +62,10 @@ export function mapCandidateDtoToClientProfile(
       communication: candidate.communicationScore ?? null,
       architecture: null,
       recommendation: null,
-      status: candidate.evaluationStatus ?? 'NOT_STARTED',
+      status: evaluationStatus,
     },
     bgv: {
-      status: candidate.bgvStatus ?? 'NOT_STARTED',
+      status: bgvStatus,
       completedChecks: [],
       summary: candidate.bgvSummary ?? '',
     },
@@ -71,5 +76,11 @@ export function mapCandidateDtoToClientProfile(
       availability: candidate.availabilityStatus ?? 'Available',
       startDate: candidate.availableFrom ?? '',
     },
+    trialEligible: isTrialEligible({
+      evaluationStatus,
+      bgvStatus,
+      visibility: candidate.visibility,
+      approvalStatus: candidate.approvalStatus,
+    }),
   };
 }

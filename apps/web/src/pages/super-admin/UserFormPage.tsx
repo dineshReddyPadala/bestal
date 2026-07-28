@@ -5,9 +5,12 @@ import { ActionMenu, type ActionMenuItem } from '../../components/super-admin/Ac
 import { useConfirmAction } from '../../components/super-admin/useConfirmAction';
 import { useAuth } from '../../contexts/AuthContext';
 import { useAdminMutations, useAdminUser } from '../../hooks/api/useAdmin';
+import { useClientsList } from '../../hooks/api/useClients';
 import { useDemoToast } from '../../lib/use-demo-toast';
+import { getApiErrorMessage } from '../../lib/api/errors';
+import { ToastHost } from '../../components/ui/ToastHost';
 
-const ROLES = ['ADMIN', 'RECRUITER', 'SALES', 'VIEWER'] as const;
+const ROLES = ['ADMIN', 'RECRUITER', 'SALES', 'VIEWER', 'CLIENT'] as const;
 
 export function SuperAdminUserFormPage() {
   const { id } = useParams();
@@ -15,15 +18,18 @@ export function SuperAdminUserFormPage() {
   const userId = isNew ? 0 : Number(id);
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { show, showError } = useDemoToast();
+  const { message, variant, show, showError, dismiss } = useDemoToast();
   const { requestConfirm, confirmDialog } = useConfirmAction();
   const { data, isLoading } = useAdminUser(userId);
   const mutations = useAdminMutations();
+  const { data: clientsData } = useClientsList({ limit: 100, sort: 'name' });
+  const clients = clientsData?.data ?? [];
 
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [role, setRole] = useState<string>('RECRUITER');
+  const [clientId, setClientId] = useState<string>('');
   const [temporaryPassword, setTemporaryPassword] = useState('');
   const [isActive, setIsActive] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -34,33 +40,61 @@ export function SuperAdminUserFormPage() {
     setLastName(String(data.lastName ?? ''));
     setEmail(String(data.email ?? ''));
     setRole(String(data.role ?? 'RECRUITER'));
+    setClientId(
+      data.clientId != null && data.clientId !== undefined
+        ? String(data.clientId)
+        : '',
+    );
     setIsActive(Boolean(data.isActive));
   }, [data, isNew]);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (role === 'CLIENT' && !clientId) {
+      showError('Select a client account for CLIENT users');
+      return;
+    }
     setBusy(true);
     try {
+      const linkedClientId = role === 'CLIENT' ? Number(clientId) : undefined;
       if (isNew) {
-        await mutations.createUser.mutateAsync({
+        const created = await mutations.createUser.mutateAsync({
           firstName,
           lastName,
           email,
           role,
+          clientId: linkedClientId,
           temporaryPassword: temporaryPassword || undefined,
           isActive,
         });
-        show('User created');
+        const emailSent = Boolean(
+          created && typeof created === 'object' && 'emailSent' in created
+            ? (created as { emailSent?: boolean }).emailSent
+            : false,
+        );
+        show(
+          emailSent
+            ? 'User created — invite email sent'
+            : 'User created — invite email was not sent (check SMTP / FROM_MAIL settings)',
+          emailSent ? 'success' : 'error',
+        );
+        setTimeout(() => navigate('/super-admin/users'), 1500);
       } else {
         await mutations.updateUser.mutateAsync({
           id: userId,
-          body: { firstName, lastName, role, isActive },
+          body: {
+            firstName,
+            lastName,
+            role,
+            isActive,
+            clientId: role === 'CLIENT' ? linkedClientId : null,
+          },
         });
         show('User updated');
+        navigate('/super-admin/users');
       }
-      navigate('/super-admin/users');
     } catch (err) {
-      showError(err instanceof Error ? err.message : 'Save failed');
+      showError(getApiErrorMessage(err, 'Save failed'));
     } finally {
       setBusy(false);
     }
@@ -140,6 +174,7 @@ export function SuperAdminUserFormPage() {
 
   return (
     <div>
+      <ToastHost message={message} variant={variant} onDismiss={dismiss} />
       <PageHeader
         title={isNew ? 'Create user' : 'Edit user'}
         actions={
@@ -171,7 +206,15 @@ export function SuperAdminUserFormPage() {
         </label>
         <label className="block space-y-1 text-sm">
           <span className="font-medium">Role</span>
-          <Select value={role} onChange={(e) => setRole(e.target.value)} disabled={isSelf}>
+          <Select
+            value={role}
+            onChange={(e) => {
+              const next = e.target.value;
+              setRole(next);
+              if (next !== 'CLIENT') setClientId('');
+            }}
+            disabled={isSelf}
+          >
             {ROLES.map((r) => (
               <option key={r} value={r}>
                 {r}
@@ -179,6 +222,27 @@ export function SuperAdminUserFormPage() {
             ))}
           </Select>
         </label>
+        {role === 'CLIENT' ? (
+          <label className="block space-y-1 text-sm">
+            <span className="font-medium">Client account</span>
+            <Select
+              value={clientId}
+              onChange={(e) => setClientId(e.target.value)}
+              required
+              disabled={isSelf}
+            >
+              <option value="">Select client…</option>
+              {clients.map((c) => (
+                <option key={c.id} value={String(c.id)}>
+                  {c.name}
+                </option>
+              ))}
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              Multiple users can be linked to the same client account.
+            </p>
+          </label>
+        ) : null}
         {isNew && (
           <label className="block space-y-1 text-sm">
             <span className="font-medium">Temporary password (optional)</span>

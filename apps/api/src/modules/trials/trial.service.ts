@@ -32,9 +32,14 @@ export class TrialService {
     input: CreateTrialInput,
   ): Promise<TrialDto> {
     const organizationId = requireOrganization(authUser);
+    const scopedClientId = await this.resolveScopedClientId(authUser, organizationId);
+    const clientId = scopedClientId ?? input.clientId;
+    if (scopedClientId != null && input.clientId !== scopedClientId) {
+      throw new BadRequestError('Clients can only create trials for their own account');
+    }
 
     await this.validateCandidate(organizationId, input.candidateId);
-    await this.validateClient(organizationId, input.clientId);
+    await this.validateClient(organizationId, clientId);
 
     if (input.deploymentId) {
       await this.validateDeployment(organizationId, input.deploymentId);
@@ -43,7 +48,7 @@ export class TrialService {
     const trial = await this.trialRepository.create(
       organizationId,
       authUser.id,
-      input,
+      { ...input, clientId },
     );
     return mapTrialToDto(trial);
   }
@@ -146,6 +151,7 @@ export class TrialService {
     meta: ReturnType<typeof buildPaginationMeta>;
   }> {
     const organizationId = requireOrganization(authUser);
+    const scopedClientId = await this.resolveScopedClientId(authUser, organizationId);
 
     const { items, total } = await this.trialRepository.findMany({
       organizationId,
@@ -153,7 +159,7 @@ export class TrialService {
       limit: query.limit,
       sort: query.sort,
       candidateId: query.candidateId,
-      clientId: query.clientId,
+      clientId: scopedClientId ?? query.clientId,
       status: query.status,
     });
 
@@ -166,7 +172,28 @@ export class TrialService {
   async getById(authUser: AuthenticatedUser, id: number): Promise<TrialDto> {
     const organizationId = requireOrganization(authUser);
     const trial = await this.getTrialOrThrow(organizationId, id);
+    const scopedClientId = await this.resolveScopedClientId(authUser, organizationId);
+    if (scopedClientId != null && Number(trial.clientId) !== scopedClientId) {
+      throw new NotFoundError('Trial request not found');
+    }
     return mapTrialToDto(trial);
+  }
+
+  private async resolveScopedClientId(
+    authUser: AuthenticatedUser,
+    organizationId: number,
+  ): Promise<number | null> {
+    if (authUser.role !== 'CLIENT') return null;
+
+    const membership = await this.trialRepository.findClientIdForUser(
+      organizationId,
+      authUser.id,
+      authUser.email,
+    );
+    if (membership == null) {
+      throw new BadRequestError('Client account is not linked to this user');
+    }
+    return membership;
   }
 
   private async getTrialOrThrow(organizationId: number, id: number) {

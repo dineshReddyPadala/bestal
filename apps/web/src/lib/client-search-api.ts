@@ -1,6 +1,7 @@
 import type { ClientSearchRecord } from '@bestal/mock-data';
 import type { AvailabilityCategory } from '@bestal/mock-data';
 import type { CandidateListItem } from './api/types';
+import { isTrialEligible } from './candidate-approval-gates';
 
 function availabilityCategory(
   status: string | null | undefined,
@@ -14,7 +15,7 @@ function availabilityCategory(
     case 'UNAVAILABLE':
       return 'NOT_AVAILABLE';
     default:
-      return 'IMMEDIATE';
+      return 'NOT_AVAILABLE';
   }
 }
 
@@ -46,9 +47,16 @@ export function mapApiCandidateToClientSearchRecord(
     currency: candidate.currency ?? 'USD',
     evaluationStatus: evaluation,
     bgvStatus: bgv,
-    trialEligible: bgv === 'CLEAR' && evaluation === 'COMPLETED',
+    trialEligible: isTrialEligible({
+      evaluationStatus: evaluation,
+      bgvStatus: bgv,
+      visibility: candidate.visibility,
+      approvalStatus: candidate.approvalStatus,
+    }),
     headline: candidate.headline ?? '',
     location: candidate.location ?? '',
     skillNames: skill ? [skill] : [],
+    currentCompany: candidate.currentCompany ?? '',
+    currentTitle: candidate.currentTitle ?? '',
   };
 }

@@ -90,8 +90,9 @@ export class CandidateRepository extends BaseRepository {
     }
 
     const skillRows = skills.map((skill) => ({
-      skillCommunityId: BigInt(skill.skillCommunityId),
-      skillName: skill.skillName,
+      skillCommunityId:
+        skill.skillCommunityId != null ? BigInt(skill.skillCommunityId) : null,
+      skillName: skill.skillName?.trim() || 'Skill',
       skillCategory: skill.skillCategory,
       proficiencyLevel: skill.proficiencyLevel ?? ('INTERMEDIATE' as const),
       yearsExperience: skill.yearsExperience,
@@ -332,7 +333,7 @@ export class CandidateRepository extends BaseRepository {
     } else if (filters.pendingApproval) {
       where.approvalStatus = 'PENDING';
       where.submittedForApprovalAt = { not: null };
-      where.profileStatus = 'PROFILE_DRAFT';
+      where.profileStatus = { in: ['PENDING_APPROVAL', 'PROFILE_DRAFT'] };
     } else {
       if (filters.visibility) {
         where.visibility = filters.visibility;

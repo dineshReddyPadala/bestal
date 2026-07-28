@@ -25,6 +25,8 @@ export type ClientCandidateProfile = {
   readonly role: string;
   readonly location: string;
   readonly yearsExperience: number;
+  readonly currentCompany: string;
+  readonly currentTitle: string;
   readonly bestalScore: number;
   readonly availability: string;
   readonly billRate: number;
@@ -54,6 +56,7 @@ export type ClientCandidateProfile = {
     readonly availability: string;
     readonly startDate: string;
   };
+  readonly trialEligible: boolean;
 };
 
 function buildGroupedSkills(candidateId: number): {
@@ -107,6 +110,8 @@ export function getClientCandidateProfile(candidateId: number): ClientCandidateP
     role: detail.overview.role,
     location: cand.location,
     yearsExperience: cand.yearsExperience,
+    currentCompany: detail.overview.currentCompany ?? '',
+    currentTitle: '',
     bestalScore: detail.overview.bestalScore,
     availability: detail.availabilityDetail.availability,
     billRate: detail.commercial.billRate,
@@ -136,5 +141,8 @@ export function getClientCandidateProfile(candidateId: number): ClientCandidateP
       availability: detail.availabilityDetail.availability,
       startDate: detail.availabilityDetail.startDate,
     },
+    trialEligible:
+      detail.overview.evaluationStatus === 'COMPLETED' &&
+      (detail.bgvDetail.status === 'CLEAR' || detail.bgvDetail.status === 'COMPLETED_CLEAR'),
   };
 }

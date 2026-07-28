@@ -277,13 +277,18 @@ export class AuthService {
     let clientId: number | null = null;
     let clientName: string | null = null;
     if (session.role === 'CLIENT' && session.organizationId !== null) {
-      const client = await this.authRepository.findClientByContactEmail(
-        session.organizationId,
-        user.email,
-      );
-      if (client) {
-        clientId = bigintToNumber(client.id);
-        clientName = client.name;
+      if (membership?.clientId != null && membership.client) {
+        clientId = bigintToNumber(membership.clientId);
+        clientName = membership.client.name;
+      } else {
+        const client = await this.authRepository.findClientByContactEmail(
+          session.organizationId,
+          user.email,
+        );
+        if (client) {
+          clientId = bigintToNumber(client.id);
+          clientName = client.name;
+        }
       }
     }
 

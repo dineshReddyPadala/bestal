@@ -154,10 +154,37 @@ export class EvaluationExtractionClient {
     });
 
     if (!response.ok) {
-      const detail = await response.text().catch(() => '');
+      let detail = '';
+      try {
+        const text = await response.text();
+        if (text) {
+          try {
+            const parsed = JSON.parse(text) as { detail?: unknown; message?: unknown };
+            if (typeof parsed.detail === 'string') {
+              detail = parsed.detail;
+            } else if (Array.isArray(parsed.detail)) {
+              detail = parsed.detail
+                .map((item) =>
+                  typeof item === 'object' && item && 'msg' in item
+                    ? String((item as { msg: unknown }).msg)
+                    : JSON.stringify(item),
+                )
+                .join('; ');
+            } else if (typeof parsed.message === 'string') {
+              detail = parsed.message;
+            } else {
+              detail = text.slice(0, 500);
+            }
+          } catch {
+            detail = text.slice(0, 500);
+          }
+        }
+      } catch {
+        detail = '';
+      }
       throw new Error(
         detail
-          ? `AI evaluation extraction failed: ${detail}`
+          ? `AI evaluation extraction failed (${response.status}): ${detail}`
           : `AI evaluation extraction failed: ${response.status} ${response.statusText}`,
       );
     }

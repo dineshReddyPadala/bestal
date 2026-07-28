@@ -20,7 +20,6 @@ import { CandidateDetailPage as ClientCandidateDetailPage } from '../pages/clien
 import { CandidateSearchPage } from '../pages/client/CandidateSearchPage';
 import { DashboardPage as ClientDashboardPage } from '../pages/client/DashboardPage';
 import { LoginPage as ClientLoginPage } from '../pages/client/LoginPage';
-import { ShortlistedCandidatesPage } from '../pages/client/ShortlistedCandidatesPage';
 import { TrialRequestsPage } from '../pages/client/TrialRequestsPage';
 import { DeploymentsPage as ClientDeploymentsPage } from '../pages/client/DeploymentsPage';
 import { AboutPage } from '../pages/public/AboutPage';
@@ -44,7 +43,6 @@ import { DeploymentsPage as RecruiterDeploymentsPage } from '../pages/recruiter/
 import { TrialsPage as RecruiterTrialsPage } from '../pages/recruiter/TrialsPage';
 import { EvaluationsPage } from '../pages/recruiter/EvaluationsPage';
 import { LoginPage as RecruiterLoginPage } from '../pages/recruiter/LoginPage';
-import { ShortlistsPage as RecruiterShortlistsPage } from '../pages/recruiter/ShortlistsPage';
 import { SalesShell } from '../layouts/SalesShell';
 import { SalesCandidatesPage } from '../pages/sales/CandidatesPage';
 import { ClientDetailPage as SalesClientDetailPage } from '../pages/sales/ClientDetailPage';
@@ -212,6 +210,7 @@ const router = createBrowserRouter([
           { path: 'candidates', element: <AdminCandidatesPage /> },
           { path: 'candidates/import', element: <AdminCandidateCsvImportPage /> },
           { path: 'candidates/new', element: <AddCandidatePage /> },
+          { path: 'candidates/:id/edit', element: <AddCandidatePage /> },
           { path: 'candidates/:id', element: <AdminCandidateDetailPage /> },
           { path: 'candidate-approvals', element: <CandidateApprovalsPage /> },
           { path: 'clients', element: <AdminClientsPage /> },
@@ -261,6 +260,7 @@ const router = createBrowserRouter([
       { path: 'candidates/pending', element: <SuperAdminPendingCandidatesPage /> },
       { path: 'candidates/import', element: <SuperAdminCandidateCsvImportPage /> },
       { path: 'candidates/new', element: <AddCandidatePage /> },
+      { path: 'candidates/:id/edit', element: <AddCandidatePage /> },
       { path: 'candidates/:id', element: <SuperAdminCandidateDetailPage /> },
       { path: 'evaluations', element: <SuperAdminEvaluationsPage /> },
       { path: 'background-checks', element: <SuperAdminBackgroundChecksPage /> },
@@ -297,9 +297,9 @@ const router = createBrowserRouter([
           { path: 'candidates', element: <RecruiterCandidatesPage /> },
           { path: 'candidates/import', element: <RecruiterCandidateCsvImportPage /> },
           { path: 'candidates/new', element: <AddCandidatePage /> },
+          { path: 'candidates/:id/edit', element: <AddCandidatePage /> },
           { path: 'candidates/:id', element: <CandidateDetailPage /> },
           { path: 'evaluations', element: <EvaluationsPage /> },
-          { path: 'shortlists', element: <RecruiterShortlistsPage /> },
           { path: 'background-checks', element: <BackgroundChecksPage /> },
           { path: 'clients', element: <RecruiterClientsPage /> },
           { path: 'trials', element: <RecruiterTrialsPage /> },
@@ -325,7 +325,6 @@ const router = createBrowserRouter([
           { index: true, element: <ClientDashboardPage /> },
           { path: 'search', element: <CandidateSearchPage /> },
           { path: 'candidates/:id', element: <ClientCandidateDetailPage /> },
-          { path: 'shortlisted', element: <ShortlistedCandidatesPage /> },
           { path: 'trials', element: <TrialRequestsPage /> },
           { path: 'deployments', element: <ClientDeploymentsPage /> },
         ],

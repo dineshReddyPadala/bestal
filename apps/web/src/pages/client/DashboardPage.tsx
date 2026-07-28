@@ -1,20 +1,18 @@
 import { formatDate } from '@bestal/shared-utils';
 import { PageHeader, SearchInput, StatusBadge } from '@bestal/ui';
-import { FlaskConical, Heart, Rocket, Sparkles, Users } from 'lucide-react';
+import { FlaskConical, Rocket, Sparkles, Users } from 'lucide-react';
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { PremiumStatCard } from '../../components/admin/PremiumStatCard';
 import { useCandidatesList } from '../../hooks/api/useCandidates';
 import { useDeploymentsList } from '../../hooks/api/useDeployments';
 import { useTrialsList } from '../../hooks/api/useTrials';
-import { useClientShortlist } from '../../hooks/useClientShortlist';
 import { useDashboardUser } from '../../hooks/useDashboardUser';
 
 export function DashboardPage() {
   const navigate = useNavigate();
   const { user } = useDashboardUser();
   const [searchQuery, setSearchQuery] = useState('');
-  const { shortlistedIds } = useClientShortlist();
 
   const candidates = useCandidatesList({ limit: 20, sort: '-createdAt' });
   const trials = useTrialsList({ limit: 20 });
@@ -47,7 +45,7 @@ export function DashboardPage() {
             />
           </form>
 
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <PremiumStatCard
               label="Available talent"
               value={candidateRows.length}
@@ -65,12 +63,6 @@ export function DashboardPage() {
               value={deploymentRows.length}
               icon={<Rocket className="h-5 w-5" />}
               accent="emerald"
-            />
-            <PremiumStatCard
-              label="Shortlisted"
-              value={shortlistedIds.length}
-              icon={<Heart className="h-5 w-5" />}
-              accent="rose"
             />
           </div>
         </section>

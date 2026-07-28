@@ -107,7 +107,7 @@ export function countReadyToPublish(): number {
       r.effectiveApprovalStatus === 'APPROVED' &&
       r.effectiveVisibility !== 'CLIENT_VISIBLE' &&
       r.evaluationStatus === 'COMPLETED' &&
-      r.bgvStatus === 'CLEAR',
+      (r.bgvStatus === 'CLEAR' || r.bgvStatus === 'COMPLETED_CLEAR'),
   ).length;
 }
 

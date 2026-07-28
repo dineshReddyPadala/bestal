@@ -23,8 +23,8 @@ export interface CandidateDocumentDto {
 
 export interface CandidateSkillDto {
   id: number;
-  skillCommunityId: number;
-  skillCommunityName: string;
+  skillCommunityId: number | null;
+  skillCommunityName: string | null;
   skillName: string | null;
   skillCategory: string | null;
   proficiencyLevel: string;
@@ -70,6 +70,7 @@ export interface CandidateDto {
   displayName: string | null;
   primaryRole: string | null;
   currentCompany: string | null;
+  currentTitle: string | null;
   education: string | null;
   githubUrl: string | null;
   naukriUrl: string | null;
@@ -116,6 +117,8 @@ export interface CandidateListItemDto {
   yearsExperience: number | null;
   primarySkillCommunityName: string | null;
   primaryRole: string | null;
+  currentCompany: string | null;
+  currentTitle: string | null;
   bestalScore: number | null;
   clientBillRate: number | null;
   currency: string | null;
@@ -155,7 +158,7 @@ export interface CandidateListFilters {
 }
 
 export interface CreateCandidateSkillInput {
-  skillCommunityId: number;
+  skillCommunityId?: number;
   skillName?: string;
   skillCategory?: string;
   proficiencyLevel?: 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED' | 'EXPERT';

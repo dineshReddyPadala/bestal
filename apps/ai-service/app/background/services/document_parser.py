@@ -32,10 +32,12 @@ class DocumentParser:
             if extension == ".pdf":
                 return self._extract_from_pdf(file_bytes)
             return self._extract_from_docx(file_bytes)
-        except UnsupportedFileTypeError:
+        except (DocumentExtractionError, UnsupportedFileTypeError):
             raise
         except Exception as exc:
-            raise DocumentExtractionError() from exc
+            raise DocumentExtractionError(
+                f"Failed to extract text from document: {exc}"
+            ) from exc
 
     def _extract_from_pdf(self, file_bytes: bytes) -> str:
         pages: list[str] = []

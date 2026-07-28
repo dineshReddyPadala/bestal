@@ -33,51 +33,18 @@ async function main() {
   const orgId = organization.id;
 
   const skillCommunitySeed = [
-    {
-      name: 'Full-Stack Development',
-      slug: 'full-stack-development',
-      description: 'React, Node.js, TypeScript, and modern web architecture specialists.',
-    },
-    {
-      name: 'DevOps & Cloud',
-      slug: 'devops-cloud',
-      description: 'Kubernetes, Terraform, AWS, GCP, and site reliability engineering experts.',
-    },
-    {
-      name: 'Data Engineering',
-      slug: 'data-engineering',
-      description: 'Spark, Kafka, Snowflake, dbt, and real-time pipeline architects.',
-    },
-    {
-      name: 'Machine Learning',
-      slug: 'machine-learning',
-      description: 'PyTorch, TensorFlow, NLP, computer vision, and MLOps practitioners.',
-    },
-    {
-      name: 'Mobile Development',
-      slug: 'mobile-development',
-      description: 'React Native, Flutter, Swift, and Kotlin mobile engineers.',
-    },
-    {
-      name: 'Cybersecurity',
-      slug: 'cybersecurity',
-      description: 'Security architects, penetration testers, and compliance specialists.',
-    },
-    {
-      name: 'Product Design',
-      slug: 'product-design',
-      description: 'UX/UI designers, design system leads, and user research experts.',
-    },
-    {
-      name: 'QA & Test Automation',
-      slug: 'qa-test-automation',
-      description: 'Cypress, Playwright, Selenium, and quality engineering leaders.',
-    },
-    {
-      name: 'Blockchain',
-      slug: 'blockchain',
-      description: 'Solidity, Ethereum, smart contract auditing, and DeFi protocol developers.',
-    },
+    { name: 'Data Engineering', slug: 'data-engineering', description: 'Spark, Kafka, Snowflake, dbt, and real-time pipeline architects.' },
+    { name: 'AI / GenAI', slug: 'ai-genai', description: 'LLM, GenAI, MLOps, and applied AI specialists.' },
+    { name: 'Cloud / DevOps', slug: 'cloud-devops', description: 'Kubernetes, Terraform, AWS, GCP, and site reliability engineering experts.' },
+    { name: 'QA Automation', slug: 'qa-automation', description: 'Cypress, Playwright, Selenium, and quality engineering leaders.' },
+    { name: 'Frontend', slug: 'frontend', description: 'React, Angular, Vue, and modern UI engineers.' },
+    { name: 'Backend', slug: 'backend', description: 'Node.js, Java, .NET, Python, and API platform engineers.' },
+    { name: 'Full Stack', slug: 'full-stack', description: 'End-to-end product engineers spanning frontend and backend.' },
+    { name: 'Mobile', slug: 'mobile', description: 'React Native, Flutter, Swift, and Kotlin mobile engineers.' },
+    { name: 'Cybersecurity', slug: 'cybersecurity', description: 'Security architects, penetration testers, and compliance specialists.' },
+    { name: 'SAP', slug: 'sap', description: 'SAP functional and technical consultants.' },
+    { name: 'Salesforce', slug: 'salesforce', description: 'Salesforce admins, developers, and architects.' },
+    { name: 'ServiceNow', slug: 'servicenow', description: 'ServiceNow developers and platform consultants.' },
   ] as const;
 
   for (const community of skillCommunitySeed) {
@@ -165,6 +132,18 @@ async function main() {
       country: 'US',
     },
   });
+
+  const clientUserId = userIds['client@bestal.com'];
+  if (clientUserId) {
+    await prisma.membership.updateMany({
+      where: {
+        userId: clientUserId,
+        organizationId: orgId,
+        role: Role.CLIENT,
+      },
+      data: { clientId: client.id },
+    });
+  }
 
   const candidate = await prisma.candidate.upsert({
     where: {

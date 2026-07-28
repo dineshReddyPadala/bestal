@@ -25,7 +25,6 @@ export const recruiterNav = [
   { id: 'dashboard', label: 'Dashboard', href: '/recruiter', icon: 'layout-dashboard' },
   { id: 'candidates', label: 'Candidates', href: '/recruiter/candidates', icon: 'user-check', badge: 3 },
   { id: 'evaluations', label: 'Evaluations', href: '/recruiter/evaluations', icon: 'clipboard-check', badge: 2 },
-  { id: 'shortlists', label: 'Shortlists', href: '/recruiter/shortlists', icon: 'list-checks' },
   { id: 'background-checks', label: 'Background Checks', href: '/recruiter/background-checks', icon: 'shield-check' },
   { id: 'clients', label: 'Clients', href: '/recruiter/clients', icon: 'briefcase' },
   { id: 'trials', label: 'Trials', href: '/recruiter/trials', icon: 'flask-conical' },
@@ -35,7 +34,6 @@ export const recruiterNav = [
 export const clientNav = [
   { id: 'dashboard', label: 'Dashboard', href: '/client', icon: 'layout-dashboard' },
   { id: 'search', label: 'Candidate Search', href: '/client/search', icon: 'search' },
-  { id: 'shortlisted', label: 'Shortlisted', href: '/client/shortlisted', icon: 'list-checks', badge: 2 },
   { id: 'trials', label: 'Trial Requests', href: '/client/trials', icon: 'flask-conical', badge: 1 },
   { id: 'deployments', label: 'Deployments', href: '/client/deployments', icon: 'rocket' },
 ] as const satisfies readonly NavItem[];
@@ -52,7 +50,6 @@ export const superAdminNav = [
   { id: 'background-checks', label: 'Background Checks', href: '/super-admin/background-checks', icon: 'shield-check' },
   { id: 'trials', label: 'Trials', href: '/super-admin/trials', icon: 'flask-conical' },
   { id: 'deployments', label: 'Deployments', href: '/super-admin/deployments', icon: 'rocket' },
-  { id: 'data-import', label: 'Data import (Oorwin)', href: '/super-admin/data-import', icon: 'file-up' },
   { id: 'reports', label: 'Reports', href: '/super-admin/reports', icon: 'trending-up' },
   { id: 'audit-logs', label: 'Audit Logs', href: '/super-admin/audit-logs', icon: 'scroll-text' },
   { id: 'platform-settings', label: 'Platform Settings', href: '/super-admin/platform-settings', icon: 'settings' },

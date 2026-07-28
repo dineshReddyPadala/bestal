@@ -46,6 +46,7 @@ export class EmailService {
         host: config.mail.host,
         port: config.mail.port,
         secure: config.mail.port === 465,
+        requireTLS: config.mail.port === 587,
         auth: {
           user: config.mail.from,
           pass: config.mail.password,
@@ -53,6 +54,11 @@ export class EmailService {
       });
     } else {
       this.transporter = null;
+      if (config.isDevelopment) {
+        console.warn(
+          '[email] SMTP not configured (FROM_MAIL / FROM_MAIL_PASSWORD). Invite emails will be logged only.',
+        );
+      }
     }
   }
 
@@ -101,15 +107,23 @@ export class EmailService {
       return { sent: false };
     }
 
-    await this.transporter.sendMail({
-      from: `"${this.config.appName}" <${this.config.mail.from}>`,
-      to: payload.to,
-      subject,
-      text,
-      html,
-    });
-
-    return { sent: true };
+    try {
+      await this.transporter.sendMail({
+        from: `"${this.config.appName}" <${this.config.mail.from}>`,
+        to: payload.to,
+        subject,
+        text,
+        html,
+      });
+      return { sent: true };
+    } catch (err) {
+      console.error('[email] Failed to send invite credentials:', {
+        to: payload.to,
+        error: err instanceof Error ? err.message : err,
+      });
+      // Do not fail user creation when SMTP is misconfigured — surface via emailSent:false
+      return { sent: false };
+    }
   }
 
   async sendPasswordResetEmail(payload: PasswordResetEmailPayload): Promise<{ sent: boolean }> {
