@@ -1,4 +1,4 @@
-import type { NotificationType, PrismaClient, Role } from '@prisma/client';
+import type { NotificationType, Prisma, PrismaClient, Role } from '@prisma/client';
 import type { AppConfig } from '../config/index.js';
 import { EmailService } from './email.service.js';
 
@@ -37,7 +37,7 @@ export async function notifyUsers(
       body: input.body,
       actionUrl: input.actionUrl ?? null,
       sentAt: now,
-      metadata: input.metadata ?? undefined,
+      metadata: (input.metadata as Prisma.InputJsonValue | undefined) ?? undefined,
     })),
   });
 
@@ -83,7 +83,7 @@ export async function notifyUsers(
         sentAt: sent ? now : null,
         failedAt: sent ? null : now,
         failureReason,
-        metadata: input.metadata ?? undefined,
+        metadata: (input.metadata as Prisma.InputJsonValue | undefined) ?? undefined,
       },
     });
   }

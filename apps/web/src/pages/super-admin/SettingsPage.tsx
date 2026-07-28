@@ -26,6 +26,8 @@ type SettingsKey =
   | 'security'
   | 'scoring'
   | 'pricing'
+  | 'trials'
+  | 'notifications'
   | 'integrations'
   | 'commercials';
 
@@ -75,6 +77,12 @@ export function SuperAdminPlatformSettingsPage() {
     defaultBillRate: '',
     notes: '',
   });
+  const [trials, setTrials] = useState({ freeTrialHours: '20' });
+  const [notifications, setNotifications] = useState({
+    emailEnabled: true,
+    trialEndingSoonDays: '2',
+    deploymentEndingSoonDays: '7',
+  });
 
   useEffect(() => {
     if (!data) return;
@@ -84,6 +92,8 @@ export function SuperAdminPlatformSettingsPage() {
     const pr = asObj(data.pricing);
     const i = asObj(data.integrations);
     const c = asObj(data.commercials);
+    const t = asObj(data.trials);
+    const n = asObj(data.notifications);
 
     setAi({
       model: String(a.model ?? 'gpt-4o-mini'),
@@ -121,6 +131,14 @@ export function SuperAdminPlatformSettingsPage() {
       defaultPayRate: String(c.defaultPayRate ?? ''),
       defaultBillRate: String(c.defaultBillRate ?? ''),
       notes: String(c.notes ?? ''),
+    });
+    setTrials({
+      freeTrialHours: String(t.freeTrialHours ?? '20'),
+    });
+    setNotifications({
+      emailEnabled: n.emailEnabled === undefined ? true : Boolean(n.emailEnabled),
+      trialEndingSoonDays: String(n.trialEndingSoonDays ?? '2'),
+      deploymentEndingSoonDays: String(n.deploymentEndingSoonDays ?? '7'),
     });
   }, [data]);
 
@@ -323,6 +341,103 @@ export function SuperAdminPlatformSettingsPage() {
               id: 'communities',
               label: 'Skill Communities',
               content: <SkillCommunitiesPanel />,
+            },
+            {
+              id: 'trials',
+              label: 'Trials',
+              content: (
+                <Section
+                  title="Free trial settings"
+                  busy={saving === 'trials'}
+                  onSave={() =>
+                    void save(
+                      'trials',
+                      {
+                        freeTrialHours: Number(trials.freeTrialHours) || 20,
+                      },
+                      'Trial settings',
+                    )
+                  }
+                >
+                  <Field label="Free trial hours (default per request)">
+                    <Input
+                      type="number"
+                      min={1}
+                      max={500}
+                      value={trials.freeTrialHours}
+                      onChange={(e) =>
+                        setTrials((p) => ({ ...p, freeTrialHours: e.target.value }))
+                      }
+                    />
+                  </Field>
+                  <p className="text-sm text-muted-foreground sm:col-span-2">
+                    Applied as the default max hours when a client or staff creates a free trial
+                    request without specifying hours.
+                  </p>
+                </Section>
+              ),
+            },
+            {
+              id: 'notifications',
+              label: 'Notifications',
+              content: (
+                <Section
+                  title="Reminders & email"
+                  busy={saving === 'notifications'}
+                  onSave={() =>
+                    void save(
+                      'notifications',
+                      {
+                        emailEnabled: notifications.emailEnabled,
+                        trialEndingSoonDays: Number(notifications.trialEndingSoonDays) || 0,
+                        deploymentEndingSoonDays:
+                          Number(notifications.deploymentEndingSoonDays) || 0,
+                        importNotifyRoles: ['SUPER_ADMIN', 'ADMIN', 'RECRUITER'],
+                      },
+                      'Notification settings',
+                    )
+                  }
+                >
+                  <label className="flex items-center gap-2 text-sm sm:col-span-2">
+                    <input
+                      type="checkbox"
+                      checked={notifications.emailEnabled}
+                      onChange={(e) =>
+                        setNotifications((p) => ({ ...p, emailEnabled: e.target.checked }))
+                      }
+                    />
+                    Send email notifications (in addition to in-app)
+                  </label>
+                  <Field label="Trial ending soon (days before end)">
+                    <Input
+                      type="number"
+                      min={0}
+                      max={30}
+                      value={notifications.trialEndingSoonDays}
+                      onChange={(e) =>
+                        setNotifications((p) => ({
+                          ...p,
+                          trialEndingSoonDays: e.target.value,
+                        }))
+                      }
+                    />
+                  </Field>
+                  <Field label="Deployment ending soon (days before end)">
+                    <Input
+                      type="number"
+                      min={0}
+                      max={90}
+                      value={notifications.deploymentEndingSoonDays}
+                      onChange={(e) =>
+                        setNotifications((p) => ({
+                          ...p,
+                          deploymentEndingSoonDays: e.target.value,
+                        }))
+                      }
+                    />
+                  </Field>
+                </Section>
+              ),
             },
             {
               id: 'pricing',

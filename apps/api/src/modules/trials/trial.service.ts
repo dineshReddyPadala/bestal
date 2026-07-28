@@ -1,5 +1,10 @@
 import type { FastifyInstance } from 'fastify';
 import type { TrialRequestStatus } from '@prisma/client';
+import {
+  notifyTrialRequested,
+  notifyTrialStatusChanged,
+} from '../../services/notification-events.js';
+import { readTrialsSettings } from '../../services/system-settings.reader.js';
 import type { AuthenticatedUser } from '../../types/index.js';
 import {
   BadRequestError,
@@ -21,8 +26,10 @@ import type { ListTrialsQuery } from './trial.validator.js';
 
 export class TrialService {
   private readonly trialRepository: TrialRepository;
+  private readonly fastify: FastifyInstance;
 
   constructor(fastify: FastifyInstance, trialRepository?: TrialRepository) {
+    this.fastify = fastify;
     this.trialRepository =
       trialRepository ?? new TrialRepository(fastify.prisma);
   }
@@ -45,12 +52,23 @@ export class TrialService {
       await this.validateDeployment(organizationId, input.deploymentId);
     }
 
+    const trialsSettings = await readTrialsSettings(this.fastify.prisma);
+    const maxTrialHours =
+      input.maxTrialHours ?? trialsSettings.freeTrialHours;
+
     const trial = await this.trialRepository.create(
       organizationId,
       authUser.id,
-      { ...input, clientId },
+      { ...input, clientId, maxTrialHours },
     );
-    return mapTrialToDto(trial);
+    const dto = mapTrialToDto(trial);
+    void notifyTrialRequested(this.fastify.prisma, this.fastify.config, {
+      organizationId,
+      trialId: dto.id,
+      candidateName: dto.candidateName,
+      clientName: dto.clientName,
+    });
+    return dto;
   }
 
   async update(
@@ -93,8 +111,24 @@ export class TrialService {
     const existing = await this.getTrialOrThrow(organizationId, id);
     this.validateTransition(existing.status, 'APPROVED');
 
+    if (existing.maxTrialHours == null) {
+      const trialsSettings = await readTrialsSettings(this.fastify.prisma);
+      await this.trialRepository.update(organizationId, id, {
+        maxTrialHours: trialsSettings.freeTrialHours,
+      });
+    }
+
     const trial = await this.trialRepository.approve(organizationId, id);
-    return mapTrialToDto(trial);
+    const dto = mapTrialToDto(trial);
+    void notifyTrialStatusChanged(this.fastify.prisma, this.fastify.config, {
+      organizationId,
+      trialId: dto.id,
+      status: 'APPROVED',
+      candidateName: dto.candidateName,
+      requestedById: dto.requestedById,
+      assignedRecruiterId: dto.assignedRecruiterId,
+    });
+    return dto;
   }
 
   async reject(
@@ -107,7 +141,16 @@ export class TrialService {
     this.validateTransition(existing.status, 'REJECTED');
 
     const trial = await this.trialRepository.reject(organizationId, id, input);
-    return mapTrialToDto(trial);
+    const dto = mapTrialToDto(trial);
+    void notifyTrialStatusChanged(this.fastify.prisma, this.fastify.config, {
+      organizationId,
+      trialId: dto.id,
+      status: 'REJECTED',
+      candidateName: dto.candidateName,
+      requestedById: dto.requestedById,
+      assignedRecruiterId: dto.assignedRecruiterId,
+    });
+    return dto;
   }
 
   async confirmCandidate(
@@ -140,7 +183,16 @@ export class TrialService {
       id,
       input,
     );
-    return mapTrialToDto(trial);
+    const dto = mapTrialToDto(trial);
+    void notifyTrialStatusChanged(this.fastify.prisma, this.fastify.config, {
+      organizationId,
+      trialId: dto.id,
+      status: 'COMPLETED',
+      candidateName: dto.candidateName,
+      requestedById: dto.requestedById,
+      assignedRecruiterId: dto.assignedRecruiterId,
+    });
+    return dto;
   }
 
   async list(

@@ -294,6 +294,8 @@ export function useAdminMutations() {
           | 'security'
           | 'scoring'
           | 'pricing'
+          | 'trials'
+          | 'notifications'
           | 'integrations'
           | 'commercials';
         body: unknown;

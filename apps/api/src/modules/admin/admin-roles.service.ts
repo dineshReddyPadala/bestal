@@ -113,6 +113,7 @@ const SYSTEM_ROLE_SEED: Array<{
       PERMISSIONS.TRIALS_READ,
       PERMISSIONS.TRIALS_WRITE,
       PERMISSIONS.DEPLOYMENTS_READ,
+      PERMISSIONS.DEPLOYMENTS_REQUEST,
       PERMISSIONS.DOCUMENTS_READ,
       PERMISSIONS.NOTIFICATIONS_READ,
     ],
@@ -238,33 +239,49 @@ export class AdminRolesService {
     const count = await this.prisma.platformRole.count({
       where: { isSystem: true, deletedAt: null },
     });
-    if (count >= SYSTEM_ROLE_SEED.length) return;
+    if (count < SYSTEM_ROLE_SEED.length) {
+      for (const seed of SYSTEM_ROLE_SEED) {
+        await this.prisma.platformRole.upsert({
+          where: { code: seed.code },
+          create: {
+            code: seed.code,
+            name: seed.name,
+            description: seed.description,
+            portal: seed.portal,
+            baseRole: seed.baseRole,
+            permissions: seed.permissions,
+            isSystem: true,
+            isProtected: seed.isProtected,
+            isActive: true,
+          },
+          update: {
+            // Do not overwrite admin-edited permissions on reseed.
+            name: seed.name,
+            description: seed.description,
+            portal: seed.portal,
+            baseRole: seed.baseRole,
+            isSystem: true,
+            isProtected: seed.isProtected,
+            deletedAt: null,
+          },
+        });
+      }
+    }
 
-    for (const seed of SYSTEM_ROLE_SEED) {
-      await this.prisma.platformRole.upsert({
-        where: { code: seed.code },
-        create: {
-          code: seed.code,
-          name: seed.name,
-          description: seed.description,
-          portal: seed.portal,
-          baseRole: seed.baseRole,
-          permissions: seed.permissions,
-          isSystem: true,
-          isProtected: seed.isProtected,
-          isActive: true,
-        },
-        update: {
-          // Do not overwrite admin-edited permissions on reseed.
-          name: seed.name,
-          description: seed.description,
-          portal: seed.portal,
-          baseRole: seed.baseRole,
-          isSystem: true,
-          isProtected: seed.isProtected,
-          deletedAt: null,
-        },
-      });
+    // Additive permission patches for existing CLIENT roles (safe merge).
+    const clientRole = await this.prisma.platformRole.findUnique({
+      where: { code: 'CLIENT' },
+    });
+    if (clientRole) {
+      const perms = asPermissionList(clientRole.permissions);
+      if (!perms.includes(PERMISSIONS.DEPLOYMENTS_REQUEST)) {
+        await this.prisma.platformRole.update({
+          where: { code: 'CLIENT' },
+          data: {
+            permissions: [...perms, PERMISSIONS.DEPLOYMENTS_REQUEST],
+          },
+        });
+      }
     }
   }
 
@@ -498,6 +515,15 @@ export class AdminRolesService {
   }
 }
 
+function withClientDeployRequestPermission(
+  role: AppRole,
+  permissions: string[],
+): string[] {
+  if (role !== 'CLIENT') return permissions;
+  if (permissions.includes(PERMISSIONS.DEPLOYMENTS_REQUEST)) return permissions;
+  return [...permissions, PERMISSIONS.DEPLOYMENTS_REQUEST];
+}
+
 /** Resolve effective permissions for a membership role / platform role override. */
 export async function resolvePermissionsForMembership(
   prisma: FastifyInstance['prisma'],
@@ -508,15 +534,19 @@ export async function resolvePermissionsForMembership(
     const custom = await prisma.platformRole.findFirst({
       where: { id: BigInt(platformRoleId), deletedAt: null, isActive: true },
     });
-    if (custom) return asPermissionList(custom.permissions);
+    if (custom) {
+      return withClientDeployRequestPermission(role, asPermissionList(custom.permissions));
+    }
   }
 
   const byCode = await prisma.platformRole.findFirst({
     where: { code: role, deletedAt: null, isActive: true },
   });
-  if (byCode) return asPermissionList(byCode.permissions);
+  if (byCode) {
+    return withClientDeployRequestPermission(role, asPermissionList(byCode.permissions));
+  }
 
   // Fallback to static map until seed runs
   const { getPermissionsForRole } = await import('../auth/auth.permissions.js');
-  return [...getPermissionsForRole(role)];
+  return withClientDeployRequestPermission(role, [...getPermissionsForRole(role)]);
 }

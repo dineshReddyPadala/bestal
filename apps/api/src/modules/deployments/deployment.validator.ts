@@ -34,6 +34,37 @@ export const createDeploymentBodySchema = z.object({
   reportingManagerName: z.string().max(150).optional(),
   reportingManagerEmail: z.string().email().max(255).optional(),
   notes: optionalTextField(),
+  activateNow: z.boolean().optional(),
+});
+
+export const requestDeploymentBodySchema = z.object({
+  candidateId: z.coerce.number().int().positive(),
+  roleTitle: z.string().min(1).max(255),
+  placementType: placementTypeEnum.optional(),
+  startDate: z.string().date().optional(),
+  endDate: z.string().date().optional(),
+  workLocation: z.string().max(255).optional(),
+  expectedHoursPerWeek: optionalIntField,
+  timezone: z.string().max(50).optional(),
+  reportingManagerName: z.string().max(150).optional(),
+  reportingManagerEmail: z.string().email().max(255).optional().or(z.literal('')),
+});
+
+export const approveDeploymentBodySchema = z.object({
+  placementType: placementTypeEnum.optional(),
+  roleTitle: z.string().min(1).max(255).optional(),
+  startDate: z.string().date().optional(),
+  endDate: z.string().date().nullable().optional(),
+  billingRate: z.coerce.number().positive(),
+  candidatePayRate: z.coerce.number().positive().nullable().optional(),
+  grossMarginPerHour: z.coerce.number().nullable().optional(),
+  expectedHoursPerWeek: optionalIntField,
+  currency: z.string().length(3).optional(),
+  workLocation: z.string().max(255).optional(),
+  timezone: z.string().max(50).optional(),
+  reportingManagerName: z.string().max(150).optional(),
+  reportingManagerEmail: z.string().email().max(255).optional().or(z.literal('')),
+  notes: optionalTextField(),
 });
 
 export const updateDeploymentBodySchema = z.object({
@@ -81,6 +112,8 @@ export const deploymentIdParamSchema = z.object({
 });
 
 export type CreateDeploymentBody = z.infer<typeof createDeploymentBodySchema>;
+export type RequestDeploymentBody = z.infer<typeof requestDeploymentBodySchema>;
+export type ApproveDeploymentBody = z.infer<typeof approveDeploymentBodySchema>;
 export type UpdateDeploymentBody = z.infer<typeof updateDeploymentBodySchema>;
 export type TerminateDeploymentBody = z.infer<typeof terminateDeploymentBodySchema>;
 export type ListDeploymentsQuery = z.infer<typeof listDeploymentsQuerySchema>;
@@ -94,14 +127,21 @@ const deploymentDtoSchema = z.object({
   clientName: z.string(),
   createdById: z.number(),
   createdByName: z.string(),
+  requestedById: z.number().nullable().optional(),
   status: z.string(),
   placementType: z.string(),
   roleTitle: z.string(),
   startDate: z.string().nullable(),
   endDate: z.string().nullable(),
   billingRate: z.number().nullable(),
+  candidatePayRate: z.number().nullable().optional(),
+  grossMarginPerHour: z.number().nullable().optional(),
+  expectedHoursPerWeek: z.number().nullable().optional(),
   currency: z.string().nullable(),
   workLocation: z.string().nullable(),
+  timezone: z.string().nullable().optional(),
+  reportingManagerName: z.string().nullable().optional(),
+  reportingManagerEmail: z.string().nullable().optional(),
   notes: z.string().nullable(),
   terminatedAt: z.string().nullable(),
   terminateReason: z.string().nullable(),

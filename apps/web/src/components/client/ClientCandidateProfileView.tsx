@@ -11,10 +11,12 @@ import {
 type ClientCandidateProfileViewProps = {
   profile: ClientCandidateProfile;
   onTrial: () => void;
+  onRequestDeployment?: () => void;
   /** @deprecated Use onTrial */
   onPilot?: () => void;
-  /** When false, Trial Request is disabled (e.g. client account not linked). */
+  /** When false, Free trial is disabled (e.g. client account not linked). */
   canRequestTrial?: boolean;
+  canRequestDeployment?: boolean;
 };
 
 function ScoreDisplay({ score }: { score: number }) {
@@ -84,13 +86,16 @@ function SkillGroup({
 export function ClientCandidateProfileView({
   profile,
   onTrial,
+  onRequestDeployment,
   onPilot,
   canRequestTrial = true,
+  canRequestDeployment = true,
 }: ClientCandidateProfileViewProps) {
   const rateLabel = `${formatCurrency(profile.billRate, profile.currency)}/hr`;
   const trialHandler = onTrial ?? onPilot;
   const companyLine = [profile.currentCompany, profile.currentTitle].filter(Boolean).join(' · ');
   const trialEnabled = profile.trialEligible && canRequestTrial;
+  const deployEnabled = Boolean(onRequestDeployment) && canRequestDeployment;
 
   const summaryTab = (
     <div className="space-y-8">
@@ -232,15 +237,31 @@ export function ClientCandidateProfileView({
                 disabled={!trialEnabled}
                 title={
                   trialEnabled
-                    ? 'Request a trial'
+                    ? 'Request a free trial'
                     : !canRequestTrial
                       ? 'Your login is not linked to a client account'
                       : 'Candidate is not yet trial eligible'
                 }
               >
                 <FlaskConical className="mr-1.5 h-4 w-4" />
-                Trial Request
+                Free trial
               </Button>
+              {onRequestDeployment ? (
+                <Button
+                  variant="outline"
+                  onClick={onRequestDeployment}
+                  disabled={!deployEnabled}
+                  title={
+                    deployEnabled
+                      ? 'Request deployment'
+                      : !canRequestDeployment
+                        ? 'Your login is not linked to a client account or lacks deploy permission'
+                        : 'Request deployment'
+                  }
+                >
+                  Request deployment
+                </Button>
+              ) : null}
             </div>
           </div>
 

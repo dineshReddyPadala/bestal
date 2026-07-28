@@ -27,6 +27,10 @@ export function DashboardPage() {
   const openTrials = trialRows.filter((t) =>
     ['REQUESTED', 'APPROVED', 'IN_PROGRESS'].includes(t.status),
   );
+  const trialsRequested = trialRows.filter((t) => t.status === 'REQUESTED').length;
+  const trialsApproved = trialRows.filter((t) => t.status === 'APPROVED').length;
+  const trialsInProgress = trialRows.filter((t) => t.status === 'IN_PROGRESS').length;
+  const trialsCompleted = trialRows.filter((t) => t.status === 'COMPLETED').length;
 
   return (
     <div>
@@ -67,6 +71,10 @@ export function DashboardPage() {
               value={candidateRows.length}
               icon={<Users className="h-5 w-5" />}
             />
+            <StatCard label="Requested" value={trialsRequested} />
+            <StatCard label="Approved" value={trialsApproved} />
+            <StatCard label="In progress" value={trialsInProgress} />
+            <StatCard label="Completed" value={trialsCompleted} />
           </div>
         )}
 

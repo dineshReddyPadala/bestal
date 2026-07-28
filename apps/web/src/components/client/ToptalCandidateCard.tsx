@@ -1,6 +1,6 @@
 import type { ClientSearchRecord } from '@bestal/mock-data';
 import { cn, formatCurrency } from '@bestal/shared-utils';
-import { Avatar, Button } from '@bestal/ui';
+import { Avatar } from '@bestal/ui';
 import { CheckCircle2 } from 'lucide-react';
 import {
   clientBgvStatusText,
@@ -10,11 +10,10 @@ import {
 export type ToptalCandidateCardProps = {
   record: ClientSearchRecord;
   onView: () => void;
-  onTrial?: () => void;
-  /** @deprecated Use onTrial */
-  onPilot?: () => void;
-  /** When false, Trial Request is disabled (e.g. client account not linked). */
+  /** When false, selection for free trial is disabled (e.g. client account not linked). */
   canRequestTrial?: boolean;
+  selected?: boolean;
+  onSelectedChange?: (selected: boolean) => void;
   layout?: 'grid' | 'list';
   className?: string;
 };
@@ -51,67 +50,79 @@ function StatusLabels({ record }: { record: ClientSearchRecord }) {
   );
 }
 
-function CardActions({
-  trialEligible,
-  onView,
-  onTrial,
-}: {
-  trialEligible: boolean;
-  onView: () => void;
-  onTrial?: () => void;
-}) {
-  return (
-    <div className="flex flex-wrap items-center gap-2">
-      <Button variant="primary" size="sm" onClick={onView} className="h-8 min-w-[72px] font-medium">
-        View
-      </Button>
-      {onTrial ? (
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={onTrial}
-          disabled={!trialEligible}
-          title={trialEligible ? 'Request a trial' : 'Candidate is not yet trial eligible'}
-          className="h-8"
-        >
-          Trial Request
-        </Button>
-      ) : null}
-    </div>
-  );
-}
-
 function companyLine(record: ClientSearchRecord): string | null {
   const parts = [record.currentCompany, record.currentTitle].filter(Boolean);
   return parts.length ? parts.join(' · ') : null;
 }
 
+function SelectionCheckbox({
+  checked,
+  disabled,
+  onChange,
+}: {
+  checked: boolean;
+  disabled?: boolean;
+  onChange: (next: boolean) => void;
+}) {
+  return (
+    <input
+      type="checkbox"
+      checked={checked}
+      disabled={disabled}
+      onClick={(e) => e.stopPropagation()}
+      onChange={(e) => {
+        e.stopPropagation();
+        onChange(e.target.checked);
+      }}
+      className="h-4 w-4 shrink-0 rounded border-border text-brand focus:ring-brand disabled:opacity-40"
+      aria-label="Select for free trial"
+      title={disabled ? 'Not eligible for free trial' : 'Select for free trial'}
+    />
+  );
+}
+
 export function ToptalCandidateCard({
   record,
   onView,
-  onTrial,
-  onPilot,
   canRequestTrial = true,
+  selected = false,
+  onSelectedChange,
   layout = 'grid',
   className,
 }: ToptalCandidateCardProps) {
-  const trialHandler = onTrial ?? onPilot;
   const visibleSkills = record.topSkills.slice(0, MAX_SKILLS);
   const extraSkills = record.topSkills.length - MAX_SKILLS;
   const company = companyLine(record);
-  const trialEligible = record.trialEligible && canRequestTrial;
+  const canSelect = record.trialEligible && canRequestTrial;
 
   if (layout === 'list') {
     return (
       <article
+        role="button"
+        tabIndex={0}
+        onClick={onView}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            onView();
+          }
+        }}
         className={cn(
-          'group flex flex-col gap-4 rounded-xl border border-border/60 bg-white p-4 shadow-sm',
+          'group flex cursor-pointer flex-col gap-4 rounded-xl border border-border/60 bg-white p-4 shadow-sm',
           'transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-border hover:shadow-md',
           'sm:flex-row sm:items-center sm:justify-between',
+          selected && 'border-brand/50 ring-1 ring-brand/30',
           className,
         )}
       >
         <div className="flex min-w-0 flex-1 items-start gap-3">
+          {onSelectedChange ? (
+            <SelectionCheckbox
+              checked={selected}
+              disabled={!canSelect}
+              onChange={onSelectedChange}
+            />
+          ) : null}
           <Avatar
             name={record.fullName}
             src={record.photoUrl}
@@ -148,28 +159,38 @@ export function ToptalCandidateCard({
             <StatusLabels record={record} />
           </div>
         </div>
-        <div className="shrink-0">
-          <CardActions
-            trialEligible={trialEligible}
-            onView={onView}
-            onTrial={trialHandler}
-          />
-        </div>
       </article>
     );
   }
 
   return (
     <article
+      role="button"
+      tabIndex={0}
+      onClick={onView}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onView();
+        }
+      }}
       className={cn(
-        'group flex h-full flex-col rounded-xl border border-border/60 bg-white shadow-sm',
+        'group flex h-full cursor-pointer flex-col rounded-xl border border-border/60 bg-white shadow-sm',
         'transition-all duration-200 ease-out',
         'hover:-translate-y-0.5 hover:border-border hover:shadow-md',
+        selected && 'border-brand/50 ring-1 ring-brand/30',
         className,
       )}
     >
       <div className="flex flex-1 flex-col p-4">
         <div className="flex items-start gap-3">
+          {onSelectedChange ? (
+            <SelectionCheckbox
+              checked={selected}
+              disabled={!canSelect}
+              onChange={onSelectedChange}
+            />
+          ) : null}
           <Avatar
             name={record.fullName}
             src={record.photoUrl}
@@ -236,14 +257,6 @@ export function ToptalCandidateCard({
         <div className="mt-3">
           <StatusLabels record={record} />
         </div>
-      </div>
-
-      <div className="border-t border-border/50 bg-muted/15 px-4 py-3">
-        <CardActions
-          trialEligible={trialEligible}
-          onView={onView}
-          onTrial={trialHandler}
-        />
       </div>
     </article>
   );

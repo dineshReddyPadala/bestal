@@ -250,6 +250,8 @@ export const adminApi = {
       | 'security'
       | 'scoring'
       | 'pricing'
+      | 'trials'
+      | 'notifications'
       | 'integrations'
       | 'commercials',
     body: unknown,

@@ -781,6 +781,19 @@ export class CandidateImportService {
             failed > 0 ? `${failed} row(s) failed during import` : null,
         },
       });
+
+      const { notifyImportBatchFinished } = await import(
+        '../../services/notification-events.js'
+      );
+      void notifyImportBatchFinished(this.fastify.prisma, this.fastify.config, {
+        organizationId: bigintToNumber(batch.organizationId),
+        batchId,
+        status: 'COMPLETED',
+        uploadedById: bigintToNumber(batch.createdById),
+        successCount: created + updated,
+        failCount: failed,
+        skipCount: skipped,
+      });
     } catch (error) {
       this.fastify.log.error({ err: error, batchId }, 'Candidate import processBatch failed');
       await this.failBatch(
@@ -1199,13 +1212,25 @@ export class CandidateImportService {
   }
 
   private async failBatch(batchId: number, message: string): Promise<void> {
-    await this.fastify.prisma.candidateImportBatch.update({
+    const batch = await this.fastify.prisma.candidateImportBatch.update({
       where: { id: BigInt(batchId) },
       data: {
         status: 'FAILED',
         errorSummary: message,
         completedAt: new Date(),
       },
+    });
+    const { notifyImportBatchFinished } = await import(
+      '../../services/notification-events.js'
+    );
+    void notifyImportBatchFinished(this.fastify.prisma, this.fastify.config, {
+      organizationId: bigintToNumber(batch.organizationId),
+      batchId,
+      status: 'FAILED',
+      uploadedById: bigintToNumber(batch.createdById),
+      successCount: batch.createdCount + batch.updatedCount,
+      failCount: batch.failedCount,
+      skipCount: batch.skippedCount,
     });
   }
 

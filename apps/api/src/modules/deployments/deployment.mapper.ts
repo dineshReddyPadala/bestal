@@ -23,6 +23,9 @@ export function mapDeploymentToDto(deployment: DeploymentRecord): DeploymentDto 
       deployment.createdBy.firstName,
       deployment.createdBy.lastName,
     ),
+    requestedById: deployment.requestedById
+      ? bigintToNumber(deployment.requestedById)
+      : null,
     status: deployment.status,
     placementType: deployment.placementType,
     roleTitle: deployment.roleTitle,

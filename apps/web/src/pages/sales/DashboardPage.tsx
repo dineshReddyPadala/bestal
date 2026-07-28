@@ -17,6 +17,9 @@ export function DashboardPage() {
   const trialRows = trials.data?.data ?? [];
   const deploymentRows = deployments.data?.data ?? [];
 
+  const trialsRequested = trialRows.filter((t) => t.status === 'REQUESTED').length;
+  const trialsApproved = trialRows.filter((t) => t.status === 'APPROVED').length;
+  const trialsInProgress = trialRows.filter((t) => t.status === 'IN_PROGRESS').length;
   const activeTrials = trialRows.filter((t) =>
     ['REQUESTED', 'APPROVED', 'IN_PROGRESS'].includes(t.status),
   );
@@ -91,6 +94,10 @@ export function DashboardPage() {
               value={clientRows.filter((c) => c.status === 'ACTIVE').length}
             />
             <StatCard label="Open trials" value={activeTrials.length} />
+            <StatCard label="Requested" value={trialsRequested} />
+            <StatCard label="Approved" value={trialsApproved} />
+            <StatCard label="In progress" value={trialsInProgress} />
+            <StatCard label="Completed trials" value={completedTrials.length} />
             <StatCard label="Trial conversion" value={`${conversionRate}%`} />
             <StatCard label="Active deployments" value={activeDeployments.length} />
             <StatCard

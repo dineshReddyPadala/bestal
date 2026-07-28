@@ -16,7 +16,14 @@ import {
   ListingPageShell,
 } from '../layout/ListingPageShell';
 
-type DeploymentAction = 'Activate' | 'Pause' | 'Resume' | 'Complete' | 'Extend' | 'Terminate';
+type DeploymentAction =
+  | 'Approve'
+  | 'Activate'
+  | 'Pause'
+  | 'Resume'
+  | 'Complete'
+  | 'Extend'
+  | 'Terminate';
 
 type DeploymentManagementViewProps = {
   title?: string;
@@ -88,7 +95,10 @@ function DeploymentRowActions({
 
   const actions: { label: DeploymentAction; disabled?: boolean; variant?: 'danger' }[] = [];
   if (record.status === 'PENDING') {
-    actions.push({ label: 'Activate' });
+    actions.push({ label: 'Approve' });
+    if (record.billingRate != null) {
+      actions.push({ label: 'Activate' });
+    }
     actions.push({ label: 'Terminate', variant: 'danger' });
   } else if (record.status === 'ACTIVE') {
     actions.push({ label: 'Pause' });
@@ -149,6 +159,11 @@ export function DeploymentManagementView({
   const mutations = useDeploymentMutations();
   const [filters, setFilters] = useState(defaultFilters);
   const [createOpen, setCreateOpen] = useState(false);
+  const [approveTarget, setApproveTarget] = useState<DeploymentListItem | null>(null);
+  const [approveBillingRate, setApproveBillingRate] = useState('');
+  const [approvePayRate, setApprovePayRate] = useState('');
+  const [approveCurrency, setApproveCurrency] = useState('USD');
+  const [approveMargin, setApproveMargin] = useState('');
 
   const records = useMemo(() => data?.data ?? [], [data]);
 
@@ -211,6 +226,16 @@ export function DeploymentManagementView({
   const handleAction = useCallback(
     async (record: DeploymentListItem, action: DeploymentAction) => {
       try {
+        if (action === 'Approve') {
+          setApproveTarget(record);
+          setApproveBillingRate(record.billingRate != null ? String(record.billingRate) : '');
+          setApprovePayRate(
+            record.candidatePayRate != null ? String(record.candidatePayRate) : '',
+          );
+          setApproveCurrency(record.currency ?? 'USD');
+          setApproveMargin('');
+          return;
+        }
         if (action === 'Activate') {
           await mutations.activate.mutateAsync(record.id);
         } else if (action === 'Pause') {
@@ -264,6 +289,7 @@ export function DeploymentManagementView({
           currency: values.currency,
           workLocation: values.workLocation || undefined,
           notes: values.notes || undefined,
+          activateNow: true,
         });
         show(`Deployment created — ${values.candidateName} @ ${values.clientName}`);
         setCreateOpen(false);
@@ -468,6 +494,122 @@ export function DeploymentManagementView({
           onSubmit={(values) => void handleCreateSubmit(values)}
           onCancel={() => setCreateOpen(false)}
         />
+      </Dialog>
+
+      <Dialog
+        open={approveTarget != null}
+        onClose={() => setApproveTarget(null)}
+        title={
+          approveTarget
+            ? `Approve deployment — ${approveTarget.candidateName}`
+            : 'Approve deployment'
+        }
+        scrollable
+        className="max-w-lg"
+        footer={
+          <>
+            <Button type="button" variant="outline" onClick={() => setApproveTarget(null)}>
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              onClick={() => {
+                if (!approveTarget) return;
+                const billingRate = Number(approveBillingRate);
+                if (!Number.isFinite(billingRate) || billingRate <= 0) {
+                  show('Billing rate is required');
+                  return;
+                }
+                void (async () => {
+                  try {
+                    await mutations.approve.mutateAsync({
+                      id: approveTarget.id,
+                      body: {
+                        roleTitle: approveTarget.roleTitle,
+                        placementType: approveTarget.placementType,
+                        startDate: approveTarget.startDate ?? undefined,
+                        endDate: approveTarget.endDate,
+                        billingRate,
+                        candidatePayRate: approvePayRate
+                          ? Number(approvePayRate)
+                          : undefined,
+                        grossMarginPerHour: approveMargin
+                          ? Number(approveMargin)
+                          : undefined,
+                        currency: approveCurrency,
+                        expectedHoursPerWeek: approveTarget.expectedHoursPerWeek ?? undefined,
+                      },
+                    });
+                    show(
+                      `Approved — ${approveTarget.candidateName} @ ${approveTarget.clientName}`,
+                    );
+                    setApproveTarget(null);
+                  } catch (err) {
+                    show(err instanceof Error ? err.message : 'Approve failed');
+                  }
+                })();
+              }}
+            >
+              Approve & activate
+            </Button>
+          </>
+        }
+      >
+        {approveTarget ? (
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Client request for <strong>{approveTarget.roleTitle}</strong> (
+              {approveTarget.placementType}). Enter commercial details to activate.
+            </p>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <label className="space-y-1 text-sm sm:col-span-2">
+                <span className="font-medium">Billing rate ($/hr) *</span>
+                <input
+                  type="number"
+                  min={0.01}
+                  step="0.01"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  value={approveBillingRate}
+                  onChange={(e) => setApproveBillingRate(e.target.value)}
+                />
+              </label>
+              <label className="space-y-1 text-sm">
+                <span className="font-medium">Candidate pay rate ($/hr)</span>
+                <input
+                  type="number"
+                  min={0}
+                  step="0.01"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  value={approvePayRate}
+                  onChange={(e) => setApprovePayRate(e.target.value)}
+                />
+              </label>
+              <label className="space-y-1 text-sm">
+                <span className="font-medium">Gross margin ($/hr)</span>
+                <input
+                  type="number"
+                  step="0.01"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  value={approveMargin}
+                  onChange={(e) => setApproveMargin(e.target.value)}
+                />
+              </label>
+              <label className="space-y-1 text-sm">
+                <span className="font-medium">Currency</span>
+                <select
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  value={approveCurrency}
+                  onChange={(e) => setApproveCurrency(e.target.value)}
+                >
+                  <option value="USD">USD</option>
+                  <option value="EUR">EUR</option>
+                  <option value="GBP">GBP</option>
+                  <option value="INR">INR</option>
+                </select>
+              </label>
+            </div>
+          </div>
+        ) : null}
       </Dialog>
     </>
   );

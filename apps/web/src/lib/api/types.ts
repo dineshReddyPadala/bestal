@@ -240,6 +240,7 @@ export type DeploymentDto = {
   clientName: string;
   createdById: number;
   createdByName: string;
+  requestedById?: number | null;
   status: string;
   placementType: string;
   roleTitle: string;

@@ -542,6 +542,7 @@ export class AdminController {
         | 'scoring'
         | 'prompts'
         | 'pricing'
+        | 'trials'
         | 'notifications'
         | 'integrations'
         | 'commercials',

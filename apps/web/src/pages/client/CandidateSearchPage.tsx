@@ -1,6 +1,6 @@
 import { mapApiCandidateToClientSearchRecord } from '../../lib/client-search-api';
 import { useCandidatesList } from '../../hooks/api/useCandidates';
-import { EmptyState, PageHeader, Select } from '@bestal/ui';
+import { Button, EmptyState, PageHeader, Select } from '@bestal/ui';
 import { Grid3X3, List, Users } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -25,7 +25,7 @@ export function CandidateSearchPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { user } = useAuth();
-  const { message, show } = useDemoToast();
+  const { message, show, showError } = useDemoToast();
   const { addRequest: addTrialRequest } = useClientTrialRequests();
   const canRequestTrial = user?.clientId != null;
 
@@ -35,9 +35,8 @@ export function CandidateSearchPage() {
   }));
   const [sort, setSort] = useState<ClientSearchSort>('best-match');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const [dialogCandidate, setDialogCandidate] = useState<{ id: number; name: string } | null>(
-    null,
-  );
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [bulkDialogOpen, setBulkDialogOpen] = useState(false);
 
   const searchParam = filters.query.trim() || undefined;
   const { data: apiCandidates, isLoading } = useCandidatesList({
@@ -63,6 +62,20 @@ export function CandidateSearchPage() {
     const rows = filterClientSearchRecords(allRecords, filters);
     return sortClientSearchRecords(rows, sort);
   }, [allRecords, filters, sort]);
+
+  const selectedRecords = useMemo(
+    () => filtered.filter((r) => selectedIds.has(r.id)),
+    [filtered, selectedIds],
+  );
+
+  function toggleSelected(id: number, next: boolean) {
+    setSelectedIds((prev) => {
+      const copy = new Set(prev);
+      if (next) copy.add(id);
+      else copy.delete(id);
+      return copy;
+    });
+  }
 
   return (
     <div className="min-h-full bg-muted/10">
@@ -147,8 +160,9 @@ export function CandidateSearchPage() {
                 record={record}
                 layout="grid"
                 canRequestTrial={canRequestTrial}
+                selected={selectedIds.has(record.id)}
+                onSelectedChange={(next) => toggleSelected(record.id, next)}
                 onView={() => navigate(`/client/candidates/${record.id}`)}
-                onTrial={() => setDialogCandidate({ id: record.id, name: record.fullName })}
               />
             ))}
           </div>
@@ -160,22 +174,68 @@ export function CandidateSearchPage() {
                 record={record}
                 layout="list"
                 canRequestTrial={canRequestTrial}
+                selected={selectedIds.has(record.id)}
+                onSelectedChange={(next) => toggleSelected(record.id, next)}
                 onView={() => navigate(`/client/candidates/${record.id}`)}
-                onTrial={() => setDialogCandidate({ id: record.id, name: record.fullName })}
               />
             ))}
           </div>
         )}
       </div>
 
-      {dialogCandidate && (
+      {selectedIds.size > 0 ? (
+        <div className="sticky bottom-0 z-20 border-t border-border bg-background/95 px-4 py-3 shadow-lg backdrop-blur sm:px-6">
+          <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3">
+            <p className="text-sm font-medium">
+              {selectedIds.size} candidate{selectedIds.size === 1 ? '' : 's'} selected
+            </p>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setSelectedIds(new Set())}
+              >
+                Clear
+              </Button>
+              <Button
+                size="sm"
+                disabled={!canRequestTrial}
+                onClick={() => setBulkDialogOpen(true)}
+              >
+                Request free trial ({selectedIds.size})
+              </Button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {bulkDialogOpen && (
         <RequestTrialDialog
           open
-          onClose={() => setDialogCandidate(null)}
-          candidateName={dialogCandidate.name}
+          onClose={() => setBulkDialogOpen(false)}
+          candidateName={
+            selectedRecords.length === 1
+              ? selectedRecords[0]!.fullName
+              : `${selectedRecords.length} candidates`
+          }
           onSubmit={async (values) => {
-            await addTrialRequest(dialogCandidate.id, dialogCandidate.name, values);
-            show(`Trial requested — ${dialogCandidate.name}`);
+            try {
+              await Promise.all(
+                selectedRecords.map((record) =>
+                  addTrialRequest(record.id, record.fullName, values),
+                ),
+              );
+              show(
+                `Free trial requested for ${selectedRecords.length} candidate${
+                  selectedRecords.length === 1 ? '' : 's'
+                }`,
+              );
+              setSelectedIds(new Set());
+              setBulkDialogOpen(false);
+            } catch (err) {
+              showError(err instanceof Error ? err.message : 'Free trial request failed');
+              throw err;
+            }
           }}
         />
       )}

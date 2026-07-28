@@ -101,6 +101,7 @@ export const ALL_PERMISSIONS = [
   'trials:write',
   'deployments:read',
   'deployments:write',
+  'deployments:request',
   'sales:pipeline:read',
   'sales:pipeline:write',
   'sales:reports:read',
@@ -166,6 +167,7 @@ export const PERMISSION_GROUPS: Array<{
       'trials:write',
       'deployments:read',
       'deployments:write',
+      'deployments:request',
     ],
   },
   {
@@ -240,6 +242,7 @@ const CLIENT: PlatformPermission[] = [
   'trials:read',
   'trials:write',
   'deployments:read',
+  'deployments:request',
   'documents:read',
   'notifications:read',
 ];

@@ -20,7 +20,10 @@ import type { ListClientsQuery } from './client.validator.js';
 export class ClientService {
   private readonly clientRepository: ClientRepository;
 
-  constructor(fastify: FastifyInstance, clientRepository?: ClientRepository) {
+  constructor(
+    private readonly fastify: FastifyInstance,
+    clientRepository?: ClientRepository,
+  ) {
     this.clientRepository =
       clientRepository ?? new ClientRepository(fastify.prisma);
   }
@@ -44,7 +47,17 @@ export class ClientService {
         input.contactEmail,
       );
     }
-    return mapClientToDto(client);
+    const dto = mapClientToDto(client);
+    const { notifyClientOnboarded } = await import(
+      '../../services/notification-events.js'
+    );
+    void notifyClientOnboarded(this.fastify.prisma, this.fastify.config, {
+      organizationId,
+      clientId: dto.id,
+      clientName: dto.name,
+      kind: 'created',
+    });
+    return dto;
   }
 
   async update(

@@ -44,7 +44,7 @@ export function RequestTrialDialog({
       onClose={() => {
         if (!submitting) onClose();
       }}
-      title={`Request trial — ${candidateName}`}
+      title={`Request free trial — ${candidateName}`}
       scrollable
       className="max-w-lg"
       footer={
@@ -62,7 +62,7 @@ export function RequestTrialDialog({
     >
       {submitted ? (
         <p className="py-4 text-center text-sm text-emerald-600">
-          Trial request submitted. Your account manager will review and confirm dates.
+          Free trial request submitted. Your account manager will review and confirm dates.
         </p>
       ) : (
         <div className="space-y-3">

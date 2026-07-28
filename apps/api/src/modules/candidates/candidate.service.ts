@@ -24,6 +24,7 @@ import {
   type PipelineCandidateSnapshot,
 } from './candidate-pipeline.js';
 import { isClearBgvStatus } from './candidate-import-status.js';
+import { notifyCandidatePendingApproval } from '../../services/notification-events.js';
 import { StorageService } from '../../services/storage.service.js';
 import {
   bufferToBase64,
@@ -63,11 +64,13 @@ export class CandidateService {
   private readonly storageService: StorageService;
   private readonly resumeExtractionClient: ResumeExtractionClient;
   private readonly prisma: PrismaClient;
+  private readonly fastify: FastifyInstance;
 
   constructor(
     fastify: FastifyInstance,
     candidateRepository?: CandidateRepository,
   ) {
+    this.fastify = fastify;
     this.candidateRepository = candidateRepository ?? new CandidateRepository(
       fastify.prisma,
     );
@@ -829,6 +832,12 @@ export class CandidateService {
         submittedForApprovalAt: new Date(),
       },
     );
+
+    void notifyCandidatePendingApproval(this.prisma, this.fastify.config, {
+      organizationId,
+      candidateId: id,
+      candidateName: `${updated.firstName} ${updated.lastName}`.trim(),
+    });
 
     return this.toDto(updated, authUser);
   }

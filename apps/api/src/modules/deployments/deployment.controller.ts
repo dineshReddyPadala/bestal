@@ -1,8 +1,10 @@
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { DeploymentService } from './deployment.service.js';
 import type {
+  ApproveDeploymentBody,
   CreateDeploymentBody,
   ListDeploymentsQuery,
+  RequestDeploymentBody,
   TerminateDeploymentBody,
   UpdateDeploymentBody,
 } from './deployment.validator.js';
@@ -16,6 +18,25 @@ export class DeploymentController {
       request.body as CreateDeploymentBody,
     );
     return reply.status(201).send({ data });
+  };
+
+  request = async (request: FastifyRequest, reply: FastifyReply) => {
+    const body = request.body as RequestDeploymentBody;
+    const data = await this.deploymentService.request(request.authUser!, {
+      ...body,
+      reportingManagerEmail: body.reportingManagerEmail || undefined,
+    });
+    return reply.status(201).send({ data });
+  };
+
+  approve = async (request: FastifyRequest, reply: FastifyReply) => {
+    const { id } = request.params as { id: number };
+    const body = request.body as ApproveDeploymentBody;
+    const data = await this.deploymentService.approve(request.authUser!, id, {
+      ...body,
+      reportingManagerEmail: body.reportingManagerEmail || undefined,
+    });
+    return reply.status(200).send({ data });
   };
 
   list = async (request: FastifyRequest, reply: FastifyReply) => {

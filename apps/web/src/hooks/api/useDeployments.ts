@@ -19,9 +19,18 @@ export function useDeploymentMutations() {
       mutationFn: (body: Record<string, unknown>) => deploymentsApi.create(body),
       onSuccess: invalidate,
     }),
+    request: useMutation({
+      mutationFn: (body: Record<string, unknown>) => deploymentsApi.request(body),
+      onSuccess: invalidate,
+    }),
     update: useMutation({
       mutationFn: ({ id, body }: { id: number; body: Record<string, unknown> }) =>
         deploymentsApi.update(id, body),
+      onSuccess: invalidate,
+    }),
+    approve: useMutation({
+      mutationFn: ({ id, body }: { id: number; body: Record<string, unknown> }) =>
+        deploymentsApi.approve(id, body),
       onSuccess: invalidate,
     }),
     activate: useMutation({

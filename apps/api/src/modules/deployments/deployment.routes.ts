@@ -8,12 +8,14 @@ import { PERMISSIONS } from '../auth/auth.permissions.js';
 import { DeploymentController } from './deployment.controller.js';
 import { DeploymentService } from './deployment.service.js';
 import {
+  approveDeploymentBodySchema,
   createDeploymentBodySchema,
   deploymentIdParamSchema,
   deploymentListResponseSchema,
   deploymentMessageResponseSchema,
   deploymentResponseSchema,
   listDeploymentsQuerySchema,
+  requestDeploymentBodySchema,
   terminateDeploymentBodySchema,
   updateDeploymentBodySchema,
 } from './deployment.validator.js';
@@ -43,6 +45,28 @@ export async function deploymentRoutes(fastify: FastifyInstance): Promise<void> 
       },
     },
     deploymentController.create,
+  );
+
+  app.post(
+    '/request',
+    {
+      preHandler: [
+        authenticate,
+        requirePermission(PERMISSIONS.DEPLOYMENTS_REQUEST),
+      ],
+      schema: {
+        tags: ['Deployments'],
+        summary: 'Client submits a deployment request (non-commercial fields)',
+        security: [{ bearerAuth: [] }],
+        body: requestDeploymentBodySchema,
+        response: {
+          201: deploymentResponseSchema,
+          401: errorResponses[401],
+          422: errorResponses[422],
+        },
+      },
+    },
+    deploymentController.request,
   );
 
   app.get(
@@ -135,6 +159,30 @@ export async function deploymentRoutes(fastify: FastifyInstance): Promise<void> 
       },
     },
     deploymentController.remove,
+  );
+
+  app.post(
+    '/:id/approve',
+    {
+      preHandler: [
+        authenticate,
+        requirePermission(PERMISSIONS.DEPLOYMENTS_WRITE),
+      ],
+      schema: {
+        tags: ['Deployments'],
+        summary: 'Approve a pending client deployment request with commercial details',
+        security: [{ bearerAuth: [] }],
+        params: deploymentIdParamSchema,
+        body: approveDeploymentBodySchema,
+        response: {
+          200: deploymentResponseSchema,
+          401: errorResponses[401],
+          404: errorResponses[404],
+          422: errorResponses[422],
+        },
+      },
+    },
+    deploymentController.approve,
   );
 
   app.post(

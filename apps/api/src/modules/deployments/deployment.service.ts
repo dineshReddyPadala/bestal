@@ -1,4 +1,9 @@
 import type { FastifyInstance } from 'fastify';
+import {
+  notifyDeploymentRequested,
+  notifyDeploymentStatusChanged,
+} from '../../services/notification-events.js';
+import { LifecycleSchedulerService } from '../../services/lifecycle-scheduler.service.js';
 import type { AuthenticatedUser } from '../../types/index.js';
 import {
   BadRequestError,
@@ -12,9 +17,11 @@ import {
 } from './deployment.mapper.js';
 import { DeploymentRepository } from './deployment.repository.js';
 import type {
+  ApproveDeploymentInput,
   CreateDeploymentInput,
   DeploymentDto,
   DeploymentListItemDto,
+  RequestDeploymentInput,
   TerminateDeploymentInput,
   UpdateDeploymentInput,
 } from './deployment.types.js';
@@ -22,13 +29,15 @@ import type { ListDeploymentsQuery } from './deployment.validator.js';
 
 export class DeploymentService {
   private readonly deploymentRepository: DeploymentRepository;
+  private readonly lifecycle: LifecycleSchedulerService;
 
   constructor(
-    fastify: FastifyInstance,
+    private readonly fastify: FastifyInstance,
     deploymentRepository?: DeploymentRepository,
   ) {
     this.deploymentRepository =
       deploymentRepository ?? new DeploymentRepository(fastify.prisma);
+    this.lifecycle = new LifecycleSchedulerService(fastify);
   }
 
   async create(
@@ -45,7 +54,109 @@ export class DeploymentService {
       authUser.id,
       input,
     );
-    return mapDeploymentToDto(deployment);
+    const dto = mapDeploymentToDto(deployment);
+
+    if (dto.status === 'ACTIVE') {
+      await this.lifecycle.hideCandidateForActiveDeployment(
+        organizationId,
+        dto.candidateId,
+      );
+      void notifyDeploymentStatusChanged(this.fastify.prisma, this.fastify.config, {
+        organizationId,
+        deploymentId: dto.id,
+        status: 'ACTIVE',
+        candidateName: dto.candidateName,
+        roleTitle: dto.roleTitle,
+        createdById: dto.createdById,
+        requestedById: dto.requestedById,
+        clientId: dto.clientId,
+      });
+    }
+
+    return dto;
+  }
+
+  async request(
+    authUser: AuthenticatedUser,
+    input: RequestDeploymentInput,
+  ): Promise<DeploymentDto> {
+    const organizationId = requireOrganization(authUser);
+    if (authUser.role !== 'CLIENT') {
+      throw new BadRequestError('Only clients can submit deployment requests');
+    }
+
+    const clientId = await this.resolveScopedClientId(authUser, organizationId);
+    await this.validateCandidate(organizationId, input.candidateId);
+    await this.validateClient(organizationId, clientId);
+
+    const deployment = await this.deploymentRepository.create(
+      organizationId,
+      authUser.id,
+      {
+        ...input,
+        clientId,
+        requestedById: authUser.id,
+        status: 'PENDING',
+        activateNow: false,
+      },
+    );
+    const dto = mapDeploymentToDto(deployment);
+
+    void notifyDeploymentRequested(this.fastify.prisma, this.fastify.config, {
+      organizationId,
+      deploymentId: dto.id,
+      candidateName: dto.candidateName,
+      clientName: dto.clientName,
+      roleTitle: dto.roleTitle,
+    });
+
+    return dto;
+  }
+
+  async approve(
+    authUser: AuthenticatedUser,
+    id: number,
+    input: ApproveDeploymentInput,
+  ): Promise<DeploymentDto> {
+    const organizationId = requireOrganization(authUser);
+    const existing = await this.getDeploymentOrThrow(organizationId, id);
+    if (existing.status !== 'PENDING') {
+      throw new BadRequestError('Only pending deployments can be approved');
+    }
+    if (input.billingRate == null || input.billingRate <= 0) {
+      throw new BadRequestError('Billing rate is required to approve a deployment');
+    }
+
+    const startDate =
+      input.startDate ??
+      (existing.startDate
+        ? existing.startDate.toISOString().slice(0, 10)
+        : new Date().toISOString().slice(0, 10));
+
+    const deployment = await this.deploymentRepository.update(organizationId, id, {
+      ...input,
+      status: 'ACTIVE',
+      startDate,
+    });
+    const dto = mapDeploymentToDto(deployment);
+
+    await this.lifecycle.hideCandidateForActiveDeployment(
+      organizationId,
+      dto.candidateId,
+    );
+
+    void notifyDeploymentStatusChanged(this.fastify.prisma, this.fastify.config, {
+      organizationId,
+      deploymentId: dto.id,
+      status: 'ACTIVE',
+      candidateName: dto.candidateName,
+      roleTitle: dto.roleTitle,
+      createdById: dto.createdById,
+      requestedById: dto.requestedById,
+      clientId: dto.clientId,
+    });
+
+    return dto;
   }
 
   async update(
@@ -69,15 +180,53 @@ export class DeploymentService {
       id,
       input,
     );
-    return mapDeploymentToDto(deployment);
+    const dto = mapDeploymentToDto(deployment);
+
+    if (input.status === 'ACTIVE') {
+      await this.lifecycle.hideCandidateForActiveDeployment(
+        organizationId,
+        dto.candidateId,
+      );
+    }
+    if (input.status === 'COMPLETED' || input.status === 'TERMINATED') {
+      await this.lifecycle.restoreCandidateIfNotDeployed(
+        organizationId,
+        dto.candidateId,
+      );
+    }
+
+    return dto;
   }
 
   async activate(authUser: AuthenticatedUser, id: number): Promise<DeploymentDto> {
     const organizationId = requireOrganization(authUser);
-    await this.getDeploymentOrThrow(organizationId, id);
+    const existing = await this.getDeploymentOrThrow(organizationId, id);
+    if (existing.billingRate == null) {
+      throw new BadRequestError(
+        'Billing rate is required before activating. Use approve with commercial details.',
+      );
+    }
 
     const deployment = await this.deploymentRepository.activate(organizationId, id);
-    return mapDeploymentToDto(deployment);
+    const dto = mapDeploymentToDto(deployment);
+
+    await this.lifecycle.hideCandidateForActiveDeployment(
+      organizationId,
+      dto.candidateId,
+    );
+
+    void notifyDeploymentStatusChanged(this.fastify.prisma, this.fastify.config, {
+      organizationId,
+      deploymentId: dto.id,
+      status: 'ACTIVE',
+      candidateName: dto.candidateName,
+      roleTitle: dto.roleTitle,
+      createdById: dto.createdById,
+      requestedById: dto.requestedById,
+      clientId: dto.clientId,
+    });
+
+    return dto;
   }
 
   async terminate(
@@ -93,7 +242,25 @@ export class DeploymentService {
       id,
       input,
     );
-    return mapDeploymentToDto(deployment);
+    const dto = mapDeploymentToDto(deployment);
+
+    await this.lifecycle.restoreCandidateIfNotDeployed(
+      organizationId,
+      dto.candidateId,
+    );
+
+    void notifyDeploymentStatusChanged(this.fastify.prisma, this.fastify.config, {
+      organizationId,
+      deploymentId: dto.id,
+      status: 'TERMINATED',
+      candidateName: dto.candidateName,
+      roleTitle: dto.roleTitle,
+      createdById: dto.createdById,
+      requestedById: dto.requestedById,
+      clientId: dto.clientId,
+    });
+
+    return dto;
   }
 
   async pause(authUser: AuthenticatedUser, id: number): Promise<DeploymentDto> {
@@ -111,7 +278,12 @@ export class DeploymentService {
     const deployment = await this.deploymentRepository.update(organizationId, id, {
       status: 'ACTIVE',
     });
-    return mapDeploymentToDto(deployment);
+    const dto = mapDeploymentToDto(deployment);
+    await this.lifecycle.hideCandidateForActiveDeployment(
+      organizationId,
+      dto.candidateId,
+    );
+    return dto;
   }
 
   async complete(authUser: AuthenticatedUser, id: number): Promise<DeploymentDto> {
@@ -121,7 +293,24 @@ export class DeploymentService {
       status: 'COMPLETED',
       endDate: new Date().toISOString().slice(0, 10),
     });
-    return mapDeploymentToDto(deployment);
+    const dto = mapDeploymentToDto(deployment);
+    await this.lifecycle.restoreCandidateIfNotDeployed(
+      organizationId,
+      dto.candidateId,
+    );
+
+    void notifyDeploymentStatusChanged(this.fastify.prisma, this.fastify.config, {
+      organizationId,
+      deploymentId: dto.id,
+      status: 'COMPLETED',
+      candidateName: dto.candidateName,
+      roleTitle: dto.roleTitle,
+      createdById: dto.createdById,
+      requestedById: dto.requestedById,
+      clientId: dto.clientId,
+    });
+
+    return dto;
   }
 
   async extend(
@@ -151,6 +340,10 @@ export class DeploymentService {
     meta: ReturnType<typeof buildPaginationMeta>;
   }> {
     const organizationId = requireOrganization(authUser);
+    const scopedClientId =
+      authUser.role === 'CLIENT'
+        ? await this.resolveScopedClientId(authUser, organizationId)
+        : null;
 
     const { items, total } = await this.deploymentRepository.findMany({
       organizationId,
@@ -158,7 +351,7 @@ export class DeploymentService {
       limit: query.limit,
       sort: query.sort,
       candidateId: query.candidateId,
-      clientId: query.clientId,
+      clientId: scopedClientId ?? query.clientId,
       status: query.status,
       placementType: query.placementType,
     });
@@ -172,7 +365,44 @@ export class DeploymentService {
   async getById(authUser: AuthenticatedUser, id: number): Promise<DeploymentDto> {
     const organizationId = requireOrganization(authUser);
     const deployment = await this.getDeploymentOrThrow(organizationId, id);
+    if (authUser.role === 'CLIENT') {
+      const clientId = await this.resolveScopedClientId(authUser, organizationId);
+      if (Number(deployment.clientId) !== clientId) {
+        throw new NotFoundError('Deployment not found');
+      }
+    }
     return mapDeploymentToDto(deployment);
+  }
+
+  private async resolveScopedClientId(
+    authUser: AuthenticatedUser,
+    organizationId: number,
+  ): Promise<number> {
+    const membership = await this.fastify.prisma.membership.findFirst({
+      where: {
+        userId: BigInt(authUser.id),
+        organizationId: BigInt(organizationId),
+        isActive: true,
+      },
+      select: { clientId: true },
+    });
+
+    if (membership?.clientId != null) {
+      return Number(membership.clientId);
+    }
+
+    const byEmail = await this.fastify.prisma.client.findFirst({
+      where: {
+        organizationId: BigInt(organizationId),
+        contactEmail: { equals: authUser.email, mode: 'insensitive' },
+        deletedAt: null,
+      },
+      select: { id: true },
+    });
+    if (!byEmail) {
+      throw new BadRequestError('Client account is not linked to this user');
+    }
+    return Number(byEmail.id);
   }
 
   private async getDeploymentOrThrow(organizationId: number, id: number) {

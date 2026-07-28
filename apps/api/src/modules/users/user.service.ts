@@ -95,6 +95,27 @@ export class UserService {
       { ...input, clientId: linkedClientId },
     );
 
+    if (linkedClientId != null) {
+      const client = await this.fastify.prisma.client.findFirst({
+        where: {
+          id: BigInt(linkedClientId),
+          organizationId: BigInt(organizationId),
+          deletedAt: null,
+        },
+        select: { name: true },
+      });
+      const { notifyClientOnboarded } = await import(
+        '../../services/notification-events.js'
+      );
+      void notifyClientOnboarded(this.fastify.prisma, this.fastify.config, {
+        organizationId,
+        clientId: linkedClientId,
+        clientName: client?.name ?? `Client #${linkedClientId}`,
+        kind: 'user_linked',
+        userEmail: input.email,
+      });
+    }
+
     const portalLoginUrl = `${this.fastify.config.webAppUrl}${ROLE_PORTAL_PATH[input.role] ?? '/login'}`;
 
     const emailResult = await this.emailService.sendInviteCredentials({

@@ -53,9 +53,11 @@ export function DashboardPage() {
       String(b.status ?? '').toUpperCase(),
     ),
   ).length;
-  const openTrials = trialRows.filter((t) =>
-    ['REQUESTED', 'APPROVED', 'IN_PROGRESS'].includes(t.status),
-  ).length;
+  const trialsRequested = trialRows.filter((t) => t.status === 'REQUESTED').length;
+  const trialsApproved = trialRows.filter((t) => t.status === 'APPROVED').length;
+  const trialsInProgress = trialRows.filter((t) => t.status === 'IN_PROGRESS').length;
+  const trialsCompleted = trialRows.filter((t) => t.status === 'COMPLETED').length;
+  const openTrials = trialsRequested + trialsApproved + trialsInProgress;
   const activeDeployments = deploymentRows.filter((d) => d.status === 'ACTIVE').length;
 
   const isLoading =
@@ -153,6 +155,15 @@ export function DashboardPage() {
                 value={activeDeployments}
                 icon={<Rocket className="h-5 w-5" />}
               />
+            </div>
+            <div className="mt-4">
+              <h2 className="mb-3 text-sm font-semibold text-muted-foreground">Trial analytics</h2>
+              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                <StatCard label="Requested" value={trialsRequested} />
+                <StatCard label="Approved" value={trialsApproved} />
+                <StatCard label="In progress" value={trialsInProgress} />
+                <StatCard label="Completed" value={trialsCompleted} />
+              </div>
             </div>
           </>
         )}

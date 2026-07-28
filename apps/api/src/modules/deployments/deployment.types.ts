@@ -9,6 +9,7 @@ export interface DeploymentDto {
   clientName: string;
   createdById: number;
   createdByName: string;
+  requestedById: number | null;
   status: DeploymentStatus;
   placementType: PlacementType;
   roleTitle: string;
@@ -71,6 +72,40 @@ export interface CreateDeploymentInput {
   candidatePayRate?: number;
   grossMarginPerHour?: number;
   expectedHoursPerWeek?: number;
+  currency?: string;
+  workLocation?: string;
+  timezone?: string;
+  reportingManagerName?: string;
+  reportingManagerEmail?: string;
+  notes?: string;
+  /** When true (or billingRate provided), create as ACTIVE (direct deploy). */
+  activateNow?: boolean;
+  requestedById?: number | null;
+  status?: DeploymentStatus;
+}
+
+export interface RequestDeploymentInput {
+  candidateId: number;
+  placementType?: PlacementType;
+  roleTitle: string;
+  startDate?: string;
+  endDate?: string;
+  workLocation?: string;
+  expectedHoursPerWeek?: number;
+  timezone?: string;
+  reportingManagerName?: string;
+  reportingManagerEmail?: string;
+}
+
+export interface ApproveDeploymentInput {
+  placementType?: PlacementType;
+  roleTitle?: string;
+  startDate?: string;
+  endDate?: string | null;
+  billingRate: number;
+  candidatePayRate?: number | null;
+  grossMarginPerHour?: number | null;
+  expectedHoursPerWeek?: number | null;
   currency?: string;
   workLocation?: string;
   timezone?: string;

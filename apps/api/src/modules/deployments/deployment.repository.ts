@@ -12,6 +12,7 @@ const deploymentInclude = {
   candidate: { select: { id: true, firstName: true, lastName: true } },
   client: { select: { id: true, name: true } },
   createdBy: { select: { id: true, firstName: true, lastName: true } },
+  requestedBy: { select: { id: true, firstName: true, lastName: true } },
 } satisfies Prisma.DeploymentInclude;
 
 export type DeploymentRecord = Prisma.DeploymentGetPayload<{
@@ -28,12 +29,20 @@ export class DeploymentRepository extends BaseRepository {
     createdById: number,
     data: CreateDeploymentInput,
   ): Promise<DeploymentRecord> {
+    const activateNow =
+      data.activateNow === true ||
+      (data.billingRate != null && data.billingRate > 0 && Boolean(data.startDate));
+    const status = data.status ?? (activateNow ? 'ACTIVE' : 'PENDING');
+
     return this.prisma.deployment.create({
       data: {
         organizationId: BigInt(organizationId),
         candidateId: BigInt(data.candidateId),
         clientId: BigInt(data.clientId),
         createdById: BigInt(createdById),
+        requestedById:
+          data.requestedById != null ? BigInt(data.requestedById) : undefined,
+        status,
         placementType: data.placementType,
         roleTitle: data.roleTitle,
         startDate: data.startDate ? new Date(data.startDate) : undefined,
