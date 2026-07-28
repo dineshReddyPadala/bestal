@@ -1,9 +1,11 @@
 import type { FastifyInstance } from 'fastify';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
+import { z } from 'zod';
 import { authenticate } from '../../middleware/authenticate.middleware.js';
 import { requireAnyPermission, requirePermission } from '../../middleware/permission.middleware.js';
 import { PERMISSIONS } from '../auth/auth.permissions.js';
 import { CandidateController } from './candidate.controller.js';
+import { CandidateImportService } from './candidate-import.service.js';
 import { CandidateService } from './candidate.service.js';
 import {
   candidateIdParamSchema,
@@ -13,16 +15,156 @@ import {
   listCandidatesQuerySchema,
   messageResponseSchema,
   rejectCandidateBodySchema,
+  sendBackCandidateBodySchema,
   runAiScreeningBodySchema,
   completeRecruiterReviewBodySchema,
   resumeExtractionDraftResponseSchema,
   updateCandidateBodySchema,
 } from './candidate.validator.js';
 
+const importBatchIdParamSchema = z.object({
+  batchId: z.coerce.number().int().positive(),
+});
+
+const importListQuerySchema = z.object({
+  page: z.coerce.number().int().positive().optional(),
+  limit: z.coerce.number().int().positive().max(200).optional(),
+});
+
 export async function candidateRoutes(fastify: FastifyInstance): Promise<void> {
   const candidateService = new CandidateService(fastify);
-  const candidateController = new CandidateController(candidateService);
+  const candidateImportService = new CandidateImportService(fastify);
+  const candidateController = new CandidateController(
+    candidateService,
+    candidateImportService,
+  );
   const app = fastify.withTypeProvider<ZodTypeProvider>();
+
+  app.get(
+    '/imports/template',
+    {
+      preHandler: [authenticate, requirePermission(PERMISSIONS.CANDIDATES_WRITE)],
+      schema: {
+        tags: ['Candidates'],
+        summary: 'Download the standard BesTal candidate import Excel template',
+        security: [{ bearerAuth: [] }],
+      },
+    },
+    candidateController.downloadImportTemplate,
+  );
+
+  app.post(
+    '/imports',
+    {
+      preHandler: [authenticate, requirePermission(PERMISSIONS.CANDIDATES_WRITE)],
+      schema: {
+        tags: ['Candidates'],
+        summary: 'Upload a candidate import workbook (fire-and-forget)',
+        security: [{ bearerAuth: [] }],
+        consumes: ['multipart/form-data'],
+      },
+    },
+    candidateController.enqueueImport,
+  );
+
+  app.get(
+    '/imports',
+    {
+      preHandler: [authenticate, requirePermission(PERMISSIONS.CANDIDATES_WRITE)],
+      schema: {
+        tags: ['Candidates'],
+        summary: 'List candidate import history for the organization',
+        security: [{ bearerAuth: [] }],
+        querystring: importListQuerySchema,
+      },
+    },
+    candidateController.listImportHistory,
+  );
+
+  app.post(
+    '/imports/preview',
+    {
+      preHandler: [authenticate, requirePermission(PERMISSIONS.CANDIDATES_WRITE)],
+      schema: {
+        tags: ['Candidates'],
+        summary: 'Validate and preview a standard candidate import workbook',
+        security: [{ bearerAuth: [] }],
+        consumes: ['multipart/form-data'],
+      },
+    },
+    candidateController.previewImport,
+  );
+
+  app.post(
+    '/imports/:batchId/confirm',
+    {
+      preHandler: [authenticate, requirePermission(PERMISSIONS.CANDIDATES_WRITE)],
+      schema: {
+        tags: ['Candidates'],
+        summary: 'Confirm and execute a previewed candidate import batch',
+        security: [{ bearerAuth: [] }],
+        params: importBatchIdParamSchema,
+      },
+    },
+    candidateController.confirmImport,
+  );
+
+  app.get(
+    '/imports/:batchId',
+    {
+      preHandler: [authenticate, requirePermission(PERMISSIONS.CANDIDATES_WRITE)],
+      schema: {
+        tags: ['Candidates'],
+        summary: 'Get candidate import batch status and summary',
+        security: [{ bearerAuth: [] }],
+        params: importBatchIdParamSchema,
+      },
+    },
+    candidateController.getImportBatch,
+  );
+
+  app.get(
+    '/imports/:batchId/errors',
+    {
+      preHandler: [authenticate, requirePermission(PERMISSIONS.CANDIDATES_WRITE)],
+      schema: {
+        tags: ['Candidates'],
+        summary: 'List per-record candidate import errors for a batch',
+        security: [{ bearerAuth: [] }],
+        params: importBatchIdParamSchema,
+        querystring: importListQuerySchema,
+      },
+    },
+    candidateController.listImportErrors,
+  );
+
+  app.get(
+    '/imports/:batchId/error-report',
+    {
+      preHandler: [authenticate, requirePermission(PERMISSIONS.CANDIDATES_WRITE)],
+      schema: {
+        tags: ['Candidates'],
+        summary: 'Download candidate import validation/error report',
+        security: [{ bearerAuth: [] }],
+        params: importBatchIdParamSchema,
+      },
+    },
+    candidateController.downloadImportErrorReport,
+  );
+
+  app.get(
+    '/imports/:batchId/file',
+    {
+      preHandler: [authenticate, requirePermission(PERMISSIONS.CANDIDATES_WRITE)],
+      schema: {
+        tags: ['Candidates'],
+        summary: 'Download the original uploaded candidate import workbook',
+        security: [{ bearerAuth: [] }],
+        params: importBatchIdParamSchema,
+      },
+    },
+    candidateController.downloadImportSourceFile,
+  );
 
   app.post(
     '/',
@@ -53,6 +195,20 @@ export async function candidateRoutes(fastify: FastifyInstance): Promise<void> {
       },
     },
     candidateController.extractResume,
+  );
+
+  app.post(
+    '/import-csv',
+    {
+      preHandler: [authenticate, requirePermission(PERMISSIONS.CANDIDATES_WRITE)],
+      schema: {
+        tags: ['Candidates'],
+        summary: 'Legacy Oorwin/BesTal CSV import (prefer /imports/preview)',
+        security: [{ bearerAuth: [] }],
+        consumes: ['multipart/form-data'],
+      },
+    },
+    candidateController.importCsv,
   );
 
   app.get(
@@ -229,6 +385,22 @@ export async function candidateRoutes(fastify: FastifyInstance): Promise<void> {
       },
     },
     candidateController.reject,
+  );
+
+  app.post(
+    '/:id/send-back',
+    {
+      preHandler: [authenticate, requirePermission(PERMISSIONS.CANDIDATES_APPROVE)],
+      schema: {
+        tags: ['Candidates'],
+        summary: 'Send candidate back to recruiter for revisions',
+        security: [{ bearerAuth: [] }],
+        params: candidateIdParamSchema,
+        body: sendBackCandidateBodySchema,
+        response: { 200: candidateResponseSchema },
+      },
+    },
+    candidateController.sendBack,
   );
 
   app.post(

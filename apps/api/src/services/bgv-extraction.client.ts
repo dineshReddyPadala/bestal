@@ -174,3 +174,33 @@ export function formatBgvCheckStatusesSummary(extraction: BgvExtractionResponse)
   ];
   return lines.join('\n');
 }
+
+/** Pretty-printed JSON stored on background_checks.ai_summary for the review UI. */
+export function formatBgvAiSummaryJson(
+  extraction: BgvExtractionResponse,
+  meta?: { provider?: string | null; checkType?: string | null; liveAi?: boolean },
+): string {
+  return JSON.stringify(
+    {
+      status: extraction.status ?? 'UNKNOWN',
+      confidence: extraction.confidence,
+      provider: extraction.vendorName ?? meta?.provider ?? null,
+      package: extraction.checkType ?? meta?.checkType ?? null,
+      checks: [
+        { name: 'Identity', result: extraction.idCheckStatus ?? 'N/A' },
+        { name: 'Address', result: extraction.addressCheckStatus ?? 'N/A' },
+        { name: 'Employment', result: extraction.employmentCheckStatus ?? 'N/A' },
+        { name: 'Education', result: extraction.educationCheckStatus ?? 'N/A' },
+        { name: 'Criminal', result: extraction.criminalCheckStatus ?? 'N/A' },
+        { name: 'Reference', result: extraction.referenceCheckStatus ?? 'N/A' },
+      ],
+      summary: extraction.aiBgvSummary ?? '',
+      concernNotes: extraction.concernNotes ?? '',
+      warnings: extraction.warnings,
+      liveAi: meta?.liveAi ?? false,
+      generatedAt: extraction.extractedAt || new Date().toISOString(),
+    },
+    null,
+    2,
+  );
+}

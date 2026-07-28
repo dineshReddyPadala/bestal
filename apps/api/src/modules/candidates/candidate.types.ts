@@ -23,8 +23,8 @@ export interface CandidateDocumentDto {
 
 export interface CandidateSkillDto {
   id: number;
-  skillCommunityId: number;
-  skillCommunityName: string;
+  skillCommunityId: number | null;
+  skillCommunityName: string | null;
   skillName: string | null;
   skillCategory: string | null;
   proficiencyLevel: string;
@@ -70,6 +70,7 @@ export interface CandidateDto {
   displayName: string | null;
   primaryRole: string | null;
   currentCompany: string | null;
+  currentTitle: string | null;
   education: string | null;
   githubUrl: string | null;
   naukriUrl: string | null;
@@ -115,6 +116,14 @@ export interface CandidateListItemDto {
   location: string | null;
   yearsExperience: number | null;
   primarySkillCommunityName: string | null;
+  primaryRole: string | null;
+  currentCompany: string | null;
+  currentTitle: string | null;
+  bestalScore: number | null;
+  clientBillRate: number | null;
+  currency: string | null;
+  availabilityStatus: string | null;
+  timezoneOverlap: string | null;
   hasResume: boolean;
   hasProfileImage: boolean;
   hasIntroVideo: boolean;
@@ -122,6 +131,10 @@ export interface CandidateListItemDto {
   evaluationStatus: string | null;
   bgvStatus: string | null;
   submittedForApprovalAt: string | null;
+  hasAiSummary: boolean;
+  hasSkills: boolean;
+  hasAvailability: boolean;
+  hasCommercials: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -140,10 +153,12 @@ export interface CandidateListFilters {
   skillCommunityId?: number;
   /** When true, restrict to published + approved (client view). */
   clientView?: boolean;
+  /** When true, only candidates submitted for admin approval. */
+  pendingApproval?: boolean;
 }
 
 export interface CreateCandidateSkillInput {
-  skillCommunityId: number;
+  skillCommunityId?: number;
   skillName?: string;
   skillCategory?: string;
   proficiencyLevel?: 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED' | 'EXPERT';

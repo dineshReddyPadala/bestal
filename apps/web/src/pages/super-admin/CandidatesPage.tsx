@@ -15,6 +15,7 @@ import {
   useAdminMutations,
   useAdminPendingCandidates,
 } from '../../hooks/api/useAdmin';
+import { getApiErrorMessage } from '../../lib/api/errors';
 import { useDemoToast } from '../../lib/use-demo-toast';
 
 type Row = {
@@ -31,6 +32,7 @@ type Row = {
   profileStatus: string | null;
   visibilityStatus: string | null;
   approvalStatus?: string | null;
+  submittedForApprovalAt?: string | null;
   updatedAt: string;
 };
 
@@ -56,9 +58,9 @@ function buildCandidateActions(
   const isArchived = profile.includes('ARCHIVE') || visibility === 'ARCHIVED';
   const isPending =
     pendingOnly ||
-    approval === 'PENDING' ||
-    profile.includes('PENDING') ||
-    profile === 'SUBMITTED_FOR_APPROVAL';
+    profile === 'PENDING_APPROVAL' ||
+    (approval === 'PENDING' && Boolean(r.submittedForApprovalAt)) ||
+    (profile === 'PROFILE_DRAFT' && Boolean(r.submittedForApprovalAt));
   const isPublished = visibility === 'CLIENT_VISIBLE';
   const isApproved =
     approval === 'APPROVED' ||
@@ -70,13 +72,20 @@ function buildCandidateActions(
 
   const view: ActionMenuItem = {
     id: 'view',
-    label: pendingOnly ? 'Review Candidate' : 'View Profile',
+    label: pendingOnly ? 'Review Candidate' : 'View Candidate',
     href: `/super-admin/candidates/${r.id}`,
+  };
+
+  const edit: ActionMenuItem = {
+    id: 'edit',
+    label: 'Edit Candidate',
+    href: `/super-admin/candidates/${r.id}/edit`,
   };
 
   if (isArchived) {
     return [
       view,
+      edit,
       {
         id: 'restore',
         label: 'Restore',
@@ -97,6 +106,7 @@ function buildCandidateActions(
   if (isPending) {
     return [
       view,
+      edit,
       {
         id: 'approve-publish',
         label: 'Approve & Publish',
@@ -109,6 +119,7 @@ function buildCandidateActions(
               await mutations.approveCandidate.mutateAsync(r.id);
               show('Approved & published');
             },
+            onError: showError,
           }),
       },
       {
@@ -118,7 +129,7 @@ function buildCandidateActions(
           void mutations.approveCandidateInternal
             .mutateAsync(r.id)
             .then(() => show('Approved (internal)'))
-            .catch((e) => showError(e instanceof Error ? e.message : 'Failed')),
+            .catch((e) => showError(getApiErrorMessage(e, 'Approve failed'))),
       },
       {
         id: 'return',
@@ -128,7 +139,7 @@ function buildCandidateActions(
           void mutations.sendBackCandidate
             .mutateAsync({ id: r.id, reason })
             .then(() => show('Returned to recruiter'))
-            .catch((e) => showError(e instanceof Error ? e.message : 'Failed'));
+            .catch((e) => showError(getApiErrorMessage(e, 'Send back failed')));
         },
       },
       {
@@ -148,6 +159,7 @@ function buildCandidateActions(
               await mutations.rejectCandidate.mutateAsync({ id: r.id, reason });
               show('Rejected');
             },
+            onError: showError,
           });
         },
       },
@@ -157,7 +169,7 @@ function buildCandidateActions(
   if (isPublished) {
     return [
       view,
-      { id: 'edit', label: 'Edit Candidate', href: `/super-admin/candidates/${r.id}` },
+      edit,
       {
         id: 'hide',
         label: 'Hide from Clients',
@@ -197,7 +209,7 @@ function buildCandidateActions(
   if (isApproved) {
     return [
       view,
-      { id: 'edit', label: 'Edit Candidate', href: `/super-admin/candidates/${r.id}` },
+      edit,
       {
         id: 'publish',
         label: 'Publish',
@@ -239,7 +251,7 @@ function buildCandidateActions(
   // Draft / AI-screened / default
   return [
     view,
-    { id: 'edit', label: 'Edit Candidate', href: `/super-admin/candidates/${r.id}` },
+    edit,
     {
       id: 'ai',
       label: isAiScreened ? 'Review AI Screening' : 'Run AI Screening',
@@ -274,7 +286,7 @@ function buildCandidateActions(
 }
 
 function CandidatesTable({ pendingOnly }: { pendingOnly: boolean }) {
-  const { message, show, showError } = useDemoToast();
+  const { message, variant, show, showError } = useDemoToast();
   const { requestConfirm, confirmDialog } = useConfirmAction();
   const [filters, setFilters] = useState(defaultFilters);
   const query = {
@@ -384,15 +396,16 @@ function CandidatesTable({ pendingOnly }: { pendingOnly: boolean }) {
       <ListingPageShell
         title={pendingOnly ? 'Pending Approvals' : 'Candidates'}
         message={message}
+        messageVariant={variant}
         error={isError ? (error instanceof Error ? error.message : 'Failed') : null}
         loading={isLoading}
         loadingLabel="Loading candidates…"
         actions={
           pendingOnly ? undefined : (
             <div className="flex flex-wrap items-center gap-2">
-              <Button size="sm" variant="outline" to="/super-admin/candidates/import">
+              <Button size="sm" to="/super-admin/candidates/import">
                 <FileSpreadsheet className="mr-1.5 h-3.5 w-3.5" />
-                Import CSV
+                Import Candidates
               </Button>
               <Button size="sm" to="/super-admin/candidates/new">
                 <Plus className="mr-1.5 h-3.5 w-3.5" />

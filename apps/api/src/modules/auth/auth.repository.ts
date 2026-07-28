@@ -11,6 +11,7 @@ export interface UserWithMemberships extends User {
   memberships: Array<
     Membership & {
       organization: { id: bigint; name: string; slug: string };
+      client: { id: bigint; name: string } | null;
     }
   >;
 }
@@ -20,6 +21,18 @@ export class AuthRepository extends BaseRepository {
     super(prisma);
   }
 
+  private membershipInclude = {
+    where: { isActive: true },
+    include: {
+      organization: {
+        select: { id: true, name: true, slug: true },
+      },
+      client: {
+        select: { id: true, name: true },
+      },
+    },
+  } as const;
+
   findUserByEmail(email: string): Promise<UserWithMemberships | null> {
     return this.prisma.user.findFirst({
       where: {
@@ -28,14 +41,7 @@ export class AuthRepository extends BaseRepository {
         isActive: true,
       },
       include: {
-        memberships: {
-          where: { isActive: true },
-          include: {
-            organization: {
-              select: { id: true, name: true, slug: true },
-            },
-          },
-        },
+        memberships: this.membershipInclude,
       },
     });
   }
@@ -48,14 +54,7 @@ export class AuthRepository extends BaseRepository {
         isActive: true,
       },
       include: {
-        memberships: {
-          where: { isActive: true },
-          include: {
-            organization: {
-              select: { id: true, name: true, slug: true },
-            },
-          },
-        },
+        memberships: this.membershipInclude,
       },
     });
   }
@@ -76,14 +75,7 @@ export class AuthRepository extends BaseRepository {
         deletedAt: null,
       },
       include: {
-        memberships: {
-          where: { isActive: true },
-          include: {
-            organization: {
-              select: { id: true, name: true, slug: true },
-            },
-          },
-        },
+        memberships: this.membershipInclude,
       },
     });
   }

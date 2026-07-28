@@ -33,5 +33,22 @@ export function useDeploymentMutations() {
         deploymentsApi.terminate(id, reason),
       onSuccess: invalidate,
     }),
+    pause: useMutation({
+      mutationFn: (id: number) => deploymentsApi.pause(id),
+      onSuccess: invalidate,
+    }),
+    resume: useMutation({
+      mutationFn: (id: number) => deploymentsApi.resume(id),
+      onSuccess: invalidate,
+    }),
+    complete: useMutation({
+      mutationFn: (id: number) => deploymentsApi.complete(id),
+      onSuccess: invalidate,
+    }),
+    extend: useMutation({
+      mutationFn: ({ id, endDate }: { id: number; endDate: string }) =>
+        deploymentsApi.extend(id, endDate),
+      onSuccess: invalidate,
+    }),
   };
 }

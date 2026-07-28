@@ -21,7 +21,7 @@ export function getBgvRecruiterStep(detail: BackgroundCheckDto): BgvRecruiterSte
   if ((detail.supportingDocumentCount ?? 0) < 1) return 'docs';
   if (!detail.provider?.trim()) return 'vendor';
   if (detail.status !== 'IN_PROGRESS' && detail.status !== 'SUSPENDED') return 'start';
-  // After start: show report upload, then AI placeholder (no extract-ai API call).
+  // After start: report upload (AI runs on upload), then review AI summary.
   if (!detail.hasReportDocument && !detail.aiSummary?.trim()) return 'report';
   return 'ai';
 }
@@ -51,8 +51,7 @@ export function isBgvStepComplete(
     case 'report':
       return Boolean(detail.hasReportDocument);
     case 'ai':
-      // Local placeholder counts as complete — extract-ai API is not called.
-      return Boolean(detail.aiSummary?.trim() || detail.hasReportDocument);
+      return Boolean(detail.aiSummary?.trim());
     case 'submit':
       return (
         detail.status === 'CONSIDER' ||

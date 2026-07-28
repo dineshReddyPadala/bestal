@@ -41,7 +41,7 @@ export class ClientRepository extends BaseRepository {
         website: data.website,
         headquarters: data.headquarters,
         contactName: data.contactName,
-        contactEmail: data.contactEmail,
+        contactEmail: data.contactEmail?.toLowerCase() ?? data.contactEmail,
         contactPhone: data.contactPhone,
         paymentTerms: data.paymentTerms,
         addressLine1: data.addressLine1,
@@ -101,7 +101,10 @@ export class ClientRepository extends BaseRepository {
         ...(data.website !== undefined && { website: data.website }),
         ...(data.headquarters !== undefined && { headquarters: data.headquarters }),
         ...(data.contactName !== undefined && { contactName: data.contactName }),
-        ...(data.contactEmail !== undefined && { contactEmail: data.contactEmail }),
+        ...(data.contactEmail !== undefined && {
+          contactEmail:
+            data.contactEmail == null ? null : data.contactEmail.toLowerCase(),
+        }),
         ...(data.contactPhone !== undefined && { contactPhone: data.contactPhone }),
         ...(data.paymentTerms !== undefined && { paymentTerms: data.paymentTerms }),
         ...(data.addressLine1 !== undefined && { addressLine1: data.addressLine1 }),
@@ -157,6 +160,25 @@ export class ClientRepository extends BaseRepository {
         select: { id: true },
       })
       .then(Boolean);
+  }
+
+  linkUnlinkedClientMemberships(
+    organizationId: number,
+    clientId: number,
+    contactEmail: string,
+  ): Promise<{ count: number }> {
+    return this.prisma.membership.updateMany({
+      where: {
+        organizationId: BigInt(organizationId),
+        role: 'CLIENT',
+        clientId: null,
+        user: {
+          email: contactEmail.toLowerCase(),
+          deletedAt: null,
+        },
+      },
+      data: { clientId: BigInt(clientId) },
+    });
   }
 
   private buildWhereClause(filters: ClientListFilters): Prisma.ClientWhereInput {

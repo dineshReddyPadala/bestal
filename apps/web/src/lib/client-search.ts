@@ -1,10 +1,10 @@
 import type { ClientSearchRecord } from '@bestal/mock-data';
+import { isBgvClear } from './candidate-approval-gates';
 
 export type ClientSearchFilters = {
   query: string;
   community: string;
   role: string;
-  skill: string;
   experience: string;
   rate: string;
   availability: string;
@@ -26,7 +26,6 @@ export const DEFAULT_CLIENT_SEARCH_FILTERS: ClientSearchFilters = {
   query: '',
   community: 'all',
   role: 'all',
-  skill: 'all',
   experience: 'all',
   rate: 'all',
   availability: 'all',
@@ -36,6 +35,11 @@ export const DEFAULT_CLIENT_SEARCH_FILTERS: ClientSearchFilters = {
   bgv: 'all',
   trialEligible: 'all',
 };
+
+function matchesBgvFilter(recordStatus: string, filter: string): boolean {
+  if (filter === 'CLEAR') return isBgvClear(recordStatus);
+  return recordStatus === filter;
+}
 
 export function filterClientSearchRecords(
   records: readonly ClientSearchRecord[],
@@ -52,6 +56,8 @@ export function filterClientSearchRecords(
         r.headline,
         r.location,
         r.community,
+        r.currentCompany,
+        r.currentTitle,
         ...r.skillNames,
       ]
         .join(' ')
@@ -61,7 +67,6 @@ export function filterClientSearchRecords(
 
     if (filters.community !== 'all' && r.community !== filters.community) return false;
     if (filters.role !== 'all' && r.role !== filters.role) return false;
-    if (filters.skill !== 'all' && !r.skillNames.includes(filters.skill)) return false;
 
     if (filters.experience !== 'all') {
       const [min, max] = filters.experience.split('-').map(Number);
@@ -80,7 +85,7 @@ export function filterClientSearchRecords(
     if (filters.timezone !== 'all' && r.timezone !== filters.timezone) return false;
     if (r.bestalScore < filters.minScore) return false;
     if (filters.evaluation !== 'all' && r.evaluationStatus !== filters.evaluation) return false;
-    if (filters.bgv !== 'all' && r.bgvStatus !== filters.bgv) return false;
+    if (filters.bgv !== 'all' && !matchesBgvFilter(r.bgvStatus, filters.bgv)) return false;
 
     if (filters.trialEligible === 'yes' && !r.trialEligible) return false;
     if (filters.trialEligible === 'no' && r.trialEligible) return false;
@@ -132,7 +137,6 @@ export function countActiveFilters(filters: ClientSearchFilters): number {
   if (filters.query) n++;
   if (filters.community !== 'all') n++;
   if (filters.role !== 'all') n++;
-  if (filters.skill !== 'all') n++;
   if (filters.experience !== 'all') n++;
   if (filters.rate !== 'all') n++;
   if (filters.availability !== 'all') n++;
@@ -142,4 +146,8 @@ export function countActiveFilters(filters: ClientSearchFilters): number {
   if (filters.bgv !== 'all') n++;
   if (filters.trialEligible !== 'all') n++;
   return n;
+}
+
+export function uniqueSorted(values: readonly string[]): string[] {
+  return [...new Set(values.filter(Boolean))].sort((a, b) => a.localeCompare(b));
 }

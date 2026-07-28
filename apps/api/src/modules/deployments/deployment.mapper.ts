@@ -66,6 +66,12 @@ export function mapDeploymentToListItem(
     roleTitle: deployment.roleTitle,
     startDate: deployment.startDate?.toISOString().slice(0, 10) ?? null,
     endDate: deployment.endDate?.toISOString().slice(0, 10) ?? null,
+    billingRate: deployment.billingRate ? Number(deployment.billingRate) : null,
+    candidatePayRate: deployment.candidatePayRate
+      ? Number(deployment.candidatePayRate)
+      : null,
+    expectedHoursPerWeek: deployment.expectedHoursPerWeek,
+    currency: deployment.currency,
     createdAt: deployment.createdAt.toISOString(),
     updatedAt: deployment.updatedAt.toISOString(),
   };

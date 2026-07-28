@@ -21,7 +21,7 @@ import { UserRepository } from '../users/user.repository.js';
 import { mapUserToDto, mapUserToListItem } from '../users/user.mapper.js';
 import { AuditService } from './audit.service.js';
 
-const ADMIN_INVITE_ROLES = ['ADMIN', 'RECRUITER', 'SALES', 'VIEWER'] as const;
+const ADMIN_INVITE_ROLES = ['ADMIN', 'RECRUITER', 'SALES', 'VIEWER', 'CLIENT'] as const;
 type AdminInviteRole = (typeof ADMIN_INVITE_ROLES)[number];
 
 function tempPassword(length = 12): string {
@@ -298,13 +298,37 @@ export class AdminService {
       include: {
         memberships: {
           where: { isActive: true },
-          include: { organization: { select: { id: true, name: true } } },
+          include: {
+            organization: { select: { id: true, name: true } },
+            client: { select: { id: true, name: true } },
+          },
         },
       },
     });
     if (!user) throw new NotFoundError('User not found');
     const org = user.memberships[0]?.organization;
     return mapUserToDto(user, organizationId, org?.name ?? '', false);
+  }
+
+  private async assertAdminClientLink(
+    organizationId: number,
+    role: AdminInviteRole,
+    clientId?: number | null,
+  ): Promise<number | null> {
+    if (role === 'CLIENT') {
+      if (clientId == null) {
+        throw new BadRequestError('clientId is required for CLIENT users');
+      }
+      const exists = await this.users.clientExists(organizationId, clientId);
+      if (!exists) {
+        throw new BadRequestError('Client not found');
+      }
+      return clientId;
+    }
+    if (clientId != null) {
+      throw new BadRequestError('clientId is only allowed for CLIENT users');
+    }
+    return null;
   }
 
   async createUser(
@@ -315,17 +339,25 @@ export class AdminService {
       lastName: string;
       phone?: string;
       role: AdminInviteRole;
+      clientId?: number;
       temporaryPassword?: string;
       isActive?: boolean;
     },
     ctx?: { ipAddress?: string | null; userAgent?: string | null },
   ) {
     if (!ADMIN_INVITE_ROLES.includes(input.role)) {
-      throw new BadRequestError('Role must be ADMIN, RECRUITER, SALES, or VIEWER');
+      throw new BadRequestError(
+        'Role must be ADMIN, RECRUITER, SALES, VIEWER, or CLIENT',
+      );
     }
     const organizationId = requireOrganization(authUser);
     const organization = await this.users.findOrganizationById(organizationId);
     if (!organization) throw new NotFoundError('Organization not found');
+    const linkedClientId = await this.assertAdminClientLink(
+      organizationId,
+      input.role,
+      input.clientId,
+    );
     const existing = await this.users.findByEmail(input.email);
     if (existing) throw new ConflictError('A user with this email already exists');
 
@@ -337,6 +369,7 @@ export class AdminService {
       lastName: input.lastName,
       phone: input.phone,
       role: input.role as Role,
+      clientId: linkedClientId ?? undefined,
     });
 
     if (input.isActive === false) {
@@ -366,7 +399,7 @@ export class AdminService {
       'User',
       bigintToNumber(user.id),
       `Created user ${input.email}`,
-      { role: input.role },
+      { role: input.role, clientId: linkedClientId },
       ctx,
     );
 
@@ -381,12 +414,13 @@ export class AdminService {
       lastName?: string;
       phone?: string | null;
       role?: AdminInviteRole;
+      clientId?: number | null;
       isActive?: boolean;
     },
     ctx?: { ipAddress?: string | null; userAgent?: string | null },
   ) {
     const organizationId = requireOrganization(authUser);
-    await this.getUser(authUser, id);
+    const existing = await this.getUser(authUser, id);
 
     await this.prisma.user.update({
       where: { id: BigInt(id) },
@@ -398,13 +432,21 @@ export class AdminService {
       },
     });
 
-    if (input.role) {
-      if (!ADMIN_INVITE_ROLES.includes(input.role)) {
-        throw new BadRequestError('Role must be ADMIN, RECRUITER, SALES, or VIEWER');
+    const nextRole = (input.role ?? existing.role ?? 'VIEWER') as AdminInviteRole;
+    if (input.role || input.clientId !== undefined) {
+      if (input.role && !ADMIN_INVITE_ROLES.includes(input.role)) {
+        throw new BadRequestError(
+          'Role must be ADMIN, RECRUITER, SALES, VIEWER, or CLIENT',
+        );
       }
-      await this.prisma.membership.updateMany({
-        where: { userId: BigInt(id), organizationId: BigInt(organizationId) },
-        data: { role: input.role },
+      const linkedClientId = await this.assertAdminClientLink(
+        organizationId,
+        nextRole,
+        input.clientId !== undefined ? input.clientId : existing.clientId,
+      );
+      await this.users.updateMembershipClient(organizationId, id, {
+        ...(input.role ? { role: input.role as Role } : {}),
+        clientId: linkedClientId,
       });
     }
 
@@ -623,7 +665,9 @@ export class AdminService {
         bgvStatus: c.bgvStatus,
         profileStatus: c.profileStatus,
         visibilityStatus: c.visibility,
-        topSkills: c.skills.map((s) => s.skillCommunity.name),
+        approvalStatus: c.approvalStatus,
+        submittedForApprovalAt: c.submittedForApprovalAt?.toISOString() ?? null,
+        topSkills: c.skills.map((s) => s.skillCommunity?.name ?? s.skillName ?? 'Skill'),
         updatedAt: c.updatedAt.toISOString(),
       })),
       meta: buildPaginationMeta(page, limit, total),
@@ -705,7 +749,7 @@ export class AdminService {
       },
       skills: candidate.skills.map((s) => ({
         id: bigintToNumber(s.id),
-        name: s.skillCommunity.name,
+        name: s.skillCommunity?.name ?? s.skillName ?? 'Skill',
         proficiencyLevel: s.proficiencyLevel,
         isPrimary: s.isPrimary,
       })),

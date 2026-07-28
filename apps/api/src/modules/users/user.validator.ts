@@ -1,15 +1,33 @@
 import { z } from 'zod';
 import { paginationMetaSchema } from '../../validators/api-responses.validator.js';
 
-export const inviteRoleEnum = z.enum(['RECRUITER', 'SALES', 'ADMIN']);
+export const inviteRoleEnum = z.enum(['RECRUITER', 'SALES', 'ADMIN', 'CLIENT']);
 
-export const createUserBodySchema = z.object({
-  email: z.string().email().max(255),
-  firstName: z.string().min(1).max(100),
-  lastName: z.string().min(1).max(100),
-  phone: z.string().max(30).optional(),
-  role: inviteRoleEnum,
-});
+export const createUserBodySchema = z
+  .object({
+    email: z.string().email().max(255),
+    firstName: z.string().min(1).max(100),
+    lastName: z.string().min(1).max(100),
+    phone: z.string().max(30).optional(),
+    role: inviteRoleEnum,
+    clientId: z.coerce.number().int().positive().optional(),
+  })
+  .superRefine((value, ctx) => {
+    if (value.role === 'CLIENT' && value.clientId == null) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['clientId'],
+        message: 'clientId is required for CLIENT users',
+      });
+    }
+    if (value.role !== 'CLIENT' && value.clientId != null) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['clientId'],
+        message: 'clientId is only allowed for CLIENT users',
+      });
+    }
+  });
 
 export const bulkInviteBodySchema = z.object({
   users: z.array(createUserBodySchema).min(1).max(200),
@@ -48,6 +66,8 @@ const userListItemSchema = z.object({
   lastName: z.string(),
   phone: z.string().nullable(),
   role: z.string().nullable(),
+  clientId: z.number().nullable(),
+  clientName: z.string().nullable(),
   isActive: z.boolean(),
   lastLoginAt: z.string().nullable(),
   createdAt: z.string(),

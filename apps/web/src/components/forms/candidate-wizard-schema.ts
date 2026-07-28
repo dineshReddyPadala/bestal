@@ -417,13 +417,16 @@ export function isProgressStepComplete(
   }
 }
 
-/** Submit for Approval unlocks after basic+AI, skills, availability, and pricing. */
+/** Submit for Approval unlocks after basic+AI, skills, availability, pricing, evaluation, and BGV. */
 export function canSubmitCandidateForApproval(values: CandidateWizardFormValues): boolean {
   return (
     isProgressStepComplete('basic', values) &&
     isProgressStepComplete('skills', values) &&
     isProgressStepComplete('availability', values) &&
-    isProgressStepComplete('pricing', values)
+    isProgressStepComplete('pricing', values) &&
+    isProgressStepComplete('evaluation', values) &&
+    isProgressStepComplete('background-check', values) &&
+    Boolean(values.resumeFileName?.trim() || values.aiSummary?.trim())
   );
 }
 
@@ -645,8 +648,14 @@ export function mapWizardToApiCreateBody(
     bestalScore: finiteNumberOrUndefined(form.bestalScore),
     technicalScore: finiteNumberOrUndefined(form.technicalScore),
     communicationScore: finiteNumberOrUndefined(form.communicationScore),
-    evaluationStatus: emptyToUndefined(form.evaluationRecommendation),
-    bgvStatus: emptyToUndefined(form.bgvStatus),
+    evaluationStatus:
+      form.technicalScore != null &&
+      !Number.isNaN(form.technicalScore) &&
+      form.communicationScore != null &&
+      !Number.isNaN(form.communicationScore)
+        ? 'COMPLETED'
+        : emptyToUndefined(form.evaluationRecommendation) ?? 'NOT_STARTED',
+    bgvStatus: emptyToUndefined(form.bgvStatus) ?? 'NOT_STARTED',
     profileStatus: (form.profileStatus ?? undefined) as CandidateProfileStatusValue | undefined,
     timezoneOverlap: emptyToUndefined(form.timezone),
     availabilityStatus: form.availabilityStatus ?? undefined,
@@ -676,4 +685,110 @@ function finiteNumberOrUndefined(value: number | null | undefined): number | und
 function positiveIdOrUndefined(value: number | null | undefined): number | undefined {
   if (value == null || Number.isNaN(value) || value <= 0) return undefined;
   return value;
+}
+
+/** Prefill wizard when editing an existing candidate (SOURCED / AI_SCREENED / drafts). */
+export function mapCandidateDtoToWizardForm(
+  candidate: {
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone?: string | null;
+    location?: string | null;
+    linkedinUrl?: string | null;
+    githubUrl?: string | null;
+    naukriUrl?: string | null;
+    displayName?: string | null;
+    oorwinCandidateId?: string | null;
+    source?: string | null;
+    headline?: string | null;
+    primaryRole?: string | null;
+    currentCompany?: string | null;
+    education?: string | null;
+    summary?: string | null;
+    aiSummary?: string | null;
+    clientProfileSummary?: string | null;
+    strengths?: string | null;
+    weaknesses?: string | null;
+    yearsExperience?: number | null;
+    primarySkillCommunityId?: number | null;
+    availableFrom?: string | null;
+    timezoneOverlap?: string | null;
+    availabilityStatus?: string | null;
+    preferredShift?: string | null;
+    minHoursPerWeek?: number | null;
+    maxHoursPerWeek?: number | null;
+    expectedRate?: number | null;
+    currency?: string | null;
+    clientBillRate?: number | null;
+    candidatePayRate?: number | null;
+    bestalScore?: number | null;
+    technicalScore?: number | null;
+    communicationScore?: number | null;
+    profileStatus?: string | null;
+    visibility?: string | null;
+    bgvStatus?: string | null;
+    skills?: Array<{
+      skillCommunityId: number;
+      skillCommunityName?: string;
+      skillName?: string | null;
+      proficiencyLevel: string;
+      yearsExperience?: number | null;
+      isPrimary: boolean;
+      notes?: string | null;
+    }>;
+  },
+): Partial<CandidateWizardFormValues> {
+  return {
+    firstName: candidate.firstName,
+    lastName: candidate.lastName,
+    email: candidate.email,
+    phone: candidate.phone ?? '',
+    location: candidate.location ?? '',
+    linkedinUrl: candidate.linkedinUrl ?? '',
+    githubUrl: candidate.githubUrl ?? '',
+    naukriUrl: candidate.naukriUrl ?? '',
+    displayName: candidate.displayName ?? '',
+    oorwinCandidateId: candidate.oorwinCandidateId ?? '',
+    source: (candidate.source as CandidateWizardFormValues['source']) || 'OTHER',
+    headline: candidate.headline ?? '',
+    primaryRole: candidate.primaryRole ?? '',
+    currentCompany: candidate.currentCompany ?? '',
+    education: candidate.education ?? '',
+    summary: candidate.summary ?? '',
+    aiSummary: candidate.aiSummary ?? '',
+    clientProfileSummary: candidate.clientProfileSummary ?? '',
+    strengths: candidate.strengths ?? '',
+    weaknesses: candidate.weaknesses ?? '',
+    yearsExperience: candidate.yearsExperience ?? undefined,
+    primarySkillCommunityId: candidate.primarySkillCommunityId ?? undefined,
+    skills: (candidate.skills ?? []).map((s) => ({
+      skillCommunityId: s.skillCommunityId,
+      proficiencyLevel: s.proficiencyLevel as CandidateWizardFormValues['skills'][number]['proficiencyLevel'],
+      yearsExperience: s.yearsExperience ?? undefined,
+      isPrimary: s.isPrimary,
+      notes: s.notes ?? s.skillName ?? s.skillCommunityName ?? '',
+    })),
+    availableFrom: candidate.availableFrom ?? '',
+    timezone: candidate.timezoneOverlap ?? 'Asia/Kolkata',
+    availabilityStatus:
+      (candidate.availabilityStatus as CandidateWizardFormValues['availabilityStatus']) ||
+      'IMMEDIATE',
+    preferredShift: candidate.preferredShift ?? '',
+    minHoursPerWeek: candidate.minHoursPerWeek ?? undefined,
+    maxHoursPerWeek: candidate.maxHoursPerWeek ?? undefined,
+    hoursPerWeek: candidate.maxHoursPerWeek ?? candidate.minHoursPerWeek ?? 40,
+    expectedRate: candidate.expectedRate ?? undefined,
+    currency: candidate.currency ?? 'USD',
+    billRate: candidate.clientBillRate ?? undefined,
+    payRate: candidate.candidatePayRate ?? undefined,
+    bestalScore: candidate.bestalScore ?? undefined,
+    technicalScore: candidate.technicalScore ?? undefined,
+    communicationScore: candidate.communicationScore ?? undefined,
+    profileStatus:
+      (candidate.profileStatus as CandidateWizardFormValues['profileStatus']) || 'SOURCED',
+    visibility:
+      (candidate.visibility as CandidateWizardFormValues['visibility']) || 'INTERNAL_ONLY',
+    bgvStatus: (candidate.bgvStatus as CandidateWizardFormValues['bgvStatus']) || 'NOT_STARTED',
+  };
 }

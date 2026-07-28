@@ -1,18 +1,26 @@
-import { candidates } from '@bestal/mock-data';
-
 export const CANDIDATE_CSV_HEADERS = [
   'first_name',
   'last_name',
   'email',
   'phone',
   'location',
+  'timezone',
   'headline',
   'years_experience',
-  'primary_skill',
-  'source',
-  'expected_rate',
+  'primary_role',
+  'summary',
+  'ai_summary',
+  'bestal_score',
+  'strengths',
+  'weaknesses',
+  'skills',
+  'bill_rate',
+  'pay_rate',
   'currency',
-  'timezone',
+  'availability_status',
+  'available_from',
+  'source',
+  'oorwin_candidate_id',
 ] as const;
 
 export type CandidateCsvHeader = (typeof CANDIDATE_CSV_HEADERS)[number];
@@ -24,13 +32,13 @@ export type CsvImportRow = {
   readonly email: string;
   readonly phone: string;
   readonly location: string;
+  readonly timezone: string;
   readonly headline: string;
   readonly yearsExperience: string;
-  readonly primarySkill: string;
-  readonly source: string;
-  readonly expectedRate: string;
+  readonly primaryRole: string;
+  readonly billRate: string;
   readonly currency: string;
-  readonly timezone: string;
+  readonly source: string;
   readonly errors: readonly string[];
   readonly isDuplicate: boolean;
   readonly duplicateOf: string | null;
@@ -53,10 +61,6 @@ export type CsvImportSummary = {
   readonly failed: number;
   readonly totalProcessed: number;
 };
-
-const EXISTING_EMAILS = new Set(
-  candidates.map((c) => c.email.toLowerCase()),
-);
 
 const VALID_SOURCES = new Set([
   'DIRECT',
@@ -129,13 +133,23 @@ export function generateTemplateCsv(): string {
     'jordan.lee@email.com',
     '+1 (415) 555-0199',
     'Austin, TX',
+    'America/Chicago',
     'Senior React Engineer',
     '8',
-    'Full-Stack Development',
-    'LINKEDIN',
+    'Full-Stack Engineer',
+    'Strong React and Node background',
+    'Experienced full-stack engineer',
+    '82',
+    'React|TypeScript',
+    '',
+    'React|Node',
     '145',
+    '110',
     'USD',
-    'America/Chicago',
+    'AVAILABLE',
+    '2026-08-01',
+    'LINKEDIN',
+    'OOR-1001',
   ].join(',');
   return `${header}\n${sample}\n`;
 }
@@ -163,13 +177,13 @@ function mapRow(cells: string[], rowNumber: number): Omit<CsvImportRow, 'errors'
     email: get(2),
     phone: get(3),
     location: get(4),
-    headline: get(5),
-    yearsExperience: get(6),
-    primarySkill: get(7),
-    source: get(8).toUpperCase(),
-    expectedRate: get(9),
-    currency: get(10).toUpperCase(),
-    timezone: get(11),
+    timezone: get(5),
+    headline: get(6),
+    yearsExperience: get(7),
+    primaryRole: get(8),
+    billRate: get(15),
+    currency: get(17).toUpperCase(),
+    source: get(20).toUpperCase(),
   };
 }
 
@@ -190,8 +204,8 @@ function validateRow(
   if (row.yearsExperience && Number.isNaN(Number(row.yearsExperience))) {
     errors.push('Years experience must be a number');
   }
-  if (row.expectedRate && Number.isNaN(Number(row.expectedRate))) {
-    errors.push('Expected rate must be a number');
+  if (row.billRate && Number.isNaN(Number(row.billRate))) {
+    errors.push('Bill rate must be a number');
   }
   if (row.source && !VALID_SOURCES.has(row.source)) {
     errors.push(`Invalid source (use ${[...VALID_SOURCES].join(', ')})`);
@@ -204,11 +218,7 @@ function validateRow(
   let isDuplicate = false;
   let duplicateOf: string | null = null;
 
-  if (emailKey && EXISTING_EMAILS.has(emailKey)) {
-    isDuplicate = true;
-    duplicateOf = row.email;
-    errors.push('Duplicate — email already exists in talent pool');
-  } else if (emailKey && seenEmails.has(emailKey)) {
+  if (emailKey && seenEmails.has(emailKey)) {
     isDuplicate = true;
     duplicateOf = row.email;
     errors.push('Duplicate — email repeated in this file');

@@ -90,8 +90,9 @@ export class CandidateRepository extends BaseRepository {
     }
 
     const skillRows = skills.map((skill) => ({
-      skillCommunityId: BigInt(skill.skillCommunityId),
-      skillName: skill.skillName,
+      skillCommunityId:
+        skill.skillCommunityId != null ? BigInt(skill.skillCommunityId) : null,
+      skillName: skill.skillName?.trim() || 'Skill',
       skillCategory: skill.skillCategory,
       proficiencyLevel: skill.proficiencyLevel ?? ('INTERMEDIATE' as const),
       yearsExperience: skill.yearsExperience,
@@ -329,6 +330,10 @@ export class CandidateRepository extends BaseRepository {
     if (filters.clientView) {
       where.visibility = 'CLIENT_VISIBLE';
       where.approvalStatus = 'APPROVED';
+    } else if (filters.pendingApproval) {
+      where.approvalStatus = 'PENDING';
+      where.submittedForApprovalAt = { not: null };
+      where.profileStatus = { in: ['PENDING_APPROVAL', 'PROFILE_DRAFT'] };
     } else {
       if (filters.visibility) {
         where.visibility = filters.visibility;

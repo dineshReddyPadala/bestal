@@ -38,12 +38,17 @@ export class ShortlistService {
     input: CreateShortlistInput,
   ): Promise<ShortlistWithCandidatesDto> {
     const organizationId = requireOrganization(authUser);
-    await this.validateClient(organizationId, input.clientId);
+    const scopedClientId = await this.resolveScopedClientId(authUser, organizationId);
+    const clientId = scopedClientId ?? input.clientId;
+    if (scopedClientId != null && input.clientId !== scopedClientId) {
+      throw new BadRequestError('Clients can only create shortlists for their own account');
+    }
+    await this.validateClient(organizationId, clientId);
 
     const shortlist = await this.shortlistRepository.create(
       organizationId,
       authUser.id,
-      input,
+      { ...input, clientId },
     );
     return mapShortlistWithCandidatesToDto(shortlist);
   }
@@ -56,13 +61,14 @@ export class ShortlistService {
     meta: ReturnType<typeof buildPaginationMeta>;
   }> {
     const organizationId = requireOrganization(authUser);
+    const scopedClientId = await this.resolveScopedClientId(authUser, organizationId);
 
     const { items, total } = await this.shortlistRepository.findMany({
       organizationId,
       page: query.page,
       limit: query.limit,
       sort: query.sort,
-      clientId: query.clientId,
+      clientId: scopedClientId ?? query.clientId,
       status: query.status,
     });
 
@@ -78,6 +84,7 @@ export class ShortlistService {
   ): Promise<ShortlistWithCandidatesDto> {
     const organizationId = requireOrganization(authUser);
     const shortlist = await this.getShortlistOrThrow(organizationId, id);
+    await this.assertClientOwnsShortlist(authUser, organizationId, shortlist.clientId);
     return mapShortlistWithCandidatesToDto(shortlist);
   }
 
@@ -87,7 +94,8 @@ export class ShortlistService {
     input: AddShortlistCandidateInput,
   ): Promise<ShortlistCandidateDto> {
     const organizationId = requireOrganization(authUser);
-    await this.getShortlistOrThrow(organizationId, shortlistId);
+    const shortlist = await this.getShortlistOrThrow(organizationId, shortlistId);
+    await this.assertClientOwnsShortlist(authUser, organizationId, shortlist.clientId);
     await this.validateCandidate(organizationId, input.candidateId);
 
     const existing = await this.shortlistRepository.findCandidateEntryIncludingDeleted(
@@ -120,7 +128,8 @@ export class ShortlistService {
     candidateId: number,
   ): Promise<void> {
     const organizationId = requireOrganization(authUser);
-    await this.getShortlistOrThrow(organizationId, shortlistId);
+    const shortlist = await this.getShortlistOrThrow(organizationId, shortlistId);
+    await this.assertClientOwnsShortlist(authUser, organizationId, shortlist.clientId);
 
     const entry = await this.shortlistRepository.findCandidateEntry(
       shortlistId,
@@ -140,7 +149,8 @@ export class ShortlistService {
     input: UpdateShortlistCandidateInput,
   ): Promise<ShortlistCandidateDto> {
     const organizationId = requireOrganization(authUser);
-    await this.getShortlistOrThrow(organizationId, shortlistId);
+    const shortlist = await this.getShortlistOrThrow(organizationId, shortlistId);
+    await this.assertClientOwnsShortlist(authUser, organizationId, shortlist.clientId);
 
     const entry = await this.shortlistRepository.findCandidateEntry(
       shortlistId,
@@ -164,6 +174,33 @@ export class ShortlistService {
       throw new NotFoundError('Shortlist not found');
     }
     return shortlist;
+  }
+
+  private async resolveScopedClientId(
+    authUser: AuthenticatedUser,
+    organizationId: number,
+  ): Promise<number | null> {
+    if (authUser.role !== 'CLIENT') return null;
+    const clientId = await this.shortlistRepository.findClientIdForUser(
+      organizationId,
+      authUser.id,
+      authUser.email,
+    );
+    if (clientId == null) {
+      throw new BadRequestError('Client account is not linked to this user');
+    }
+    return clientId;
+  }
+
+  private async assertClientOwnsShortlist(
+    authUser: AuthenticatedUser,
+    organizationId: number,
+    shortlistClientId: bigint,
+  ): Promise<void> {
+    const scopedClientId = await this.resolveScopedClientId(authUser, organizationId);
+    if (scopedClientId != null && scopedClientId !== Number(shortlistClientId)) {
+      throw new NotFoundError('Shortlist not found');
+    }
   }
 
   private async validateClient(

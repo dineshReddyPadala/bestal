@@ -98,7 +98,7 @@ function deploymentActions(
     ];
   }
 
-  if (status === 'PAUSED') {
+  if (status === 'ON_HOLD') {
     return [
       view,
       {

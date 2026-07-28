@@ -1,15 +1,19 @@
-import { useLocation, useNavigate, Link } from 'react-router-dom';
+import { useLocation, useNavigate, useParams, Link } from 'react-router-dom';
 import { Card, CardContent, useDashboardHeaderLeading } from '@bestal/ui';
 import { ArrowLeft } from 'lucide-react';
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { CandidateWizard } from '../../components/forms/CandidateWizard';
 import type {
+  CandidateWizardFormValues,
   CandidateWizardUploads,
   CandidateWizardValues,
 } from '../../components/forms/candidate-wizard-schema';
-import { mapWizardToApiCreateBody } from '../../components/forms/candidate-wizard-schema';
+import {
+  mapCandidateDtoToWizardForm,
+  mapWizardToApiCreateBody,
+} from '../../components/forms/candidate-wizard-schema';
 import { useDemoToast } from '../../lib/use-demo-toast';
-import { useCandidateMutations } from '../../hooks/api/useCandidates';
+import { useCandidate, useCandidateMutations } from '../../hooks/api/useCandidates';
 import { getApiErrorMessage } from '../../lib/api/errors';
 import { uploadCandidateFile } from '../../lib/api/candidates';
 import { ToastHost } from '../../components/ui/ToastHost';
@@ -23,20 +27,35 @@ function usePortalBasePath() {
 
 export function AddCandidatePage() {
   const navigate = useNavigate();
+  const { id: routeId } = useParams();
+  const editId = routeId && routeId !== 'new' ? Number(routeId) : 0;
+  const isEdit = editId > 0;
   const basePath = usePortalBasePath();
   const { message, variant, show, showError, dismiss } = useDemoToast();
   const { create, update, submitForApproval } = useCandidateMutations();
+  const existingQuery = useCandidate(editId);
   const [submittedId, setSubmittedId] = useState<number | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const [draftCandidateId, setDraftCandidateId] = useState<number | null>(null);
-  const draftCandidateIdRef = useRef<number | null>(null);
+  const [draftCandidateId, setDraftCandidateId] = useState<number | null>(
+    isEdit ? editId : null,
+  );
+  const [initialFormValues, setInitialFormValues] = useState<
+    Partial<CandidateWizardFormValues> | undefined
+  >();
+  const draftCandidateIdRef = useRef<number | null>(isEdit ? editId : null);
   const resumeUploadedViaExtractRef = useRef(false);
+
+  useEffect(() => {
+    if (!isEdit || !existingQuery.data) return;
+    setDraftId(existingQuery.data.id);
+    setInitialFormValues(mapCandidateDtoToWizardForm(existingQuery.data));
+  }, [isEdit, existingQuery.data]);
 
   const headerLeading = useMemo(
     () => (
       <div className="flex min-w-0 items-center gap-3">
         <Link
-          to={`${basePath}/candidates`}
+          to={isEdit ? `${basePath}/candidates/${editId}` : `${basePath}/candidates`}
           className="inline-flex shrink-0 items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
@@ -44,11 +63,11 @@ export function AddCandidatePage() {
         </Link>
         <span className="hidden h-4 w-px bg-border sm:block" aria-hidden />
         <h1 className="truncate text-lg font-semibold tracking-tight text-foreground sm:text-xl">
-          Add Candidate
+          {isEdit ? 'Edit Candidate' : 'Add Candidate'}
         </h1>
       </div>
     ),
-    [basePath],
+    [basePath, editId, isEdit],
   );
   useDashboardHeaderLeading(headerLeading);
 
@@ -71,7 +90,6 @@ export function AddCandidatePage() {
           body.availabilityStatus = values.availabilityStatus ?? 'IMMEDIATE';
         }
       }
-      // Create only once; every later Next / Save Draft updates the same candidate.
       const existingDraftId = draftCandidateIdRef.current;
       const saved = existingDraftId
         ? await update.mutateAsync({ id: existingDraftId, body })
@@ -102,7 +120,7 @@ export function AddCandidatePage() {
       }
 
       if (!options.silent) {
-        show(existingDraftId ? 'Draft updated' : 'Draft saved');
+        show(existingDraftId || isEdit ? 'Candidate updated' : 'Draft saved');
       }
       return true;
     } catch (err) {
@@ -114,6 +132,23 @@ export function AddCandidatePage() {
       showError(errorMessage);
       return false;
     }
+  }
+
+  if (isEdit && existingQuery.isLoading) {
+    return (
+      <div className="p-6 text-sm text-muted-foreground">Loading candidate…</div>
+    );
+  }
+
+  if (isEdit && (existingQuery.isError || !existingQuery.data)) {
+    return (
+      <div className="p-6">
+        <p className="text-muted-foreground">Candidate not found.</p>
+        <Link to={`${basePath}/candidates`} className="mt-4 inline-flex text-sm text-brand">
+          Back to candidates
+        </Link>
+      </div>
+    );
   }
 
   return (
@@ -145,8 +180,10 @@ export function AddCandidatePage() {
           <Card className="flex min-h-0 flex-1 flex-col overflow-hidden">
             <CardContent className="flex min-h-0 flex-1 flex-col overflow-hidden p-4 sm:p-5">
               <CandidateWizard
+                key={isEdit ? `edit-${editId}-${initialFormValues ? 'ready' : 'loading'}` : 'new'}
                 entryMethod="manual"
                 initialTab="basic"
+                initialFormValues={initialFormValues}
                 draftCandidateId={draftCandidateId}
                 onDraftCandidateId={(id) => {
                   resumeUploadedViaExtractRef.current = true;
@@ -161,7 +198,13 @@ export function AddCandidatePage() {
                 onSubmitForApproval={(values, uploads) =>
                   void persistCandidate(values, uploads, { submit: true })
                 }
-                onCancel={() => navigate(`${basePath}/candidates`)}
+                onCancel={() =>
+                  navigate(
+                    isEdit
+                      ? `${basePath}/candidates/${editId}`
+                      : `${basePath}/candidates`,
+                  )
+                }
                 onToast={show}
                 submitError={submitError}
                 isSavingDraft={create.isPending || update.isPending}

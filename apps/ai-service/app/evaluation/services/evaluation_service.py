@@ -46,7 +46,13 @@ class EvaluationService:
         if "," in encoded and encoded.lower().startswith("data:"):
             encoded = encoded.split(",", 1)[1]
 
+        # Node Buffer.toString('base64') is usually padded; tolerate missing padding.
+        missing = len(encoded) % 4
+        if missing:
+            encoded += "=" * (4 - missing)
+
         try:
-            return base64.b64decode(encoded, validate=True)
+            # validate=False: some transports insert whitespace / newlines
+            return base64.b64decode(encoded, validate=False)
         except Exception as exc:
             raise InvalidRequestError("Invalid base64 content.") from exc

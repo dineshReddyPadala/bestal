@@ -9,6 +9,7 @@ import {
 } from '../auth/auth.permissions.js';
 import {
   assertSalesLimitedCandidateUpdate,
+  redactCandidateForClient,
   redactCandidatePayFields,
 } from './candidate-access.js';
 import { normalizeCandidateSkills } from './candidate-skills.js';
@@ -22,6 +23,7 @@ import {
   isPricingComplete,
   type PipelineCandidateSnapshot,
 } from './candidate-pipeline.js';
+import { isClearBgvStatus } from './candidate-import-status.js';
 import { StorageService } from '../../services/storage.service.js';
 import {
   bufferToBase64,
@@ -409,8 +411,11 @@ export class CandidateService {
           ? {
               skills: {
                 create: normalizedSkills.map((skill) => ({
-                  skillCommunityId: BigInt(skill.skillCommunityId),
-                  skillName: skill.skillName,
+                  skillCommunityId:
+                    skill.skillCommunityId != null
+                      ? BigInt(skill.skillCommunityId)
+                      : null,
+                  skillName: skill.skillName?.trim() || 'Skill',
                   skillCategory: skill.skillCategory,
                   proficiencyLevel: skill.proficiencyLevel ?? 'INTERMEDIATE',
                   yearsExperience: skill.yearsExperience,
@@ -514,6 +519,7 @@ export class CandidateService {
       primarySkillCommunityId: query.primarySkillCommunityId,
       skillCommunityId: query.skillCommunityId,
       clientView,
+      pendingApproval: query.pendingApproval,
     });
 
     return {
@@ -704,6 +710,34 @@ export class CandidateService {
     return this.toDto(updated, authUser);
   }
 
+  async sendBack(
+    authUser: AuthenticatedUser,
+    id: number,
+    reason?: string,
+  ): Promise<CandidateDto> {
+    const organizationId = this.requireOrganization(authUser);
+    const candidate = await this.getCandidateOrThrow(organizationId, id);
+
+    if (!candidate.submittedForApprovalAt) {
+      throw new BadRequestError('Candidate has not been submitted for approval');
+    }
+    if (candidate.approvalStatus !== 'PENDING') {
+      throw new BadRequestError('Only pending candidates can be sent back to recruiter');
+    }
+
+    const updated = await this.candidateRepository.updatePipelineState(
+      organizationId,
+      id,
+      {
+        approvalStatus: 'PENDING',
+        submittedForApprovalAt: null,
+        profileStatus: 'RECRUITER_SCREENED',
+        rejectionReason: reason?.trim() || null,
+      },
+    );
+    return this.toDto(updated, authUser);
+  }
+
   async runAiScreening(
     authUser: AuthenticatedUser,
     id: number,
@@ -789,7 +823,11 @@ export class CandidateService {
     const updated = await this.candidateRepository.updatePipelineState(
       organizationId,
       id,
-      { submittedForApprovalAt: new Date() },
+      {
+        approvalStatus: 'PENDING',
+        profileStatus: 'PENDING_APPROVAL',
+        submittedForApprovalAt: new Date(),
+      },
     );
 
     return this.toDto(updated, authUser);
@@ -816,6 +854,7 @@ export class CandidateService {
       resumeDocumentId: candidate.resumeDocumentId,
       evaluationStatus: candidate.evaluationStatus,
       bgvStatus: candidate.bgvStatus,
+      aiSummary: candidate.aiSummary,
       clientBillRate: candidate.clientBillRate,
       availabilityStatus: candidate.availabilityStatus,
       availableFrom: candidate.availableFrom,
@@ -878,7 +917,7 @@ export class CandidateService {
       this.storageService.resolveFileUrl(key, bucket, mimeType),
     );
 
-    const bgvVerified = candidate.bgvStatus === 'CLEAR';
+    const bgvVerified = isClearBgvStatus(candidate.bgvStatus);
     dto.bgvVerified = bgvVerified;
 
     if (bgvVerified) {
@@ -886,7 +925,7 @@ export class CandidateService {
         where: {
           organizationId: candidate.organizationId,
           candidateId: candidate.id,
-          status: 'CLEAR',
+          status: { in: ['CLEAR', 'COMPLETED_CLEAR'] },
           deletedAt: null,
         },
         orderBy: { completedAt: 'desc' },
@@ -902,9 +941,8 @@ export class CandidateService {
     // Clients never receive document assets beyond public profile media already on DTO.
     if (authUser.role === ROLES.CLIENT) {
       return {
-        ...redactCandidatePayFields(dto, authUser.role),
+        ...redactCandidateForClient(dto),
         resume: null,
-        // Keep photo for profile cards; never expose BGV report links (not on DTO today).
       };
     }
 

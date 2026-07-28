@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import { loadConfig } from './config/index.js';
 import { buildApp } from './app.js';
+import { CandidateImportService } from './modules/candidates/candidate-import.service.js';
 
 async function start() {
   const config = loadConfig();
@@ -26,6 +27,11 @@ async function start() {
       { port: config.port, env: config.nodeEnv, docs: `${config.appUrl}/docs` },
       `${config.appName} API server started`,
     );
+
+    const importService = new CandidateImportService(app);
+    void importService.reclaimOrphanedBatches().catch((error) => {
+      app.log.error({ err: error }, 'Failed to reclaim orphaned import batches');
+    });
   } catch (error) {
     app.log.error({ err: error }, 'Failed to start server');
     process.exit(1);

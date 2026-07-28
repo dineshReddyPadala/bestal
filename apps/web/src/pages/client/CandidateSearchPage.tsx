@@ -1,22 +1,20 @@
-import { getClientSearchRecordsLive } from '../../lib/client-search-overrides';
 import { mapApiCandidateToClientSearchRecord } from '../../lib/client-search-api';
 import { useCandidatesList } from '../../hooks/api/useCandidates';
-import { subscribeApprovalChanges } from '../../lib/candidate-approval-overrides';
 import { EmptyState, PageHeader, Select } from '@bestal/ui';
 import { Grid3X3, List, Users } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ToptalCandidateCard } from '../../components/client/ToptalCandidateCard';
 import { PremiumSearchFilters } from '../../components/client/PremiumSearchFilters';
-import { RequestInterviewDialog } from '../../components/client/RequestInterviewDialog';
 import { RequestTrialDialog } from '../../components/client/RequestTrialDialog';
-import { useClientInterviewRequests, useClientTrialRequests } from '../../hooks/useClientEngagementRequests';
-import { useClientShortlist } from '../../hooks/useClientShortlist';
+import { useAuth } from '../../contexts/AuthContext';
+import { useClientTrialRequests } from '../../hooks/useClientEngagementRequests';
 import {
   countActiveFilters,
   DEFAULT_CLIENT_SEARCH_FILTERS,
   filterClientSearchRecords,
   sortClientSearchRecords,
+  uniqueSorted,
   type ClientSearchFilters,
   type ClientSearchSort,
 } from '../../lib/client-search';
@@ -26,10 +24,10 @@ import { cn } from '@bestal/shared-utils';
 export function CandidateSearchPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const { user } = useAuth();
   const { message, show } = useDemoToast();
-  const { isShortlisted, toggleShortlist } = useClientShortlist();
-  const { addRequest: addInterviewRequest } = useClientInterviewRequests();
   const { addRequest: addTrialRequest } = useClientTrialRequests();
+  const canRequestTrial = user?.clientId != null;
 
   const [filters, setFilters] = useState<ClientSearchFilters>(() => ({
     ...DEFAULT_CLIENT_SEARCH_FILTERS,
@@ -37,21 +35,29 @@ export function CandidateSearchPage() {
   }));
   const [sort, setSort] = useState<ClientSearchSort>('best-match');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const [dialogCandidate, setDialogCandidate] = useState<{ id: number; name: string } | null>(null);
-  const [dialogType, setDialogType] = useState<'interview' | 'trial' | null>(null);
+  const [dialogCandidate, setDialogCandidate] = useState<{ id: number; name: string } | null>(
+    null,
+  );
 
-  const [approvalTick, setApprovalTick] = useState(0);
-  const { data: apiCandidates } = useCandidatesList({ limit: 100 });
-
-  useEffect(() => subscribeApprovalChanges(() => setApprovalTick((t) => t + 1)), []);
+  const searchParam = filters.query.trim() || undefined;
+  const { data: apiCandidates, isLoading } = useCandidatesList({
+    limit: 100,
+    search: searchParam,
+  });
 
   const allRecords = useMemo(() => {
-    const apiRows = apiCandidates?.data?.map(mapApiCandidateToClientSearchRecord) ?? [];
-    if (apiRows.length > 0) {
-      return apiRows;
-    }
-    return getClientSearchRecordsLive();
-  }, [apiCandidates, approvalTick]);
+    return (apiCandidates?.data ?? []).map(mapApiCandidateToClientSearchRecord);
+  }, [apiCandidates]);
+
+  const communityOptions = useMemo(
+    () => uniqueSorted(allRecords.map((r) => r.community)),
+    [allRecords],
+  );
+  const roleOptions = useMemo(() => uniqueSorted(allRecords.map((r) => r.role)), [allRecords]);
+  const timezoneOptions = useMemo(
+    () => uniqueSorted(allRecords.map((r) => r.timezone).filter((tz) => tz !== 'Flexible')),
+    [allRecords],
+  );
 
   const filtered = useMemo(() => {
     const rows = filterClientSearchRecords(allRecords, filters);
@@ -60,9 +66,7 @@ export function CandidateSearchPage() {
 
   return (
     <div className="min-h-full bg-muted/10">
-      <PageHeader
-        title="Candidate Search"
-      />
+      <PageHeader title="Candidate Search" />
 
       {message && (
         <div className="mx-6 mt-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
@@ -75,12 +79,17 @@ export function CandidateSearchPage() {
           filters={filters}
           onChange={setFilters}
           resultCount={filtered.length}
+          communityOptions={communityOptions}
+          roleOptions={roleOptions}
+          timezoneOptions={timezoneOptions}
         />
 
         <div className="flex flex-wrap items-center justify-between gap-3">
           <p className="text-sm text-muted-foreground">
-            {filtered.length} result{filtered.length === 1 ? '' : 's'}
-            {countActiveFilters(filters) > 0 && (
+            {isLoading
+              ? 'Loading candidates…'
+              : `${filtered.length} result${filtered.length === 1 ? '' : 's'}`}
+            {!isLoading && countActiveFilters(filters) > 0 && (
               <span> · {countActiveFilters(filters)} filter(s) active</span>
             )}
           </p>
@@ -123,50 +132,36 @@ export function CandidateSearchPage() {
           </div>
         </div>
 
-        {filtered.length === 0 ? (
+        {isLoading ? (
+          <p className="text-sm text-muted-foreground">Loading talent pool…</p>
+        ) : filtered.length === 0 ? (
           <EmptyState
             icon={<Users className="h-8 w-8" />}
             title="No candidates match your filters"
           />
         ) : viewMode === 'grid' ? (
-          <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
             {filtered.map((record) => (
               <ToptalCandidateCard
                 key={record.id}
                 record={record}
-                shortlisted={isShortlisted(record.id)}
                 layout="grid"
+                canRequestTrial={canRequestTrial}
                 onView={() => navigate(`/client/candidates/${record.id}`)}
-                onShortlist={() => toggleShortlist(record.id)}
-                onInterview={() => {
-                  setDialogCandidate({ id: record.id, name: record.fullName });
-                  setDialogType('interview');
-                }}
-                onPilot={() => {
-                  setDialogCandidate({ id: record.id, name: record.fullName });
-                  setDialogType('trial');
-                }}
+                onTrial={() => setDialogCandidate({ id: record.id, name: record.fullName })}
               />
             ))}
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-3">
             {filtered.map((record) => (
               <ToptalCandidateCard
                 key={record.id}
                 record={record}
-                shortlisted={isShortlisted(record.id)}
                 layout="list"
+                canRequestTrial={canRequestTrial}
                 onView={() => navigate(`/client/candidates/${record.id}`)}
-                onShortlist={() => toggleShortlist(record.id)}
-                onInterview={() => {
-                  setDialogCandidate({ id: record.id, name: record.fullName });
-                  setDialogType('interview');
-                }}
-                onPilot={() => {
-                  setDialogCandidate({ id: record.id, name: record.fullName });
-                  setDialogType('trial');
-                }}
+                onTrial={() => setDialogCandidate({ id: record.id, name: record.fullName })}
               />
             ))}
           </div>
@@ -174,28 +169,15 @@ export function CandidateSearchPage() {
       </div>
 
       {dialogCandidate && (
-        <>
-          <RequestInterviewDialog
-            open={dialogType === 'interview'}
-            onClose={() => setDialogType(null)}
-            candidateName={dialogCandidate.name}
-            onSubmit={(values) => {
-              addInterviewRequest(dialogCandidate.id, dialogCandidate.name, values);
-              show(`Interview requested — ${dialogCandidate.name} (demo)`);
-              setDialogType(null);
-            }}
-          />
-          <RequestTrialDialog
-            open={dialogType === 'trial'}
-            onClose={() => setDialogType(null)}
-            candidateName={dialogCandidate.name}
-            onSubmit={(values) => {
-              addTrialRequest(dialogCandidate.id, dialogCandidate.name, values);
-              show(`Trial requested — ${dialogCandidate.name} (demo)`);
-              setDialogType(null);
-            }}
-          />
-        </>
+        <RequestTrialDialog
+          open
+          onClose={() => setDialogCandidate(null)}
+          candidateName={dialogCandidate.name}
+          onSubmit={async (values) => {
+            await addTrialRequest(dialogCandidate.id, dialogCandidate.name, values);
+            show(`Trial requested — ${dialogCandidate.name}`);
+          }}
+        />
       )}
     </div>
   );

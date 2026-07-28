@@ -19,10 +19,9 @@ import { TrialsPage } from '../pages/admin/TrialsPage';
 import { CandidateDetailPage as ClientCandidateDetailPage } from '../pages/client/CandidateDetailPage';
 import { CandidateSearchPage } from '../pages/client/CandidateSearchPage';
 import { DashboardPage as ClientDashboardPage } from '../pages/client/DashboardPage';
-import { InterviewRequestsPage } from '../pages/client/InterviewRequestsPage';
 import { LoginPage as ClientLoginPage } from '../pages/client/LoginPage';
-import { ShortlistedCandidatesPage } from '../pages/client/ShortlistedCandidatesPage';
 import { TrialRequestsPage } from '../pages/client/TrialRequestsPage';
+import { DeploymentsPage as ClientDeploymentsPage } from '../pages/client/DeploymentsPage';
 import { AboutPage } from '../pages/public/AboutPage';
 import { CommunitiesPage } from '../pages/public/CommunitiesPage';
 import { ContactPage } from '../pages/public/ContactPage';
@@ -41,10 +40,9 @@ import { CandidatesPage as RecruiterCandidatesPage } from '../pages/recruiter/Ca
 import { ClientsPage as RecruiterClientsPage } from '../pages/recruiter/ClientsPage';
 import { DashboardPage as RecruiterDashboardPage } from '../pages/recruiter/DashboardPage';
 import { DeploymentsPage as RecruiterDeploymentsPage } from '../pages/recruiter/DeploymentsPage';
+import { TrialsPage as RecruiterTrialsPage } from '../pages/recruiter/TrialsPage';
 import { EvaluationsPage } from '../pages/recruiter/EvaluationsPage';
-import { InterviewsPage as RecruiterInterviewsPage } from '../pages/recruiter/InterviewsPage';
 import { LoginPage as RecruiterLoginPage } from '../pages/recruiter/LoginPage';
-import { ShortlistsPage as RecruiterShortlistsPage } from '../pages/recruiter/ShortlistsPage';
 import { SalesShell } from '../layouts/SalesShell';
 import { SalesCandidatesPage } from '../pages/sales/CandidatesPage';
 import { ClientDetailPage as SalesClientDetailPage } from '../pages/sales/ClientDetailPage';
@@ -54,7 +52,6 @@ import { DeploymentsPage as SalesDeploymentsPage } from '../pages/sales/Deployme
 import { LoginPage as SalesLoginPage } from '../pages/sales/LoginPage';
 import { MarginReportPage as SalesMarginReportPage } from '../pages/sales/MarginReportPage';
 import { TrialsPage as SalesTrialsPage } from '../pages/sales/TrialsPage';
-import { InterviewRequestsPage as SalesInterviewRequestsPage } from '../pages/sales/InterviewRequestsPage';
 import { ProtectedRoute } from '../components/auth/ProtectedRoute';
 import { PortalAuthShell } from '../components/auth/PortalAuthShell';
 import { PORTAL_AUTH_CONFIG } from '../lib/auth-portal-config';
@@ -213,6 +210,7 @@ const router = createBrowserRouter([
           { path: 'candidates', element: <AdminCandidatesPage /> },
           { path: 'candidates/import', element: <AdminCandidateCsvImportPage /> },
           { path: 'candidates/new', element: <AddCandidatePage /> },
+          { path: 'candidates/:id/edit', element: <AddCandidatePage /> },
           { path: 'candidates/:id', element: <AdminCandidateDetailPage /> },
           { path: 'candidate-approvals', element: <CandidateApprovalsPage /> },
           { path: 'clients', element: <AdminClientsPage /> },
@@ -262,6 +260,7 @@ const router = createBrowserRouter([
       { path: 'candidates/pending', element: <SuperAdminPendingCandidatesPage /> },
       { path: 'candidates/import', element: <SuperAdminCandidateCsvImportPage /> },
       { path: 'candidates/new', element: <AddCandidatePage /> },
+      { path: 'candidates/:id/edit', element: <AddCandidatePage /> },
       { path: 'candidates/:id', element: <SuperAdminCandidateDetailPage /> },
       { path: 'evaluations', element: <SuperAdminEvaluationsPage /> },
       { path: 'background-checks', element: <SuperAdminBackgroundChecksPage /> },
@@ -298,12 +297,12 @@ const router = createBrowserRouter([
           { path: 'candidates', element: <RecruiterCandidatesPage /> },
           { path: 'candidates/import', element: <RecruiterCandidateCsvImportPage /> },
           { path: 'candidates/new', element: <AddCandidatePage /> },
+          { path: 'candidates/:id/edit', element: <AddCandidatePage /> },
           { path: 'candidates/:id', element: <CandidateDetailPage /> },
           { path: 'evaluations', element: <EvaluationsPage /> },
-          { path: 'shortlists', element: <RecruiterShortlistsPage /> },
-          { path: 'interviews', element: <RecruiterInterviewsPage /> },
           { path: 'background-checks', element: <BackgroundChecksPage /> },
           { path: 'clients', element: <RecruiterClientsPage /> },
+          { path: 'trials', element: <RecruiterTrialsPage /> },
           { path: 'deployments', element: <RecruiterDeploymentsPage /> },
         ],
       },
@@ -326,9 +325,8 @@ const router = createBrowserRouter([
           { index: true, element: <ClientDashboardPage /> },
           { path: 'search', element: <CandidateSearchPage /> },
           { path: 'candidates/:id', element: <ClientCandidateDetailPage /> },
-          { path: 'shortlisted', element: <ShortlistedCandidatesPage /> },
-          { path: 'interviews', element: <InterviewRequestsPage /> },
           { path: 'trials', element: <TrialRequestsPage /> },
+          { path: 'deployments', element: <ClientDeploymentsPage /> },
         ],
       },
     ],
@@ -352,7 +350,6 @@ const router = createBrowserRouter([
           { path: 'candidates', element: <SalesCandidatesPage /> },
           { path: 'clients/:id', element: <SalesClientDetailPage /> },
           { path: 'trials', element: <SalesTrialsPage /> },
-          { path: 'interviews', element: <SalesInterviewRequestsPage /> },
           { path: 'deployments', element: <SalesDeploymentsPage /> },
           { path: 'margin', element: <SalesMarginReportPage /> },
         ],

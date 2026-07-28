@@ -13,6 +13,7 @@ import {
 
 const candidateStatusEnum = z.enum([
   'NEW',
+  'IMPORTED',
   'ACTIVE',
   'INACTIVE',
   'PLACED',
@@ -21,7 +22,12 @@ const candidateStatusEnum = z.enum([
 
 const candidateVisibilityEnum = z.enum(CANDIDATE_VISIBILITY_STATUSES);
 
-const candidateApprovalStatusEnum = z.enum(['PENDING', 'APPROVED', 'REJECTED']);
+const candidateApprovalStatusEnum = z.enum([
+  'PENDING',
+  'PENDING_REVIEW',
+  'APPROVED',
+  'REJECTED',
+]);
 
 const candidateSourceEnum = z.enum([
   'DIRECT',
@@ -31,6 +37,14 @@ const candidateSourceEnum = z.enum([
   'AGENCY',
   'INTERNAL',
   'OTHER',
+  'OORWIN',
+  'WORKDAY',
+  'GREENHOUSE',
+  'LEVER',
+  'BULLHORN',
+  'ZOHO_RECRUIT',
+  'INDEED',
+  'CAREER_PAGE',
 ]);
 
 const proficiencyLevelEnum = z.enum(['BEGINNER', 'INTERMEDIATE', 'ADVANCED', 'EXPERT']);
@@ -46,7 +60,7 @@ const optionalSkillNameField = z
   });
 
 export const candidateSkillBodySchema = z.object({
-  skillCommunityId: z.coerce.number().int().positive(),
+  skillCommunityId: z.coerce.number().int().positive().optional(),
   skillName: optionalSkillNameField,
   skillCategory: z.string().max(100).optional(),
   proficiencyLevel: proficiencyLevelEnum.optional(),
@@ -126,10 +140,19 @@ export const listCandidatesQuerySchema = z.object({
   source: candidateSourceEnum.optional(),
   primarySkillCommunityId: z.coerce.number().int().positive().optional(),
   skillCommunityId: z.coerce.number().int().positive().optional(),
+  /** Pending admin approval queue: submitted + approvalStatus PENDING. */
+  pendingApproval: z
+    .union([z.boolean(), z.enum(['true', 'false', '1', '0'])])
+    .optional()
+    .transform((v) => v === true || v === 'true' || v === '1'),
 });
 
 export const rejectCandidateBodySchema = z.object({
   reason: z.string().min(3).max(500),
+});
+
+export const sendBackCandidateBodySchema = z.object({
+  reason: z.string().min(3).max(500).optional(),
 });
 
 export const runAiScreeningBodySchema = z.object({
@@ -151,6 +174,7 @@ export type CreateCandidateBody = z.infer<typeof createCandidateBodySchema>;
 export type UpdateCandidateBody = z.infer<typeof updateCandidateBodySchema>;
 export type ListCandidatesQuery = z.infer<typeof listCandidatesQuerySchema>;
 export type RejectCandidateBody = z.infer<typeof rejectCandidateBodySchema>;
+export type SendBackCandidateBody = z.infer<typeof sendBackCandidateBodySchema>;
 export type RunAiScreeningBody = z.infer<typeof runAiScreeningBodySchema>;
 export type CompleteRecruiterReviewBody = z.infer<typeof completeRecruiterReviewBodySchema>;
 
@@ -201,8 +225,8 @@ export const candidateResponseSchema = z.object({
     skills: z.array(
       z.object({
         id: z.number(),
-        skillCommunityId: z.number(),
-        skillCommunityName: z.string(),
+        skillCommunityId: z.number().nullable(),
+        skillCommunityName: z.string().nullable(),
         proficiencyLevel: z.string(),
         yearsExperience: z.number().nullable(),
         isPrimary: z.boolean(),
@@ -254,6 +278,14 @@ export const candidateListItemSchema = z.object({
   location: z.string().nullable(),
   yearsExperience: z.number().nullable(),
   primarySkillCommunityName: z.string().nullable(),
+  primaryRole: z.string().nullable(),
+  currentCompany: z.string().nullable(),
+  currentTitle: z.string().nullable(),
+  bestalScore: z.number().nullable(),
+  clientBillRate: z.number().nullable(),
+  currency: z.string().nullable(),
+  availabilityStatus: z.string().nullable(),
+  timezoneOverlap: z.string().nullable(),
   hasResume: z.boolean(),
   hasProfileImage: z.boolean(),
   hasIntroVideo: z.boolean(),
@@ -261,6 +293,10 @@ export const candidateListItemSchema = z.object({
   evaluationStatus: z.string().nullable(),
   bgvStatus: z.string().nullable(),
   submittedForApprovalAt: z.string().nullable(),
+  hasAiSummary: z.boolean(),
+  hasSkills: z.boolean(),
+  hasAvailability: z.boolean(),
+  hasCommercials: z.boolean(),
   createdAt: z.string(),
   updatedAt: z.string(),
 });

@@ -1,73 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { interviewsApi, trialsApi } from '../lib/api';
+import { trialsApi } from '../lib/api';
 import {
-  buildInterviewRequestPayload,
   buildTrialRequestPayload,
-  type InterviewRequestFormValues,
   type TrialRequestFormValues,
 } from '../lib/entity-field-metadata';
 import { queryKeys } from './api/query-keys';
-import { toInterviewCard } from './api/useInterviews';
 import { toTrialRow } from './api/useTrials';
-
-export function useClientInterviewRequests() {
-  const { user: authUser } = useAuth();
-  const clientId = authUser?.clientId ?? undefined;
-
-  const query = useQuery({
-    queryKey: queryKeys.interviews.list({ clientId }),
-    queryFn: () => interviewsApi.list({ clientId, limit: 100 }),
-    enabled: Boolean(clientId),
-  });
-
-  const qc = useQueryClient();
-
-  const addMutation = useMutation({
-    mutationFn: async ({
-      candidateId,
-      form,
-    }: {
-      candidateId: number;
-      candidateName: string;
-      form: InterviewRequestFormValues;
-    }) => {
-      if (!clientId) throw new Error('Client account not linked');
-      const payload = buildInterviewRequestPayload(form, candidateId, clientId);
-      return interviewsApi.create({
-        candidateId: payload.candidateId,
-        clientId: payload.clientId,
-        type: payload.type,
-        scheduledAt: payload.scheduledAt ?? undefined,
-        durationMinutes: payload.durationMinutes,
-        timezone: payload.timezone ?? undefined,
-        location: payload.location ?? undefined,
-        notes: payload.notes ?? undefined,
-        shortlistId: payload.shortlistId ?? undefined,
-      });
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: queryKeys.interviews.all });
-    },
-  });
-
-  const addRequest = useCallback(
-    (candidateId: number, candidateName: string, form: InterviewRequestFormValues) => {
-      addMutation.mutate({ candidateId, candidateName, form });
-    },
-    [addMutation],
-  );
-
-  const interviews = (query.data?.data ?? []).map(toInterviewCard);
-
-  return {
-    interviews,
-    isLoading: query.isLoading,
-    addRequest,
-    isSubmitting: addMutation.isPending,
-  };
-}
 
 export function useClientTrialRequests() {
   const { user: authUser } = useAuth();
@@ -112,8 +52,8 @@ export function useClientTrialRequests() {
   });
 
   const addRequest = useCallback(
-    (candidateId: number, candidateName: string, form: TrialRequestFormValues) => {
-      addMutation.mutate({ candidateId, candidateName, form });
+    async (candidateId: number, candidateName: string, form: TrialRequestFormValues) => {
+      return addMutation.mutateAsync({ candidateId, candidateName, form });
     },
     [addMutation],
   );
@@ -138,6 +78,8 @@ export function useClientTrialRequests() {
       pilotType: '20_HOUR' as const,
       feedback: row.feedback ?? '',
       recruiter: '',
+      clientRating: row.clientRating ?? null,
+      outcome: row.outcome ?? null,
     };
   });
 

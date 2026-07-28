@@ -88,8 +88,11 @@ export function buildCandidateCreateData(
       ? {
           skills: {
             create: data.skills.map((skill) => ({
-              skillCommunityId: BigInt(skill.skillCommunityId),
-              skillName: skill.skillName,
+              skillCommunityId:
+                skill.skillCommunityId != null
+                  ? BigInt(skill.skillCommunityId)
+                  : null,
+              skillName: skill.skillName?.trim() || 'Skill',
               skillCategory: skill.skillCategory,
               proficiencyLevel: skill.proficiencyLevel ?? 'INTERMEDIATE',
               yearsExperience: skill.yearsExperience,
@@ -107,6 +110,7 @@ export function mapCandidateExtendedDto(candidate: {
   displayName: string | null;
   primaryRole: string | null;
   currentCompany: string | null;
+  currentTitle: string | null;
   education: string | null;
   githubUrl: string | null;
   naukriUrl: string | null;
@@ -139,6 +143,7 @@ export function mapCandidateExtendedDto(candidate: {
     displayName: candidate.displayName,
     primaryRole: candidate.primaryRole,
     currentCompany: candidate.currentCompany,
+    currentTitle: candidate.currentTitle,
     education: candidate.education,
     githubUrl: candidate.githubUrl,
     naukriUrl: candidate.naukriUrl,

@@ -1,16 +1,13 @@
 import { getBestalScore } from '@bestal/mock-data';
 import { cn, formatCurrency, formatDate } from '@bestal/shared-utils';
 import { Avatar, Badge, Button, Card, CardContent, SkillBadge } from '@bestal/ui';
-import { Calendar, Heart, MapPin, Star } from 'lucide-react';
+import { Calendar, MapPin, Star } from 'lucide-react';
 import type { MockCandidate } from '@bestal/mock-data';
 import { getPrimaryCommunity, getScoreTier } from '../../lib/client-candidates';
 
 type ClientCandidateCardProps = {
   candidate: MockCandidate;
-  shortlisted?: boolean;
   onView: () => void;
-  onShortlist?: () => void;
-  onRequestInterview?: () => void;
   onRequestTrial?: () => void;
   compact?: boolean;
 };
@@ -34,10 +31,7 @@ function ScoreBadge({ score }: { score: number }) {
 
 export function ClientCandidateCard({
   candidate,
-  shortlisted = false,
   onView,
-  onShortlist,
-  onRequestInterview,
   onRequestTrial,
   compact = false,
 }: ClientCandidateCardProps) {
@@ -99,22 +93,6 @@ export function ClientCandidateCard({
           <Button variant="outline" size="sm" onClick={onView} className="flex-1 sm:flex-none">
             View profile
           </Button>
-          {onShortlist && (
-            <Button
-              variant={shortlisted ? 'primary' : 'outline'}
-              size="sm"
-              onClick={onShortlist}
-              aria-pressed={shortlisted}
-            >
-              <Heart className={cn('mr-1.5 h-3.5 w-3.5', shortlisted && 'fill-current')} />
-              {shortlisted ? 'Shortlisted' : 'Shortlist'}
-            </Button>
-          )}
-          {onRequestInterview && (
-            <Button variant="outline" size="sm" onClick={onRequestInterview} className="hidden sm:inline-flex">
-              Interview
-            </Button>
-          )}
           {onRequestTrial && (
             <Button variant="outline" size="sm" onClick={onRequestTrial} className="hidden sm:inline-flex">
               Trial

@@ -25,6 +25,8 @@ export type ClientSearchRecord = {
   readonly headline: string;
   readonly location: string;
   readonly skillNames: readonly string[];
+  readonly currentCompany: string;
+  readonly currentTitle: string;
 };
 
 function evalStatus(id: number): string {
@@ -44,8 +46,8 @@ function isTrialEligible(
   profileStatus: string,
 ): boolean {
   if (profileStatus === 'PLACED' || profileStatus === 'DO_NOT_CONTACT') return false;
-  const evalOk = ['COMPLETED'].includes(evaluationStatus);
-  const bgvOk = ['CLEAR', 'NOT_STARTED'].includes(bgvStatus);
+  const evalOk = evaluationStatus === 'COMPLETED';
+  const bgvOk = bgvStatus === 'CLEAR' || bgvStatus === 'COMPLETED_CLEAR';
   return evalOk && bgvOk && candidateId !== 5;
 }
 
@@ -76,6 +78,8 @@ function buildSearchRecord(listRec: (typeof candidateListingRecords)[number]): C
     headline: listRec.headline,
     location: listRec.location,
     skillNames: cand.skills.map((s) => s.skillCommunityName),
+    currentCompany: listRec.currentCompany ?? '',
+    currentTitle: '',
   };
 }
 

@@ -1,15 +1,20 @@
 import type { ClientCandidateProfile, ClientGroupedSkill } from '@bestal/mock-data';
 import { formatCurrency, formatDate } from '@bestal/shared-utils';
-import { Avatar, Badge, Button, SkillBadge, StatusBadge, Tabs } from '@bestal/ui';
-import { ArrowLeft, Calendar, FlaskConical, Heart, MapPin, Star } from 'lucide-react';
+import { Avatar, Badge, Button, SkillBadge, Tabs } from '@bestal/ui';
+import { ArrowLeft, Calendar, FlaskConical, MapPin, Star } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import {
+  clientBgvStatusText,
+  clientEvaluationStatusText,
+} from '../../lib/client-status-labels';
 
 type ClientCandidateProfileViewProps = {
   profile: ClientCandidateProfile;
-  shortlisted: boolean;
-  onShortlist: () => void;
-  onInterview: () => void;
-  onPilot: () => void;
+  onTrial: () => void;
+  /** @deprecated Use onTrial */
+  onPilot?: () => void;
+  /** When false, Trial Request is disabled (e.g. client account not linked). */
+  canRequestTrial?: boolean;
 };
 
 function ScoreDisplay({ score }: { score: number }) {
@@ -33,15 +38,6 @@ function MetricPill({ label, value }: { label: string; value: string }) {
         {label}
       </p>
       <p className="mt-1 text-sm font-semibold text-foreground">{value}</p>
-    </div>
-  );
-}
-
-function EvalScore({ label, value }: { label: string; value: number | null }) {
-  return (
-    <div className="rounded-xl border border-border/60 bg-muted/20 p-5 text-center">
-      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</p>
-      <p className="mt-2 text-3xl font-bold tabular-nums text-foreground">{value ?? '—'}</p>
     </div>
   );
 }
@@ -87,12 +83,14 @@ function SkillGroup({
 
 export function ClientCandidateProfileView({
   profile,
-  shortlisted,
-  onShortlist,
-  onInterview,
+  onTrial,
   onPilot,
+  canRequestTrial = true,
 }: ClientCandidateProfileViewProps) {
   const rateLabel = `${formatCurrency(profile.billRate, profile.currency)}/hr`;
+  const trialHandler = onTrial ?? onPilot;
+  const companyLine = [profile.currentCompany, profile.currentTitle].filter(Boolean).join(' · ');
+  const trialEnabled = profile.trialEligible && canRequestTrial;
 
   const summaryTab = (
     <div className="space-y-8">
@@ -155,52 +153,6 @@ export function ClientCandidateProfileView({
     </div>
   );
 
-  const evaluationTab = (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-center gap-3">
-        <span className="text-sm text-muted-foreground">Status</span>
-        <StatusBadge status={profile.evaluation.status} />
-        {profile.evaluation.recommendation && (
-          <>
-            <span className="text-muted-foreground">·</span>
-            <StatusBadge status={profile.evaluation.recommendation} />
-          </>
-        )}
-      </div>
-      <div className="grid gap-4 sm:grid-cols-3">
-        <EvalScore label="Technical" value={profile.evaluation.technical} />
-        <EvalScore label="Communication" value={profile.evaluation.communication} />
-        <EvalScore label="Architecture" value={profile.evaluation.architecture} />
-      </div>
-    </div>
-  );
-
-  const bgvTab = (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-center gap-3">
-        <span className="text-sm font-medium text-muted-foreground">Status</span>
-        <StatusBadge status={profile.bgv.status} />
-      </div>
-      <section>
-        <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-          Completed Checks
-        </h3>
-        <ul className="divide-y divide-border/60 rounded-xl border border-border/60 bg-white">
-          {profile.bgv.completedChecks.map((check) => (
-            <li
-              key={check.label}
-              className="flex items-center justify-between gap-4 px-4 py-3"
-            >
-              <span className="text-sm text-foreground">{check.label}</span>
-              <StatusBadge status={check.status} className="text-[10px]" />
-            </li>
-          ))}
-        </ul>
-      </section>
-      <p className="text-sm leading-relaxed text-muted-foreground">{profile.bgv.summary}</p>
-    </div>
-  );
-
   const availabilityTab = (
     <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
       <MetricPill
@@ -242,6 +194,9 @@ export function ClientCandidateProfileView({
                     {profile.displayName}
                   </h1>
                   <p className="mt-1 text-lg text-muted-foreground">{profile.role}</p>
+                  {companyLine ? (
+                    <p className="mt-1 text-sm text-muted-foreground">{companyLine}</p>
+                  ) : null}
                 </div>
                 <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted-foreground">
                   <span className="inline-flex items-center gap-1">
@@ -259,23 +214,32 @@ export function ClientCandidateProfileView({
                   </span>
                   <span className="font-semibold text-foreground">{rateLabel}</span>
                 </div>
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <span className="inline-flex items-center rounded-full bg-muted/70 px-2.5 py-1 text-xs font-medium text-foreground/80">
+                    {clientBgvStatusText(profile.bgv.status)}
+                  </span>
+                  <span className="inline-flex items-center rounded-full bg-muted/70 px-2.5 py-1 text-xs font-medium text-foreground/80">
+                    {clientEvaluationStatusText(profile.evaluation.status)}
+                  </span>
+                </div>
               </div>
             </div>
 
             <div className="flex flex-wrap gap-2 lg:shrink-0">
               <Button
-                variant={shortlisted ? 'primary' : 'outline'}
-                onClick={onShortlist}
+                variant="primary"
+                onClick={trialHandler}
+                disabled={!trialEnabled}
+                title={
+                  trialEnabled
+                    ? 'Request a trial'
+                    : !canRequestTrial
+                      ? 'Your login is not linked to a client account'
+                      : 'Candidate is not yet trial eligible'
+                }
               >
-                <Heart className={`mr-1.5 h-4 w-4 ${shortlisted ? 'fill-current' : ''}`} />
-                {shortlisted ? 'Shortlisted' : 'Shortlist'}
-              </Button>
-              <Button variant="primary" onClick={onInterview}>
-                Interview
-              </Button>
-              <Button variant="outline" onClick={onPilot}>
                 <FlaskConical className="mr-1.5 h-4 w-4" />
-                Request Pilot
+                Trial Request
               </Button>
             </div>
           </div>
@@ -300,8 +264,6 @@ export function ClientCandidateProfileView({
               { id: 'summary', label: 'Summary', content: summaryTab },
               { id: 'skills', label: 'Skills', content: skillsTab },
               { id: 'projects', label: 'Projects', content: projectsTab },
-              { id: 'evaluation', label: 'Evaluation', content: evaluationTab },
-              { id: 'bgv', label: 'BGV', content: bgvTab },
               { id: 'availability', label: 'Availability', content: availabilityTab },
             ]}
           />

@@ -43,6 +43,7 @@ enum ClientStatus {
 
 enum CandidateStatus {
   NEW
+  IMPORTED
   ACTIVE
   INACTIVE
   PLACED
@@ -56,6 +57,7 @@ enum CandidateVisibility {
 }
 
 enum CandidateAvailabilityStatus {
+  AVAILABLE
   IMMEDIATE
   ONE_WEEK
   TWO_WEEKS
@@ -65,6 +67,7 @@ enum CandidateAvailabilityStatus {
 }
 
 enum CandidateProfileStatus {
+  IMPORTED
   SOURCED
   AI_SCREENED
   RECRUITER_SCREENED
@@ -73,6 +76,7 @@ enum CandidateProfileStatus {
   BGV_PENDING
   BGV_COMPLETE
   PROFILE_DRAFT
+  PENDING_APPROVAL
   ADMIN_APPROVED
   CLIENT_VISIBLE
   SHORTLISTED
@@ -84,8 +88,42 @@ enum CandidateProfileStatus {
 
 enum CandidateApprovalStatus {
   PENDING
+  PENDING_REVIEW
   APPROVED
   REJECTED
+}
+
+enum AiScreeningStatus {
+  NOT_SCREENED
+  IMPORTED
+  COMPLETED
+  FAILED
+}
+
+enum CandidateScoreSource {
+  ATS_AI
+  BESTAL_AI
+  RECRUITER
+  MANUAL
+  INTERVIEWER
+}
+
+enum CandidateImportBatchStatus {
+  QUEUED
+  VALIDATING
+  PREVIEWED
+  CONFIRMING
+  PROCESSING
+  COMPLETED
+  FAILED
+  EXPIRED
+}
+
+enum CandidateImportRowAction {
+  CREATE
+  UPDATE
+  SKIP
+  FAIL
 }
 
 enum DocumentKind {
@@ -103,6 +141,14 @@ enum CandidateSource {
   AGENCY
   INTERNAL
   OTHER
+  OORWIN
+  WORKDAY
+  GREENHOUSE
+  LEVER
+  BULLHORN
+  ZOHO_RECRUIT
+  INDEED
+  CAREER_PAGE
 }
 
 enum ProficiencyLevel {
@@ -115,12 +161,17 @@ enum ProficiencyLevel {
 enum BackgroundCheckStatus {
   NOT_STARTED
   PENDING
+  CONSENT_PENDING
+  INITIATED
   IN_PROGRESS
   CLEAR
   CONSIDER
+  COMPLETED_CLEAR
+  COMPLETED_WITH_CONCERN
   SUSPENDED
   FAILED
   CANCELLED
+  EXPIRED
 }
 
 enum BackgroundCheckType {
@@ -138,26 +189,6 @@ enum ShortlistStatus {
   ACTIVE
   CLOSED
   ARCHIVED
-}
-
-enum InterviewRequestStatus {
-  REQUESTED
-  SCHEDULED
-  CONFIRMED
-  COMPLETED
-  CANCELLED
-  NO_SHOW
-  RESCHEDULED
-}
-
-enum InterviewType {
-  PHONE
-  VIDEO
-  IN_PERSON
-  TECHNICAL
-  PANEL
-  FINAL
-  HR
 }
 
 enum TrialRequestStatus {
@@ -271,9 +302,8 @@ model User {
   backgroundChecksReviewed BackgroundCheck[] @relation("BackgroundCheckReviewer")
   shortlistsCreated        Shortlist[]         @relation("ShortlistCreator")
   shortlistEntriesAdded    ShortlistCandidate[] @relation("ShortlistEntryAddedBy")
-  interviewRequestsCreated InterviewRequest[]  @relation("InterviewRequestCreator")
-  interviewRequestsAssigned InterviewRequest[] @relation("InterviewRequestAssignee")
   trialRequestsCreated     TrialRequest[]      @relation("TrialRequestCreator")
+  trialRequestsAssigned    TrialRequest[]      @relation("TrialRequestAssignedRecruiter")
   deploymentsCreated       Deployment[]        @relation("DeploymentCreator")
   documentsUploaded        Document[]          @relation("DocumentUploader")
   candidatesApproved       Candidate[]         @relation("CandidateApprovedBy")
@@ -283,6 +313,7 @@ model User {
   auditLogs                AuditLog[]          @relation("AuditLogActor")
   systemSettingsUpdated    SystemSetting[]     @relation("SystemSettingUpdatedBy")
   oorwinImportBatches      OorwinImportBatch[] @relation("OorwinImportBatchCreator")
+  candidateImportBatches   CandidateImportBatch[] @relation("CandidateImportBatchCreator")
   platformRolesCreated     PlatformRole[]      @relation("PlatformRoleCreator")
   platformRolesUpdated     PlatformRole[]      @relation("PlatformRoleUpdatedBy")
 
@@ -305,14 +336,15 @@ model Organization {
   candidates        Candidate[]
   evaluations       Evaluation[]
   backgroundChecks  BackgroundCheck[]
+  candidateScores   CandidateScore[]
   shortlists        Shortlist[]
-  interviewRequests InterviewRequest[]
   trialRequests     TrialRequest[]
   deployments       Deployment[]
   documents         Document[]
   notifications     Notification[]
   auditLogs         AuditLog[]
   oorwinImportBatches OorwinImportBatch[]
+  candidateImportBatches CandidateImportBatch[]
 
   @@index([deletedAt])
   @@index([isActive, deletedAt])
@@ -325,6 +357,8 @@ model Membership {
   organizationId BigInt   @map("organization_id")
   role           Role
   platformRoleId BigInt?  @map("platform_role_id")
+  /// Portal client account for CLIENT-role memberships (1 client → many users)
+  clientId       BigInt?  @map("client_id")
   isActive       Boolean  @default(true) @map("is_active")
   createdAt      DateTime @default(now()) @map("created_at")
   updatedAt      DateTime @updatedAt @map("updated_at")
@@ -332,11 +366,13 @@ model Membership {
   user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   organization Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   platformRole PlatformRole? @relation(fields: [platformRoleId], references: [id], onDelete: SetNull)
+  client       Client?       @relation("ClientPortalMemberships", fields: [clientId], references: [id], onDelete: SetNull)
 
   @@unique([userId, organizationId])
   @@index([organizationId, role])
   @@index([userId, isActive])
   @@index([platformRoleId])
+  @@index([clientId])
   @@map("memberships")
 }
 
@@ -404,8 +440,8 @@ model Client {
 
   organization      Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   accountManager    User?              @relation("ClientAccountManager", fields: [accountManagerId], references: [id], onDelete: SetNull)
+  portalMemberships Membership[]       @relation("ClientPortalMemberships")
   shortlists        Shortlist[]
-  interviewRequests InterviewRequest[]
   trialRequests     TrialRequest[]
   deployments       Deployment[]
 
@@ -444,6 +480,7 @@ model Candidate {
   primarySkillCommunityId BigInt?                 @map("primary_skill_community_id")
   createdById             BigInt?                 @map("created_by_id")
   oorwinCandidateId       String?                 @unique @map("oorwin_candidate_id") @db.VarChar(100)
+  sourceCandidateId       String?                 @map("source_candidate_id") @db.VarChar(150)
   resumeDocumentId        BigInt?                 @unique @map("resume_document_id")
   profileImageDocumentId  BigInt?                 @unique @map("profile_image_document_id")
   introVideoDocumentId    BigInt?                 @unique @map("intro_video_document_id")
@@ -460,8 +497,14 @@ model Candidate {
   primaryRole             String?                 @map("primary_role") @db.VarChar(150)
   summary                 String?                 @db.Text
   location                String?                 @db.VarChar(255)
+  country                 String?                 @db.VarChar(100)
+  timezone                String?                 @db.VarChar(100)
   yearsExperience         Int?                    @map("years_experience")
   currentCompany          String?                 @map("current_company") @db.VarChar(255)
+  currentTitle            String?                 @map("current_title") @db.VarChar(150)
+  noticePeriod            String?                 @map("notice_period") @db.VarChar(100)
+  portfolioUrl            String?                 @map("portfolio_url") @db.VarChar(500)
+  resumeUrl               String?                 @map("resume_url") @db.VarChar(500)
   education               String?                 @db.Text
   availableFrom           DateTime?               @map("available_from") @db.Date
   availabilityStatus      CandidateAvailabilityStatus? @map("availability_status")
@@ -489,6 +532,7 @@ model Candidate {
   evaluationStatus        String?                 @map("evaluation_status") @db.VarChar(50)
   bgvStatus               String?                 @map("bgv_status") @db.VarChar(50)
   profileStatus           CandidateProfileStatus? @default(SOURCED) @map("profile_status")
+  aiScreeningStatus       AiScreeningStatus       @default(NOT_SCREENED) @map("ai_screening_status")
   deploymentStatus        String?                 @map("deployment_status") @db.VarChar(50)
   submittedForApprovalAt  DateTime?               @map("submitted_for_approval_at")
   publishedAt             DateTime?               @map("published_at")
@@ -513,26 +557,29 @@ model Candidate {
   skills                CandidateSkill[]
   evaluations           Evaluation[]
   backgroundChecks      BackgroundCheck[]
+  scores                CandidateScore[]
   shortlistEntries      ShortlistCandidate[]
-  interviewRequests     InterviewRequest[]
   trialRequests         TrialRequest[]
   deployments           Deployment[]
+  importRows            CandidateImportRow[]
 
   @@unique([organizationId, email])
+  @@unique([organizationId, source, sourceCandidateId])
   @@index([organizationId, status, deletedAt])
   @@index([organizationId, visibility, approvalStatus, deletedAt])
   @@index([organizationId, lastName, firstName])
   @@index([primarySkillCommunityId])
   @@index([createdById])
   @@index([organizationId, source])
+  @@index([organizationId, sourceCandidateId])
   @@map("candidates")
 }
 
 model CandidateSkill {
   id               BigInt           @id @default(autoincrement())
   candidateId      BigInt           @map("candidate_id")
-  skillCommunityId BigInt           @map("skill_community_id")
-  skillName        String?          @map("skill_name") @db.VarChar(150)
+  skillCommunityId BigInt?          @map("skill_community_id")
+  skillName        String           @map("skill_name") @db.VarChar(150)
   skillCategory    String?          @map("skill_category") @db.VarChar(100)
   proficiencyLevel ProficiencyLevel @default(INTERMEDIATE) @map("proficiency_level")
   yearsExperience  Int?             @map("years_experience")
@@ -542,10 +589,10 @@ model CandidateSkill {
   updatedAt        DateTime         @updatedAt @map("updated_at")
   deletedAt        DateTime?        @map("deleted_at")
 
-  candidate      Candidate      @relation(fields: [candidateId], references: [id], onDelete: Cascade)
-  skillCommunity SkillCommunity @relation(fields: [skillCommunityId], references: [id], onDelete: Cascade)
+  candidate      Candidate       @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  skillCommunity SkillCommunity? @relation(fields: [skillCommunityId], references: [id], onDelete: SetNull)
 
-  @@unique([candidateId, skillCommunityId])
+  @@unique([candidateId, skillName])
   @@index([skillCommunityId, deletedAt])
   @@index([candidateId, isPrimary])
   @@map("candidate_skills")
@@ -569,6 +616,7 @@ model Evaluation {
   architectureScore    Int?      @map("architecture_score")
   clientReadinessScore Int?      @map("client_readiness_score")
   recommendation       String?   @db.Text
+  evaluationSummary    String?   @map("evaluation_summary") @db.Text
   evaluatorComments    String?   @map("evaluator_comments") @db.Text
   aiEvaluationSummary  String?   @map("ai_evaluation_summary") @db.Text
   recordingUrl         String?   @map("recording_url") @db.VarChar(500)
@@ -587,30 +635,36 @@ model Evaluation {
 }
 
 model BackgroundCheck {
-  id                   BigInt                @id @default(autoincrement())
-  organizationId       BigInt                @map("organization_id")
-  candidateId          BigInt                @map("candidate_id")
-  requestedById        BigInt                @map("requested_by_id")
-  type                 BackgroundCheckType
-  status               BackgroundCheckStatus @default(NOT_STARTED)
-  provider             String?               @db.VarChar(100)
-  externalReferenceId  String?               @map("external_reference_id") @db.VarChar(255)
-  resultSummary        String?               @map("result_summary") @db.Text
-  aiSummary            String?               @map("ai_summary") @db.Text
-  reviewNotes          String?               @map("review_notes") @db.Text
-  consentConfirmedAt   DateTime?             @map("consent_confirmed_at")
-  consentConfirmedById BigInt?               @map("consent_confirmed_by_id")
-  vendorAssignedAt     DateTime?             @map("vendor_assigned_at")
-  reviewedById         BigInt?               @map("reviewed_by_id")
-  reviewedAt           DateTime?             @map("reviewed_at")
-  consentDocumentId    BigInt?               @map("consent_document_id")
-  reportDocumentId     BigInt?               @map("report_document_id")
-  initiatedAt          DateTime?             @map("initiated_at")
-  completedAt          DateTime?             @map("completed_at")
-  expiresAt            DateTime?             @map("expires_at")
-  createdAt            DateTime              @default(now()) @map("created_at")
-  updatedAt            DateTime              @updatedAt @map("updated_at")
-  deletedAt            DateTime?             @map("deleted_at")
+  id                       BigInt                @id @default(autoincrement())
+  organizationId           BigInt                @map("organization_id")
+  candidateId              BigInt                @map("candidate_id")
+  requestedById            BigInt                @map("requested_by_id")
+  type                     BackgroundCheckType   @default(COMPREHENSIVE)
+  status                   BackgroundCheckStatus @default(NOT_STARTED)
+  provider                 String?               @db.VarChar(100)
+  externalReferenceId      String?               @map("external_reference_id") @db.VarChar(255)
+  resultSummary            String?               @map("result_summary") @db.Text
+  aiSummary                String?               @map("ai_summary") @db.Text
+  reviewNotes              String?               @map("review_notes") @db.Text
+  idCheckStatus            String?               @map("id_check_status") @db.VarChar(50)
+  addressCheckStatus       String?               @map("address_check_status") @db.VarChar(50)
+  employmentCheckStatus    String?               @map("employment_check_status") @db.VarChar(50)
+  educationCheckStatus     String?               @map("education_check_status") @db.VarChar(50)
+  criminalCheckStatus      String?               @map("criminal_check_status") @db.VarChar(50)
+  referenceCheckStatus     String?               @map("reference_check_status") @db.VarChar(50)
+  consentConfirmedAt       DateTime?             @map("consent_confirmed_at")
+  consentConfirmedById     BigInt?               @map("consent_confirmed_by_id")
+  vendorAssignedAt         DateTime?             @map("vendor_assigned_at")
+  reviewedById             BigInt?               @map("reviewed_by_id")
+  reviewedAt               DateTime?             @map("reviewed_at")
+  consentDocumentId        BigInt?               @map("consent_document_id")
+  reportDocumentId         BigInt?               @map("report_document_id")
+  initiatedAt              DateTime?             @map("initiated_at")
+  completedAt              DateTime?             @map("completed_at")
+  expiresAt                DateTime?             @map("expires_at")
+  createdAt                DateTime              @default(now()) @map("created_at")
+  updatedAt                DateTime              @updatedAt @map("updated_at")
+  deletedAt                DateTime?             @map("deleted_at")
 
   organization       Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   candidate          Candidate    @relation(fields: [candidateId], references: [id], onDelete: Cascade)
@@ -626,6 +680,32 @@ model BackgroundCheck {
   @@index([externalReferenceId])
   @@index([organizationId, completedAt])
   @@map("background_checks")
+}
+
+model CandidateScore {
+  id                   BigInt               @id @default(autoincrement())
+  organizationId       BigInt               @map("organization_id")
+  candidateId          BigInt               @map("candidate_id")
+  bestalScore          Int?                 @map("bestal_score")
+  technicalScore       Int?                 @map("technical_score")
+  communicationScore   Int?                 @map("communication_score")
+  problemSolvingScore  Int?                 @map("problem_solving_score")
+  architectureScore    Int?                 @map("architecture_score")
+  reliabilityScore     Int?                 @map("reliability_score")
+  clientReadinessScore Int?                 @map("client_readiness_score")
+  scoreSource          CandidateScoreSource @map("score_source")
+  scoreDate            DateTime?            @map("score_date") @db.Date
+  createdAt            DateTime             @default(now()) @map("created_at")
+  updatedAt            DateTime             @updatedAt @map("updated_at")
+  deletedAt            DateTime?            @map("deleted_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  candidate    Candidate    @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, deletedAt])
+  @@index([candidateId, deletedAt])
+  @@index([candidateId, scoreDate])
+  @@map("candidate_scores")
 }
 
 // ---------------------------------------------------------------------------
@@ -651,7 +731,6 @@ model Shortlist {
   client            Client               @relation(fields: [clientId], references: [id], onDelete: Cascade)
   createdBy         User                 @relation("ShortlistCreator", fields: [createdById], references: [id], onDelete: Restrict)
   candidates        ShortlistCandidate[]
-  interviewRequests InterviewRequest[]
 
   @@index([organizationId, status, deletedAt])
   @@index([clientId, deletedAt])
@@ -686,49 +765,8 @@ model ShortlistCandidate {
 }
 
 // ---------------------------------------------------------------------------
-// Interviews & Trials
+// Trials
 // ---------------------------------------------------------------------------
-
-model InterviewRequest {
-  id             BigInt                 @id @default(autoincrement())
-  organizationId BigInt                 @map("organization_id")
-  candidateId    BigInt                 @map("candidate_id")
-  clientId       BigInt                 @map("client_id")
-  shortlistId    BigInt?                @map("shortlist_id")
-  requestedById  BigInt                 @map("requested_by_id")
-  assignedToId   BigInt?                @map("assigned_to_id")
-  type           InterviewType
-  status         InterviewRequestStatus @default(REQUESTED)
-  scheduledAt    DateTime?              @map("scheduled_at")
-  durationMinutes Int?                  @map("duration_minutes")
-  timezone       String?                @db.VarChar(50)
-  location       String?                @db.VarChar(500)
-  meetingLink    String?                @map("meeting_link") @db.VarChar(500)
-  notes          String?                @db.Text
-  feedback       String?                @db.Text
-  completedAt    DateTime?              @map("completed_at")
-  cancelledAt    DateTime?              @map("cancelled_at")
-  cancelReason   String?                @map("cancel_reason") @db.VarChar(500)
-  createdAt      DateTime               @default(now()) @map("created_at")
-  updatedAt      DateTime               @updatedAt @map("updated_at")
-  deletedAt      DateTime?              @map("deleted_at")
-
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  candidate    Candidate    @relation(fields: [candidateId], references: [id], onDelete: Cascade)
-  client       Client       @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  shortlist    Shortlist?   @relation(fields: [shortlistId], references: [id], onDelete: SetNull)
-  requestedBy  User         @relation("InterviewRequestCreator", fields: [requestedById], references: [id], onDelete: Restrict)
-  assignedTo   User?        @relation("InterviewRequestAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
-
-  @@index([organizationId, status, deletedAt])
-  @@index([candidateId, scheduledAt])
-  @@index([clientId, status, deletedAt])
-  @@index([shortlistId])
-  @@index([requestedById])
-  @@index([assignedToId])
-  @@index([organizationId, scheduledAt])
-  @@map("interview_requests")
-}
 
 model TrialRequest {
   id             BigInt             @id @default(autoincrement())
@@ -737,6 +775,7 @@ model TrialRequest {
   clientId       BigInt             @map("client_id")
   deploymentId   BigInt?            @map("deployment_id")
   requestedById    BigInt             @map("requested_by_id")
+  assignedRecruiterId BigInt?         @map("assigned_recruiter_id")
   status           TrialRequestStatus @default(REQUESTED)
   trialType        String?            @map("trial_type") @db.VarChar(100)
   maxTrialHours    Int?               @default(20) @map("max_trial_hours")
@@ -751,6 +790,7 @@ model TrialRequest {
   convertedToPaid Boolean           @default(false) @map("converted_to_paid")
   outcome        String?            @db.VarChar(500)
   approvedAt     DateTime?          @map("approved_at")
+  candidateConfirmedAt DateTime?     @map("candidate_confirmed_at")
   rejectedAt     DateTime?          @map("rejected_at")
   rejectReason   String?            @map("reject_reason") @db.VarChar(500)
   createdAt      DateTime           @default(now()) @map("created_at")
@@ -762,12 +802,14 @@ model TrialRequest {
   client       Client       @relation(fields: [clientId], references: [id], onDelete: Cascade)
   deployment   Deployment?  @relation(fields: [deploymentId], references: [id], onDelete: SetNull)
   requestedBy  User         @relation("TrialRequestCreator", fields: [requestedById], references: [id], onDelete: Restrict)
+  assignedRecruiter User?    @relation("TrialRequestAssignedRecruiter", fields: [assignedRecruiterId], references: [id], onDelete: SetNull)
 
   @@index([organizationId, status, deletedAt])
   @@index([candidateId, deletedAt])
   @@index([clientId, status, deletedAt])
   @@index([deploymentId])
   @@index([requestedById])
+  @@index([assignedRecruiterId])
   @@index([organizationId, startDate])
   @@map("trial_requests")
 }
@@ -1014,4 +1056,77 @@ model OorwinImportRow {
 
   @@index([batchId, rowNumber])
   @@map("oorwin_import_rows")
+}
+
+model CandidateImportBatch {
+  id             BigInt                     @id @default(autoincrement())
+  organizationId BigInt                     @map("organization_id")
+  createdById    BigInt                     @map("created_by_id")
+  fileName       String                     @map("file_name") @db.VarChar(255)
+  fileChecksum   String                     @map("file_checksum") @db.VarChar(64)
+  fileContent    Bytes?                     @map("file_content")
+  status         CandidateImportBatchStatus @default(PREVIEWED)
+  createdCount   Int                        @default(0) @map("created_count")
+  updatedCount   Int                        @default(0) @map("updated_count")
+  skippedCount   Int                        @default(0) @map("skipped_count")
+  failedCount    Int                        @default(0) @map("failed_count")
+  processedCount Int                        @default(0) @map("processed_count")
+  totalCount     Int                        @default(0) @map("total_count")
+  errorSummary   String?                    @map("error_summary") @db.Text
+  previewPayload Json?                      @map("preview_payload") @db.JsonB
+  expiresAt      DateTime                   @map("expires_at")
+  createdAt      DateTime                   @default(now()) @map("created_at")
+  confirmedAt    DateTime?                  @map("confirmed_at")
+  completedAt    DateTime?                  @map("completed_at")
+
+  organization Organization         @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdBy    User                 @relation("CandidateImportBatchCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  rows         CandidateImportRow[]
+  errors       CandidateImportError[]
+
+  @@index([organizationId, createdAt])
+  @@index([organizationId, fileChecksum])
+  @@index([status, expiresAt])
+  @@map("candidate_import_batches")
+}
+
+model CandidateImportRow {
+  id                BigInt                   @id @default(autoincrement())
+  batchId           BigInt                   @map("batch_id")
+  rowNumber         Int                      @map("row_number")
+  sourceCandidateId String                   @map("source_candidate_id") @db.VarChar(150)
+  email             String?                  @db.VarChar(255)
+  candidateId       BigInt?                  @map("candidate_id")
+  action            CandidateImportRowAction
+  errorMessage      String?                  @map("error_message") @db.Text
+  normalizedPayload Json                     @map("normalized_payload") @db.JsonB
+  createdAt         DateTime                 @default(now()) @map("created_at")
+  processedAt       DateTime?                @map("processed_at")
+
+  batch     CandidateImportBatch @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  candidate Candidate?           @relation(fields: [candidateId], references: [id], onDelete: SetNull)
+
+  @@index([batchId, rowNumber])
+  @@index([batchId, action])
+  @@index([batchId, processedAt, rowNumber])
+  @@index([candidateId])
+  @@map("candidate_import_rows")
+}
+
+model CandidateImportError {
+  id               BigInt   @id @default(autoincrement())
+  batchId          BigInt   @map("batch_id")
+  sheetName        String   @map("sheet_name") @db.VarChar(100)
+  rowNumber        Int?     @map("row_number")
+  sourceCandidateId String? @map("source_candidate_id") @db.VarChar(150)
+  columnName       String?  @map("column_name") @db.VarChar(100)
+  suppliedValue    String?  @map("supplied_value") @db.Text
+  errorCode        String   @map("error_code") @db.VarChar(80)
+  message          String   @db.Text
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  batch CandidateImportBatch @relation(fields: [batchId], references: [id], onDelete: Cascade)
+
+  @@index([batchId, sheetName, rowNumber])
+  @@map("candidate_import_errors")
 }

@@ -3,6 +3,7 @@ import { BaseRepository } from '../../repositories/base.repository.js';
 import type {
   CreateTrialInput,
   RejectTrialInput,
+  TrialFeedbackInput,
   TrialListFilters,
   UpdateTrialInput,
 } from './trial.types.js';
@@ -12,6 +13,7 @@ const trialInclude = {
   candidate: { select: { id: true, firstName: true, lastName: true } },
   client: { select: { id: true, name: true } },
   requestedBy: { select: { id: true, firstName: true, lastName: true } },
+  assignedRecruiter: { select: { id: true, firstName: true, lastName: true } },
 } satisfies Prisma.TrialRequestInclude;
 
 export type TrialRecord = Prisma.TrialRequestGetPayload<{
@@ -142,6 +144,32 @@ export class TrialRepository extends BaseRepository {
     });
   }
 
+  confirmCandidate(organizationId: number, id: number): Promise<TrialRecord> {
+    return this.prisma.trialRequest.update({
+      where: { id: BigInt(id), organizationId: BigInt(organizationId) },
+      data: { candidateConfirmedAt: new Date() },
+      include: trialInclude,
+    });
+  }
+
+  submitFeedback(
+    organizationId: number,
+    id: number,
+    input: TrialFeedbackInput,
+  ): Promise<TrialRecord> {
+    return this.prisma.trialRequest.update({
+      where: { id: BigInt(id), organizationId: BigInt(organizationId) },
+      data: {
+        status: 'COMPLETED',
+        feedback: input.feedback,
+        clientRating: input.clientRating,
+        outcome: input.decision,
+        convertedToPaid: input.decision === 'CONTINUE',
+      },
+      include: trialInclude,
+    });
+  }
+
   async findMany(filters: TrialListFilters): Promise<{
     items: TrialRecord[];
     total: number;
@@ -186,6 +214,35 @@ export class TrialRepository extends BaseRepository {
         select: { id: true },
       })
       .then(Boolean);
+  }
+
+  async findClientIdForUser(
+    organizationId: number,
+    userId: number,
+    email: string,
+  ): Promise<number | null> {
+    const membership = await this.prisma.membership.findFirst({
+      where: {
+        userId: BigInt(userId),
+        organizationId: BigInt(organizationId),
+        role: 'CLIENT',
+        isActive: true,
+      },
+      select: { clientId: true },
+    });
+    if (membership?.clientId != null) {
+      return Number(membership.clientId);
+    }
+
+    const client = await this.prisma.client.findFirst({
+      where: {
+        organizationId: BigInt(organizationId),
+        contactEmail: email.toLowerCase(),
+        deletedAt: null,
+      },
+      select: { id: true },
+    });
+    return client ? Number(client.id) : null;
   }
 
   deploymentExists(organizationId: number, deploymentId: number): Promise<boolean> {

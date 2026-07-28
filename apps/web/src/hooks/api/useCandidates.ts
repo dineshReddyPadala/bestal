@@ -45,6 +45,11 @@ export function useCandidateMutations() {
         candidatesApi.reject(id, reason),
       onSuccess: (_data, { id }) => invalidateDetail(id),
     }),
+    sendBack: useMutation({
+      mutationFn: ({ id, reason }: { id: number; reason?: string }) =>
+        candidatesApi.sendBack(id, reason),
+      onSuccess: (_data, { id }) => invalidateDetail(id),
+    }),
     publish: useMutation({
       mutationFn: (id: number) => candidatesApi.publish(id),
       onSuccess: (_data, id) => invalidateDetail(id),

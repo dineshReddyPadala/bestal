@@ -1,5 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
+import { z } from 'zod';
 import { authenticate } from '../../middleware/authenticate.middleware.js';
 import { requirePermission } from '../../middleware/permission.middleware.js';
 import { errorResponses } from '../../validators/api-responses.validator.js';
@@ -181,5 +182,94 @@ export async function deploymentRoutes(fastify: FastifyInstance): Promise<void> 
       },
     },
     deploymentController.terminate,
+  );
+
+  app.post(
+    '/:id/pause',
+    {
+      preHandler: [
+        authenticate,
+        requirePermission(PERMISSIONS.DEPLOYMENTS_WRITE),
+      ],
+      schema: {
+        tags: ['Deployments'],
+        summary: 'Pause deployment (ON_HOLD)',
+        security: [{ bearerAuth: [] }],
+        params: deploymentIdParamSchema,
+        response: {
+          200: deploymentResponseSchema,
+          401: errorResponses[401],
+          404: errorResponses[404],
+        },
+      },
+    },
+    deploymentController.pause,
+  );
+
+  app.post(
+    '/:id/resume',
+    {
+      preHandler: [
+        authenticate,
+        requirePermission(PERMISSIONS.DEPLOYMENTS_WRITE),
+      ],
+      schema: {
+        tags: ['Deployments'],
+        summary: 'Resume paused deployment',
+        security: [{ bearerAuth: [] }],
+        params: deploymentIdParamSchema,
+        response: {
+          200: deploymentResponseSchema,
+          401: errorResponses[401],
+          404: errorResponses[404],
+        },
+      },
+    },
+    deploymentController.resume,
+  );
+
+  app.post(
+    '/:id/complete',
+    {
+      preHandler: [
+        authenticate,
+        requirePermission(PERMISSIONS.DEPLOYMENTS_WRITE),
+      ],
+      schema: {
+        tags: ['Deployments'],
+        summary: 'Mark deployment completed',
+        security: [{ bearerAuth: [] }],
+        params: deploymentIdParamSchema,
+        response: {
+          200: deploymentResponseSchema,
+          401: errorResponses[401],
+          404: errorResponses[404],
+        },
+      },
+    },
+    deploymentController.complete,
+  );
+
+  app.post(
+    '/:id/extend',
+    {
+      preHandler: [
+        authenticate,
+        requirePermission(PERMISSIONS.DEPLOYMENTS_WRITE),
+      ],
+      schema: {
+        tags: ['Deployments'],
+        summary: 'Extend deployment end date',
+        security: [{ bearerAuth: [] }],
+        params: deploymentIdParamSchema,
+        body: z.object({ endDate: z.string().min(1) }),
+        response: {
+          200: deploymentResponseSchema,
+          401: errorResponses[401],
+          404: errorResponses[404],
+        },
+      },
+    },
+    deploymentController.extend,
   );
 }

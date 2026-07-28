@@ -1,15 +1,20 @@
 import { DashboardLayout } from '@bestal/ui';
 import { Outlet, useLocation } from 'react-router-dom';
 import { NotificationBell } from '../components/notifications/NotificationBell';
+import { useAuth } from '../contexts/AuthContext';
 import { useDashboardUser } from '../hooks/useDashboardUser';
 import { clientNavItems } from '../lib/nav';
 
 export function ClientShell() {
   const { pathname } = useLocation();
   const { user, handleLogout } = useDashboardUser();
+  const { user: authUser } = useAuth();
   const currentPath = pathname.startsWith('/client/candidates')
     ? '/client/search'
     : pathname;
+  const missingClientLink =
+    authUser?.role === 'CLIENT' &&
+    (authUser.clientId == null || authUser.clientId === undefined);
 
   return (
     <DashboardLayout
@@ -20,6 +25,12 @@ export function ClientShell() {
       onLogout={handleLogout}
       headerActions={<NotificationBell />}
     >
+      {missingClientLink ? (
+        <div className="border-b border-amber-300/60 bg-amber-50 px-4 py-2 text-sm text-amber-900">
+          Your login is not linked to a client account — contact your administrator.
+          Trial requests are disabled until this is fixed.
+        </div>
+      ) : null}
       <Outlet />
     </DashboardLayout>
   );

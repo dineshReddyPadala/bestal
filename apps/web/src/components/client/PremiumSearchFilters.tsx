@@ -1,9 +1,3 @@
-import {
-  clientSearchCommunities,
-  clientSearchRoles,
-  clientSearchSkills,
-  clientSearchTimezones,
-} from '@bestal/mock-data';
 import { cn } from '@bestal/shared-utils';
 import { Button, SearchInput, Select } from '@bestal/ui';
 import { RotateCcw } from 'lucide-react';
@@ -16,6 +10,9 @@ type PremiumSearchFiltersProps = {
   filters: ClientSearchFilters;
   onChange: (filters: ClientSearchFilters) => void;
   resultCount: number;
+  communityOptions?: readonly string[];
+  roleOptions?: readonly string[];
+  timezoneOptions?: readonly string[];
   className?: string;
 };
 
@@ -50,6 +47,9 @@ export function PremiumSearchFilters({
   filters,
   onChange,
   resultCount,
+  communityOptions = [],
+  roleOptions = [],
+  timezoneOptions = [],
   className,
 }: PremiumSearchFiltersProps) {
   const set = (patch: Partial<ClientSearchFilters>) => onChange({ ...filters, ...patch });
@@ -81,7 +81,7 @@ export function PremiumSearchFilters({
           onChange={(v) => set({ community: v })}
           options={[
             { value: 'all', label: 'All communities' },
-            ...clientSearchCommunities.map((c) => ({ value: c, label: c })),
+            ...communityOptions.map((c) => ({ value: c, label: c })),
           ]}
         />
         <FilterSelect
@@ -90,16 +90,7 @@ export function PremiumSearchFilters({
           onChange={(v) => set({ role: v })}
           options={[
             { value: 'all', label: 'All roles' },
-            ...clientSearchRoles.map((r) => ({ value: r, label: r })),
-          ]}
-        />
-        <FilterSelect
-          label="Skills"
-          value={filters.skill}
-          onChange={(v) => set({ skill: v })}
-          options={[
-            { value: 'all', label: 'All skills' },
-            ...clientSearchSkills.map((s) => ({ value: s, label: s })),
+            ...roleOptions.map((r) => ({ value: r, label: r })),
           ]}
         />
         <FilterSelect
@@ -132,22 +123,23 @@ export function PremiumSearchFilters({
             { value: 'all', label: 'Any' },
             { value: 'IMMEDIATE', label: 'Immediate' },
             { value: 'WITHIN_2_WEEKS', label: 'Within 2 weeks' },
-            { value: 'WITHIN_30_DAYS', label: 'Within 30 days' },
-            { value: 'WITHIN_60_DAYS', label: 'Within 60 days' },
+            { value: 'NOT_AVAILABLE', label: 'Not available' },
           ]}
         />
-        <FilterSelect
-          label="Timezone"
-          value={filters.timezone}
-          onChange={(v) => set({ timezone: v })}
-          options={[
-            { value: 'all', label: 'All timezones' },
-            ...clientSearchTimezones.map((tz) => ({
-              value: tz,
-              label: tz.replace(/_/g, ' '),
-            })),
-          ]}
-        />
+        {timezoneOptions.length > 0 ? (
+          <FilterSelect
+            label="Timezone"
+            value={filters.timezone}
+            onChange={(v) => set({ timezone: v })}
+            options={[
+              { value: 'all', label: 'All timezones' },
+              ...timezoneOptions.map((tz) => ({
+                value: tz,
+                label: tz.replace(/_/g, ' '),
+              })),
+            ]}
+          />
+        ) : null}
         <label className="flex min-w-[140px] flex-1 flex-col gap-1">
           <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
             BesTal Score

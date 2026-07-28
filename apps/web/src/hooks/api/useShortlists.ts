@@ -7,6 +7,7 @@ export function useShortlistsList(params?: ListQuery) {
   return useQuery({
     queryKey: queryKeys.shortlists.list(params),
     queryFn: () => shortlistsApi.list(params),
+    enabled: params != null,
   });
 }
 

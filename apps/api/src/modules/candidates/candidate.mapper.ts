@@ -87,8 +87,10 @@ export async function mapCandidateToDtoAsync(
     introVideo,
     skills: (candidate.skills ?? []).map((skill) => ({
       id: bigintToNumber(skill.id),
-      skillCommunityId: bigintToNumber(skill.skillCommunityId),
-      skillCommunityName: skill.skillCommunity.name,
+      skillCommunityId: skill.skillCommunityId
+        ? bigintToNumber(skill.skillCommunityId)
+        : null,
+      skillCommunityName: skill.skillCommunity?.name ?? null,
       skillName: skill.skillName,
       skillCategory: skill.skillCategory,
       proficiencyLevel: skill.proficiencyLevel,
@@ -117,6 +119,14 @@ export function mapCandidateToListItem(
     location: candidate.location,
     yearsExperience: candidate.yearsExperience,
     primarySkillCommunityName: candidate.primarySkillCommunity?.name ?? null,
+    primaryRole: candidate.primaryRole ?? null,
+    currentCompany: candidate.currentCompany ?? null,
+    currentTitle: candidate.currentTitle ?? null,
+    bestalScore: candidate.bestalScore ?? null,
+    clientBillRate: candidate.clientBillRate ? Number(candidate.clientBillRate) : null,
+    currency: candidate.currency,
+    availabilityStatus: candidate.availabilityStatus ?? null,
+    timezoneOverlap: candidate.timezoneOverlap ?? null,
     hasResume: Boolean(candidate.resumeDocumentId),
     hasProfileImage: Boolean(candidate.profileImageDocumentId),
     hasIntroVideo: Boolean(candidate.introVideoDocumentId),
@@ -124,6 +134,13 @@ export function mapCandidateToListItem(
     evaluationStatus: candidate.evaluationStatus,
     bgvStatus: candidate.bgvStatus,
     submittedForApprovalAt: candidate.submittedForApprovalAt?.toISOString() ?? null,
+    hasAiSummary: Boolean(candidate.aiSummary?.trim()),
+    hasSkills: (candidate.skills?.length ?? 0) > 0,
+    hasAvailability: Boolean(
+      candidate.availabilityStatus && candidate.availableFrom,
+    ),
+    hasCommercials:
+      candidate.clientBillRate != null && Number(candidate.clientBillRate) > 0,
     createdAt: candidate.createdAt.toISOString(),
     updatedAt: candidate.updatedAt.toISOString(),
   };

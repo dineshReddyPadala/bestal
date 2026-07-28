@@ -1,95 +1,95 @@
-import { deployments } from '@bestal/mock-data';
 import { formatCurrency, formatDate } from '@bestal/shared-utils';
 import {
   Card,
   CardContent,
-  DataTable,
-  DataTableBody,
-  DataTableCell,
-  DataTableHead,
-  DataTableHeader,
-  DataTableRow,
   EmptyState,
   PageHeader,
   StatCard,
   StatusBadge,
+  TanStackDataTable,
 } from '@bestal/ui';
-import { Briefcase, Clock, DollarSign, Rocket } from 'lucide-react';
-import { DEMO_CLIENT_ID } from '../../lib/demo-client';
+import { type ColumnDef } from '@tanstack/react-table';
+import { Briefcase, Clock, Rocket } from 'lucide-react';
+import { useMemo } from 'react';
+import { useAuth } from '../../contexts/AuthContext';
+import { useDeploymentsList } from '../../hooks/api/useDeployments';
+import type { DeploymentListItem } from '../../lib/api/types';
 
 export function DeploymentsPage() {
-  const clientDeployments = deployments.filter((d) => d.clientId === DEMO_CLIENT_ID);
-  const active = clientDeployments.filter((d) => ['ACTIVE'].includes(d.status));
-  const pending = clientDeployments.filter((d) =>
-    ['PENDING', 'ON_HOLD'].includes(d.status),
+  const { user } = useAuth();
+  const clientId = user?.clientId ?? undefined;
+  const { data, isLoading } = useDeploymentsList({
+    limit: 100,
+    sort: '-createdAt',
+    ...(clientId ? { clientId } : {}),
+  });
+  const rows = data?.data ?? [];
+  const active = rows.filter((d) => d.status === 'ACTIVE');
+  const pending = rows.filter((d) => ['PENDING', 'ON_HOLD'].includes(d.status));
+
+  const columns = useMemo<ColumnDef<DeploymentListItem>[]>(
+    () => [
+      {
+        accessorKey: 'candidateName',
+        header: 'Candidate',
+        cell: ({ getValue }) => (
+          <span className="font-medium">{getValue() as string}</span>
+        ),
+      },
+      { accessorKey: 'roleTitle', header: 'Role' },
+      { accessorKey: 'placementType', header: 'Type' },
+      {
+        id: 'rate',
+        header: 'Rate',
+        cell: ({ row }) =>
+          row.original.billingRate != null
+            ? `${formatCurrency(row.original.billingRate, row.original.currency ?? 'USD')}/hr`
+            : '—',
+      },
+      {
+        accessorKey: 'startDate',
+        header: 'Start',
+        cell: ({ getValue }) => {
+          const v = getValue() as string | null;
+          return v ? formatDate(v) : '—';
+        },
+      },
+      {
+        accessorKey: 'status',
+        header: 'Status',
+        cell: ({ getValue }) => <StatusBadge status={getValue() as string} />,
+      },
+    ],
+    [],
   );
 
   return (
     <div>
-      <PageHeader
-        title="Active Deployments"
-      />
+      <PageHeader title="Active Deployments" />
 
       <div className="space-y-6 p-6">
         <div className="grid gap-4 sm:grid-cols-3">
+          <StatCard label="Active" value={active.length} icon={<Rocket className="h-5 w-5" />} />
           <StatCard
-            label="Active"
-            value={active.length}
-            icon={<Rocket className="h-5 w-5" />}
-          />
-          <StatCard
-            label="Pending Start"
+            label="Pending / On hold"
             value={pending.length}
             icon={<Clock className="h-5 w-5" />}
           />
           <StatCard
-            label="Total Placements"
-            value={clientDeployments.length}
+            label="Total placements"
+            value={rows.length}
             icon={<Briefcase className="h-5 w-5" />}
           />
         </div>
 
-        {clientDeployments.length === 0 ? (
-          <EmptyState
-            icon={<Rocket className="h-8 w-8" />}
-            title="No deployments"
-          />
+        {isLoading ? (
+          <p className="text-sm text-muted-foreground">Loading deployments…</p>
+        ) : rows.length === 0 ? (
+          <EmptyState icon={<Rocket className="h-8 w-8" />} title="No deployments" />
         ) : (
           <Card>
             <CardContent className="p-0">
-              <DataTable>
-                <DataTableHeader>
-                  <DataTableRow>
-                    <DataTableHead>Candidate</DataTableHead>
-                    <DataTableHead>Role</DataTableHead>
-                    <DataTableHead>Type</DataTableHead>
-                    <DataTableHead>Rate</DataTableHead>
-                    <DataTableHead>Start</DataTableHead>
-                    <DataTableHead>Status</DataTableHead>
-                  </DataTableRow>
-                </DataTableHeader>
-                <DataTableBody>
-                  {clientDeployments.map((deployment) => (
-                    <DataTableRow key={deployment.id}>
-                      <DataTableCell className="font-medium">
-                        {deployment.candidateName}
-                      </DataTableCell>
-                      <DataTableCell>{deployment.title}</DataTableCell>
-                      <DataTableCell>{deployment.placementType}</DataTableCell>
-                      <DataTableCell>
-                        <span className="inline-flex items-center gap-1">
-                          <DollarSign className="h-3.5 w-3.5 text-muted-foreground" />
-                          {formatCurrency(deployment.rate, deployment.currency)}/hr
-                        </span>
-                      </DataTableCell>
-                      <DataTableCell>{formatDate(deployment.startDate)}</DataTableCell>
-                      <DataTableCell>
-                        <StatusBadge status={deployment.status} />
-                      </DataTableCell>
-                    </DataTableRow>
-                  ))}
-                </DataTableBody>
-              </DataTable>
+              <TanStackDataTable columns={columns} data={rows} pageSize={12} dense />
             </CardContent>
           </Card>
         )}

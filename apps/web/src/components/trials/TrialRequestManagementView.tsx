@@ -26,7 +26,7 @@ import {
   ListingPageShell,
 } from '../layout/ListingPageShell';
 
-type TrialAction = 'Approve' | 'Reject' | 'Start' | 'Complete' | 'Convert';
+type TrialAction = 'Approve' | 'Reject' | 'Confirm' | 'Start' | 'Complete' | 'Convert';
 
 type TrialRequestStatus =
   | 'REQUESTED'
@@ -100,7 +100,7 @@ function TrialRowActions({
       case 'REQUESTED':
         return ['Approve', 'Reject'];
       case 'APPROVED':
-        return ['Start'];
+        return record.candidateConfirmedAt ? ['Start'] : ['Confirm', 'Start'];
       case 'IN_PROGRESS':
         return ['Complete'];
       case 'COMPLETED':
@@ -159,7 +159,7 @@ export function TrialRequestManagementView({
 }: TrialRequestManagementViewProps) {
   const { message, show } = useDemoToast();
   const { data, isLoading, isError, error } = useTrialsList({ limit: 100 });
-  const { approve, reject, update } = useTrialMutations();
+  const { approve, reject, update, confirmCandidate } = useTrialMutations();
   const { create: createDeployment } = useDeploymentMutations();
   const [filters, setFilters] = useState(defaultFilters);
   const [rejectTarget, setRejectTarget] = useState<TrialManagementRow | null>(null);
@@ -229,6 +229,8 @@ export function TrialRequestManagementView({
       try {
         if (action === 'Approve') {
           await approve.mutateAsync(record.id);
+        } else if (action === 'Confirm') {
+          await confirmCandidate.mutateAsync(record.id);
         } else if (action === 'Start') {
           await update.mutateAsync({ id: record.id, body: { status: 'IN_PROGRESS' } });
         }
@@ -237,7 +239,7 @@ export function TrialRequestManagementView({
         show(err instanceof Error ? err.message : 'Action failed');
       }
     },
-    [approve, update, show],
+    [approve, confirmCandidate, update, show],
   );
 
   const confirmReject = async (values: TrialRejectFormValues) => {

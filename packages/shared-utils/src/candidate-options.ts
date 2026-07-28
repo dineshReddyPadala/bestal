@@ -1,4 +1,5 @@
 export const CANDIDATE_AVAILABILITY_STATUSES = [
+  'AVAILABLE',
   'IMMEDIATE',
   'ONE_WEEK',
   'TWO_WEEKS',
@@ -10,6 +11,7 @@ export const CANDIDATE_AVAILABILITY_STATUSES = [
 export type CandidateAvailabilityStatusValue = (typeof CANDIDATE_AVAILABILITY_STATUSES)[number];
 
 export const CANDIDATE_AVAILABILITY_LABELS: Record<CandidateAvailabilityStatusValue, string> = {
+  AVAILABLE: 'Available',
   IMMEDIATE: 'Immediate',
   ONE_WEEK: '1 Week',
   TWO_WEEKS: '2 Weeks',
@@ -19,6 +21,7 @@ export const CANDIDATE_AVAILABILITY_LABELS: Record<CandidateAvailabilityStatusVa
 };
 
 export const CANDIDATE_PROFILE_STATUSES = [
+  'IMPORTED',
   'SOURCED',
   'AI_SCREENED',
   'RECRUITER_SCREENED',
@@ -27,6 +30,7 @@ export const CANDIDATE_PROFILE_STATUSES = [
   'BGV_PENDING',
   'BGV_COMPLETE',
   'PROFILE_DRAFT',
+  'PENDING_APPROVAL',
   'ADMIN_APPROVED',
   'CLIENT_VISIBLE',
   'SHORTLISTED',
@@ -39,6 +43,7 @@ export const CANDIDATE_PROFILE_STATUSES = [
 export type CandidateProfileStatusValue = (typeof CANDIDATE_PROFILE_STATUSES)[number];
 
 export const CANDIDATE_PROFILE_STATUS_LABELS: Record<CandidateProfileStatusValue, string> = {
+  IMPORTED: 'Imported',
   SOURCED: 'Sourced',
   AI_SCREENED: 'AI Screened',
   RECRUITER_SCREENED: 'Recruiter Screened',
@@ -47,6 +52,7 @@ export const CANDIDATE_PROFILE_STATUS_LABELS: Record<CandidateProfileStatusValue
   BGV_PENDING: 'BGV Pending',
   BGV_COMPLETE: 'BGV Complete',
   PROFILE_DRAFT: 'Profile Draft',
+  PENDING_APPROVAL: 'Approval Pending',
   ADMIN_APPROVED: 'Admin Approved',
   CLIENT_VISIBLE: 'Client Visible',
   SHORTLISTED: 'Shortlisted',

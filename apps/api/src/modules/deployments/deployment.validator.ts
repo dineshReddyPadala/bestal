@@ -124,6 +124,10 @@ export const deploymentListItemSchema = z.object({
   roleTitle: z.string(),
   startDate: z.string().nullable(),
   endDate: z.string().nullable(),
+  billingRate: z.number().nullable(),
+  candidatePayRate: z.number().nullable(),
+  expectedHoursPerWeek: z.number().nullable(),
+  currency: z.string().nullable(),
   createdAt: z.string(),
   updatedAt: z.string(),
 });

@@ -1,19 +1,11 @@
 import { formatDate } from '@bestal/shared-utils';
 import { PageHeader, SearchInput, StatusBadge } from '@bestal/ui';
-import {
-  Calendar,
-  FlaskConical,
-  Heart,
-  Rocket,
-  Sparkles,
-  Users,
-} from 'lucide-react';
+import { FlaskConical, Rocket, Sparkles, Users } from 'lucide-react';
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { PremiumStatCard } from '../../components/admin/PremiumStatCard';
 import { useCandidatesList } from '../../hooks/api/useCandidates';
 import { useDeploymentsList } from '../../hooks/api/useDeployments';
-import { useInterviewsList } from '../../hooks/api/useInterviews';
 import { useTrialsList } from '../../hooks/api/useTrials';
 import { useDashboardUser } from '../../hooks/useDashboardUser';
 
@@ -23,12 +15,10 @@ export function DashboardPage() {
   const [searchQuery, setSearchQuery] = useState('');
 
   const candidates = useCandidatesList({ limit: 20, sort: '-createdAt' });
-  const interviews = useInterviewsList({ limit: 20, sort: '-createdAt' });
   const trials = useTrialsList({ limit: 20 });
   const deployments = useDeploymentsList({ limit: 20 });
 
   const candidateRows = candidates.data?.data ?? [];
-  const interviewRows = interviews.data?.data ?? [];
   const trialRows = trials.data?.data ?? [];
   const deploymentRows = deployments.data?.data ?? [];
 
@@ -55,18 +45,12 @@ export function DashboardPage() {
             />
           </form>
 
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <PremiumStatCard
               label="Available talent"
               value={candidateRows.length}
               icon={<Sparkles className="h-5 w-5" />}
               accent="violet"
-            />
-            <PremiumStatCard
-              label="Interviews"
-              value={interviewRows.length}
-              icon={<Calendar className="h-5 w-5" />}
-              accent="sky"
             />
             <PremiumStatCard
               label="Trials"
@@ -79,12 +63,6 @@ export function DashboardPage() {
               value={deploymentRows.length}
               icon={<Rocket className="h-5 w-5" />}
               accent="emerald"
-            />
-            <PremiumStatCard
-              label="Shortlisted"
-              value="—"
-              icon={<Heart className="h-5 w-5" />}
-              accent="rose"
             />
           </div>
         </section>
@@ -126,31 +104,28 @@ export function DashboardPage() {
 
           <div className="rounded-xl border border-border bg-background p-5">
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-lg font-semibold">Your interviews</h2>
-              <Link
-                to="/client/interviews"
-                className="text-sm font-medium text-brand hover:underline"
-              >
+              <h2 className="text-lg font-semibold">Your trials</h2>
+              <Link to="/client/trials" className="text-sm font-medium text-brand hover:underline">
                 View all
               </Link>
             </div>
             <div className="space-y-3">
-              {interviewRows.slice(0, 6).map((i) => (
+              {trialRows.slice(0, 6).map((t) => (
                 <div
-                  key={i.id}
+                  key={t.id}
                   className="flex items-center justify-between rounded-lg border border-border/70 px-3 py-2"
                 >
                   <div>
-                    <p className="text-sm font-medium">{i.candidateName}</p>
+                    <p className="text-sm font-medium">{t.candidateName}</p>
                     <p className="text-xs text-muted-foreground">
-                      {i.scheduledAt ? formatDate(i.scheduledAt) : 'Unscheduled'}
+                      {t.startDate ? formatDate(t.startDate) : 'Dates TBD'}
                     </p>
                   </div>
-                  <StatusBadge status={i.status} />
+                  <StatusBadge status={t.status} />
                 </div>
               ))}
-              {interviewRows.length === 0 && (
-                <p className="text-sm text-muted-foreground">No interview requests yet.</p>
+              {trialRows.length === 0 && (
+                <p className="text-sm text-muted-foreground">No trial requests yet.</p>
               )}
             </div>
           </div>

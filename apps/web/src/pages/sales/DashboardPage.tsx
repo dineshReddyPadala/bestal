@@ -18,9 +18,32 @@ export function DashboardPage() {
   const deploymentRows = deployments.data?.data ?? [];
 
   const activeTrials = trialRows.filter((t) =>
-    ['REQUESTED', 'APPROVED', 'SCHEDULED', 'IN_PROGRESS'].includes(t.status),
+    ['REQUESTED', 'APPROVED', 'IN_PROGRESS'].includes(t.status),
   );
   const activeDeployments = deploymentRows.filter((d) => d.status === 'ACTIVE');
+  const completedTrials = trialRows.filter((t) => t.status === 'COMPLETED');
+  const convertedTrials = completedTrials.filter(
+    (t) => t.outcome === 'CONTINUE' || t.outcome === 'CONVERTED',
+  );
+  const conversionRate =
+    completedTrials.length > 0
+      ? Math.round((convertedTrials.length / completedTrials.length) * 100)
+      : 0;
+  const revenue = activeDeployments.reduce(
+    (sum, d) => sum + (d.billingRate ?? 0) * (d.expectedHoursPerWeek ?? 40),
+    0,
+  );
+  const margin = activeDeployments.reduce((sum, d) => {
+    const bill = d.billingRate ?? 0;
+    const pay = d.candidatePayRate ?? 0;
+    return sum + (bill - pay) * (d.expectedHoursPerWeek ?? 40);
+  }, 0);
+
+  const thirtyDaysAgo = Date.now() - 30 * 86_400_000;
+  const newClients = clientRows.filter((c) => {
+    const created = c.createdAt ? new Date(c.createdAt).getTime() : 0;
+    return created >= thirtyDaysAgo;
+  }).length;
 
   const dealColumns = useMemo<ColumnDef<DeploymentListItem>[]>(
     () => [
@@ -54,22 +77,27 @@ export function DashboardPage() {
 
   return (
     <div>
-      <PageHeader
-        title="Sales Dashboard"
-      />
+      <PageHeader title="Sales Dashboard" />
 
-      <div className="grid gap-4 p-6 md:grid-cols-4">
+      <div className="grid gap-4 p-6 md:grid-cols-4 xl:grid-cols-8">
         {clients.isLoading || trials.isLoading || deployments.isLoading ? (
           <p className="text-sm text-muted-foreground md:col-span-4">Loading live metrics…</p>
         ) : (
           <>
+            <StatCard label="Total clients" value={clientRows.length} />
+            <StatCard label="New clients (30d)" value={newClients} />
             <StatCard
               label="Active clients"
               value={clientRows.filter((c) => c.status === 'ACTIVE').length}
             />
             <StatCard label="Open trials" value={activeTrials.length} />
+            <StatCard label="Trial conversion" value={`${conversionRate}%`} />
             <StatCard label="Active deployments" value={activeDeployments.length} />
-            <StatCard label="Total clients" value={clientRows.length} />
+            <StatCard
+              label="Weekly revenue"
+              value={formatCurrency(revenue, 'USD')}
+            />
+            <StatCard label="Weekly margin" value={formatCurrency(margin, 'USD')} />
           </>
         )}
       </div>

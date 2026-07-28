@@ -8,6 +8,7 @@ const userInclude = {
     where: { isActive: true },
     include: {
       organization: { select: { id: true, name: true } },
+      client: { select: { id: true, name: true } },
     },
   },
 } satisfies Prisma.UserInclude;
@@ -33,6 +34,19 @@ export class UserRepository extends BaseRepository {
     });
   }
 
+  clientExists(organizationId: number, clientId: number): Promise<boolean> {
+    return this.prisma.client
+      .findFirst({
+        where: {
+          id: BigInt(clientId),
+          organizationId: BigInt(organizationId),
+          deletedAt: null,
+        },
+        select: { id: true },
+      })
+      .then(Boolean);
+  }
+
   async createWithMembership(
     organizationId: number,
     passwordHash: string,
@@ -50,6 +64,7 @@ export class UserRepository extends BaseRepository {
           create: {
             organizationId: BigInt(organizationId),
             role: input.role as Role,
+            clientId: input.clientId != null ? BigInt(input.clientId) : null,
             isActive: true,
           },
         },
@@ -58,6 +73,25 @@ export class UserRepository extends BaseRepository {
     });
 
     return user;
+  }
+
+  updateMembershipClient(
+    organizationId: number,
+    userId: number,
+    data: { role?: Role; clientId?: number | null },
+  ): Promise<{ count: number }> {
+    return this.prisma.membership.updateMany({
+      where: {
+        userId: BigInt(userId),
+        organizationId: BigInt(organizationId),
+      },
+      data: {
+        ...(data.role !== undefined ? { role: data.role } : {}),
+        ...(data.clientId !== undefined
+          ? { clientId: data.clientId != null ? BigInt(data.clientId) : null }
+          : {}),
+      },
+    });
   }
 
   async findMany(filters: UserListFilters): Promise<{ items: UserRecord[]; total: number }> {

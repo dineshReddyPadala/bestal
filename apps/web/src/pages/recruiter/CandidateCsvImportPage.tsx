@@ -1,10 +1,10 @@
-import { CsvImportScreen } from '../../components/import/CsvImportScreen';
+import { CandidateImportScreen } from '../../components/import/CandidateImportScreen';
 
 export function CandidateCsvImportPage() {
   return (
-    <CsvImportScreen
+    <CandidateImportScreen
       cancelPath="/recruiter/candidates"
-      title="Data Import"
+      title="Candidate Data Import"
     />
   );
 }

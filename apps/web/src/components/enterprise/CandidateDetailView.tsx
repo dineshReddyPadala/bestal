@@ -18,6 +18,7 @@ import {
   FileText,
   Globe,
   Loader2,
+  Pencil,
   Sparkles,
   Trash2,
   Upload,
@@ -31,6 +32,7 @@ import { usePermissions } from '../../hooks/usePermissions';
 import { getApiErrorMessage } from '../../lib/api/errors';
 import type { CandidateDocumentDto, CandidateDto, CandidateSkillDto } from '../../lib/api/types';
 import { useDemoToast } from '../../lib/use-demo-toast';
+import { ToastHost } from '../ui/ToastHost';
 import { DetailPageShell, type WorkflowAction } from './DetailPageShell';
 import { SchemaFieldGrid, type SchemaFieldDef } from './SchemaFieldGrid';
 
@@ -246,7 +248,7 @@ function OverviewTab({ candidate, fullName }: { candidate: CandidateDto; fullNam
 
 export function CandidateDetailView({ candidateId, basePath }: CandidateDetailViewProps) {
   const navigate = useNavigate();
-  const { message, show, showError } = useDemoToast();
+  const { message, variant, show, showError, dismiss } = useDemoToast();
   const {
     canApproveCandidates,
     canWriteCandidates,
@@ -286,6 +288,30 @@ export function CandidateDetailView({ candidateId, basePath }: CandidateDetailVi
 
   const workflowActions = useMemo(() => {
     const actions: WorkflowAction[] = [];
+    const profile = (candidate?.profileStatus ?? '').toUpperCase();
+    const editableStatuses = new Set([
+      'SOURCED',
+      'AI_SCREENED',
+      'RECRUITER_SCREENED',
+      'EVALUATION_PENDING',
+      'EVALUATION_COMPLETE',
+      'BGV_PENDING',
+      'BGV_COMPLETE',
+      'PROFILE_DRAFT',
+    ]);
+    const canEditProfile =
+      canWriteCandidates &&
+      (editableStatuses.has(profile) || !profile);
+
+    if (canEditProfile) {
+      actions.push({
+        id: 'edit',
+        label: 'Edit Profile',
+        variant: 'primary',
+        icon: <Pencil className="mr-1.5 h-3.5 w-3.5" />,
+        to: `${basePath}/${candidateId}/edit`,
+      });
+    }
 
     if (canWriteCandidates) {
       actions.push(
@@ -369,6 +395,10 @@ export function CandidateDetailView({ candidateId, basePath }: CandidateDetailVi
 
     return actions;
   }, [
+    basePath,
+    candidate?.approvalStatus,
+    candidate?.profileStatus,
+    candidateId,
     canApproveCandidates,
     canDeleteCandidates,
     canUploadBgv,
@@ -547,6 +577,8 @@ export function CandidateDetailView({ candidateId, basePath }: CandidateDetailVi
   ].filter(Boolean) as Array<{ id: string; title: string; description: string; at: string }>;
 
   return (
+    <>
+      <ToastHost message={message} variant={variant} onDismiss={dismiss} />
     <DetailPageShell
       title={fullName}
       description={candidate.headline ?? candidate.primaryRole ?? undefined}
@@ -563,6 +595,7 @@ export function CandidateDetailView({ candidateId, basePath }: CandidateDetailVi
         void handleAction(id);
       }}
       toast={message}
+      toastVariant={variant}
     >
       <Tabs
         defaultTab="overview"
@@ -735,5 +768,6 @@ export function CandidateDetailView({ candidateId, basePath }: CandidateDetailVi
         ]}
       />
     </DetailPageShell>
+    </>
   );
 }

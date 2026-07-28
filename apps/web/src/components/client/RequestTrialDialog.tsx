@@ -2,12 +2,13 @@ import { Button, Dialog } from '@bestal/ui';
 import { useState } from 'react';
 import { TrialRequestForm } from '../forms/TrialRequestForm';
 import type { TrialRequestFormValues } from '../../lib/entity-field-metadata';
+import { getApiErrorMessage } from '../../lib/api/errors';
 
 type RequestTrialDialogProps = {
   open: boolean;
   onClose: () => void;
   candidateName: string;
-  onSubmit: (values: TrialRequestFormValues) => void;
+  onSubmit: (values: TrialRequestFormValues) => void | Promise<void>;
 };
 
 export function RequestTrialDialog({
@@ -17,31 +18,43 @@ export function RequestTrialDialog({
   onSubmit,
 }: RequestTrialDialogProps) {
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  function handleSubmit(values: TrialRequestFormValues) {
-    onSubmit(values);
-    setSubmitted(true);
-    setTimeout(() => {
-      setSubmitted(false);
-      onClose();
-    }, 1500);
+  async function handleSubmit(values: TrialRequestFormValues) {
+    setError(null);
+    setSubmitting(true);
+    try {
+      await onSubmit(values);
+      setSubmitted(true);
+      setTimeout(() => {
+        setSubmitted(false);
+        setSubmitting(false);
+        onClose();
+      }, 1200);
+    } catch (err) {
+      setSubmitting(false);
+      setError(getApiErrorMessage(err, 'Trial request failed'));
+    }
   }
 
   return (
     <Dialog
       open={open}
-      onClose={onClose}
+      onClose={() => {
+        if (!submitting) onClose();
+      }}
       title={`Request trial — ${candidateName}`}
       scrollable
       className="max-w-lg"
       footer={
         !submitted && (
           <>
-            <Button variant="outline" onClick={onClose}>
+            <Button variant="outline" onClick={onClose} disabled={submitting}>
               Cancel
             </Button>
-            <Button type="submit" form="trial-request-form">
-              Submit request
+            <Button type="submit" form="trial-request-form" disabled={submitting}>
+              {submitting ? 'Submitting…' : 'Submit request'}
             </Button>
           </>
         )
@@ -52,12 +65,21 @@ export function RequestTrialDialog({
           Trial request submitted. Your account manager will review and confirm dates.
         </p>
       ) : (
-        <TrialRequestForm
-          formId="trial-request-form"
-          showActions={false}
-          onSubmit={handleSubmit}
-          onCancel={onClose}
-        />
+        <div className="space-y-3">
+          {error ? (
+            <p className="rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+              {error}
+            </p>
+          ) : null}
+          <TrialRequestForm
+            formId="trial-request-form"
+            showActions={false}
+            onSubmit={(values) => {
+              void handleSubmit(values);
+            }}
+            onCancel={onClose}
+          />
+        </div>
       )}
     </Dialog>
   );

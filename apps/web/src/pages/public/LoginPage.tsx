@@ -21,7 +21,7 @@ const portals = [
   {
     id: 'recruiter',
     name: 'Recruiter Portal',
-    description: 'Candidate pipeline, evaluations, interviews, and shortlists.',
+    description: 'Candidate pipeline, evaluations, and BGV.',
     href: '/recruiter/login',
     icon: Users,
     color: 'bg-blue-100 text-blue-700',
@@ -29,7 +29,7 @@ const portals = [
   {
     id: 'client',
     name: 'Client Portal',
-    description: 'Review shortlists, schedule interviews, and manage deployments.',
+    description: 'Browse candidates, request trials, and manage deployments.',
     href: '/client/login',
     icon: Briefcase,
     color: 'bg-emerald-100 text-emerald-700',

@@ -87,4 +87,7 @@ export const backgroundChecksApi = {
     );
     return json.data;
   },
+  /** Re-run AI extraction on the uploaded final report via Node → ai-service. */
+  extractAi: (id: number) =>
+    apiAction<BackgroundCheckDto>(`/background-checks/${id}/extract-ai`),
 };
