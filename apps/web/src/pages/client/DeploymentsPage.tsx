@@ -10,10 +10,11 @@ import {
   TanStackDataTable,
 } from '@bestal/ui';
 import { type ColumnDef } from '@tanstack/react-table';
-import { Briefcase, Clock, Plus, Rocket } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { Briefcase, Clock, MoreHorizontal, Plus, Rocket } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { PickCandidateDialog } from '../../components/client/PickCandidateDialog';
 import { RequestDeploymentDialog } from '../../components/client/RequestDeploymentDialog';
+import { ExtendDeploymentDialog } from '../../components/deployments/ExtendDeploymentDialog';
 import { useAuth } from '../../contexts/AuthContext';
 import { useDeploymentMutations, useDeploymentsList } from '../../hooks/api/useDeployments';
 import { usePermissions } from '../../hooks/usePermissions';
@@ -21,13 +22,69 @@ import type { DeploymentListItem } from '../../lib/api/types';
 import { getApiErrorMessage } from '../../lib/api/errors';
 import { useDemoToast } from '../../lib/use-demo-toast';
 
+function ClientDeploymentActions({
+  record,
+  canRequest,
+  onRequestExtension,
+}: {
+  record: DeploymentListItem;
+  canRequest: boolean;
+  onRequestExtension: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const canExtend =
+    canRequest && (record.status === 'ACTIVE' || record.status === 'ON_HOLD');
+
+  useEffect(() => {
+    if (!open) return;
+    const close = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', close);
+    return () => document.removeEventListener('mousedown', close);
+  }, [open]);
+
+  if (!canExtend) {
+    return <span className="text-muted-foreground">—</span>;
+  }
+
+  return (
+    <div className="relative" ref={ref} onClick={(e) => e.stopPropagation()}>
+      <button
+        type="button"
+        className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
+        onClick={() => setOpen((v) => !v)}
+        aria-label="Deployment actions"
+      >
+        <MoreHorizontal className="h-4 w-4" />
+      </button>
+      {open ? (
+        <div className="absolute right-0 top-full z-20 mt-1 min-w-[180px] rounded-lg border border-border bg-background py-1 shadow-elevated">
+          <button
+            type="button"
+            className="flex w-full items-center px-3 py-2 text-left text-sm hover:bg-muted"
+            onClick={() => {
+              onRequestExtension();
+              setOpen(false);
+            }}
+          >
+            {record.extensionRequestedEndDate
+              ? 'Update extension request'
+              : 'Request extension'}
+          </button>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 export function DeploymentsPage() {
   const { user } = useAuth();
   const { has } = usePermissions();
   const { message, show, showError } = useDemoToast();
   const clientId = user?.clientId ?? undefined;
-  const canRequest =
-    clientId != null && has('deployments:request');
+  const canRequest = clientId != null && has('deployments:request');
 
   const { data, isLoading } = useDeploymentsList({
     limit: 100,
@@ -45,6 +102,7 @@ export function DeploymentsPage() {
     id: number;
     name: string;
   } | null>(null);
+  const [extendTarget, setExtendTarget] = useState<DeploymentListItem | null>(null);
 
   const columns = useMemo<ColumnDef<DeploymentListItem>[]>(
     () => [
@@ -74,12 +132,40 @@ export function DeploymentsPage() {
         },
       },
       {
+        accessorKey: 'endDate',
+        header: 'End',
+        cell: ({ row }) => {
+          const end = row.original.endDate;
+          return (
+            <div className="flex flex-col gap-0.5">
+              <span>{end ? formatDate(end) : 'Ongoing'}</span>
+              {row.original.extensionRequestedEndDate ? (
+                <span className="text-[10px] font-medium text-amber-700">
+                  Ext. requested → {row.original.extensionRequestedEndDate}
+                </span>
+              ) : null}
+            </div>
+          );
+        },
+      },
+      {
         accessorKey: 'status',
         header: 'Status',
         cell: ({ getValue }) => <StatusBadge status={getValue() as string} />,
       },
+      {
+        id: 'actions',
+        header: '',
+        cell: ({ row }) => (
+          <ClientDeploymentActions
+            record={row.original}
+            canRequest={canRequest}
+            onRequestExtension={() => setExtendTarget(row.original)}
+          />
+        ),
+      },
     ],
-    [],
+    [canRequest],
   );
 
   return (
@@ -192,6 +278,36 @@ export function DeploymentsPage() {
           }}
         />
       ) : null}
+
+      <ExtendDeploymentDialog
+        open={extendTarget != null}
+        title={
+          extendTarget
+            ? `Request extension — ${extendTarget.candidateName}`
+            : 'Request extension'
+        }
+        description="Send an extension request to BesTal. An admin will review and update the end date."
+        initialEndDate={
+          extendTarget?.extensionRequestedEndDate ?? extendTarget?.endDate ?? null
+        }
+        confirmLabel="Submit request"
+        askReason
+        onClose={() => setExtendTarget(null)}
+        onSubmit={async ({ endDate, reason }) => {
+          if (!extendTarget) return;
+          try {
+            await mutations.requestExtension.mutateAsync({
+              id: extendTarget.id,
+              endDate,
+              reason,
+            });
+            show(`Extension requested — ${extendTarget.candidateName}`);
+            setExtendTarget(null);
+          } catch (err) {
+            throw new Error(getApiErrorMessage(err, 'Extension request failed'));
+          }
+        }}
+      />
     </div>
   );
 }

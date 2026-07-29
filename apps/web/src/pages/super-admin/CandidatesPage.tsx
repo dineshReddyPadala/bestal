@@ -400,20 +400,6 @@ function CandidatesTable({ pendingOnly }: { pendingOnly: boolean }) {
         error={isError ? (error instanceof Error ? error.message : 'Failed') : null}
         loading={isLoading}
         loadingLabel="Loading candidates…"
-        actions={
-          pendingOnly ? undefined : (
-            <div className="flex flex-wrap items-center gap-2">
-              <Button size="sm" to="/super-admin/candidates/import">
-                <FileSpreadsheet className="mr-1.5 h-3.5 w-3.5" />
-                Import Candidates
-              </Button>
-              <Button size="sm" to="/super-admin/candidates/new">
-                <Plus className="mr-1.5 h-3.5 w-3.5" />
-                Add Candidate
-              </Button>
-            </div>
-          )
-        }
       >
         <TanStackDataTable
           columns={columns}
@@ -424,9 +410,23 @@ function CandidatesTable({ pendingOnly }: { pendingOnly: boolean }) {
           fillHeight
           dense
           filtersInline={!pendingOnly}
+          toolbar={
+            pendingOnly ? undefined : (
+              <>
+                <Button size="sm" to="/super-admin/candidates/import">
+                  <FileSpreadsheet className="mr-1.5 h-3.5 w-3.5" />
+                  Import Candidates
+                </Button>
+                <Button size="sm" to="/super-admin/candidates/new">
+                  <Plus className="mr-1.5 h-3.5 w-3.5" />
+                  Add Candidate
+                </Button>
+              </>
+            )
+          }
           filters={
             pendingOnly ? undefined : (
-              <ListingFiltersRow onClear={() => setFilters(defaultFilters)}>
+              <ListingFiltersRow>
                 <ListingFilterSelect
                   label="PROFILE"
                   value={filters.profileStatus}

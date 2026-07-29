@@ -14,6 +14,7 @@ import {
 import { type ColumnDef } from '@tanstack/react-table';
 import {
   CheckCircle,
+  ClipboardList,
   Download,
   FileText,
   Globe,
@@ -29,6 +30,7 @@ import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCandidate, useCandidateMutations } from '../../hooks/api/useCandidates';
 import { usePermissions } from '../../hooks/usePermissions';
+import { useAuth } from '../../contexts/AuthContext';
 import { getApiErrorMessage } from '../../lib/api/errors';
 import type { CandidateDocumentDto, CandidateDto, CandidateSkillDto } from '../../lib/api/types';
 import { useDemoToast } from '../../lib/use-demo-toast';
@@ -248,6 +250,7 @@ function OverviewTab({ candidate, fullName }: { candidate: CandidateDto; fullNam
 
 export function CandidateDetailView({ candidateId, basePath }: CandidateDetailViewProps) {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { message, variant, show, showError, dismiss } = useDemoToast();
   const {
     canApproveCandidates,
@@ -258,6 +261,13 @@ export function CandidateDetailView({ candidateId, basePath }: CandidateDetailVi
   } = usePermissions();
   const { data: candidate, isLoading, isError, error } = useCandidate(candidateId);
   const mutations = useCandidateMutations();
+  const evaluationsPath = basePath.startsWith('/admin')
+    ? '/admin/evaluations'
+    : basePath.startsWith('/super-admin')
+      ? '/super-admin/evaluations'
+      : '/recruiter/evaluations';
+  const isAdminPortal =
+    user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN' || basePath.startsWith('/admin');
 
   const skillColumns = useMemo<ColumnDef<CandidateSkillDto>[]>(
     () => [
@@ -336,6 +346,15 @@ export function CandidateDetailView({ candidateId, basePath }: CandidateDetailVi
       );
     }
 
+    if (isAdminPortal || canUploadEvaluation) {
+      actions.push({
+        id: 'view-eval',
+        label: 'View Evaluation',
+        variant: 'outline',
+        icon: <ClipboardList className="mr-1.5 h-3.5 w-3.5" />,
+      });
+    }
+
     if (canUploadEvaluation) {
       actions.push({
         id: 'upload-eval',
@@ -404,6 +423,7 @@ export function CandidateDetailView({ candidateId, basePath }: CandidateDetailVi
     canUploadBgv,
     canUploadEvaluation,
     canWriteCandidates,
+    isAdminPortal,
   ]);
 
   async function handleAction(id: string) {
@@ -437,11 +457,16 @@ export function CandidateDetailView({ candidateId, basePath }: CandidateDetailVi
           }
           return;
         }
+        case 'view-eval':
+          navigate(`${evaluationsPath}?candidateId=${candidateId}`);
+          return;
         case 'upload-eval':
-          navigate(`${basePath.includes('admin') ? '/admin' : '/recruiter'}/evaluations`);
+          navigate(`${evaluationsPath}?candidateId=${candidateId}`);
           return;
         case 'upload-bgv':
-          navigate(`${basePath.includes('admin') ? '/admin' : '/recruiter'}/background-checks`);
+          navigate(
+            `${basePath.includes('admin') ? '/admin' : '/recruiter'}/background-checks`,
+          );
           return;
         default:
           show(

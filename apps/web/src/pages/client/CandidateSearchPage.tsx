@@ -87,100 +87,109 @@ export function CandidateSearchPage() {
         </div>
       )}
 
-      <div className="space-y-6 p-4 sm:p-6">
-        <PremiumSearchFilters
-          filters={filters}
-          onChange={setFilters}
-          resultCount={filtered.length}
-          communityOptions={communityOptions}
-          roleOptions={roleOptions}
-          timezoneOptions={timezoneOptions}
-        />
+      <div className="flex flex-col gap-4 p-4 md:flex-row md:items-start md:gap-6 sm:p-6">
+        <aside className="w-full shrink-0 md:sticky md:top-4 md:w-72 lg:w-80">
+          <PremiumSearchFilters
+            layout="panel"
+            filters={filters}
+            onChange={setFilters}
+            resultCount={filtered.length}
+            communityOptions={communityOptions}
+            roleOptions={roleOptions}
+            timezoneOptions={timezoneOptions}
+          />
+        </aside>
 
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <p className="text-sm text-muted-foreground">
-            {isLoading
-              ? 'Loading candidates…'
-              : `${filtered.length} result${filtered.length === 1 ? '' : 's'}`}
-            {!isLoading && countActiveFilters(filters) > 0 && (
-              <span> · {countActiveFilters(filters)} filter(s) active</span>
-            )}
-          </p>
-          <div className="flex flex-wrap items-center gap-2">
-            <Select
-              value={sort}
-              onChange={(e) => setSort(e.target.value as ClientSearchSort)}
-              className="h-9 w-44 text-sm"
-            >
-              <option value="best-match">Best Match</option>
-              <option value="highest-score">Highest Score</option>
-              <option value="lowest-rate">Lowest Rate</option>
-              <option value="experience">Experience</option>
-              <option value="availability">Availability</option>
-            </Select>
-            <div className="flex rounded-lg border border-border p-0.5">
-              <button
-                type="button"
-                className={cn(
-                  'rounded-md p-2 transition-colors',
-                  viewMode === 'grid' ? 'bg-brand text-white' : 'text-muted-foreground hover:bg-muted',
-                )}
-                onClick={() => setViewMode('grid')}
-                aria-label="Grid view"
+        <div className="min-w-0 flex-1 space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <p className="text-sm text-muted-foreground">
+              {isLoading
+                ? 'Loading candidates…'
+                : `${filtered.length} result${filtered.length === 1 ? '' : 's'}`}
+              {!isLoading && countActiveFilters(filters) > 0 && (
+                <span> · {countActiveFilters(filters)} filter(s) active</span>
+              )}
+            </p>
+            <div className="flex flex-wrap items-center gap-2">
+              <Select
+                value={sort}
+                onChange={(e) => setSort(e.target.value as ClientSearchSort)}
+                className="h-9 w-44 text-sm"
               >
-                <Grid3X3 className="h-4 w-4" />
-              </button>
-              <button
-                type="button"
-                className={cn(
-                  'rounded-md p-2 transition-colors',
-                  viewMode === 'list' ? 'bg-brand text-white' : 'text-muted-foreground hover:bg-muted',
-                )}
-                onClick={() => setViewMode('list')}
-                aria-label="List view"
-              >
-                <List className="h-4 w-4" />
-              </button>
+                <option value="best-match">Best Match</option>
+                <option value="highest-score">Highest Score</option>
+                <option value="lowest-rate">Lowest Rate</option>
+                <option value="experience">Experience</option>
+                <option value="availability">Availability</option>
+              </Select>
+              <div className="flex rounded-lg border border-border p-0.5">
+                <button
+                  type="button"
+                  className={cn(
+                    'rounded-md p-2 transition-colors',
+                    viewMode === 'grid'
+                      ? 'bg-brand text-white'
+                      : 'text-muted-foreground hover:bg-muted',
+                  )}
+                  onClick={() => setViewMode('grid')}
+                  aria-label="Grid view"
+                >
+                  <Grid3X3 className="h-4 w-4" />
+                </button>
+                <button
+                  type="button"
+                  className={cn(
+                    'rounded-md p-2 transition-colors',
+                    viewMode === 'list'
+                      ? 'bg-brand text-white'
+                      : 'text-muted-foreground hover:bg-muted',
+                  )}
+                  onClick={() => setViewMode('list')}
+                  aria-label="List view"
+                >
+                  <List className="h-4 w-4" />
+                </button>
+              </div>
             </div>
           </div>
-        </div>
 
-        {isLoading ? (
-          <p className="text-sm text-muted-foreground">Loading talent pool…</p>
-        ) : filtered.length === 0 ? (
-          <EmptyState
-            icon={<Users className="h-8 w-8" />}
-            title="No candidates match your filters"
-          />
-        ) : viewMode === 'grid' ? (
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
-            {filtered.map((record) => (
-              <ToptalCandidateCard
-                key={record.id}
-                record={record}
-                layout="grid"
-                canRequestTrial={canRequestTrial}
-                selected={selectedIds.has(record.id)}
-                onSelectedChange={(next) => toggleSelected(record.id, next)}
-                onView={() => navigate(`/client/candidates/${record.id}`)}
-              />
-            ))}
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {filtered.map((record) => (
-              <ToptalCandidateCard
-                key={record.id}
-                record={record}
-                layout="list"
-                canRequestTrial={canRequestTrial}
-                selected={selectedIds.has(record.id)}
-                onSelectedChange={(next) => toggleSelected(record.id, next)}
-                onView={() => navigate(`/client/candidates/${record.id}`)}
-              />
-            ))}
-          </div>
-        )}
+          {isLoading ? (
+            <p className="text-sm text-muted-foreground">Loading talent pool…</p>
+          ) : filtered.length === 0 ? (
+            <EmptyState
+              icon={<Users className="h-8 w-8" />}
+              title="No candidates match your filters"
+            />
+          ) : viewMode === 'grid' ? (
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              {filtered.map((record) => (
+                <ToptalCandidateCard
+                  key={record.id}
+                  record={record}
+                  layout="grid"
+                  canRequestTrial={canRequestTrial}
+                  selected={selectedIds.has(record.id)}
+                  onSelectedChange={(next) => toggleSelected(record.id, next)}
+                  onView={() => navigate(`/client/candidates/${record.id}`)}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {filtered.map((record) => (
+                <ToptalCandidateCard
+                  key={record.id}
+                  record={record}
+                  layout="list"
+                  canRequestTrial={canRequestTrial}
+                  selected={selectedIds.has(record.id)}
+                  onSelectedChange={(next) => toggleSelected(record.id, next)}
+                  onView={() => navigate(`/client/candidates/${record.id}`)}
+                />
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       {selectedIds.size > 0 ? (

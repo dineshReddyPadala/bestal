@@ -10,11 +10,13 @@ import type { DeploymentListItem } from '../../lib/api/types';
 import { useDemoToast } from '../../lib/use-demo-toast';
 import { DeploymentForm } from '../forms/DeploymentForm';
 import type { DeploymentFormValues } from '../../lib/entity-field-metadata';
+import { getApiErrorMessage } from '../../lib/api/errors';
 import {
   ListingFilterSelect,
   ListingFiltersRow,
   ListingPageShell,
 } from '../layout/ListingPageShell';
+import { ExtendDeploymentDialog } from './ExtendDeploymentDialog';
 
 type DeploymentAction =
   | 'Approve'
@@ -164,6 +166,7 @@ export function DeploymentManagementView({
   const [approvePayRate, setApprovePayRate] = useState('');
   const [approveCurrency, setApproveCurrency] = useState('USD');
   const [approveMargin, setApproveMargin] = useState('');
+  const [extendTarget, setExtendTarget] = useState<DeploymentListItem | null>(null);
 
   const records = useMemo(() => data?.data ?? [], [data]);
 
@@ -245,12 +248,8 @@ export function DeploymentManagementView({
         } else if (action === 'Complete') {
           await mutations.complete.mutateAsync(record.id);
         } else if (action === 'Extend') {
-          const next = window.prompt(
-            'New end date (YYYY-MM-DD)',
-            record.endDate?.slice(0, 10) ?? '',
-          );
-          if (!next?.trim()) return;
-          await mutations.extend.mutateAsync({ id: record.id, endDate: next.trim() });
+          setExtendTarget(record);
+          return;
         } else {
           await mutations.terminate.mutateAsync({ id: record.id });
         }
@@ -358,7 +357,16 @@ export function DeploymentManagementView({
       {
         accessorKey: 'status',
         header: 'Status',
-        cell: ({ getValue }) => <StatusBadge status={getValue() as string} />,
+        cell: ({ row }) => (
+          <div className="flex flex-col gap-1">
+            <StatusBadge status={row.original.status} />
+            {row.original.extensionRequestedEndDate ? (
+              <span className="text-[10px] font-medium text-amber-700">
+                Ext. requested → {row.original.extensionRequestedEndDate}
+              </span>
+            ) : null}
+          </div>
+        ),
       },
       {
         accessorKey: 'placementType',
@@ -397,23 +405,6 @@ export function DeploymentManagementView({
         error={listError}
         loading={isLoading}
         loadingLabel="Loading deployments…"
-        actions={
-          <>
-            <Button size="sm" onClick={() => setCreateOpen(true)}>
-              <Plus className="mr-1.5 h-3.5 w-3.5" />
-              New deployment
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleExport}
-              disabled={filteredData.length === 0}
-            >
-              <Download className="mr-1.5 h-3.5 w-3.5" />
-              Export
-            </Button>
-          </>
-        }
       >
         <TanStackDataTable
           columns={columns}
@@ -424,6 +415,23 @@ export function DeploymentManagementView({
           fillHeight
           dense
           filtersInline
+          toolbar={
+            <>
+              <Button size="sm" onClick={() => setCreateOpen(true)}>
+                <Plus className="mr-1.5 h-3.5 w-3.5" />
+                New deployment
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleExport}
+                disabled={filteredData.length === 0}
+              >
+                <Download className="mr-1.5 h-3.5 w-3.5" />
+                Export
+              </Button>
+            </>
+          }
           filters={
             <ListingFiltersRow onClear={() => setFilters(defaultFilters)}>
               <ListingFilterSelect
@@ -468,6 +476,35 @@ export function DeploymentManagementView({
           }}
         />
       </ListingPageShell>
+
+      <ExtendDeploymentDialog
+        open={extendTarget != null}
+        title={
+          extendTarget
+            ? `Extend deployment — ${extendTarget.candidateName}`
+            : 'Extend deployment'
+        }
+        description={
+          extendTarget?.extensionRequestedEndDate
+            ? `Client requested extension to ${extendTarget.extensionRequestedEndDate}. Confirm or choose another end date.`
+            : 'Set a new end date for this deployment.'
+        }
+        initialEndDate={
+          extendTarget?.extensionRequestedEndDate ?? extendTarget?.endDate ?? null
+        }
+        confirmLabel="Extend"
+        onClose={() => setExtendTarget(null)}
+        onSubmit={async ({ endDate }) => {
+          if (!extendTarget) return;
+          try {
+            await mutations.extend.mutateAsync({ id: extendTarget.id, endDate });
+            show(`Extended — ${extendTarget.candidateName} @ ${extendTarget.clientName}`);
+            setExtendTarget(null);
+          } catch (err) {
+            throw new Error(getApiErrorMessage(err, 'Extend failed'));
+          }
+        }}
+      />
 
       <Dialog
         open={createOpen}

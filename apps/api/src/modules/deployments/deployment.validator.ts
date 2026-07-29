@@ -143,6 +143,7 @@ const deploymentDtoSchema = z.object({
   reportingManagerName: z.string().nullable().optional(),
   reportingManagerEmail: z.string().nullable().optional(),
   notes: z.string().nullable(),
+  extensionRequestedEndDate: z.string().nullable().optional(),
   terminatedAt: z.string().nullable(),
   terminateReason: z.string().nullable(),
   createdAt: z.string(),
@@ -168,6 +169,8 @@ export const deploymentListItemSchema = z.object({
   candidatePayRate: z.number().nullable(),
   expectedHoursPerWeek: z.number().nullable(),
   currency: z.string().nullable(),
+  notes: z.string().nullable().optional(),
+  extensionRequestedEndDate: z.string().nullable().optional(),
   createdAt: z.string(),
   updatedAt: z.string(),
 });

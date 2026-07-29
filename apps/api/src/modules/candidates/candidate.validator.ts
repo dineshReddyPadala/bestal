@@ -140,11 +140,16 @@ export const listCandidatesQuerySchema = z.object({
   source: candidateSourceEnum.optional(),
   primarySkillCommunityId: z.coerce.number().int().positive().optional(),
   skillCommunityId: z.coerce.number().int().positive().optional(),
-  /** Pending admin approval queue: submitted + approvalStatus PENDING. */
-  pendingApproval: z
-    .union([z.boolean(), z.enum(['true', 'false', '1', '0'])])
-    .optional()
-    .transform((v) => v === true || v === 'true' || v === '1'),
+  /** Pending admin approval queue: approvalStatus PENDING (matches Admin dashboard). */
+  pendingApproval: z.preprocess(
+    (v) => {
+      if (v === undefined || v === null || v === '') return undefined;
+      if (v === true || v === 'true' || v === '1' || v === 1) return true;
+      if (v === false || v === 'false' || v === '0' || v === 0) return false;
+      return v;
+    },
+    z.boolean().optional(),
+  ),
 });
 
 export const rejectCandidateBodySchema = z.object({

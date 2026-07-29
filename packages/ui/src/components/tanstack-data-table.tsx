@@ -133,28 +133,42 @@ export function TanStackDataTable<TData>({
       )}
     >
       {filtersInline ? (
-        <div className="flex shrink-0 flex-col gap-3 lg:flex-row lg:items-end lg:gap-4">
-          <SearchInput
-            placeholder={searchPlaceholder}
-            value={globalFilter}
-            onChange={(e) => setGlobalFilter(e.target.value)}
-            onClear={() => setGlobalFilter('')}
-            className="w-full min-w-0 max-w-[200px] shrink-0"
-          />
-          {filters ? <div className="min-w-0 flex-1">{filters}</div> : null}
-          {toolbar}
-        </div>
-      ) : (
-        <>
-          <div className="flex shrink-0 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex shrink-0 flex-wrap items-end gap-x-3 gap-y-2">
+          <div className="flex w-full min-w-[10rem] max-w-xs shrink-0 flex-col gap-1 sm:w-52">
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-transparent select-none">
+              Search
+            </span>
             <SearchInput
               placeholder={searchPlaceholder}
               value={globalFilter}
               onChange={(e) => setGlobalFilter(e.target.value)}
               onClear={() => setGlobalFilter('')}
-              className="w-full max-w-[200px]"
+              className="w-full"
             />
-            {toolbar}
+          </div>
+          {filters}
+          {toolbar ? (
+            <div className="flex shrink-0 flex-col gap-1 sm:ml-auto">
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-transparent select-none">
+                Actions
+              </span>
+              <div className="flex flex-wrap items-center gap-2">{toolbar}</div>
+            </div>
+          ) : null}
+        </div>
+      ) : (
+        <>
+          <div className="flex shrink-0 flex-wrap items-end gap-3">
+            <SearchInput
+              placeholder={searchPlaceholder}
+              value={globalFilter}
+              onChange={(e) => setGlobalFilter(e.target.value)}
+              onClear={() => setGlobalFilter('')}
+              className="w-full min-w-[10rem] max-w-xs sm:w-52"
+            />
+            {toolbar ? (
+              <div className="flex shrink-0 flex-wrap items-end gap-2 sm:ml-auto">{toolbar}</div>
+            ) : null}
           </div>
           {filters ? <div className="shrink-0">{filters}</div> : null}
         </>

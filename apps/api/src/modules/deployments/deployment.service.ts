@@ -12,8 +12,10 @@ import {
 } from '../../utils/index.js';
 import { buildPaginationMeta } from '../../validators/common.validator.js';
 import {
+  clearExtensionRequest,
   mapDeploymentToDto,
   mapDeploymentToListItem,
+  withExtensionRequest,
 } from './deployment.mapper.js';
 import { DeploymentRepository } from './deployment.repository.js';
 import type {
@@ -319,11 +321,47 @@ export class DeploymentService {
     endDate: string,
   ): Promise<DeploymentDto> {
     const organizationId = requireOrganization(authUser);
-    await this.getDeploymentOrThrow(organizationId, id);
+    const existing = await this.getDeploymentOrThrow(organizationId, id);
     const deployment = await this.deploymentRepository.update(organizationId, id, {
       endDate,
+      notes: clearExtensionRequest(existing.notes),
     });
     return mapDeploymentToDto(deployment);
+  }
+
+  async requestExtension(
+    authUser: AuthenticatedUser,
+    id: number,
+    input: { endDate: string; reason?: string },
+  ): Promise<DeploymentDto> {
+    const organizationId = requireOrganization(authUser);
+    if (authUser.role !== 'CLIENT') {
+      throw new BadRequestError('Only clients can request deployment extensions');
+    }
+
+    const clientId = await this.resolveScopedClientId(authUser, organizationId);
+    const existing = await this.getDeploymentOrThrow(organizationId, id);
+    if (Number(existing.clientId) !== clientId) {
+      throw new NotFoundError('Deployment not found');
+    }
+    if (existing.status !== 'ACTIVE' && existing.status !== 'ON_HOLD') {
+      throw new BadRequestError('Only active or on-hold deployments can be extended');
+    }
+
+    const deployment = await this.deploymentRepository.update(organizationId, id, {
+      notes: withExtensionRequest(existing.notes, input.endDate, input.reason ?? ''),
+    });
+    const dto = mapDeploymentToDto(deployment);
+
+    void notifyDeploymentRequested(this.fastify.prisma, this.fastify.config, {
+      organizationId,
+      deploymentId: dto.id,
+      candidateName: dto.candidateName,
+      clientName: dto.clientName,
+      roleTitle: `extension to ${input.endDate} — ${dto.roleTitle}`,
+    });
+
+    return dto;
   }
 
   async delete(authUser: AuthenticatedUser, id: number): Promise<void> {

@@ -99,7 +99,6 @@ export class AdminService {
           organizationId: org,
           deletedAt: null,
           approvalStatus: 'PENDING',
-          submittedForApprovalAt: { not: null },
         },
       }),
       this.prisma.client.count({
@@ -547,7 +546,6 @@ export class AdminService {
 
     if (query.pendingOnly === true || query.pendingOnly === 'true') {
       where.approvalStatus = 'PENDING';
-      where.submittedForApprovalAt = { not: null };
     }
     if (query.communityId) where.primarySkillCommunityId = BigInt(Number(query.communityId));
     if (query.minExperience || query.maxExperience) {

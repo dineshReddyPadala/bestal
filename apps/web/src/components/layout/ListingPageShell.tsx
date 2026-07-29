@@ -1,4 +1,4 @@
-import { Button, Select, useDashboardHeaderLeading } from '@bestal/ui';
+import { Select, useDashboardHeaderLeading } from '@bestal/ui';
 import { useMemo, type ReactNode } from 'react';
 
 import type { ToastVariant } from '../../lib/use-demo-toast';
@@ -108,19 +108,11 @@ export function ListingFilterSelect({
 
 type ListingFiltersRowProps = {
   children: ReactNode;
+  /** @deprecated Clear filters control removed from listing toolbars. */
   onClear?: () => void;
 };
 
 /** Inline filter chips to place beside search via TanStackDataTable `filtersInline`. */
-export function ListingFiltersRow({ children, onClear }: ListingFiltersRowProps) {
-  return (
-    <div className="flex flex-wrap items-end gap-3">
-      {children}
-      {onClear ? (
-        <Button variant="ghost" size="sm" className="mb-0.5 shrink-0" onClick={onClear}>
-          Clear filters
-        </Button>
-      ) : null}
-    </div>
-  );
+export function ListingFiltersRow({ children }: ListingFiltersRowProps) {
+  return <div className="flex flex-wrap items-end gap-3">{children}</div>;
 }

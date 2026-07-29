@@ -1,11 +1,13 @@
-import type { ClientCandidateProfile, ClientGroupedSkill } from '@bestal/mock-data';
-import { formatCurrency, formatDate } from '@bestal/shared-utils';
-import { Avatar, Badge, Button, SkillBadge, Tabs } from '@bestal/ui';
+import type { ClientCandidateProfile } from '@bestal/mock-data';
+import { formatCurrency } from '@bestal/shared-utils';
+import { Avatar, Badge, Button, Tabs } from '@bestal/ui';
 import { ArrowLeft, Calendar, FlaskConical, MapPin, Star } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import {
   clientBgvStatusText,
   clientEvaluationStatusText,
+  formatClientBgvLabel,
+  formatClientEvaluationLabel,
 } from '../../lib/client-status-labels';
 
 type ClientCandidateProfileViewProps = {
@@ -44,43 +46,8 @@ function MetricPill({ label, value }: { label: string; value: string }) {
   );
 }
 
-function SkillGroup({
-  title,
-  skills,
-}: {
-  title: string;
-  skills: readonly ClientGroupedSkill[];
-}) {
-  if (skills.length === 0) {
-    return (
-      <div>
-        <h3 className="mb-3 text-sm font-semibold text-foreground">{title}</h3>
-        <p className="text-sm text-muted-foreground">None listed</p>
-      </div>
-    );
-  }
-  return (
-    <div>
-      <h3 className="mb-3 text-sm font-semibold text-foreground">{title}</h3>
-      <div className="space-y-3">
-        {skills.map((skill) => (
-          <div
-            key={skill.skillCommunityName}
-            className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border/50 bg-white px-4 py-3"
-          >
-            <SkillBadge
-              name={skill.skillCommunityName}
-              proficiency={skill.proficiencyLevel as 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED' | 'EXPERT'}
-              isPrimary={skill.isPrimary}
-            />
-            {skill.yearsExperience != null && (
-              <span className="text-sm text-muted-foreground">{skill.yearsExperience} yrs</span>
-            )}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
+function scoreOrDash(value: number | null | undefined): string {
+  return value != null ? String(value) : '—';
 }
 
 export function ClientCandidateProfileView({
@@ -109,65 +76,102 @@ export function ClientCandidateProfileView({
         <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
           Strengths
         </h3>
-        <ul className="space-y-2">
-          {profile.strengths.map((s) => (
-            <li key={s} className="flex gap-2 text-sm leading-relaxed text-foreground">
-              <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-brand" />
-              {s}
-            </li>
-          ))}
-        </ul>
+        {profile.strengths.length > 0 ? (
+          <ul className="space-y-2">
+            {profile.strengths.map((s) => (
+              <li key={s} className="flex gap-2 text-sm leading-relaxed text-foreground">
+                <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-brand" />
+                {s}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-sm text-muted-foreground">No strengths listed yet.</p>
+        )}
       </section>
+      {profile.industryExperience.length > 0 ? (
+        <section>
+          <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+            Industry Experience
+          </h3>
+          <div className="flex flex-wrap gap-2">
+            {profile.industryExperience.map((d) => (
+              <Badge key={d} variant="secondary" className="font-normal">
+                {d}
+              </Badge>
+            ))}
+          </div>
+        </section>
+      ) : null}
+    </div>
+  );
+
+  const evaluationTab = (
+    <div className="space-y-6">
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-sm font-medium text-muted-foreground">Status</span>
+        <Badge variant="secondary">{formatClientEvaluationLabel(profile.evaluation.status)}</Badge>
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <MetricPill label="Technical" value={scoreOrDash(profile.evaluation.technical)} />
+        <MetricPill label="Communication" value={scoreOrDash(profile.evaluation.communication)} />
+        <MetricPill label="Architecture" value={scoreOrDash(profile.evaluation.architecture)} />
+        <MetricPill label="BesTal score" value={String(profile.bestalScore)} />
+      </div>
+
+      <section>
+        <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+          Recommendation
+        </h3>
+        <p className="text-sm leading-relaxed text-foreground/90">
+          {profile.evaluation.recommendation?.trim() || 'No recommendation recorded yet.'}
+        </p>
+      </section>
+    </div>
+  );
+
+  const bgvTab = (
+    <div className="space-y-6">
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-sm font-medium text-muted-foreground">Status</span>
+        <Badge variant="secondary">{formatClientBgvLabel(profile.bgv.status)}</Badge>
+      </div>
+
+      <section>
+        <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+          Summary
+        </h3>
+        <p className="text-sm leading-relaxed text-foreground/90">
+          {profile.bgv.summary?.trim() || 'Background verification summary is not available yet.'}
+        </p>
+      </section>
+
       <section>
         <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-          Industry Experience
+          Checks
         </h3>
-        <div className="flex flex-wrap gap-2">
-          {profile.industryExperience.map((d) => (
-            <Badge key={d} variant="secondary" className="font-normal">
-              {d}
-            </Badge>
-          ))}
-        </div>
-      </section>
-    </div>
-  );
-
-  const skillsTab = (
-    <div className="grid gap-8 md:grid-cols-2">
-      <SkillGroup title="Primary Skills" skills={profile.primarySkills} />
-      <SkillGroup title="Secondary Skills" skills={profile.secondarySkills} />
-    </div>
-  );
-
-  const projectsTab = (
-    <div className="space-y-4">
-      {profile.projects.map((project) => (
-        <article
-          key={project.title}
-          className="rounded-xl border border-border/60 bg-white p-5 shadow-sm transition-shadow hover:shadow-md"
-        >
-          <div className="flex flex-wrap items-start justify-between gap-2">
-            <h3 className="font-semibold text-foreground">{project.title}</h3>
-            <Badge variant="outline">{project.period}</Badge>
+        {profile.bgv.completedChecks.length > 0 ? (
+          <div className="space-y-2">
+            {profile.bgv.completedChecks.map((check) => (
+              <div
+                key={check.label}
+                className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border/50 bg-muted/20 px-4 py-3"
+              >
+                <span className="text-sm font-medium text-foreground">{check.label}</span>
+                <Badge variant="outline" className="font-normal">
+                  {formatClientBgvLabel(check.status)}
+                </Badge>
+              </div>
+            ))}
           </div>
-          <p className="mt-1 text-sm font-medium text-brand">{project.client}</p>
-          <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{project.description}</p>
-        </article>
-      ))}
-    </div>
-  );
-
-  const availabilityTab = (
-    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-      <MetricPill
-        label="Hours / week"
-        value={`${profile.availabilityDetail.hoursMin}–${profile.availabilityDetail.hoursMax}`}
-      />
-      <MetricPill label="Timezone" value={profile.availabilityDetail.timezone} />
-      <MetricPill label="Availability" value={profile.availabilityDetail.availability} />
-      <MetricPill label="Start date" value={formatDate(profile.availabilityDetail.startDate)} />
-      <MetricPill label="Bill rate" value={rateLabel} />
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            Individual check details are not available. Overall status:{' '}
+            {formatClientBgvLabel(profile.bgv.status)}.
+          </p>
+        )}
+      </section>
     </div>
   );
 
@@ -265,10 +269,9 @@ export function ClientCandidateProfileView({
             </div>
           </div>
 
-          <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-5 lg:hidden">
+          <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:hidden">
             <MetricPill label="Experience" value={`${profile.yearsExperience} yrs`} />
             <MetricPill label="Score" value={String(profile.bestalScore)} />
-            <MetricPill label="Availability" value={profile.availability} />
             <MetricPill label="Rate" value={rateLabel} />
             <div className="col-span-2 sm:col-span-1">
               <ScoreDisplay score={profile.bestalScore} />
@@ -283,9 +286,8 @@ export function ClientCandidateProfileView({
             defaultTab="summary"
             tabs={[
               { id: 'summary', label: 'Summary', content: summaryTab },
-              { id: 'skills', label: 'Skills', content: skillsTab },
-              { id: 'projects', label: 'Projects', content: projectsTab },
-              { id: 'availability', label: 'Availability', content: availabilityTab },
+              { id: 'evaluation', label: 'Evaluation', content: evaluationTab },
+              { id: 'bgv', label: 'BGV', content: bgvTab },
             ]}
           />
         </div>

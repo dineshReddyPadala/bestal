@@ -1,6 +1,7 @@
 import { cn } from '@bestal/shared-utils';
 import { Button, SearchInput, Select } from '@bestal/ui';
-import { RotateCcw } from 'lucide-react';
+import { ChevronDown, RotateCcw } from 'lucide-react';
+import { useState } from 'react';
 import {
   DEFAULT_CLIENT_SEARCH_FILTERS,
   type ClientSearchFilters,
@@ -13,6 +14,8 @@ type PremiumSearchFiltersProps = {
   communityOptions?: readonly string[];
   roleOptions?: readonly string[];
   timezoneOptions?: readonly string[];
+  /** `panel` = stacked left sidebar; `inline` = horizontal wrap (legacy). */
+  layout?: 'panel' | 'inline';
   className?: string;
 };
 
@@ -21,18 +24,25 @@ function FilterSelect({
   value,
   onChange,
   options,
+  fullWidth,
 }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
   options: { value: string; label: string }[];
+  fullWidth?: boolean;
 }) {
   return (
-    <label className="flex min-w-[140px] flex-1 flex-col gap-1">
+    <label
+      className={cn(
+        'flex flex-col gap-1',
+        fullWidth ? 'w-full' : 'min-w-[140px] flex-1',
+      )}
+    >
       <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
         {label}
       </span>
-      <Select value={value} onChange={(e) => onChange(e.target.value)} className="h-9 text-sm">
+      <Select value={value} onChange={(e) => onChange(e.target.value)} className="h-9 w-full text-sm">
         {options.map((o) => (
           <option key={o.value} value={o.value}>
             {o.label}
@@ -43,6 +53,152 @@ function FilterSelect({
   );
 }
 
+function FilterFields({
+  filters,
+  set,
+  communityOptions,
+  roleOptions,
+  timezoneOptions,
+  stacked,
+}: {
+  filters: ClientSearchFilters;
+  set: (patch: Partial<ClientSearchFilters>) => void;
+  communityOptions: readonly string[];
+  roleOptions: readonly string[];
+  timezoneOptions: readonly string[];
+  stacked: boolean;
+}) {
+  return (
+    <>
+      <FilterSelect
+        label="Community"
+        value={filters.community}
+        onChange={(v) => set({ community: v })}
+        fullWidth={stacked}
+        options={[
+          { value: 'all', label: 'All communities' },
+          ...communityOptions.map((c) => ({ value: c, label: c })),
+        ]}
+      />
+      <FilterSelect
+        label="Role"
+        value={filters.role}
+        onChange={(v) => set({ role: v })}
+        fullWidth={stacked}
+        options={[
+          { value: 'all', label: 'All roles' },
+          ...roleOptions.map((r) => ({ value: r, label: r })),
+        ]}
+      />
+      <FilterSelect
+        label="Experience"
+        value={filters.experience}
+        onChange={(v) => set({ experience: v })}
+        fullWidth={stacked}
+        options={[
+          { value: 'all', label: 'Any' },
+          { value: '0-5', label: '0–5 yrs' },
+          { value: '6-10', label: '6–10 yrs' },
+          { value: '11-99', label: '11+ yrs' },
+        ]}
+      />
+      <FilterSelect
+        label="Rate"
+        value={filters.rate}
+        onChange={(v) => set({ rate: v })}
+        fullWidth={stacked}
+        options={[
+          { value: 'all', label: 'Any rate' },
+          { value: '0-130', label: 'Under $130/hr' },
+          { value: '130-160', label: '$130–160/hr' },
+          { value: '160-999', label: '$160+/hr' },
+        ]}
+      />
+      <FilterSelect
+        label="Availability"
+        value={filters.availability}
+        onChange={(v) => set({ availability: v })}
+        fullWidth={stacked}
+        options={[
+          { value: 'all', label: 'Any' },
+          { value: 'IMMEDIATE', label: 'Immediate' },
+          { value: 'WITHIN_2_WEEKS', label: 'Within 2 weeks' },
+          { value: 'NOT_AVAILABLE', label: 'Not available' },
+        ]}
+      />
+      {timezoneOptions.length > 0 ? (
+        <FilterSelect
+          label="Timezone"
+          value={filters.timezone}
+          onChange={(v) => set({ timezone: v })}
+          fullWidth={stacked}
+          options={[
+            { value: 'all', label: 'All timezones' },
+            ...timezoneOptions.map((tz) => ({
+              value: tz,
+              label: tz.replace(/_/g, ' '),
+            })),
+          ]}
+        />
+      ) : null}
+      <label className={cn('flex flex-col gap-1', stacked ? 'w-full' : 'min-w-[140px] flex-1')}>
+        <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+          BesTal Score
+        </span>
+        <div className="flex h-9 items-center gap-2 rounded-md border border-input bg-background px-3">
+          <input
+            type="range"
+            min={0}
+            max={95}
+            step={5}
+            value={filters.minScore}
+            onChange={(e) => set({ minScore: Number(e.target.value) })}
+            className="w-full accent-brand"
+          />
+          <span className="w-8 shrink-0 text-xs font-medium tabular-nums">{filters.minScore}+</span>
+        </div>
+      </label>
+      <FilterSelect
+        label="Evaluation"
+        value={filters.evaluation}
+        onChange={(v) => set({ evaluation: v })}
+        fullWidth={stacked}
+        options={[
+          { value: 'all', label: 'All' },
+          { value: 'COMPLETED', label: 'Completed' },
+          { value: 'IN_PROGRESS', label: 'In Progress' },
+          { value: 'DRAFT', label: 'Draft' },
+          { value: 'NOT_STARTED', label: 'Not Started' },
+        ]}
+      />
+      <FilterSelect
+        label="BGV"
+        value={filters.bgv}
+        onChange={(v) => set({ bgv: v })}
+        fullWidth={stacked}
+        options={[
+          { value: 'all', label: 'All' },
+          { value: 'CLEAR', label: 'Clear' },
+          { value: 'IN_PROGRESS', label: 'In Progress' },
+          { value: 'PENDING', label: 'Pending' },
+          { value: 'NOT_STARTED', label: 'Not Started' },
+        ]}
+      />
+      <FilterSelect
+        label="Trial Eligible"
+        value={filters.trialEligible}
+        onChange={(v) => set({ trialEligible: v })}
+        fullWidth={stacked}
+        options={[
+          { value: 'all', label: 'Any' },
+          { value: 'yes', label: 'Eligible' },
+          { value: 'no', label: 'Not eligible' },
+        ]}
+      />
+    </>
+  );
+}
+
 export function PremiumSearchFilters({
   filters,
   onChange,
@@ -50,157 +206,119 @@ export function PremiumSearchFilters({
   communityOptions = [],
   roleOptions = [],
   timezoneOptions = [],
+  layout = 'panel',
   className,
 }: PremiumSearchFiltersProps) {
   const set = (patch: Partial<ClientSearchFilters>) => onChange({ ...filters, ...patch });
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const stacked = layout === 'panel';
+
+  const searchBlock = (
+    <div>
+      <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+        Search
+      </span>
+      <SearchInput
+        placeholder="Name, role, skill, or location…"
+        value={filters.query}
+        onChange={(e) => set({ query: e.target.value })}
+        onClear={() => set({ query: '' })}
+        className={cn('mt-1', stacked ? 'w-full' : 'max-w-xl')}
+      />
+    </div>
+  );
+
+  const footer = (
+    <div
+      className={cn(
+        'flex gap-2 border-t border-border/60 pt-3',
+        stacked ? 'flex-col' : 'flex-wrap items-center justify-between',
+      )}
+    >
+      <p className="text-sm text-muted-foreground">
+        <span className="font-semibold text-foreground">{resultCount}</span> candidates match
+      </p>
+      <Button
+        variant="ghost"
+        size="sm"
+        className={stacked ? 'w-full justify-center' : undefined}
+        onClick={() => onChange(DEFAULT_CLIENT_SEARCH_FILTERS)}
+      >
+        <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
+        Reset filters
+      </Button>
+    </div>
+  );
+
+  if (layout === 'inline') {
+    return (
+      <div
+        className={cn(
+          'rounded-xl border border-border/80 bg-gradient-to-br from-background to-muted/20 p-4 shadow-sm',
+          className,
+        )}
+      >
+        <div className="mb-4">{searchBlock}</div>
+        <div className="flex flex-wrap gap-3">
+          <FilterFields
+            filters={filters}
+            set={set}
+            communityOptions={communityOptions}
+            roleOptions={roleOptions}
+            timezoneOptions={timezoneOptions}
+            stacked={false}
+          />
+        </div>
+        <div className="mt-4">{footer}</div>
+      </div>
+    );
+  }
 
   return (
     <div
       className={cn(
-        'rounded-xl border border-border/80 bg-gradient-to-br from-background to-muted/20 p-4 shadow-sm',
+        'rounded-xl border border-border/80 bg-gradient-to-br from-background to-muted/20 shadow-sm',
         className,
       )}
     >
-      <div className="mb-4">
-        <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-          Search
-        </span>
-        <SearchInput
-          placeholder="Name, role, skill, or location…"
-          value={filters.query}
-          onChange={(e) => set({ query: e.target.value })}
-          onClear={() => set({ query: '' })}
-          className="mt-1 max-w-xl"
+      {/* Mobile accordion */}
+      <button
+        type="button"
+        className="flex w-full items-center justify-between gap-2 px-4 py-3 text-left md:hidden"
+        onClick={() => setMobileOpen((v) => !v)}
+        aria-expanded={mobileOpen}
+      >
+        <div>
+          <p className="text-sm font-semibold text-foreground">Filters</p>
+          <p className="text-xs text-muted-foreground">{resultCount} candidates match</p>
+        </div>
+        <ChevronDown
+          className={cn(
+            'h-4 w-4 shrink-0 text-muted-foreground transition-transform',
+            mobileOpen && 'rotate-180',
+          )}
         />
-      </div>
+      </button>
 
-      <div className="flex flex-wrap gap-3">
-        <FilterSelect
-          label="Community"
-          value={filters.community}
-          onChange={(v) => set({ community: v })}
-          options={[
-            { value: 'all', label: 'All communities' },
-            ...communityOptions.map((c) => ({ value: c, label: c })),
-          ]}
-        />
-        <FilterSelect
-          label="Role"
-          value={filters.role}
-          onChange={(v) => set({ role: v })}
-          options={[
-            { value: 'all', label: 'All roles' },
-            ...roleOptions.map((r) => ({ value: r, label: r })),
-          ]}
-        />
-        <FilterSelect
-          label="Experience"
-          value={filters.experience}
-          onChange={(v) => set({ experience: v })}
-          options={[
-            { value: 'all', label: 'Any' },
-            { value: '0-5', label: '0–5 yrs' },
-            { value: '6-10', label: '6–10 yrs' },
-            { value: '11-99', label: '11+ yrs' },
-          ]}
-        />
-        <FilterSelect
-          label="Rate"
-          value={filters.rate}
-          onChange={(v) => set({ rate: v })}
-          options={[
-            { value: 'all', label: 'Any rate' },
-            { value: '0-130', label: 'Under $130/hr' },
-            { value: '130-160', label: '$130–160/hr' },
-            { value: '160-999', label: '$160+/hr' },
-          ]}
-        />
-        <FilterSelect
-          label="Availability"
-          value={filters.availability}
-          onChange={(v) => set({ availability: v })}
-          options={[
-            { value: 'all', label: 'Any' },
-            { value: 'IMMEDIATE', label: 'Immediate' },
-            { value: 'WITHIN_2_WEEKS', label: 'Within 2 weeks' },
-            { value: 'NOT_AVAILABLE', label: 'Not available' },
-          ]}
-        />
-        {timezoneOptions.length > 0 ? (
-          <FilterSelect
-            label="Timezone"
-            value={filters.timezone}
-            onChange={(v) => set({ timezone: v })}
-            options={[
-              { value: 'all', label: 'All timezones' },
-              ...timezoneOptions.map((tz) => ({
-                value: tz,
-                label: tz.replace(/_/g, ' '),
-              })),
-            ]}
+      <div
+        className={cn(
+          'flex-col gap-4 p-4',
+          mobileOpen ? 'flex' : 'hidden',
+          'md:flex',
+        )}
+      >
+        {searchBlock}
+        <div className="flex flex-col gap-3">
+          <FilterFields
+            filters={filters}
+            set={set}
+            communityOptions={communityOptions}
+            roleOptions={roleOptions}
+            timezoneOptions={timezoneOptions}
+            stacked
           />
-        ) : null}
-        <label className="flex min-w-[140px] flex-1 flex-col gap-1">
-          <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-            BesTal Score
-          </span>
-          <div className="flex h-9 items-center gap-2 rounded-md border border-input bg-background px-3">
-            <input
-              type="range"
-              min={0}
-              max={95}
-              step={5}
-              value={filters.minScore}
-              onChange={(e) => set({ minScore: Number(e.target.value) })}
-              className="w-full accent-brand"
-            />
-            <span className="w-8 shrink-0 text-xs font-medium tabular-nums">{filters.minScore}+</span>
-          </div>
-        </label>
-        <FilterSelect
-          label="Evaluation"
-          value={filters.evaluation}
-          onChange={(v) => set({ evaluation: v })}
-          options={[
-            { value: 'all', label: 'All' },
-            { value: 'COMPLETED', label: 'Completed' },
-            { value: 'IN_PROGRESS', label: 'In Progress' },
-            { value: 'DRAFT', label: 'Draft' },
-            { value: 'NOT_STARTED', label: 'Not Started' },
-          ]}
-        />
-        <FilterSelect
-          label="BGV"
-          value={filters.bgv}
-          onChange={(v) => set({ bgv: v })}
-          options={[
-            { value: 'all', label: 'All' },
-            { value: 'CLEAR', label: 'Clear' },
-            { value: 'IN_PROGRESS', label: 'In Progress' },
-            { value: 'PENDING', label: 'Pending' },
-            { value: 'NOT_STARTED', label: 'Not Started' },
-          ]}
-        />
-        <FilterSelect
-          label="Trial Eligible"
-          value={filters.trialEligible}
-          onChange={(v) => set({ trialEligible: v })}
-          options={[
-            { value: 'all', label: 'Any' },
-            { value: 'yes', label: 'Eligible' },
-            { value: 'no', label: 'Not eligible' },
-          ]}
-        />
-      </div>
-
-      <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-border/60 pt-3">
-        <p className="text-sm text-muted-foreground">
-          <span className="font-semibold text-foreground">{resultCount}</span> candidates match
-        </p>
-        <Button variant="ghost" size="sm" onClick={() => onChange(DEFAULT_CLIENT_SEARCH_FILTERS)}>
-          <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
-          Reset filters
-        </Button>
+        </div>
+        {footer}
       </div>
     </div>
   );

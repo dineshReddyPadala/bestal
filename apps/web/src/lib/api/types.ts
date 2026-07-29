@@ -256,6 +256,7 @@ export type DeploymentDto = {
   currency: string | null;
   workLocation: string | null;
   notes: string | null;
+  extensionRequestedEndDate?: string | null;
   terminatedAt: string | null;
   terminateReason: string | null;
   createdAt: string;
@@ -277,6 +278,8 @@ export type DeploymentListItem = {
   candidatePayRate?: number | null;
   expectedHoursPerWeek?: number | null;
   currency: string | null;
+  notes?: string | null;
+  extensionRequestedEndDate?: string | null;
   createdAt: string;
   updatedAt: string;
 };

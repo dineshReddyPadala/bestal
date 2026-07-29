@@ -331,9 +331,8 @@ export class CandidateRepository extends BaseRepository {
       where.visibility = 'CLIENT_VISIBLE';
       where.approvalStatus = 'APPROVED';
     } else if (filters.pendingApproval) {
+      // Match Admin dashboard "Pending approvals" count: any not-yet-decided candidate.
       where.approvalStatus = 'PENDING';
-      where.submittedForApprovalAt = { not: null };
-      where.profileStatus = { in: ['PENDING_APPROVAL', 'PROFILE_DRAFT'] };
     } else {
       if (filters.visibility) {
         where.visibility = filters.visibility;

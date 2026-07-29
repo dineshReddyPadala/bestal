@@ -388,14 +388,6 @@ export function BackgroundVerificationManagementView({
         error={listError}
         loading={isLoading}
         loadingLabel="Loading background checks…"
-        actions={
-          canUploadBgv ? (
-            <Button size="sm" onClick={() => setRequestOpen(true)}>
-              <Plus className="mr-1.5 h-3.5 w-3.5" />
-              Request BGV
-            </Button>
-          ) : null
-        }
       >
         <TanStackDataTable
           columns={columns}
@@ -406,8 +398,16 @@ export function BackgroundVerificationManagementView({
           fillHeight
           dense
           filtersInline
+          toolbar={
+            canUploadBgv ? (
+              <Button size="sm" onClick={() => setRequestOpen(true)}>
+                <Plus className="mr-1.5 h-3.5 w-3.5" />
+                Request BGV
+              </Button>
+            ) : undefined
+          }
           filters={
-            <ListingFiltersRow onClear={() => setFilters(defaultFilters)}>
+            <ListingFiltersRow>
               <ListingFilterSelect
                 label="STATUS"
                 value={filters.status}

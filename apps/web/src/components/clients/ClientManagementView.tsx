@@ -307,18 +307,6 @@ export function ClientManagementView({
         loading={isLoading}
         loadingLabel="Loading clients…"
         error={isError ? (error instanceof Error ? error.message : 'Failed to load clients') : null}
-        actions={
-          <Button
-            size="sm"
-            onClick={() => {
-              setEditingRecord(null);
-              setFormOpen('add');
-            }}
-          >
-            <Plus className="mr-1.5 h-3.5 w-3.5" />
-            Add client
-          </Button>
-        }
       >
         <TanStackDataTable
           columns={columns}
@@ -336,8 +324,20 @@ export function ClientManagementView({
               ? (row) => navigate(`${clientDetailBasePath}/${row.id}`)
               : undefined
           }
+          toolbar={
+            <Button
+              size="sm"
+              onClick={() => {
+                setEditingRecord(null);
+                setFormOpen('add');
+              }}
+            >
+              <Plus className="mr-1.5 h-3.5 w-3.5" />
+              Add client
+            </Button>
+          }
           filters={
-            <ListingFiltersRow onClear={() => setFilters(defaultFilters)}>
+            <ListingFiltersRow>
               <ListingFilterSelect
                 label="INDUSTRY"
                 value={filters.industry}

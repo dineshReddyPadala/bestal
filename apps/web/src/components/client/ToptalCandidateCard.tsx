@@ -108,14 +108,14 @@ export function ToptalCandidateCard({
           }
         }}
         className={cn(
-          'group flex cursor-pointer flex-col gap-4 rounded-xl border border-border/60 bg-white p-4 shadow-sm',
+          'group flex cursor-pointer flex-col gap-3 rounded-xl border border-border/60 bg-white p-4 shadow-sm',
           'transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-border hover:shadow-md',
-          'sm:flex-row sm:items-center sm:justify-between',
+          'sm:flex-row sm:items-center sm:gap-4',
           selected && 'border-brand/50 ring-1 ring-brand/30',
           className,
         )}
       >
-        <div className="flex min-w-0 flex-1 items-start gap-3">
+        <div className="flex min-w-0 flex-1 items-center gap-3">
           {onSelectedChange ? (
             <SelectionCheckbox
               checked={selected}
@@ -129,35 +129,41 @@ export function ToptalCandidateCard({
             size="md"
             className="h-12 w-12 shrink-0"
           />
-          <div className="min-w-0 flex-1 space-y-1.5">
-            <div>
-              <h3 className="text-base font-semibold tracking-tight text-foreground">
-                {record.displayName}
-              </h3>
-              <p className="mt-0.5 line-clamp-1 text-sm text-muted-foreground">{record.role}</p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                {record.community} · {record.yearsExperience} yrs
-                {company ? ` · ${company}` : ''}
-              </p>
-            </div>
-            <p className="line-clamp-1 text-xs text-foreground/80">
-              {visibleSkills.join(' · ')}
-              {extraSkills > 0 && <span className="text-muted-foreground"> +{extraSkills}</span>}
+          <div className="min-w-0 flex-1">
+            <h3 className="truncate text-base font-semibold tracking-tight text-foreground">
+              {record.displayName}
+            </h3>
+            <p className="mt-0.5 truncate text-sm text-muted-foreground">{record.role}</p>
+            <p className="mt-0.5 truncate text-xs text-muted-foreground">
+              {record.community} · {record.yearsExperience} yrs
+              {company ? ` · ${company}` : ''}
             </p>
-            <div className="flex flex-wrap items-center gap-2 text-sm">
-              <span className="font-semibold tabular-nums text-foreground">
-                {record.bestalScore}
-                <span className="ml-1 text-[10px] font-normal text-muted-foreground">score</span>
-              </span>
-              <span className="text-muted-foreground">·</span>
-              <span className="text-xs">{record.availability}</span>
-              <span className="text-muted-foreground">·</span>
-              <span className="text-xs font-medium">
-                {formatCurrency(record.hourlyRate, record.currency)}/hr
-              </span>
-            </div>
-            <StatusLabels record={record} />
           </div>
+        </div>
+
+        {visibleSkills.length > 0 ? (
+          <p className="min-w-0 shrink text-xs text-foreground/80 sm:max-w-[12rem] sm:truncate lg:max-w-[16rem]">
+            {visibleSkills.join(' · ')}
+            {extraSkills > 0 && (
+              <span className="text-muted-foreground"> +{extraSkills}</span>
+            )}
+          </p>
+        ) : null}
+
+        <div className="flex shrink-0 flex-wrap items-center gap-2 text-sm sm:flex-col sm:items-end sm:gap-0.5 sm:text-right">
+          <span className="font-semibold tabular-nums text-foreground">
+            {record.bestalScore}
+            <span className="ml-1 text-[10px] font-normal text-muted-foreground">score</span>
+          </span>
+          <span className="text-xs text-muted-foreground sm:hidden">·</span>
+          <span className="text-xs">{record.availability}</span>
+          <span className="text-xs font-medium">
+            {formatCurrency(record.hourlyRate, record.currency)}/hr
+          </span>
+        </div>
+
+        <div className="shrink-0 sm:max-w-[11rem]">
+          <StatusLabels record={record} />
         </div>
       </article>
     );

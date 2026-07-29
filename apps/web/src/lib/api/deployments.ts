@@ -19,4 +19,6 @@ export const deploymentsApi = {
   complete: (id: number) => apiAction<DeploymentDto>(`/deployments/${id}/complete`),
   extend: (id: number, endDate: string) =>
     apiAction<DeploymentDto>(`/deployments/${id}/extend`, { endDate }),
+  requestExtension: (id: number, body: { endDate: string; reason?: string }) =>
+    apiAction<DeploymentDto>(`/deployments/${id}/request-extension`, body),
 };

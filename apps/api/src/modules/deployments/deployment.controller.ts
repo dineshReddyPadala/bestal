@@ -115,4 +115,15 @@ export class DeploymentController {
     );
     return reply.status(200).send({ data });
   };
+
+  requestExtension = async (request: FastifyRequest, reply: FastifyReply) => {
+    const { id } = request.params as { id: number };
+    const body = request.body as { endDate: string; reason?: string };
+    const data = await this.deploymentService.requestExtension(
+      request.authUser!,
+      id,
+      body,
+    );
+    return reply.status(200).send({ data });
+  };
 }

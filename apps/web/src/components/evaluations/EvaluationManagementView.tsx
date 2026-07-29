@@ -2,7 +2,8 @@ import { formatDate, EVALUATION_RECOMMENDATIONS, EVALUATION_TYPES } from '@besta
 import { Button, Dialog, FileUpload, Input, Select, StatusBadge, TanStackDataTable } from '@bestal/ui';
 import { type ColumnDef } from '@tanstack/react-table';
 import { AlertCircle, Loader2, Plus, Sparkles } from 'lucide-react';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useCandidatesList, useCandidateMutations } from '../../hooks/api/useCandidates';
 import {
   useEvaluationMutations,
@@ -53,6 +54,7 @@ export function EvaluationManagementView({
   title = 'Evaluation Management',
 }: EvaluationManagementViewProps) {
   const { message, show } = useDemoToast();
+  const [searchParams] = useSearchParams();
   const { data, isLoading, isError, error } = useEvaluationsList({ limit: 100, sort: '-createdAt' });
   const { data: candidatesData } = useCandidatesList({ limit: 100 });
   const mutations = useEvaluationMutations();
@@ -121,10 +123,24 @@ export function EvaluationManagementView({
     [records],
   );
 
+  useEffect(() => {
+    const candidateIdParam = searchParams.get('candidateId');
+    if (!candidateIdParam || !records.length) return;
+    const id = Number(candidateIdParam);
+    if (!Number.isFinite(id)) return;
+    const match = records.find((r) => r.candidateId === id);
+    if (match) {
+      setFilters((prev) => ({ ...prev, candidate: match.candidateName }));
+    }
+  }, [searchParams, records]);
+
   const filteredData = useMemo(() => {
     let rows = [...records];
 
-    if (filters.candidate !== 'all') {
+    const candidateIdParam = Number(searchParams.get('candidateId'));
+    if (Number.isFinite(candidateIdParam) && candidateIdParam > 0 && filters.candidate === 'all') {
+      rows = rows.filter((r) => r.candidateId === candidateIdParam);
+    } else if (filters.candidate !== 'all') {
       rows = rows.filter((r) => r.candidateName === filters.candidate);
     }
     if (filters.evaluator !== 'all') {
@@ -146,7 +162,7 @@ export function EvaluationManagementView({
     );
 
     return rows;
-  }, [records, filters]);
+  }, [records, filters, searchParams]);
 
   const resetCreateForm = useCallback(() => {
     setSelectedCandidateId('');
@@ -427,18 +443,6 @@ export function EvaluationManagementView({
         error={listError}
         loading={isLoading}
         loadingLabel="Loading evaluations…"
-        actions={
-          <Button
-            size="sm"
-            onClick={() => {
-              resetCreateForm();
-              setCreateOpen(true);
-            }}
-          >
-            <Plus className="mr-1.5 h-3.5 w-3.5" />
-            Add evaluation
-          </Button>
-        }
       >
         <TanStackDataTable
           columns={columns}
@@ -449,8 +453,22 @@ export function EvaluationManagementView({
           fillHeight
           dense
           filtersInline
+          toolbar={
+            <Button
+              size="sm"
+              onClick={() => {
+                resetCreateForm();
+                const candidateIdParam = searchParams.get('candidateId');
+                if (candidateIdParam) setSelectedCandidateId(candidateIdParam);
+                setCreateOpen(true);
+              }}
+            >
+              <Plus className="mr-1.5 h-3.5 w-3.5" />
+              Add evaluation
+            </Button>
+          }
           filters={
-            <ListingFiltersRow onClear={() => setFilters(defaultFilters)}>
+            <ListingFiltersRow>
               <ListingFilterSelect
                 label="CANDIDATE"
                 value={filters.candidate}

@@ -1,5 +1,5 @@
 import { cn } from '@bestal/shared-utils';
-import { ChevronDown, LogOut, Menu, X } from 'lucide-react';
+import { ChevronDown, ChevronsLeft, ChevronsRight, LogOut, Menu, X } from 'lucide-react';
 import {
   createContext,
   useContext,
@@ -37,6 +37,10 @@ export type DashboardLayoutProps = {
   onLogout?: () => void | Promise<void>;
   /** Optional top-right actions (e.g. notification bell) rendered before the profile menu */
   headerActions?: ReactNode;
+  /** When true, desktop sidebar can collapse to an icon rail. */
+  collapsible?: boolean;
+  /** localStorage key for collapsed state (used when collapsible). */
+  collapseStorageKey?: string;
 };
 
 type DashboardChromeContextValue = {
@@ -44,6 +48,8 @@ type DashboardChromeContextValue = {
 };
 
 const DashboardChromeContext = createContext<DashboardChromeContextValue | null>(null);
+
+const DEFAULT_COLLAPSE_KEY = 'bestal.nav.collapsed';
 
 /**
  * Render content in the top bar leading slot (page actions, breadcrumbs, etc.).
@@ -61,14 +67,34 @@ export function useDashboardHeaderLeading(node: ReactNode | null): boolean {
   return ctx != null;
 }
 
+function readCollapsed(key: string): boolean {
+  if (typeof window === 'undefined') return false;
+  try {
+    return window.localStorage.getItem(key) === '1';
+  } catch {
+    return false;
+  }
+}
+
+function writeCollapsed(key: string, value: boolean) {
+  try {
+    window.localStorage.setItem(key, value ? '1' : '0');
+  } catch {
+    // ignore quota / private mode
+  }
+}
+
 function NavLink({
   item,
   isActive,
   onClick,
+  collapsed,
 }: {
   item: DashboardNavItem;
   isActive: boolean;
   onClick?: () => void;
+  /** Desktop icon-rail mode (lg+ only; mobile drawer always shows labels). */
+  collapsed?: boolean;
 }) {
   const Icon = resolveIcon(item.icon);
 
@@ -76,23 +102,36 @@ function NavLink({
     <Link
       to={item.href}
       onClick={onClick}
+      title={collapsed ? item.label : undefined}
+      aria-label={item.label}
       className={cn(
         'flex items-center gap-2.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
+        collapsed && 'lg:justify-center lg:px-2',
         isActive
           ? 'bg-white/10 text-white'
           : 'text-white/70 hover:bg-white/5 hover:text-white',
       )}
     >
       <Icon className="h-4 w-4 shrink-0" />
-      <span className="min-w-0 flex-1 truncate">{item.label}</span>
-      {item.badge !== undefined && item.badge > 0 && (
-        <Badge
-          variant="default"
-          className="h-5 min-w-5 justify-center bg-brand px-1.5 text-[10px]"
-        >
-          {item.badge}
-        </Badge>
-      )}
+      <span className={cn('min-w-0 flex-1 truncate', collapsed && 'lg:hidden')}>
+        {item.label}
+      </span>
+      {item.badge !== undefined && item.badge > 0 ? (
+        <>
+          <Badge
+            variant="default"
+            className={cn(
+              'h-5 min-w-5 justify-center bg-brand px-1.5 text-[10px]',
+              collapsed && 'lg:hidden',
+            )}
+          >
+            {item.badge}
+          </Badge>
+          {collapsed ? (
+            <span className="absolute right-1.5 top-1.5 hidden h-1.5 w-1.5 rounded-full bg-brand lg:block" />
+          ) : null}
+        </>
+      ) : null}
     </Link>
   );
 }
@@ -196,10 +235,25 @@ export function DashboardLayout({
   currentPath = '',
   onLogout,
   headerActions,
+  collapsible = false,
+  collapseStorageKey = DEFAULT_COLLAPSE_KEY,
 }: DashboardLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(() =>
+    collapsible ? readCollapsed(collapseStorageKey) : false,
+  );
   const [headerLeading, setHeaderLeading] = useState<ReactNode | null>(null);
   const chromeValue = useMemo(() => ({ setHeaderLeading }), []);
+
+  const desktopCollapsed = collapsible && collapsed;
+
+  function toggleCollapsed() {
+    setCollapsed((prev) => {
+      const next = !prev;
+      writeCollapsed(collapseStorageKey, next);
+      return next;
+    });
+  }
 
   return (
     <DashboardChromeContext.Provider value={chromeValue}>
@@ -214,15 +268,44 @@ export function DashboardLayout({
 
         <aside
           className={cn(
-            'fixed inset-y-0 left-0 z-50 flex h-svh w-64 shrink-0 flex-col overflow-hidden bg-navy transition-transform lg:static lg:translate-x-0',
+            'fixed inset-y-0 left-0 z-50 flex h-svh shrink-0 flex-col overflow-hidden bg-navy transition-[width,transform] duration-200 lg:static lg:translate-x-0',
+            desktopCollapsed ? 'lg:w-[4.5rem]' : 'lg:w-64',
+            'w-64',
             sidebarOpen ? 'translate-x-0' : '-translate-x-full',
           )}
         >
-          <div className="flex h-16 shrink-0 items-center justify-between border-b border-white/10 px-4">
-            <div className="min-w-0">
+          <div
+            className={cn(
+              'flex h-16 shrink-0 items-center border-b border-white/10 px-4',
+              desktopCollapsed ? 'justify-between lg:justify-center lg:px-2' : 'justify-between gap-2',
+            )}
+          >
+            <div className={cn('min-w-0', desktopCollapsed && 'lg:hidden')}>
               <span className="block truncate text-lg font-bold leading-none text-white">Bestal</span>
               <p className="mt-1 truncate text-xs leading-none text-white/60">{portalName}</p>
             </div>
+            {desktopCollapsed ? (
+              <button
+                type="button"
+                className="hidden flex-col items-center gap-0.5 rounded-md px-1 py-1 text-white/90 hover:bg-white/10 lg:flex"
+                onClick={toggleCollapsed}
+                aria-label="Expand sidebar"
+                title="Expand sidebar"
+              >
+                <span className="text-sm font-bold leading-none text-white">B</span>
+                <ChevronsRight className="h-3.5 w-3.5 text-white/70" />
+              </button>
+            ) : collapsible ? (
+              <button
+                type="button"
+                className="hidden rounded-md p-1.5 text-white/70 hover:bg-white/10 hover:text-white lg:inline-flex"
+                onClick={toggleCollapsed}
+                aria-label="Collapse sidebar"
+                title="Collapse sidebar"
+              >
+                <ChevronsLeft className="h-4 w-4" />
+              </button>
+            ) : null}
             <button
               type="button"
               className="text-white/70 hover:text-white lg:hidden"
@@ -235,12 +318,14 @@ export function DashboardLayout({
 
           <nav className="flex flex-1 flex-col justify-start gap-0.5 overflow-y-auto overflow-x-hidden px-2 py-3">
             {navItems.map((item) => (
-              <NavLink
-                key={item.href}
-                item={item}
-                isActive={currentPath === item.href}
-                onClick={() => setSidebarOpen(false)}
-              />
+              <div key={item.href} className="relative">
+                <NavLink
+                  item={item}
+                  isActive={currentPath === item.href}
+                  collapsed={desktopCollapsed}
+                  onClick={() => setSidebarOpen(false)}
+                />
+              </div>
             ))}
           </nav>
         </aside>

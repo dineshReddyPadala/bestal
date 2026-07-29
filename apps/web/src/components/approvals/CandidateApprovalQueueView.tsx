@@ -10,6 +10,7 @@ import { type ColumnDef } from '@tanstack/react-table';
 import {
   Check,
   CheckCircle,
+  ClipboardList,
   EyeOff,
   Globe,
   MoreHorizontal,
@@ -18,7 +19,7 @@ import {
   XCircle,
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useCandidateMutations, useCandidatesList } from '../../hooks/api/useCandidates';
 import type { CandidateListItem } from '../../lib/api/types';
 import { canApprove, canPublish } from '../../lib/candidate-approval-gates';
@@ -41,7 +42,13 @@ type CandidateApprovalQueueViewProps = {
   candidateDetailBasePath?: string;
 };
 
-type ApprovalAction = 'Approve' | 'Reject' | 'Publish' | 'Unpublish' | 'Send back';
+type ApprovalAction =
+  | 'Approve'
+  | 'Reject'
+  | 'Publish'
+  | 'Unpublish'
+  | 'Send back'
+  | 'View Evaluation';
 
 type ApprovalRow = {
   id: number;
@@ -131,6 +138,10 @@ function ApprovalRowActions({
     variant?: 'danger';
   }[] = [
     {
+      label: 'View Evaluation',
+      icon: <ClipboardList className="h-3.5 w-3.5" />,
+    },
+    {
       label: 'Approve',
       icon: <CheckCircle className="h-3.5 w-3.5" />,
       disabled: !approveGate.allowed,
@@ -199,15 +210,27 @@ function ApprovalRowActions({
 export function CandidateApprovalQueueView({
   candidateDetailBasePath = '/admin/candidates',
 }: CandidateApprovalQueueViewProps) {
+  const navigate = useNavigate();
   const { message, variant, show, showError, dismiss } = useDemoToast();
   const [filters, setFilters] = useState(defaultFilters);
-  const listParams = useMemo(
-    () =>
-      filters.queue === 'pending'
-        ? { limit: 100, sort: '-createdAt', pendingApproval: true }
-        : { limit: 100, sort: '-createdAt' },
-    [filters.queue],
-  );
+  const evaluationsBase = candidateDetailBasePath.includes('super-admin')
+    ? '/super-admin/evaluations'
+    : '/admin/evaluations';
+  const listParams = useMemo(() => {
+    if (filters.queue === 'pending') {
+      return { limit: 100, sort: '-updatedAt', pendingApproval: true as const };
+    }
+    if (filters.queue === 'approved') {
+      return { limit: 100, sort: '-updatedAt', approvalStatus: 'APPROVED' };
+    }
+    if (filters.queue === 'published') {
+      return { limit: 100, sort: '-updatedAt', visibility: 'CLIENT_VISIBLE' };
+    }
+    if (filters.queue === 'rejected') {
+      return { limit: 100, sort: '-updatedAt', approvalStatus: 'REJECTED' };
+    }
+    return { limit: 100, sort: '-updatedAt' };
+  }, [filters.queue]);
   const { data, isLoading, isError, error } = useCandidatesList(listParams);
   const mutations = useCandidateMutations();
   const [rejectOpen, setRejectOpen] = useState(false);
@@ -220,21 +243,16 @@ export function CandidateApprovalQueueView({
   const filteredData = useMemo(() => {
     let rows = [...records];
 
+    // Server already scopes pending/approved/rejected; client only narrows "published".
     if (filters.queue === 'approved') {
-      rows = rows.filter(
-        (r) => r.approvalStatus === 'APPROVED' && r.visibility !== 'CLIENT_VISIBLE',
-      );
+      rows = rows.filter((r) => r.visibility !== 'CLIENT_VISIBLE');
     } else if (filters.queue === 'published') {
       rows = rows.filter((r) => r.visibility === 'CLIENT_VISIBLE');
-    } else if (filters.queue === 'rejected') {
-      rows = rows.filter((r) => r.approvalStatus === 'REJECTED');
-    } else if (filters.queue === 'all') {
-      // keep all
     }
 
     rows.sort((a, b) => {
       const priority = (r: ApprovalRow) => {
-        if (r.approvalStatus === 'PENDING' && r.submittedForApprovalAt) return 0;
+        if (r.approvalStatus === 'PENDING') return 0;
         if (r.approvalStatus === 'APPROVED' && r.visibility !== 'CLIENT_VISIBLE') return 1;
         return 2;
       };
@@ -329,6 +347,9 @@ export function CandidateApprovalQueueView({
   const handleRowAction = useCallback(
     (record: ApprovalRow, action: ApprovalAction) => {
       switch (action) {
+        case 'View Evaluation':
+          navigate(`${evaluationsBase}?candidateId=${record.id}`);
+          break;
         case 'Approve':
           void handleApprove(record);
           break;
@@ -346,7 +367,7 @@ export function CandidateApprovalQueueView({
           break;
       }
     },
-    [handleApprove, handlePublish, handleUnpublish],
+    [evaluationsBase, handleApprove, handlePublish, handleUnpublish, navigate],
   );
 
   const columns = useMemo<ColumnDef<ApprovalRow>[]>(

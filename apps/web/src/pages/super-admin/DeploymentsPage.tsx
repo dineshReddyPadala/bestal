@@ -1,10 +1,12 @@
 import { StatusBadge, TanStackDataTable } from '@bestal/ui';
 import { type ColumnDef } from '@tanstack/react-table';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
+import { ExtendDeploymentDialog } from '../../components/deployments/ExtendDeploymentDialog';
 import { ListingPageShell } from '../../components/layout/ListingPageShell';
 import { ActionMenu, type ActionMenuItem } from '../../components/super-admin/ActionMenu';
 import { useConfirmAction } from '../../components/super-admin/useConfirmAction';
 import { useAdminDeployments, useAdminMutations } from '../../hooks/api/useAdmin';
+import { getApiErrorMessage } from '../../lib/api/errors';
 import { useDemoToast } from '../../lib/use-demo-toast';
 
 type Row = {
@@ -26,9 +28,10 @@ function deploymentActions(
     show: (m: string) => void;
     showError: (m: string) => void;
     requestConfirm: ReturnType<typeof useConfirmAction>['requestConfirm'];
+    onExtend: (row: Row) => void;
   },
 ): ActionMenuItem[] {
-  const { mutations, show, showError, requestConfirm } = helpers;
+  const { mutations, show, requestConfirm, onExtend } = helpers;
   const status = r.status.toUpperCase();
   const label = `${r.candidateName} · ${r.clientName}`;
   const view: ActionMenuItem = { id: 'view', label: 'View Deployment' };
@@ -39,14 +42,7 @@ function deploymentActions(
       {
         id: 'extend',
         label: 'Extend Deployment',
-        onSelect: () => {
-          const endDate = window.prompt('New end date (YYYY-MM-DD)');
-          if (!endDate) return;
-          void mutations.extendDeployment
-            .mutateAsync({ id: r.id, endDate })
-            .then(() => show('Deployment extended'))
-            .catch((e) => showError(e instanceof Error ? e.message : 'Failed'));
-        },
+        onSelect: () => onExtend(r),
       },
       {
         id: 'pause',
@@ -81,19 +77,20 @@ function deploymentActions(
         id: 'terminate',
         label: 'Terminate Deployment',
         destructive: true,
-        onSelect: () => {
-          const reason = window.prompt('Terminate reason') ?? 'Terminated';
+        onSelect: () =>
           requestConfirm({
             title: 'Terminate Deployment?',
-            description: `${label} will be terminated. Reason: ${reason}`,
+            description: `${label} will be terminated.`,
             confirmLabel: 'Terminate Deployment',
             destructive: true,
             onConfirm: async () => {
-              await mutations.terminateDeployment.mutateAsync({ id: r.id, reason });
+              await mutations.terminateDeployment.mutateAsync({
+                id: r.id,
+                reason: 'Terminated',
+              });
               show('Deployment terminated');
             },
-          });
-        },
+          }),
       },
     ];
   }
@@ -104,48 +101,54 @@ function deploymentActions(
       {
         id: 'extend',
         label: 'Extend Deployment',
-        onSelect: () => {
-          const endDate = window.prompt('New end date (YYYY-MM-DD)');
-          if (!endDate) return;
-          void mutations.extendDeployment
-            .mutateAsync({ id: r.id, endDate })
-            .then(() => show('Extended'))
-            .catch((e) => showError(e instanceof Error ? e.message : 'Failed'));
-        },
+        onSelect: () => onExtend(r),
       },
       {
         id: 'complete',
         label: 'Complete Deployment',
         onSelect: () =>
-          void mutations.completeDeployment
-            .mutateAsync(r.id)
-            .then(() => show('Completed'))
-            .catch((e) => showError(e instanceof Error ? e.message : 'Failed')),
+          requestConfirm({
+            title: 'Complete Deployment?',
+            description: `${label} will be marked completed.`,
+            confirmLabel: 'Complete Deployment',
+            onConfirm: async () => {
+              await mutations.completeDeployment.mutateAsync(r.id);
+              show('Completed');
+            },
+          }),
       },
       {
         id: 'terminate',
         label: 'Terminate Deployment',
         destructive: true,
         separatorBefore: true,
-        onSelect: () => {
-          const reason = window.prompt('Terminate reason') ?? 'Terminated';
+        onSelect: () =>
           requestConfirm({
             title: 'Terminate Deployment?',
             description: `${label} will be terminated.`,
             confirmLabel: 'Terminate Deployment',
             destructive: true,
             onConfirm: async () => {
-              await mutations.terminateDeployment.mutateAsync({ id: r.id, reason });
+              await mutations.terminateDeployment.mutateAsync({
+                id: r.id,
+                reason: 'Terminated',
+              });
               show('Terminated');
             },
-          });
-        },
+          }),
       },
     ];
   }
 
   if (status === 'COMPLETED') {
-    return [view, { id: 'commercials', label: 'View Commercials', href: '/super-admin/reports?tab=margin' }];
+    return [
+      view,
+      {
+        id: 'commercials',
+        label: 'View Commercials',
+        href: '/super-admin/reports?tab=margin',
+      },
+    ];
   }
 
   if (status === 'TERMINATED') {
@@ -157,14 +160,7 @@ function deploymentActions(
     {
       id: 'extend',
       label: 'Extend Deployment',
-      onSelect: () => {
-        const endDate = window.prompt('New end date (YYYY-MM-DD)');
-        if (!endDate) return;
-        void mutations.extendDeployment
-          .mutateAsync({ id: r.id, endDate })
-          .then(() => show('Extended'))
-          .catch((e) => showError(e instanceof Error ? e.message : 'Failed'));
-      },
+      onSelect: () => onExtend(r),
     },
   ];
 }
@@ -175,6 +171,7 @@ export function SuperAdminDeploymentsPage() {
   const { data, isLoading, isError, error } = useAdminDeployments({ limit: 100 });
   const mutations = useAdminMutations();
   const rows = (data?.data ?? []) as unknown as Row[];
+  const [extendTarget, setExtendTarget] = useState<Row | null>(null);
 
   const columns = useMemo<ColumnDef<Row>[]>(
     () => [
@@ -235,6 +232,7 @@ export function SuperAdminDeploymentsPage() {
               show,
               showError,
               requestConfirm,
+              onExtend: setExtendTarget,
             })}
             label={`Actions for deployment ${row.original.id}`}
           />
@@ -264,6 +262,30 @@ export function SuperAdminDeploymentsPage() {
         />
       </ListingPageShell>
       {confirmDialog}
+
+      <ExtendDeploymentDialog
+        open={extendTarget != null}
+        title={
+          extendTarget
+            ? `Extend deployment — ${extendTarget.candidateName}`
+            : 'Extend deployment'
+        }
+        initialEndDate={extendTarget?.endDate ?? null}
+        onClose={() => setExtendTarget(null)}
+        onSubmit={async ({ endDate }) => {
+          if (!extendTarget) return;
+          try {
+            await mutations.extendDeployment.mutateAsync({
+              id: extendTarget.id,
+              endDate,
+            });
+            show('Deployment extended');
+            setExtendTarget(null);
+          } catch (err) {
+            throw new Error(getApiErrorMessage(err, 'Extend failed'));
+          }
+        }}
+      />
     </>
   );
 }

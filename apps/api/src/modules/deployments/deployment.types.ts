@@ -25,6 +25,7 @@ export interface DeploymentDto {
   reportingManagerName: string | null;
   reportingManagerEmail: string | null;
   notes: string | null;
+  extensionRequestedEndDate?: string | null;
   terminatedAt: string | null;
   terminateReason: string | null;
   createdAt: string;
@@ -46,6 +47,8 @@ export interface DeploymentListItemDto {
   candidatePayRate: number | null;
   expectedHoursPerWeek: number | null;
   currency: string | null;
+  notes?: string | null;
+  extensionRequestedEndDate?: string | null;
   createdAt: string;
   updatedAt: string;
 }

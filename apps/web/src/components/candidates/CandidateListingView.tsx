@@ -409,24 +409,6 @@ export function CandidateListingView({
         loading={isLoading}
         loadingLabel="Loading candidates…"
         error={isError ? (error instanceof Error ? error.message : 'Failed to load candidates') : null}
-        actions={
-          addCandidatePath || importPath ? (
-            <div className="flex flex-wrap items-center gap-2">
-              {importPath ? (
-                <Button size="sm" to={importPath}>
-                  <FileSpreadsheet className="mr-1.5 h-3.5 w-3.5" />
-                  Import Candidates
-                </Button>
-              ) : null}
-              {addCandidatePath ? (
-                <Button size="sm" to={addCandidatePath}>
-                  <Plus className="mr-1.5 h-3.5 w-3.5" />
-                  Add Candidate
-                </Button>
-              ) : null}
-            </div>
-          ) : undefined
-        }
       >
         <TanStackDataTable
           columns={columns}
@@ -438,6 +420,24 @@ export function CandidateListingView({
           fillHeight
           dense
           filtersInline
+          toolbar={
+            addCandidatePath || importPath ? (
+              <>
+                {importPath ? (
+                  <Button size="sm" to={importPath}>
+                    <FileSpreadsheet className="mr-1.5 h-3.5 w-3.5" />
+                    Import Candidates
+                  </Button>
+                ) : null}
+                {addCandidatePath ? (
+                  <Button size="sm" to={addCandidatePath}>
+                    <Plus className="mr-1.5 h-3.5 w-3.5" />
+                    Add Candidate
+                  </Button>
+                ) : null}
+              </>
+            ) : undefined
+          }
           enableRowSelection={showSubmitActions}
           emptyTitle={readOnly ? 'No matching candidates' : 'No candidates yet'}
           emptyDescription={
@@ -471,46 +471,44 @@ export function CandidateListingView({
               : undefined
           }
           filters={
-            readOnly ? undefined : (
-              <ListingFiltersRow onClear={() => setFilters(defaultFilters)}>
-                <ListingFilterSelect
-                  label="STATUS"
-                  value={filters.status}
-                  onChange={(v) => setFilters((prev) => ({ ...prev, status: v }))}
-                  options={[
-                    { value: 'all', label: 'All statuses' },
-                    { value: 'NEW', label: 'New' },
-                    { value: 'ACTIVE', label: 'Active' },
-                    { value: 'INACTIVE', label: 'Inactive' },
-                    { value: 'PLACED', label: 'Placed' },
-                    { value: 'DO_NOT_CONTACT', label: 'Do not contact' },
-                  ]}
-                />
-                <ListingFilterSelect
-                  label="VISIBILITY"
-                  value={filters.visibility}
-                  onChange={(v) => setFilters((prev) => ({ ...prev, visibility: v }))}
-                  options={[
-                    { value: 'all', label: 'All visibility' },
-                    ...CANDIDATE_VISIBILITY_STATUSES.map((value) => ({
-                      value,
-                      label: CANDIDATE_VISIBILITY_LABELS[value],
-                    })),
-                  ]}
-                />
-                <ListingFilterSelect
-                  label="APPROVAL"
-                  value={filters.approvalStatus}
-                  onChange={(v) => setFilters((prev) => ({ ...prev, approvalStatus: v }))}
-                  options={[
-                    { value: 'all', label: 'All approvals' },
-                    { value: 'PENDING', label: 'Pending' },
-                    { value: 'APPROVED', label: 'Approved' },
-                    { value: 'REJECTED', label: 'Rejected' },
-                  ]}
-                />
-              </ListingFiltersRow>
-            )
+            <ListingFiltersRow>
+              <ListingFilterSelect
+                label="STATUS"
+                value={filters.status}
+                onChange={(v) => setFilters((prev) => ({ ...prev, status: v }))}
+                options={[
+                  { value: 'all', label: 'All statuses' },
+                  { value: 'NEW', label: 'New' },
+                  { value: 'ACTIVE', label: 'Active' },
+                  { value: 'INACTIVE', label: 'Inactive' },
+                  { value: 'PLACED', label: 'Placed' },
+                  { value: 'DO_NOT_CONTACT', label: 'Do not contact' },
+                ]}
+              />
+              <ListingFilterSelect
+                label="VISIBILITY"
+                value={filters.visibility}
+                onChange={(v) => setFilters((prev) => ({ ...prev, visibility: v }))}
+                options={[
+                  { value: 'all', label: 'All visibility' },
+                  ...CANDIDATE_VISIBILITY_STATUSES.map((value) => ({
+                    value,
+                    label: CANDIDATE_VISIBILITY_LABELS[value],
+                  })),
+                ]}
+              />
+              <ListingFilterSelect
+                label="APPROVAL"
+                value={filters.approvalStatus}
+                onChange={(v) => setFilters((prev) => ({ ...prev, approvalStatus: v }))}
+                options={[
+                  { value: 'all', label: 'All approvals' },
+                  { value: 'PENDING', label: 'Pending' },
+                  { value: 'APPROVED', label: 'Approved' },
+                  { value: 'REJECTED', label: 'Rejected' },
+                ]}
+              />
+            </ListingFiltersRow>
           }
           globalFilterFn={(row, _columnId, filterValue) => {
             const q = String(filterValue).toLowerCase().trim();

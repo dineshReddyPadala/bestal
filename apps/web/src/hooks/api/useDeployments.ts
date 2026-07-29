@@ -59,5 +59,17 @@ export function useDeploymentMutations() {
         deploymentsApi.extend(id, endDate),
       onSuccess: invalidate,
     }),
+    requestExtension: useMutation({
+      mutationFn: ({
+        id,
+        endDate,
+        reason,
+      }: {
+        id: number;
+        endDate: string;
+        reason?: string;
+      }) => deploymentsApi.requestExtension(id, { endDate, reason }),
+      onSuccess: invalidate,
+    }),
   };
 }

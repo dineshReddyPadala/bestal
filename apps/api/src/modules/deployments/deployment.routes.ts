@@ -320,4 +320,30 @@ export async function deploymentRoutes(fastify: FastifyInstance): Promise<void> 
     },
     deploymentController.extend,
   );
+
+  app.post(
+    '/:id/request-extension',
+    {
+      preHandler: [
+        authenticate,
+        requirePermission(PERMISSIONS.DEPLOYMENTS_REQUEST),
+      ],
+      schema: {
+        tags: ['Deployments'],
+        summary: 'Client requests a deployment end-date extension',
+        security: [{ bearerAuth: [] }],
+        params: deploymentIdParamSchema,
+        body: z.object({
+          endDate: z.string().min(1),
+          reason: z.string().max(500).optional(),
+        }),
+        response: {
+          200: deploymentResponseSchema,
+          401: errorResponses[401],
+          404: errorResponses[404],
+        },
+      },
+    },
+    deploymentController.requestExtension,
+  );
 }
