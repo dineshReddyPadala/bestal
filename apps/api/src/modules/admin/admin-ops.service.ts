@@ -33,7 +33,7 @@ export class AdminOpsService {
   private readonly trials: TrialService;
   private readonly deployments: DeploymentService;
 
-  constructor(private readonly fastify: FastifyInstance) {
+  constructor(fastify: FastifyInstance) {
     this.prisma = fastify.prisma;
     this.audit = new AuditService(fastify.prisma);
     this.trials = new TrialService(fastify);

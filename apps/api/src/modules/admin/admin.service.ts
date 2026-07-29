@@ -15,8 +15,6 @@ import { EmailService } from '../../services/email.service.js';
 import { buildPaginationMeta } from '../../validators/common.validator.js';
 import { CandidateService } from '../candidates/candidate.service.js';
 import { ClientService } from '../clients/client.service.js';
-import { DeploymentService } from '../deployments/deployment.service.js';
-import { TrialService } from '../trials/trial.service.js';
 import { UserRepository } from '../users/user.repository.js';
 import { mapUserToDto, mapUserToListItem } from '../users/user.mapper.js';
 import { AuditService } from './audit.service.js';
@@ -34,48 +32,6 @@ function tempPassword(length = 12): string {
   return result;
 }
 
-function parseCsv(text: string): Record<string, string>[] {
-  const lines = text
-    .replace(/^\uFEFF/, '')
-    .split(/\r?\n/)
-    .map((l) => l.trim())
-    .filter(Boolean);
-  if (lines.length < 2) return [];
-  const headers = splitCsvLine(lines[0]!).map((h) => h.trim().toLowerCase());
-  return lines.slice(1).map((line) => {
-    const cols = splitCsvLine(line);
-    const row: Record<string, string> = {};
-    headers.forEach((h, i) => {
-      row[h] = (cols[i] ?? '').trim();
-    });
-    return row;
-  });
-}
-
-function splitCsvLine(line: string): string[] {
-  const out: string[] = [];
-  let cur = '';
-  let inQuotes = false;
-  for (let i = 0; i < line.length; i += 1) {
-    const ch = line[i]!;
-    if (ch === '"') {
-      if (inQuotes && line[i + 1] === '"') {
-        cur += '"';
-        i += 1;
-      } else {
-        inQuotes = !inQuotes;
-      }
-    } else if (ch === ',' && !inQuotes) {
-      out.push(cur);
-      cur = '';
-    } else {
-      cur += ch;
-    }
-  }
-  out.push(cur);
-  return out;
-}
-
 export class AdminService {
   private readonly prisma: PrismaClient;
   private readonly audit: AuditService;
@@ -83,8 +39,6 @@ export class AdminService {
   private readonly email: EmailService;
   private readonly candidates: CandidateService;
   private readonly clients: ClientService;
-  private readonly trials: TrialService;
-  private readonly deployments: DeploymentService;
 
   constructor(private readonly fastify: FastifyInstance) {
     this.prisma = fastify.prisma;
@@ -93,8 +47,6 @@ export class AdminService {
     this.email = new EmailService(fastify.config);
     this.candidates = new CandidateService(fastify);
     this.clients = new ClientService(fastify);
-    this.trials = new TrialService(fastify);
-    this.deployments = new DeploymentService(fastify);
   }
 
   private async auditWrite(
