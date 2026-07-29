@@ -24,7 +24,7 @@ const portals = [
     description: 'Candidate pipeline, evaluations, and BGV.',
     href: '/recruiter/login',
     icon: Users,
-    color: 'bg-blue-100 text-blue-700',
+    color: 'bg-brand-light text-brand',
   },
   {
     id: 'client',

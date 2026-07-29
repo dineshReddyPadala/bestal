@@ -65,7 +65,7 @@ export function CandidateWorkflowTabs({ candidate }: CandidateWorkflowTabsProps)
   return (
     <div className="space-y-4">
       {uploadMsg && (
-        <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+        <div className="rounded-lg border border-emerald-200 bg-success/10 px-4 py-3 text-sm text-success">
           {uploadMsg}
         </div>
       )}
@@ -144,7 +144,7 @@ export function CandidateWorkflowTabs({ candidate }: CandidateWorkflowTabsProps)
             </div>
           ) : screeningDone ? (
             <div className="py-6 text-center">
-              <p className="text-lg font-semibold text-emerald-600">Screening complete</p>
+              <p className="text-lg font-semibold text-success">Screening complete</p>
               <p className="mt-1 text-sm text-muted-foreground">Score: 85 · Recommendation: PASS</p>
             </div>
           ) : (

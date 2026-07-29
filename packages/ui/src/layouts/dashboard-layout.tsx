@@ -1,5 +1,5 @@
 import { cn } from '@bestal/shared-utils';
-import { ChevronDown, ChevronsLeft, ChevronsRight, LogOut, Menu, X } from 'lucide-react';
+import { ChevronDown, ChevronsLeft, ChevronsRight, LogOut, Menu, ShieldCheck, X } from 'lucide-react';
 import {
   createContext,
   useContext,
@@ -84,6 +84,32 @@ function writeCollapsed(key: string, value: boolean) {
   }
 }
 
+function BrandMark({ compact = false }: { compact?: boolean }) {
+  if (compact) {
+    return (
+      <span
+        className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-brand text-white"
+        title="BesTal"
+      >
+        <ShieldCheck className="h-4 w-4" />
+      </span>
+    );
+  }
+
+  return (
+    <div className="flex min-w-0 items-center gap-2.5">
+      <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-brand text-white">
+        <ShieldCheck className="h-4 w-4" />
+      </span>
+      <div className="min-w-0">
+        <span className="block truncate text-base font-semibold leading-none tracking-tight text-foreground">
+          Bes<span className="font-bold">Tal</span>
+        </span>
+      </div>
+    </div>
+  );
+}
+
 function NavLink({
   item,
   isActive,
@@ -105,11 +131,11 @@ function NavLink({
       title={collapsed ? item.label : undefined}
       aria-label={item.label}
       className={cn(
-        'flex items-center gap-2.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
+        'flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
         collapsed && 'lg:justify-center lg:px-2',
         isActive
-          ? 'bg-white/10 text-white'
-          : 'text-white/70 hover:bg-white/5 hover:text-white',
+          ? 'bg-brand-light text-brand'
+          : 'text-muted-foreground hover:bg-muted hover:text-foreground',
       )}
     >
       <Icon className="h-4 w-4 shrink-0" />
@@ -121,7 +147,7 @@ function NavLink({
           <Badge
             variant="default"
             className={cn(
-              'h-5 min-w-5 justify-center bg-brand px-1.5 text-[10px]',
+              'h-5 min-w-5 justify-center bg-brand px-1.5 text-[10px] text-white',
               collapsed && 'lg:hidden',
             )}
           >
@@ -202,7 +228,7 @@ function ProfileMenu({
       {open && (
         <div
           role="menu"
-          className="absolute right-0 top-full z-50 mt-2 min-w-[12rem] overflow-hidden rounded-md border bg-background py-1 shadow-lg"
+          className="absolute right-0 top-full z-50 mt-2 min-w-[12rem] overflow-hidden rounded-md border bg-card py-1 shadow-lg"
         >
           <div className="border-b border-border px-3 py-2">
             <p className="truncate text-sm font-medium text-foreground">{user.name}</p>
@@ -257,10 +283,10 @@ export function DashboardLayout({
 
   return (
     <DashboardChromeContext.Provider value={chromeValue}>
-      <div className="flex h-svh overflow-hidden bg-muted/30">
+      <div className="flex h-svh overflow-hidden bg-background">
         {sidebarOpen && (
           <div
-            className="fixed inset-0 z-40 bg-black/50 lg:hidden"
+            className="fixed inset-0 z-40 bg-black/40 lg:hidden"
             onClick={() => setSidebarOpen(false)}
             aria-hidden
           />
@@ -268,7 +294,7 @@ export function DashboardLayout({
 
         <aside
           className={cn(
-            'fixed inset-y-0 left-0 z-50 flex h-svh shrink-0 flex-col overflow-hidden bg-navy transition-[width,transform] duration-200 lg:static lg:translate-x-0',
+            'fixed inset-y-0 left-0 z-50 flex h-svh shrink-0 flex-col overflow-hidden border-r border-border bg-card transition-[width,transform] duration-200 lg:static lg:translate-x-0',
             desktopCollapsed ? 'lg:w-[4.5rem]' : 'lg:w-64',
             'w-64',
             sidebarOpen ? 'translate-x-0' : '-translate-x-full',
@@ -276,29 +302,31 @@ export function DashboardLayout({
         >
           <div
             className={cn(
-              'flex h-16 shrink-0 items-center border-b border-white/10 px-4',
+              'flex h-16 shrink-0 items-center border-b border-border px-4',
               desktopCollapsed ? 'justify-between lg:justify-center lg:px-2' : 'justify-between gap-2',
             )}
           >
             <div className={cn('min-w-0', desktopCollapsed && 'lg:hidden')}>
-              <span className="block truncate text-lg font-bold leading-none text-white">Bestal</span>
-              <p className="mt-1 truncate text-xs leading-none text-white/60">{portalName}</p>
+              <BrandMark />
+              <p className="mt-1 truncate pl-[2.625rem] text-[11px] leading-none text-muted-foreground">
+                {portalName}
+              </p>
             </div>
             {desktopCollapsed ? (
               <button
                 type="button"
-                className="hidden flex-col items-center gap-0.5 rounded-md px-1 py-1 text-white/90 hover:bg-white/10 lg:flex"
+                className="hidden flex-col items-center gap-0.5 rounded-md px-1 py-1 text-muted-foreground hover:bg-muted hover:text-foreground lg:flex"
                 onClick={toggleCollapsed}
                 aria-label="Expand sidebar"
                 title="Expand sidebar"
               >
-                <span className="text-sm font-bold leading-none text-white">B</span>
-                <ChevronsRight className="h-3.5 w-3.5 text-white/70" />
+                <BrandMark compact />
+                <ChevronsRight className="h-3.5 w-3.5" />
               </button>
             ) : collapsible ? (
               <button
                 type="button"
-                className="hidden rounded-md p-1.5 text-white/70 hover:bg-white/10 hover:text-white lg:inline-flex"
+                className="hidden rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground lg:inline-flex"
                 onClick={toggleCollapsed}
                 aria-label="Collapse sidebar"
                 title="Collapse sidebar"
@@ -308,7 +336,7 @@ export function DashboardLayout({
             ) : null}
             <button
               type="button"
-              className="text-white/70 hover:text-white lg:hidden"
+              className="text-muted-foreground hover:text-foreground lg:hidden"
               onClick={() => setSidebarOpen(false)}
               aria-label="Close sidebar"
             >
@@ -331,7 +359,7 @@ export function DashboardLayout({
         </aside>
 
         <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-          <header className="z-30 flex h-16 shrink-0 items-center gap-3 border-b border-border bg-background px-4 sm:px-6">
+          <header className="z-30 flex h-16 shrink-0 items-center gap-3 border-b border-border bg-card px-4 sm:px-6">
             <button
               type="button"
               className="shrink-0 text-muted-foreground hover:text-foreground lg:hidden"

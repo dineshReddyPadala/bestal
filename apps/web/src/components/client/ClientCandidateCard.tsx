@@ -20,7 +20,7 @@ function ScoreBadge({ score }: { score: number }) {
         'inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold',
         tier === 'elite' && 'bg-amber-50 text-amber-700',
         tier === 'strong' && 'bg-emerald-50 text-emerald-700',
-        tier === 'good' && 'bg-blue-50 text-blue-700',
+        tier === 'good' && 'bg-brand-light text-brand',
       )}
     >
       <Star className="h-3 w-3 fill-current" />

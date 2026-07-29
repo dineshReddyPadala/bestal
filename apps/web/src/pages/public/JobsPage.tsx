@@ -14,11 +14,13 @@ function formatRate(job: (typeof publicJobs)[number]) {
 export function JobsPage() {
   return (
     <>
-      <section className="bg-navy py-16 text-white lg:py-24">
+      <section className="border-b border-border bg-background py-16 lg:py-24">
         <Container>
           <div className="mx-auto max-w-3xl text-center">
-            <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl">Open Roles</h1>
-            <p className="mt-4 text-lg text-white/75">
+            <h1 className="text-4xl font-extrabold tracking-tight text-foreground sm:text-5xl">
+              Open Roles
+            </h1>
+            <p className="mt-4 text-lg text-muted-foreground">
               Explore opportunities with BesTal&apos;s enterprise clients — remote-friendly, competitive rates.
             </p>
           </div>

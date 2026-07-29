@@ -13,11 +13,13 @@ export function ContactPage() {
 
   return (
     <>
-      <section className="bg-navy py-16 text-white lg:py-24">
+      <section className="border-b border-border bg-background py-16 lg:py-24">
         <Container>
           <div className="mx-auto max-w-3xl text-center">
-            <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl">Get in Touch</h1>
-            <p className="mt-4 text-lg text-white/75">
+            <h1 className="text-4xl font-extrabold tracking-tight text-foreground sm:text-5xl">
+              Get in Touch
+            </h1>
+            <p className="mt-4 text-lg text-muted-foreground">
               Tell us about your hiring needs. A talent strategist will respond within one business day.
             </p>
           </div>
@@ -28,10 +30,10 @@ export function ContactPage() {
         <Container size="narrow">
           {submitted ? (
             <div className="rounded-2xl border border-border bg-card p-12 text-center shadow-card">
-              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100">
-                <MessageSquare className="h-8 w-8 text-emerald-600" />
+              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-brand-light">
+                <MessageSquare className="h-8 w-8 text-brand" />
               </div>
-              <h2 className="mt-6 text-2xl font-bold text-navy">Thank you!</h2>
+              <h2 className="mt-6 text-2xl font-bold text-foreground">Thank you!</h2>
               <p className="mt-2 text-muted-foreground">
                 We&apos;ve received your message and will be in touch shortly.
               </p>

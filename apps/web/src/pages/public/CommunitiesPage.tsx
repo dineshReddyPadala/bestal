@@ -18,11 +18,13 @@ const iconMap: Record<string, LucideIcon> = {
 export function CommunitiesPage() {
   return (
     <>
-      <section className="bg-navy py-16 text-white lg:py-24">
+      <section className="border-b border-border bg-background py-16 lg:py-24">
         <Container>
           <div className="mx-auto max-w-3xl text-center">
-            <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl">Skill Communities</h1>
-            <p className="mt-4 text-lg text-white/75">
+            <h1 className="text-4xl font-extrabold tracking-tight text-foreground sm:text-5xl">
+              Skill Communities
+            </h1>
+            <p className="mt-4 text-lg text-muted-foreground">
               Specialist talent pools across the enterprise technologies our clients hire most.
             </p>
           </div>
@@ -52,7 +54,7 @@ export function CommunitiesPage() {
           </div>
 
           <div className="mt-16 rounded-2xl border border-border bg-muted/40 p-8 text-center lg:p-12">
-            <h2 className="text-2xl font-bold text-navy">Need a specific skill mix?</h2>
+            <h2 className="text-2xl font-bold text-foreground">Need a specific skill mix?</h2>
             <p className="mx-auto mt-3 max-w-xl text-muted-foreground">
               Tell us your role requirements and we will curate a shortlist from the right communities.
             </p>

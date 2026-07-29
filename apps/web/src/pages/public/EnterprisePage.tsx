@@ -42,29 +42,33 @@ export function EnterprisePage() {
 
   return (
     <>
-      <section className="relative overflow-hidden bg-navy py-20 text-white lg:py-32">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,_var(--tw-gradient-stops))] from-brand/15 via-transparent to-transparent" />
+      <section className="relative overflow-hidden border-b border-border bg-background py-20 lg:py-32">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,_var(--tw-gradient-stops))] from-brand/10 via-transparent to-transparent" />
         <Container className="relative">
           <div className="mx-auto max-w-3xl text-center">
-            <p className="text-sm font-semibold uppercase tracking-wider text-brand-light">Enterprise</p>
-            <h1 className="mt-4 text-4xl font-extrabold tracking-tight sm:text-5xl">
+            <p className="text-sm font-semibold uppercase tracking-wider text-brand">Enterprise</p>
+            <h1 className="mt-4 text-4xl font-extrabold tracking-tight text-foreground sm:text-5xl">
               Scale your team with confidence
             </h1>
-            <p className="mt-6 text-lg leading-relaxed text-white/75">
+            <p className="mt-6 text-lg leading-relaxed text-muted-foreground">
               Fortune 500 companies trust BesTal for mission-critical hires. Enterprise-grade processes,
               dedicated support, and the top 3% of global talent.
             </p>
             <div className="mt-10 flex justify-center gap-12">
               {enterpriseClients && (
                 <div>
-                  <p className="text-4xl font-bold">{enterpriseClients.value.toLocaleString()}+</p>
-                  <p className="mt-1 text-sm text-white/60">{enterpriseClients.label}</p>
+                  <p className="text-4xl font-bold text-foreground">
+                    {enterpriseClients.value.toLocaleString()}+
+                  </p>
+                  <p className="mt-1 text-sm text-muted-foreground">{enterpriseClients.label}</p>
                 </div>
               )}
               {activeDeployments && (
                 <div>
-                  <p className="text-4xl font-bold">{activeDeployments.value.toLocaleString()}+</p>
-                  <p className="mt-1 text-sm text-white/60">{activeDeployments.label}</p>
+                  <p className="text-4xl font-bold text-foreground">
+                    {activeDeployments.value.toLocaleString()}+
+                  </p>
+                  <p className="mt-1 text-sm text-muted-foreground">{activeDeployments.label}</p>
                 </div>
               )}
             </div>
@@ -75,7 +79,7 @@ export function EnterprisePage() {
       <section className="py-20 lg:py-28">
         <Container>
           <div className="mx-auto max-w-2xl text-center">
-            <h2 className="text-3xl font-bold tracking-tight text-navy">Built for enterprise scale</h2>
+            <h2 className="text-3xl font-bold tracking-tight text-foreground">Built for enterprise scale</h2>
             <p className="mt-4 text-lg text-muted-foreground">
               Everything you need to hire, onboard, and manage elite talent at organizational scale.
             </p>
@@ -97,7 +101,7 @@ export function EnterprisePage() {
       <section className="border-t border-border bg-muted/40 py-20">
         <Container>
           <div className="mx-auto max-w-2xl text-center">
-            <h2 className="text-2xl font-bold text-navy">Talk to our enterprise team</h2>
+            <h2 className="text-2xl font-bold text-foreground">Talk to our enterprise team</h2>
             <p className="mt-3 text-muted-foreground">
               Custom SLAs, volume pricing, and a dedicated onboarding plan for your organization.
             </p>

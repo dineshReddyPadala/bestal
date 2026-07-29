@@ -4,38 +4,50 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222 47% 11%;
+    /* Warm cream page canvas — BesTal website palette */
+    --background: 40 20% 96%;
+    --foreground: 200 6% 11%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
+    --card-foreground: 200 6% 11%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
+    --popover-foreground: 200 6% 11%;
 
-    --primary: 217 91% 53%;
+    /* Brand teal #0D5E5E */
+    --primary: 180 76% 21%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 210 40% 96%;
-    --secondary-foreground: 222 47% 11%;
+    --brand: 180 76% 21%;
+    --brand-hover: 180 77% 17%; /* #0A4F4F */
+    --brand-light: 185 28% 92%; /* #E6F0F1 */
 
-    --muted: 210 40% 96%;
-    --muted-foreground: 215 16% 47%;
+    --secondary: 180 20% 94%;
+    --secondary-foreground: 200 6% 11%;
 
-    --accent: 210 40% 96%;
-    --accent-foreground: 222 47% 11%;
+    --muted: 40 14% 94%;
+    --muted-foreground: 220 9% 46%;
+
+    --accent: 180 25% 93%;
+    --accent-foreground: 180 76% 21%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 214 32% 91%;
-    --input: 214 32% 91%;
-    --ring: 217 91% 53%;
+    /* Teal-tinted success (Verified / Placed) */
+    --success: 180 76% 21%;
+    --success-foreground: 0 0% 100%;
+    --success-soft: 168 33% 95%; /* #ECF6F5 */
+
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 180 76% 21%;
 
     --radius: 0.5rem;
 
-    --navy: 210 73% 15%;
-    --navy-light: 213 58% 24%;
+    /* Legacy navy tokens remapped to deep teal */
+    --navy: 180 76% 21%;
+    --navy-light: 174 49% 24%;
   }
 
   * {
@@ -45,5 +57,42 @@
   body {
     @apply bg-background text-foreground antialiased;
     font-feature-settings: 'rlig' 1, 'calt' 1;
+  }
+}
+
+/*
+ * Brand utilities must resolve through CSS variables. Hardcoded hex in a stale
+ * Tailwind JIT cache previously left buttons as blue (#2563eb) after palette updates.
+ */
+@layer utilities {
+  .bg-brand {
+    background-color: hsl(var(--brand) / var(--tw-bg-opacity, 1));
+  }
+  .bg-brand-hover {
+    background-color: hsl(var(--brand-hover) / var(--tw-bg-opacity, 1));
+  }
+  .bg-brand-light {
+    background-color: hsl(var(--brand-light) / var(--tw-bg-opacity, 1));
+  }
+  .hover\:bg-brand-hover:hover {
+    background-color: hsl(var(--brand-hover) / var(--tw-bg-opacity, 1));
+  }
+  .text-brand {
+    color: hsl(var(--brand) / var(--tw-text-opacity, 1));
+  }
+  .text-brand-light {
+    color: hsl(var(--brand-light) / var(--tw-text-opacity, 1));
+  }
+  .border-brand {
+    border-color: hsl(var(--brand) / var(--tw-border-opacity, 1));
+  }
+  .ring-brand {
+    --tw-ring-color: hsl(var(--brand) / var(--tw-ring-opacity, 1));
+  }
+  .bg-navy {
+    background-color: hsl(var(--navy) / var(--tw-bg-opacity, 1));
+  }
+  .text-navy {
+    color: hsl(var(--navy) / var(--tw-text-opacity, 1));
   }
 }

@@ -324,7 +324,7 @@ function BasicDetailsTab({
             onFileSelect={handleResumeSelect}
           />
           {resumeFileName ? (
-            <div className="flex flex-wrap items-center gap-3 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+            <div className="flex flex-wrap items-center gap-3 rounded-lg border border-emerald-200 bg-success/10 px-3 py-2 text-sm text-emerald-800">
               <CheckCircle2 className="h-4 w-4 shrink-0" />
               <span>Resume Uploaded — {resumeFileName}</span>
             </div>
@@ -791,7 +791,7 @@ function EvaluationTab({
             }}
           />
           {evaluationFileName ? (
-            <div className="flex flex-wrap items-center gap-3 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+            <div className="flex flex-wrap items-center gap-3 rounded-lg border border-emerald-200 bg-success/10 px-3 py-2 text-sm text-emerald-800">
               <CheckCircle2 className="h-4 w-4 shrink-0" />
               <span>Evaluation Uploaded — {evaluationFileName}</span>
             </div>
@@ -1028,7 +1028,7 @@ function BackgroundCheckTab({
                 }}
               />
               {watch('bgvConsentFileName') ? (
-                <p className="mt-2 text-sm text-emerald-700">Selected: {watch('bgvConsentFileName')}</p>
+                <p className="mt-2 text-sm text-success">Selected: {watch('bgvConsentFileName')}</p>
               ) : null}
             </div>
             <div>
@@ -1041,7 +1041,7 @@ function BackgroundCheckTab({
                 }}
               />
               {watch('bgvFileName') ? (
-                <p className="mt-2 text-sm text-emerald-700">Selected: {watch('bgvFileName')}</p>
+                <p className="mt-2 text-sm text-success">Selected: {watch('bgvFileName')}</p>
               ) : null}
             </div>
           </div>
@@ -1071,7 +1071,7 @@ function DocumentsTab({ pendingUploads }: { pendingUploads: MutableRefObject<Can
             }}
           />
           {watch('profileImageFileName') ? (
-            <p className="mt-2 text-sm text-emerald-700">Selected: {watch('profileImageFileName')}</p>
+            <p className="mt-2 text-sm text-success">Selected: {watch('profileImageFileName')}</p>
           ) : null}
         </div>
         <div>
@@ -1085,7 +1085,7 @@ function DocumentsTab({ pendingUploads }: { pendingUploads: MutableRefObject<Can
             }}
           />
           {watch('introVideoFileName') ? (
-            <p className="mt-2 text-sm text-emerald-700">Selected: {watch('introVideoFileName')}</p>
+            <p className="mt-2 text-sm text-success">Selected: {watch('introVideoFileName')}</p>
           ) : null}
         </div>
       </div>
