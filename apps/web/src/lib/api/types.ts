@@ -331,6 +331,8 @@ export type CandidateListItem = {
   availabilityStatus?: string | null;
   timezoneOverlap?: string | null;
   hasResume?: boolean;
+  hasProfileImage?: boolean;
+  profileImageUrl?: string | null;
   hasAiSummary?: boolean;
   hasSkills?: boolean;
   hasAvailability?: boolean;

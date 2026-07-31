@@ -32,7 +32,7 @@ export function mapApiCandidateToClientSearchRecord(
 
   return {
     id: candidate.id,
-    photoUrl: '',
+    photoUrl: candidate.profileImageUrl?.trim() || '',
     displayName: candidate.firstName,
     fullName,
     role,

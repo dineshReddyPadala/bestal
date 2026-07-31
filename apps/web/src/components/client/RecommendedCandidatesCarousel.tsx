@@ -45,7 +45,7 @@ export function RecommendedCandidatesCarousel({ items }: RecommendedCandidatesCa
           return (
             <div
               key={rec.candidateId}
-              className="w-[min(100%,320px)] shrink-0 snap-start sm:w-[300px]"
+              className="w-[min(100%,360px)] shrink-0 snap-start sm:w-[340px]"
             >
               <div className="mb-2 flex items-center justify-between gap-2 px-1">
                 <span className="rounded-full bg-brand/10 px-2 py-0.5 text-xs font-semibold text-brand">

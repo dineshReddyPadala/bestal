@@ -88,7 +88,19 @@ export function TanStackDataTable<TData>({
     getPaginationRowModel: getPaginationRowModel(),
     enableRowSelection,
     getRowId,
-    globalFilterFn: globalFilterFn as never,
+    globalFilterFn:
+      (globalFilterFn as never) ??
+      ((row, _columnId, filterValue) => {
+        const q = String(filterValue ?? '')
+          .toLowerCase()
+          .trim();
+        if (!q) return true;
+        const original = row.original as Record<string, unknown>;
+        return Object.values(original).some((value) => {
+          if (value == null || typeof value === 'object') return false;
+          return String(value).toLowerCase().includes(q);
+        });
+      }),
     initialState: { pagination: { pageSize } },
   });
 

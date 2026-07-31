@@ -293,6 +293,7 @@ export const candidateListItemSchema = z.object({
   timezoneOverlap: z.string().nullable(),
   hasResume: z.boolean(),
   hasProfileImage: z.boolean(),
+  profileImageUrl: z.string().nullable(),
   hasIntroVideo: z.boolean(),
   profileStatus: z.string().nullable(),
   evaluationStatus: z.string().nullable(),

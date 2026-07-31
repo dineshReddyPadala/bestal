@@ -4,11 +4,10 @@ import {
 } from '@bestal/shared-utils';
 import { Button, Card, CardContent, CardHeader, CardTitle, StatusBadge } from '@bestal/ui';
 import { CheckCircle2, Circle, Loader2 } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { useCandidate, useCandidateMutations } from '../../hooks/api/useCandidates';
 import { usePermissions } from '../../hooks/usePermissions';
 import { getApiErrorMessage } from '../../lib/api/errors';
-import { canApprove, canPublish } from '../../lib/candidate-approval-gates';
 import { useDemoToast } from '../../lib/use-demo-toast';
 import { ToastHost } from '../ui/ToastHost';
 
@@ -52,24 +51,9 @@ export function CandidatePipelinePanel({
 }: CandidatePipelinePanelProps) {
   const { data: candidate, isLoading, isError, error } = useCandidate(candidateId);
   const mutations = useCandidateMutations();
-  const { canWriteCandidates, canApproveCandidates } = usePermissions();
+  const { canWriteCandidates } = usePermissions();
   const { message, variant, show, showError, dismiss } = useDemoToast();
   const [busy, setBusy] = useState<string | null>(null);
-
-  const gateInput = useMemo(
-    () =>
-      candidate
-        ? {
-            profileStatus: candidate.profileStatus,
-            evaluationStatus: candidate.evaluationStatus,
-            bgvStatus: candidate.bgvStatus,
-            approvalStatus: candidate.approvalStatus,
-            visibility: candidate.visibility,
-            submittedForApprovalAt: candidate.submittedForApprovalAt,
-          }
-        : null,
-    [candidate],
-  );
 
   const currentIdx = stepIndex(candidate?.profileStatus);
 
@@ -107,8 +91,6 @@ export function CandidatePipelinePanel({
   }
 
   const hasResume = Boolean(candidate.hasResume ?? candidate.resume);
-  const approveGate = gateInput ? canApprove(gateInput) : null;
-  const publishGate = gateInput ? canPublish(gateInput) : null;
 
   return (
     <>
@@ -271,45 +253,6 @@ export function CandidatePipelinePanel({
           </div>
         ) : null}
 
-        {canApproveCandidates ? (
-          <div className="flex flex-wrap gap-2 border-t border-border/60 pt-4">
-            <Button
-              size="sm"
-              disabled={!approveGate?.allowed || busy !== null}
-              title={approveGate?.blockers.join('; ')}
-              onClick={() =>
-                run(
-                  'approve',
-                  () => mutations.approve.mutateAsync(candidateId),
-                  'Candidate approved (admin step)',
-                )
-              }
-            >
-              Approve
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              disabled={!publishGate?.allowed || busy !== null}
-              title={publishGate?.blockers.join('; ')}
-              onClick={() =>
-                run(
-                  'publish',
-                  () => mutations.publish.mutateAsync(candidateId),
-                  'Published to client portal',
-                )
-              }
-            >
-              Publish to clients
-            </Button>
-          </div>
-        ) : null}
-
-        <p className="text-xs text-muted-foreground">
-          Evaluation and BGV steps are advanced via their respective modules once the prior
-          profile status is reached. Approve and Publish are separate actions per the pipeline
-          enums.
-        </p>
       </CardContent>
     </Card>
     </>
