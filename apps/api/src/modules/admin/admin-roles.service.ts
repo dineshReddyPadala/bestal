@@ -6,6 +6,8 @@ import type { AuthenticatedUser } from '../../types/index.js';
 import {
   BadRequestError,
   NotFoundError,
+  bigintToNumber,
+  requireOrganization,
 } from '../../utils/index.js';
 import { AuditService } from './audit.service.js';
 
@@ -155,8 +157,16 @@ function asPermissionList(value: unknown): string[] {
   return [...new Set(value.map((p) => String(p).trim()).filter(Boolean))];
 }
 
+/** Keep only known permission keys (drops legacy values like `interviews`). */
+function sanitizePermissions(value: unknown): string[] {
+  return asPermissionList(value).filter((p) =>
+    (ALL_PERMISSIONS as readonly string[]).includes(p),
+  );
+}
+
 function validatePermissions(permissions: string[]) {
-  const invalid = permissions.filter((p) => !ALL_PERMISSIONS.includes(p as never));
+  const unique = asPermissionList(permissions);
+  const invalid = [...new Set(unique.filter((p) => !(ALL_PERMISSIONS as readonly string[]).includes(p)))];
   if (invalid.length > 0) {
     throw new BadRequestError(`Invalid permissions: ${invalid.slice(0, 5).join(', ')}`);
   }
@@ -193,7 +203,7 @@ function mapRole(row: {
     description: row.description,
     portal: row.portal,
     baseRole: row.baseRole,
-    permissions: asPermissionList(row.permissions),
+    permissions: sanitizePermissions(row.permissions),
     isSystem: row.isSystem,
     isProtected: row.isProtected,
     isActive: row.isActive,
@@ -283,23 +293,275 @@ export class AdminRolesService {
         });
       }
     }
+
+    // Strip legacy / unknown permission keys (e.g. removed `interviews`) from all roles.
+    const allRoles = await this.prisma.platformRole.findMany({
+      where: { deletedAt: null },
+      select: { id: true, permissions: true },
+    });
+    for (const role of allRoles) {
+      const raw = asPermissionList(role.permissions);
+      const clean = sanitizePermissions(raw);
+      if (raw.length !== clean.length || raw.some((p, i) => p !== clean[i])) {
+        await this.prisma.platformRole.update({
+          where: { id: role.id },
+          data: { permissions: clean },
+        });
+      }
+    }
   }
 
-  async listRoles() {
+  private membershipWhereForRole(role: {
+    id: bigint;
+    baseRole: Role;
+    isSystem: boolean;
+  }): Prisma.MembershipWhereInput {
+    if (role.isSystem) {
+      return {
+        isActive: true,
+        OR: [
+          { platformRoleId: role.id },
+          { role: role.baseRole, platformRoleId: null },
+        ],
+      };
+    }
+    return { isActive: true, platformRoleId: role.id };
+  }
+
+  private async countUsersForRole(role: {
+    id: bigint;
+    baseRole: Role;
+    isSystem: boolean;
+  }): Promise<number> {
+    return this.prisma.membership.count({
+      where: this.membershipWhereForRole(role),
+    });
+  }
+
+  async listRoles(query?: { search?: string }) {
     await this.ensureSystemRolesSeeded();
+    const search = query?.search?.trim();
     const rows = await this.prisma.platformRole.findMany({
-      where: { deletedAt: null },
-      include: { _count: { select: { memberships: true } } },
+      where: {
+        deletedAt: null,
+        ...(search
+          ? {
+              OR: [
+                { name: { contains: search, mode: 'insensitive' } },
+                { code: { contains: search, mode: 'insensitive' } },
+                { description: { contains: search, mode: 'insensitive' } },
+                { portal: { contains: search, mode: 'insensitive' } },
+              ],
+            }
+          : {}),
+      },
       orderBy: [{ isSystem: 'desc' }, { name: 'asc' }],
     });
-    return { data: rows.map(mapRole) };
+    const data = await Promise.all(
+      rows.map(async (row) => {
+        const userCount = await this.countUsersForRole(row);
+        return mapRole({ ...row, _count: { memberships: userCount } });
+      }),
+    );
+    return { data };
   }
 
   async getRole(codeOrId: string) {
     await this.ensureSystemRolesSeeded();
     const row = await this.findRole(codeOrId);
     if (!row) throw new NotFoundError('Role not found');
-    return mapRole(row);
+    const userCount = await this.countUsersForRole(row);
+    return mapRole({ ...row, _count: { memberships: userCount } });
+  }
+
+  async listRoleUsers(
+    authUser: AuthenticatedUser,
+    codeOrId: string,
+    query?: { search?: string },
+  ) {
+    await this.ensureSystemRolesSeeded();
+    const role = await this.findRole(codeOrId);
+    if (!role) throw new NotFoundError('Role not found');
+    const organizationId = requireOrganization(authUser);
+    const search = query?.search?.trim();
+
+    const memberships = await this.prisma.membership.findMany({
+      where: {
+        organizationId: BigInt(organizationId),
+        ...this.membershipWhereForRole(role),
+        user: {
+          deletedAt: null,
+          ...(search
+            ? {
+                OR: [
+                  { email: { contains: search, mode: 'insensitive' } },
+                  { firstName: { contains: search, mode: 'insensitive' } },
+                  { lastName: { contains: search, mode: 'insensitive' } },
+                ],
+              }
+            : {}),
+        },
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            email: true,
+            firstName: true,
+            lastName: true,
+            isActive: true,
+            lastLoginAt: true,
+          },
+        },
+        client: { select: { id: true, name: true } },
+      },
+      orderBy: [{ user: { lastName: 'asc' } }, { user: { firstName: 'asc' } }],
+    });
+
+    return {
+      data: memberships.map((m) => ({
+        id: bigintToNumber(m.user.id),
+        email: m.user.email,
+        firstName: m.user.firstName,
+        lastName: m.user.lastName,
+        isActive: m.user.isActive,
+        role: m.role,
+        clientId: m.clientId != null ? bigintToNumber(m.clientId) : null,
+        clientName: m.client?.name ?? null,
+        lastLoginAt: m.user.lastLoginAt?.toISOString() ?? null,
+      })),
+    };
+  }
+
+  async assignUserToRole(
+    authUser: AuthenticatedUser,
+    codeOrId: string,
+    input: { userId: number; clientId?: number | null },
+    ctx?: { ipAddress?: string | null; userAgent?: string | null },
+  ) {
+    await this.ensureSystemRolesSeeded();
+    const role = await this.findRole(codeOrId);
+    if (!role) throw new NotFoundError('Role not found');
+    if (role.isProtected || role.baseRole === 'SUPER_ADMIN') {
+      throw new BadRequestError('Users cannot be assigned to SUPER_ADMIN from this screen');
+    }
+    if (!role.isActive) {
+      throw new BadRequestError('Cannot assign users to an inactive role');
+    }
+
+    const organizationId = requireOrganization(authUser);
+    const userId = Number(input.userId);
+    if (!Number.isFinite(userId) || userId <= 0) {
+      throw new BadRequestError('userId is required');
+    }
+
+    const membership = await this.prisma.membership.findFirst({
+      where: {
+        userId: BigInt(userId),
+        organizationId: BigInt(organizationId),
+        isActive: true,
+        user: { deletedAt: null },
+      },
+      include: { user: { select: { email: true } } },
+    });
+    if (!membership) throw new NotFoundError('User not found in this organization');
+
+    let clientId: bigint | null = membership.clientId;
+    if (role.baseRole === 'CLIENT') {
+      const requested =
+        input.clientId !== undefined
+          ? input.clientId
+          : membership.clientId != null
+            ? bigintToNumber(membership.clientId)
+            : null;
+      if (requested == null) {
+        throw new BadRequestError('clientId is required when assigning the CLIENT role');
+      }
+      const client = await this.prisma.client.findFirst({
+        where: {
+          id: BigInt(requested),
+          organizationId: BigInt(organizationId),
+          deletedAt: null,
+        },
+        select: { id: true },
+      });
+      if (!client) throw new BadRequestError('Client account not found');
+      clientId = client.id;
+    } else {
+      clientId = null;
+    }
+
+    await this.prisma.membership.update({
+      where: { id: membership.id },
+      data: {
+        role: role.baseRole,
+        platformRoleId: role.id,
+        clientId,
+      },
+    });
+
+    await this.auditWrite(
+      authUser,
+      'UPDATE',
+      Number(role.id),
+      `Assigned user ${membership.user.email} to role ${role.code}`,
+      { userId, clientId: clientId != null ? bigintToNumber(clientId) : null },
+      ctx,
+    );
+
+    return this.listRoleUsers(authUser, codeOrId);
+  }
+
+  async unassignUserFromRole(
+    authUser: AuthenticatedUser,
+    codeOrId: string,
+    userId: number,
+    ctx?: { ipAddress?: string | null; userAgent?: string | null },
+  ) {
+    await this.ensureSystemRolesSeeded();
+    const role = await this.findRole(codeOrId);
+    if (!role) throw new NotFoundError('Role not found');
+    if (role.isProtected || role.baseRole === 'SUPER_ADMIN') {
+      throw new BadRequestError('Users cannot be removed from SUPER_ADMIN from this screen');
+    }
+
+    const organizationId = requireOrganization(authUser);
+    const membership = await this.prisma.membership.findFirst({
+      where: {
+        userId: BigInt(userId),
+        organizationId: BigInt(organizationId),
+        isActive: true,
+        ...this.membershipWhereForRole(role),
+        user: { deletedAt: null },
+      },
+      include: { user: { select: { email: true } } },
+    });
+    if (!membership) throw new NotFoundError('User is not assigned to this role');
+
+    await this.prisma.membership.update({
+      where: { id: membership.id },
+      data: {
+        role: 'VIEWER',
+        platformRoleId: (
+          await this.prisma.platformRole.findFirst({
+            where: { code: 'VIEWER', deletedAt: null },
+            select: { id: true },
+          })
+        )?.id ?? null,
+        clientId: null,
+      },
+    });
+
+    await this.auditWrite(
+      authUser,
+      'UPDATE',
+      Number(role.id),
+      `Removed user ${membership.user.email} from role ${role.code}`,
+      { userId },
+      ctx,
+    );
+
+    return this.listRoleUsers(authUser, codeOrId);
   }
 
   async createRole(
@@ -331,7 +593,7 @@ export class AdminRolesService {
       throw new BadRequestError('Invalid base role');
     }
 
-    const permissions = asPermissionList(input.permissions ?? []);
+    const permissions = sanitizePermissions(input.permissions ?? []);
     validatePermissions(permissions);
     if (permissions.includes(PERMISSIONS.ADMIN_PLATFORM)) {
       throw new BadRequestError('admin:platform cannot be granted to custom roles');
@@ -424,7 +686,7 @@ export class AdminRolesService {
       data.isActive = input.isActive;
     }
     if (input.permissions !== undefined) {
-      const permissions = asPermissionList(input.permissions);
+      const permissions = sanitizePermissions(input.permissions);
       validatePermissions(permissions);
       if (existing.code !== 'SUPER_ADMIN' && permissions.includes(PERMISSIONS.ADMIN_PLATFORM)) {
         throw new BadRequestError('admin:platform is reserved for SUPER_ADMIN');
@@ -535,7 +797,7 @@ export async function resolvePermissionsForMembership(
       where: { id: BigInt(platformRoleId), deletedAt: null, isActive: true },
     });
     if (custom) {
-      return withClientDeployRequestPermission(role, asPermissionList(custom.permissions));
+      return withClientDeployRequestPermission(role, sanitizePermissions(custom.permissions));
     }
   }
 
@@ -543,7 +805,7 @@ export async function resolvePermissionsForMembership(
     where: { code: role, deletedAt: null, isActive: true },
   });
   if (byCode) {
-    return withClientDeployRequestPermission(role, asPermissionList(byCode.permissions));
+    return withClientDeployRequestPermission(role, sanitizePermissions(byCode.permissions));
   }
 
   // Fallback to static map until seed runs

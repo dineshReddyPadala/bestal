@@ -9,6 +9,7 @@ import { ClientForm } from '../forms/ClientForm';
 import type { ClientFormValues } from '../../lib/entity-field-metadata';
 import { useDemoToast } from '../../lib/use-demo-toast';
 import { useClientMutations, useClientsList } from '../../hooks/api/useClients';
+import { useDebouncedSearch } from '../../hooks/useDebouncedSearch';
 import { clientsApi } from '../../lib/api/clients';
 import { queryKeys } from '../../hooks/api/query-keys';
 import type { ClientListItem } from '../../lib/api/types';
@@ -129,6 +130,7 @@ export function ClientManagementView({
   const [filters, setFilters] = useState(defaultFilters);
   const [formOpen, setFormOpen] = useState<'add' | 'edit' | null>(null);
   const [editingRecord, setEditingRecord] = useState<ClientListItem | null>(null);
+  const { searchInput, setSearchInput, search, searchParam } = useDebouncedSearch();
   const mutations = useClientMutations();
 
   const { data: editingClient } = useQuery({
@@ -141,9 +143,10 @@ export function ClientManagementView({
     () => ({
       limit: 100,
       sort: '-createdAt',
+      ...searchParam,
       status: filters.status === 'all' ? undefined : filters.status,
     }),
-    [filters.status],
+    [filters.status, searchParam],
   );
 
   const { data, isLoading, isError, error } = useClientsList(listParams);
@@ -309,9 +312,13 @@ export function ClientManagementView({
         error={isError ? (error instanceof Error ? error.message : 'Failed to load clients') : null}
       >
         <TanStackDataTable
+          key={search}
           columns={columns}
           data={filteredData}
           searchPlaceholder="Search by company, email, or manager…"
+          searchValue={searchInput}
+          onSearchChange={setSearchInput}
+          serverSideSearch
           pageSize={12}
           stickyHeader
           fillHeight

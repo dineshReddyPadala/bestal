@@ -9,6 +9,7 @@ import {
 } from '../../components/layout/ListingPageShell';
 import { ActionMenu, type ActionMenuItem } from '../../components/super-admin/ActionMenu';
 import { useAdminAuditLogs } from '../../hooks/api/useAdmin';
+import { useDebouncedSearch } from '../../hooks/useDebouncedSearch';
 
 type Row = {
   id: number;
@@ -24,10 +25,14 @@ type Row = {
 
 export function SuperAdminAuditLogsPage() {
   const [action, setAction] = useState('all');
+  const { searchInput, setSearchInput, search, searchParam, clearSearch } = useDebouncedSearch();
   const [detail, setDetail] = useState<Row | null>(null);
+
   const { data, isLoading, isError, error } = useAdminAuditLogs({
     limit: 100,
+    page: 1,
     ...(action !== 'all' ? { action } : {}),
+    ...searchParam,
   });
   const rows = (data?.data ?? []) as unknown as Row[];
 
@@ -53,6 +58,14 @@ export function SuperAdminAuditLogsPage() {
         accessorKey: 'entityId',
         header: 'Entity id',
         cell: ({ getValue }) => getValue() ?? '—',
+      },
+      {
+        accessorKey: 'description',
+        header: 'Description',
+        cell: ({ getValue }) => {
+          const v = (getValue() as string | null) || '';
+          return v ? <span className="line-clamp-2 max-w-xs text-xs">{v}</span> : '—';
+        },
       },
       {
         accessorKey: 'ipAddress',
@@ -99,11 +112,6 @@ export function SuperAdminAuditLogsPage() {
                     disabledReason: 'No linked entity for this log entry',
                   }),
             },
-            {
-              id: 'history',
-              label: 'View Full Change History',
-              onSelect: () => setDetail(r),
-            },
           ];
           return <ActionMenu items={items} label={`Actions for audit ${r.id}`} />;
         },
@@ -121,16 +129,25 @@ export function SuperAdminAuditLogsPage() {
         loadingLabel="Loading audit logs…"
       >
         <TanStackDataTable
+          key={`${action}-${search}`}
           columns={columns}
           data={rows}
-          searchPlaceholder="Search…"
+          searchPlaceholder="Search user, action, entity, description…"
+          searchValue={searchInput}
+          onSearchChange={setSearchInput}
+          serverSideSearch
           pageSize={12}
           stickyHeader
           fillHeight
           dense
           filtersInline
           filters={
-            <ListingFiltersRow onClear={() => setAction('all')}>
+            <ListingFiltersRow
+              onClear={() => {
+                setAction('all');
+                clearSearch();
+              }}
+            >
               <ListingFilterSelect
                 label="ACTION"
                 value={action}
@@ -142,6 +159,8 @@ export function SuperAdminAuditLogsPage() {
                   { value: 'DELETE', label: 'DELETE' },
                   { value: 'APPROVE', label: 'APPROVE' },
                   { value: 'REJECT', label: 'REJECT' },
+                  { value: 'LOGIN', label: 'LOGIN' },
+                  { value: 'ASSIGN', label: 'ASSIGN' },
                 ]}
               />
             </ListingFiltersRow>

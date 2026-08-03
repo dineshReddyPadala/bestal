@@ -21,6 +21,7 @@ import {
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useCandidateMutations, useCandidatesList } from '../../hooks/api/useCandidates';
+import { useDebouncedSearch } from '../../hooks/useDebouncedSearch';
 import type { CandidateListItem } from '../../lib/api/types';
 import { canApprove, canPublish } from '../../lib/candidate-approval-gates';
 import {
@@ -213,24 +214,26 @@ export function CandidateApprovalQueueView({
   const navigate = useNavigate();
   const { message, variant, show, showError, dismiss } = useDemoToast();
   const [filters, setFilters] = useState(defaultFilters);
+  const { searchInput, setSearchInput, search, searchParam } = useDebouncedSearch();
   const evaluationsBase = candidateDetailBasePath.includes('super-admin')
     ? '/super-admin/evaluations'
     : '/admin/evaluations';
   const listParams = useMemo(() => {
+    const base = { limit: 100, sort: '-updatedAt', ...searchParam };
     if (filters.queue === 'pending') {
-      return { limit: 100, sort: '-updatedAt', pendingApproval: true as const };
+      return { ...base, pendingApproval: true as const };
     }
     if (filters.queue === 'approved') {
-      return { limit: 100, sort: '-updatedAt', approvalStatus: 'APPROVED' };
+      return { ...base, approvalStatus: 'APPROVED' };
     }
     if (filters.queue === 'published') {
-      return { limit: 100, sort: '-updatedAt', visibility: 'CLIENT_VISIBLE' };
+      return { ...base, visibility: 'CLIENT_VISIBLE' };
     }
     if (filters.queue === 'rejected') {
-      return { limit: 100, sort: '-updatedAt', approvalStatus: 'REJECTED' };
+      return { ...base, approvalStatus: 'REJECTED' };
     }
-    return { limit: 100, sort: '-updatedAt' };
-  }, [filters.queue]);
+    return base;
+  }, [filters.queue, searchParam]);
   const { data, isLoading, isError, error } = useCandidatesList(listParams);
   const mutations = useCandidateMutations();
   const [rejectOpen, setRejectOpen] = useState(false);
@@ -463,9 +466,13 @@ export function CandidateApprovalQueueView({
         loadingLabel="Loading approval queue…"
       >
         <TanStackDataTable
+          key={search}
           columns={columns}
           data={filteredData}
           searchPlaceholder="Search by candidate name or role…"
+          searchValue={searchInput}
+          onSearchChange={setSearchInput}
+          serverSideSearch
           pageSize={12}
           stickyHeader
           fillHeight

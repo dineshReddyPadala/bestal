@@ -283,9 +283,24 @@ export function isPlatformRole(value: string): value is PlatformRole {
   return (PLATFORM_ROLES as readonly string[]).includes(value);
 }
 
-export function permissionLabel(permission: string): string {
-  return permission
-    .split(':')
-    .map((part) => part.replace(/_/g, ' '))
-    .join(' · ');
+export { permissionLabel, PERMISSION_LABELS } from './permission-labels';
+
+/** Filter to known permission keys and dedupe (drops legacy values like `interviews`). */
+export function sanitizePermissionKeys(permissions: readonly string[]): PlatformPermission[] {
+  const allowed = new Set<string>(ALL_PERMISSIONS);
+  return [...new Set(permissions.map((p) => p.trim()).filter(Boolean))].filter((p): p is PlatformPermission =>
+    allowed.has(p),
+  );
+}
+
+export const PORTAL_LABELS: Record<string, string> = {
+  ADMIN: 'Admin',
+  RECRUITER: 'Recruiter',
+  SALES: 'Sales',
+  CLIENT: 'Client',
+  SUPER_ADMIN: 'Super Admin',
+};
+
+export function portalLabel(portal: string): string {
+  return PORTAL_LABELS[portal] ?? portal;
 }

@@ -122,10 +122,10 @@ export function useAdminSettings() {
   });
 }
 
-export function useAdminRoles() {
+export function useAdminRoles(params?: ListQuery) {
   return useQuery({
-    queryKey: queryKeys.admin.roles,
-    queryFn: () => adminApi.listRoles(),
+    queryKey: queryKeys.admin.rolesList(params),
+    queryFn: () => adminApi.listRoles(params),
   });
 }
 
@@ -133,6 +133,14 @@ export function useAdminRole(code: string | undefined) {
   return useQuery({
     queryKey: queryKeys.admin.role(code ?? ''),
     queryFn: () => adminApi.getRole(code!),
+    enabled: Boolean(code),
+  });
+}
+
+export function useAdminRoleUsers(code: string | undefined, params?: ListQuery) {
+  return useQuery({
+    queryKey: queryKeys.admin.roleUsers(code ?? '', params),
+    queryFn: () => adminApi.listRoleUsers(code!, params),
     enabled: Boolean(code),
   });
 }
@@ -313,6 +321,23 @@ export function useAdminMutations() {
     }),
     deleteRole: useMutation({
       mutationFn: (code: string) => adminApi.deleteRole(code),
+      onSuccess: invalidate,
+    }),
+    assignUserToRole: useMutation({
+      mutationFn: ({
+        code,
+        userId,
+        clientId,
+      }: {
+        code: string;
+        userId: number;
+        clientId?: number | null;
+      }) => adminApi.assignUserToRole(code, { userId, clientId }),
+      onSuccess: invalidate,
+    }),
+    unassignUserFromRole: useMutation({
+      mutationFn: ({ code, userId }: { code: string; userId: number }) =>
+        adminApi.unassignUserFromRole(code, userId),
       onSuccess: invalidate,
     }),
   };

@@ -616,6 +616,7 @@ export class BackgroundCheckService {
       page: query.page,
       limit: query.limit,
       sort: query.sort,
+      search: query.search,
       candidateId: query.candidateId,
       status: query.status,
       type: query.type,

@@ -218,6 +218,7 @@ export class EvaluationService {
       page: query.page,
       limit: query.limit,
       sort: query.sort,
+      search: query.search,
       candidateId: query.candidateId,
       evaluationType: query.evaluationType,
     });

@@ -49,6 +49,14 @@ export type TanStackDataTableProps<TData> = {
   /** Render search and filters on one horizontal row. */
   filtersInline?: boolean;
   globalFilterFn?: (row: { original: TData }, columnId: string, filterValue: string) => boolean;
+  /** Controlled search (e.g. server-side). When set, search box is controlled by the parent. */
+  searchValue?: string;
+  onSearchChange?: (value: string) => void;
+  /**
+   * When true, do not apply client-side text filtering (parent/server already filtered).
+   * Search box still updates via onSearchChange / internal state.
+   */
+  serverSideSearch?: boolean;
 };
 
 export function TanStackDataTable<TData>({
@@ -70,17 +78,34 @@ export function TanStackDataTable<TData>({
   dense = false,
   filtersInline = false,
   globalFilterFn,
+  searchValue,
+  onSearchChange,
+  serverSideSearch = false,
 }: TanStackDataTableProps<TData>) {
   const [sorting, setSorting] = useState<SortingState>([]);
-  const [globalFilter, setGlobalFilter] = useState('');
+  const [internalFilter, setInternalFilter] = useState('');
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
+  const isSearchControlled = searchValue !== undefined;
+  const globalFilter = isSearchControlled ? searchValue : internalFilter;
+
+  const setGlobalFilter = (value: string) => {
+    if (isSearchControlled) {
+      onSearchChange?.(value);
+    } else {
+      setInternalFilter(value);
+      onSearchChange?.(value);
+    }
+  };
 
   const table = useReactTable({
     data,
     columns,
     state: { sorting, globalFilter, rowSelection },
     onSortingChange: setSorting,
-    onGlobalFilterChange: setGlobalFilter,
+    onGlobalFilterChange: (updater) => {
+      const next = typeof updater === 'function' ? updater(globalFilter) : updater;
+      setGlobalFilter(String(next ?? ''));
+    },
     onRowSelectionChange: setRowSelection,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
@@ -88,19 +113,20 @@ export function TanStackDataTable<TData>({
     getPaginationRowModel: getPaginationRowModel(),
     enableRowSelection,
     getRowId,
-    globalFilterFn:
-      (globalFilterFn as never) ??
-      ((row, _columnId, filterValue) => {
-        const q = String(filterValue ?? '')
-          .toLowerCase()
-          .trim();
-        if (!q) return true;
-        const original = row.original as Record<string, unknown>;
-        return Object.values(original).some((value) => {
-          if (value == null || typeof value === 'object') return false;
-          return String(value).toLowerCase().includes(q);
-        });
-      }),
+    globalFilterFn: serverSideSearch
+      ? (() => true as boolean)
+      : ((globalFilterFn as never) ??
+        ((row, _columnId, filterValue) => {
+          const q = String(filterValue ?? '')
+            .toLowerCase()
+            .trim();
+          if (!q) return true;
+          const original = row.original as Record<string, unknown>;
+          return Object.values(original).some((value) => {
+            if (value == null || typeof value === 'object') return false;
+            return String(value).toLowerCase().includes(q);
+          });
+        })),
     initialState: { pagination: { pageSize } },
   });
 

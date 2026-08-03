@@ -8,6 +8,7 @@ import { ActionMenu, type ActionMenuItem } from '../../components/super-admin/Ac
 import { useConfirmAction } from '../../components/super-admin/useConfirmAction';
 import { useAuth } from '../../contexts/AuthContext';
 import { useAdminMutations, useAdminUsers } from '../../hooks/api/useAdmin';
+import { useDebouncedSearch } from '../../hooks/useDebouncedSearch';
 import { useDemoToast } from '../../lib/use-demo-toast';
 import { isPlatformRole } from '../../lib/rbac/roles';
 
@@ -35,18 +36,21 @@ export function SuperAdminUsersPage() {
   const { user } = useAuth();
   const { message, variant, show, showError } = useDemoToast();
   const { requestConfirm, confirmDialog } = useConfirmAction();
-  const { data, isLoading, isError, error } = useAdminUsers({ limit: 100, sort: '-createdAt' });
+  const { searchInput, setSearchInput, search, searchParam } = useDebouncedSearch();
+  const { data, isLoading, isError, error } = useAdminUsers({
+    limit: 100,
+    sort: '-createdAt',
+    ...(roleFilter && isPlatformRole(roleFilter) ? { role: roleFilter } : {}),
+    ...searchParam,
+  });
+  const { data: superAdminData } = useAdminUsers({
+    limit: 100,
+    role: 'SUPER_ADMIN',
+    isActive: true,
+  });
   const mutations = useAdminMutations();
-  const allRows = (data?.data ?? []) as unknown as Row[];
-  const rows = useMemo(() => {
-    if (!roleFilter || !isPlatformRole(roleFilter)) return allRows;
-    return allRows.filter((r) => r.role === roleFilter);
-  }, [allRows, roleFilter]);
-
-  const activeSuperAdminCount = useMemo(
-    () => allRows.filter((r) => r.role === 'SUPER_ADMIN' && r.isActive).length,
-    [allRows],
-  );
+  const rows = (data?.data ?? []) as unknown as Row[];
+  const activeSuperAdminCount = (superAdminData?.data ?? []).length;
 
   const columns = useMemo<ColumnDef<Row>[]>(
     () => [
@@ -120,12 +124,6 @@ export function SuperAdminUsersPage() {
               id: 'edit',
               label: 'Edit User',
               href: `/super-admin/users/${r.id}`,
-            },
-            {
-              id: 'change-role',
-              label: 'Assign Role',
-              href: `/super-admin/users/${r.id}`,
-              hidden: isSelf,
             },
             {
               id: 'view-role',
@@ -236,9 +234,13 @@ export function SuperAdminUsersPage() {
           ) : null}
         </div>
         <TanStackDataTable
+          key={search}
           columns={columns}
           data={rows}
           searchPlaceholder="Search users…"
+          searchValue={searchInput}
+          onSearchChange={setSearchInput}
+          serverSideSearch
           pageSize={12}
           stickyHeader
           fillHeight

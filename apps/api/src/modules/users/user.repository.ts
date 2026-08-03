@@ -64,6 +64,8 @@ export class UserRepository extends BaseRepository {
           create: {
             organizationId: BigInt(organizationId),
             role: input.role as Role,
+            platformRoleId:
+              input.platformRoleId != null ? BigInt(input.platformRoleId) : null,
             clientId: input.clientId != null ? BigInt(input.clientId) : null,
             isActive: true,
           },
@@ -78,7 +80,11 @@ export class UserRepository extends BaseRepository {
   updateMembershipClient(
     organizationId: number,
     userId: number,
-    data: { role?: Role; clientId?: number | null },
+    data: {
+      role?: Role;
+      clientId?: number | null;
+      platformRoleId?: number | null;
+    },
   ): Promise<{ count: number }> {
     return this.prisma.membership.updateMany({
       where: {
@@ -89,6 +95,12 @@ export class UserRepository extends BaseRepository {
         ...(data.role !== undefined ? { role: data.role } : {}),
         ...(data.clientId !== undefined
           ? { clientId: data.clientId != null ? BigInt(data.clientId) : null }
+          : {}),
+        ...(data.platformRoleId !== undefined
+          ? {
+              platformRoleId:
+                data.platformRoleId != null ? BigInt(data.platformRoleId) : null,
+            }
           : {}),
       },
     });

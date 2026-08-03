@@ -170,6 +170,17 @@ export class EvaluationRepository extends BaseRepository {
       where.evaluationType = filters.evaluationType;
     }
 
+    const search = filters.search?.trim();
+    if (search) {
+      where.OR = [
+        { evaluatorName: { contains: search, mode: 'insensitive' } },
+        { evaluationType: { contains: search, mode: 'insensitive' } },
+        { candidate: { firstName: { contains: search, mode: 'insensitive' } } },
+        { candidate: { lastName: { contains: search, mode: 'insensitive' } } },
+        { candidate: { email: { contains: search, mode: 'insensitive' } } },
+      ];
+    }
+
     return where;
   }
 }

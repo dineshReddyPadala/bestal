@@ -15,6 +15,7 @@ import {
   useAdminMutations,
   useAdminPendingCandidates,
 } from '../../hooks/api/useAdmin';
+import { useDebouncedSearch } from '../../hooks/useDebouncedSearch';
 import { getApiErrorMessage } from '../../lib/api/errors';
 import { useDemoToast } from '../../lib/use-demo-toast';
 
@@ -289,13 +290,15 @@ function CandidatesTable({ pendingOnly }: { pendingOnly: boolean }) {
   const { message, variant, show, showError } = useDemoToast();
   const { requestConfirm, confirmDialog } = useConfirmAction();
   const [filters, setFilters] = useState(defaultFilters);
+  const { searchInput, setSearchInput, search, searchParam } = useDebouncedSearch();
   const query = {
     limit: 100,
+    ...searchParam,
     ...(filters.profileStatus !== 'all' ? { profileStatus: filters.profileStatus } : {}),
     ...(filters.visibilityStatus !== 'all' ? { visibilityStatus: filters.visibilityStatus } : {}),
   };
   const allQuery = useAdminCandidates(query);
-  const pendingQuery = useAdminPendingCandidates({ limit: 100 });
+  const pendingQuery = useAdminPendingCandidates({ limit: 100, ...searchParam });
   const { data, isLoading, isError, error } = pendingOnly ? pendingQuery : allQuery;
   const mutations = useAdminMutations();
   const rows = (data?.data ?? []) as unknown as Row[];
@@ -402,9 +405,13 @@ function CandidatesTable({ pendingOnly }: { pendingOnly: boolean }) {
         loadingLabel="Loading candidates…"
       >
         <TanStackDataTable
+          key={`${pendingOnly}-${search}`}
           columns={columns}
           data={rows}
           searchPlaceholder="Search candidates…"
+          searchValue={searchInput}
+          onSearchChange={setSearchInput}
+          serverSideSearch
           pageSize={12}
           stickyHeader
           fillHeight

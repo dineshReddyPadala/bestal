@@ -263,7 +263,7 @@ export const adminApi = {
     return json.data;
   },
 
-  listRoles: () => apiList<Record<string, unknown>>('/admin/roles'),
+  listRoles: (query?: ListQuery) => apiList<Record<string, unknown>>('/admin/roles', query),
   getRoleCatalog: () =>
     apiGet<{
       permissions: string[];
@@ -271,6 +271,25 @@ export const adminApi = {
       baseRoles: string[];
     }>('/admin/roles/catalog'),
   getRole: (code: string) => apiGet<Record<string, unknown>>(`/admin/roles/${encodeURIComponent(code)}`),
+  listRoleUsers: (code: string, query?: ListQuery) =>
+    apiList<Record<string, unknown>>(`/admin/roles/${encodeURIComponent(code)}/users`, query),
+  assignUserToRole: async (
+    code: string,
+    body: { userId: number; clientId?: number | null },
+  ) => {
+    const json = await apiRequest<{ data: Record<string, unknown>[] }>(
+      `/admin/roles/${encodeURIComponent(code)}/users`,
+      { method: 'POST', body },
+    );
+    return json.data;
+  },
+  unassignUserFromRole: async (code: string, userId: number) => {
+    const json = await apiRequest<{ data: Record<string, unknown>[] }>(
+      `/admin/roles/${encodeURIComponent(code)}/users/${userId}`,
+      { method: 'DELETE' },
+    );
+    return json.data;
+  },
   createRole: (body: Record<string, unknown>) =>
     apiCreate<Record<string, unknown>>('/admin/roles', body),
   updateRole: async (code: string, body: Record<string, unknown>) => {

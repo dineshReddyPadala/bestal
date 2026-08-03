@@ -210,6 +210,7 @@ export class TrialService {
       page: query.page,
       limit: query.limit,
       sort: query.sort,
+      search: query.search,
       candidateId: query.candidateId,
       clientId: scopedClientId ?? query.clientId,
       status: query.status,

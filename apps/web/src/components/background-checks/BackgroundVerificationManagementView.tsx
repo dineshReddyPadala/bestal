@@ -8,6 +8,7 @@ import {
   useBackgroundCheckMutations,
   useBackgroundChecksList,
 } from '../../hooks/api/useEvaluations';
+import { useDebouncedSearch } from '../../hooks/useDebouncedSearch';
 import { usePermissions } from '../../hooks/usePermissions';
 import { mapBgvExtractionToForm } from '../../lib/api/ai/bgv-extraction.mapper';
 import { getApiErrorMessage } from '../../lib/api/errors';
@@ -85,9 +86,11 @@ export function BackgroundVerificationManagementView({
 }: BackgroundVerificationManagementViewProps) {
   const { message, show, showError } = useDemoToast();
   const { canUploadBgv, canApproveBgv } = usePermissions();
+  const { searchInput, setSearchInput, search, searchParam } = useDebouncedSearch();
   const { data, isLoading, isError, error } = useBackgroundChecksList({
     limit: 100,
     sort: '-createdAt',
+    ...searchParam,
   });
   const { data: candidatesData } = useCandidatesList({ limit: 100 });
   const mutations = useBackgroundCheckMutations();
@@ -390,9 +393,13 @@ export function BackgroundVerificationManagementView({
         loadingLabel="Loading background checks…"
       >
         <TanStackDataTable
+          key={search}
           columns={columns}
           data={filteredData}
           searchPlaceholder="Search by candidate or provider…"
+          searchValue={searchInput}
+          onSearchChange={setSearchInput}
+          serverSideSearch
           pageSize={12}
           stickyHeader
           fillHeight

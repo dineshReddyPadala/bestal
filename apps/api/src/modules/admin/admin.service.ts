@@ -261,6 +261,14 @@ export class AdminService {
     return mapUserToDto(user, organizationId, org?.name ?? '', false);
   }
 
+  private async resolvePlatformRoleId(roleCode: string): Promise<number | null> {
+    const row = await this.prisma.platformRole.findFirst({
+      where: { code: roleCode.toUpperCase(), deletedAt: null, isActive: true },
+      select: { id: true },
+    });
+    return row ? bigintToNumber(row.id) : null;
+  }
+
   private async assertAdminClientLink(
     organizationId: number,
     role: AdminInviteRole,
@@ -314,6 +322,7 @@ export class AdminService {
 
     const temporaryPassword = input.temporaryPassword?.trim() || tempPassword();
     const passwordHash = await argon2.hash(temporaryPassword);
+    const platformRoleId = await this.resolvePlatformRoleId(input.role);
     const user = await this.users.createWithMembership(organizationId, passwordHash, {
       email: input.email,
       firstName: input.firstName,
@@ -321,6 +330,7 @@ export class AdminService {
       phone: input.phone,
       role: input.role as Role,
       clientId: linkedClientId ?? undefined,
+      platformRoleId,
     });
 
     if (input.isActive === false) {
@@ -395,8 +405,12 @@ export class AdminService {
         nextRole,
         input.clientId !== undefined ? input.clientId : existing.clientId,
       );
+      const platformRoleId = input.role
+        ? await this.resolvePlatformRoleId(input.role)
+        : undefined;
       await this.users.updateMembershipClient(organizationId, id, {
         ...(input.role ? { role: input.role as Role } : {}),
+        ...(platformRoleId !== undefined ? { platformRoleId } : {}),
         clientId: linkedClientId,
       });
     }

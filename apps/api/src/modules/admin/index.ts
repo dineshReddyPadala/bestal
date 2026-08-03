@@ -111,8 +111,11 @@ export async function adminRoutes(fastify: FastifyInstance): Promise<void> {
   app.put('/settings/commercials', { ...secure, schema: { tags: ['Admin'], security: [{ bearerAuth: [] }] } }, controller.putSetting('commercials'));
 
   // Roles & permissions
-  app.get('/roles', { ...secure, schema: { tags: ['Admin'], security: [{ bearerAuth: [] }] } }, controller.listRoles);
+  app.get('/roles', { ...secure, schema: { tags: ['Admin'], querystring: z.object({ search: z.string().max(200).optional() }), security: [{ bearerAuth: [] }] } }, controller.listRoles);
   app.get('/roles/catalog', { ...secure, schema: { tags: ['Admin'], security: [{ bearerAuth: [] }] } }, controller.getRoleCatalog);
+  app.get('/roles/:code/users', { ...secure, schema: { tags: ['Admin'], params: z.object({ code: z.string().min(1) }), querystring: z.object({ search: z.string().max(200).optional() }), security: [{ bearerAuth: [] }] } }, controller.listRoleUsers);
+  app.post('/roles/:code/users', { ...secure, schema: { tags: ['Admin'], params: z.object({ code: z.string().min(1) }), body: z.object({ userId: z.coerce.number().int().positive(), clientId: z.coerce.number().int().positive().nullish() }), security: [{ bearerAuth: [] }] } }, controller.assignUserToRole);
+  app.delete('/roles/:code/users/:userId', { ...secure, schema: { tags: ['Admin'], params: z.object({ code: z.string().min(1), userId: z.string().min(1) }), security: [{ bearerAuth: [] }] } }, controller.unassignUserFromRole);
   app.get('/roles/:code', { ...secure, schema: { tags: ['Admin'], params: z.object({ code: z.string().min(1) }), security: [{ bearerAuth: [] }] } }, controller.getRole);
   app.post('/roles', { ...secure, schema: { tags: ['Admin'], security: [{ bearerAuth: [] }] } }, controller.createRole);
   app.put('/roles/:code', { ...secure, schema: { tags: ['Admin'], params: z.object({ code: z.string().min(1) }), security: [{ bearerAuth: [] }] } }, controller.updateRole);

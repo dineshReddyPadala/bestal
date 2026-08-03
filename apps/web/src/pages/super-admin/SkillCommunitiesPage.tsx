@@ -6,6 +6,7 @@ import { ListingPageShell } from '../../components/layout/ListingPageShell';
 import { ActionMenu, type ActionMenuItem } from '../../components/super-admin/ActionMenu';
 import { useConfirmAction } from '../../components/super-admin/useConfirmAction';
 import { useAdminMutations, useAdminSkillCommunities } from '../../hooks/api/useAdmin';
+import { useDebouncedSearch } from '../../hooks/useDebouncedSearch';
 import { useDemoToast } from '../../lib/use-demo-toast';
 
 type Row = {
@@ -20,7 +21,11 @@ type Row = {
 export function SuperAdminSkillCommunitiesPage() {
   const { message, show, showError } = useDemoToast();
   const { requestConfirm, confirmDialog } = useConfirmAction();
-  const { data, isLoading, isError, error } = useAdminSkillCommunities({ limit: 100 });
+  const { searchInput, setSearchInput, search, searchParam } = useDebouncedSearch();
+  const { data, isLoading, isError, error } = useAdminSkillCommunities({
+    limit: 100,
+    ...searchParam,
+  });
   const mutations = useAdminMutations();
   const rows = (data?.data ?? []) as unknown as Row[];
   const [open, setOpen] = useState(false);
@@ -126,9 +131,13 @@ export function SuperAdminSkillCommunitiesPage() {
         }
       >
         <TanStackDataTable
+          key={search}
           columns={columns}
           data={rows}
           searchPlaceholder="Search…"
+          searchValue={searchInput}
+          onSearchChange={setSearchInput}
+          serverSideSearch
           pageSize={12}
           stickyHeader
           fillHeight

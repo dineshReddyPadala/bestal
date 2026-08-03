@@ -74,6 +74,7 @@ export const listBackgroundChecksQuerySchema = z.object({
       'Invalid sort format',
     )
     .optional(),
+  search: z.string().max(200).optional(),
   candidateId: z.coerce.number().int().positive().optional(),
   status: backgroundCheckStatusEnum.optional(),
   type: backgroundCheckTypeEnum.optional(),

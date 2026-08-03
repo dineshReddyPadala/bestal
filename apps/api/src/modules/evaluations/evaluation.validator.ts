@@ -57,6 +57,7 @@ export const listEvaluationsQuerySchema = z.object({
       'Invalid sort format',
     )
     .optional(),
+  search: z.string().max(200).optional(),
   candidateId: z.coerce.number().int().positive().optional(),
   evaluationType: evaluationTypeEnum.optional(),
 });

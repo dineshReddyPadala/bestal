@@ -1,6 +1,6 @@
 import { Button, Input, PageHeader, Select } from '@bestal/ui';
 import { useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { ActionMenu, type ActionMenuItem } from '../../components/super-admin/ActionMenu';
 import { useConfirmAction } from '../../components/super-admin/useConfirmAction';
 import { useAuth } from '../../contexts/AuthContext';
@@ -17,6 +17,7 @@ export function SuperAdminUserFormPage() {
   const isNew = !id || id === 'new';
   const userId = isNew ? 0 : Number(id);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { user } = useAuth();
   const { message, variant, show, showError, dismiss } = useDemoToast();
   const { requestConfirm, confirmDialog } = useConfirmAction();
@@ -24,15 +25,26 @@ export function SuperAdminUserFormPage() {
   const mutations = useAdminMutations();
   const { data: clientsData } = useClientsList({ limit: 100, sort: 'name' });
   const clients = clientsData?.data ?? [];
+  const presetRole = (searchParams.get('role') ?? '').toUpperCase();
+  const assignRoleCode = (searchParams.get('assignRole') ?? '').toUpperCase();
 
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
-  const [role, setRole] = useState<string>('RECRUITER');
+  const [role, setRole] = useState<string>(
+    ROLES.includes(presetRole as (typeof ROLES)[number]) ? presetRole : 'RECRUITER',
+  );
   const [clientId, setClientId] = useState<string>('');
   const [temporaryPassword, setTemporaryPassword] = useState('');
   const [isActive, setIsActive] = useState(true);
   const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    if (!isNew) return;
+    if (ROLES.includes(presetRole as (typeof ROLES)[number])) {
+      setRole(presetRole);
+    }
+  }, [isNew, presetRole]);
 
   useEffect(() => {
     if (!data || isNew) return;
@@ -67,6 +79,17 @@ export function SuperAdminUserFormPage() {
           temporaryPassword: temporaryPassword || undefined,
           isActive,
         });
+        const createdId =
+          created && typeof created === 'object' && 'id' in created
+            ? Number((created as { id?: number }).id)
+            : 0;
+        if (assignRoleCode && createdId > 0 && assignRoleCode !== role) {
+          await mutations.assignUserToRole.mutateAsync({
+            code: assignRoleCode,
+            userId: createdId,
+            clientId: linkedClientId,
+          });
+        }
         const emailSent = Boolean(
           created && typeof created === 'object' && 'emailSent' in created
             ? (created as { emailSent?: boolean }).emailSent
@@ -78,7 +101,11 @@ export function SuperAdminUserFormPage() {
             : 'User created — invite email was not sent (check SMTP / FROM_MAIL settings)',
           emailSent ? 'success' : 'error',
         );
-        setTimeout(() => navigate('/super-admin/users'), 1500);
+        const returnTo =
+          assignRoleCode
+            ? `/super-admin/roles/${encodeURIComponent(assignRoleCode)}?tab=users`
+            : '/super-admin/users';
+        setTimeout(() => navigate(returnTo), 1500);
       } else {
         await mutations.updateUser.mutateAsync({
           id: userId,

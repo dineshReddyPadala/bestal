@@ -46,7 +46,10 @@ export const queryKeys = {
     auditLogs: (params?: Record<string, unknown>) => ['admin', 'audit-logs', params] as const,
     settings: ['admin', 'settings'] as const,
     roles: ['admin', 'roles'] as const,
+    rolesList: (params?: Record<string, unknown>) => ['admin', 'roles', 'list', params] as const,
     role: (code: string) => ['admin', 'roles', code] as const,
+    roleUsers: (code: string, params?: Record<string, unknown>) =>
+      ['admin', 'roles', code, 'users', params] as const,
     roleCatalog: ['admin', 'roles', 'catalog'] as const,
   },
   evaluations: {

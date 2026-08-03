@@ -63,7 +63,6 @@ import { SuperAdminUsersPage } from '../pages/super-admin/UsersPage';
 import { SuperAdminUserFormPage } from '../pages/super-admin/UserFormPage';
 import { SuperAdminRolesPage } from '../pages/super-admin/RolesPage';
 import { SuperAdminRoleDetailPage } from '../pages/super-admin/RoleDetailPage';
-import { SuperAdminPermissionMatrixPage } from '../pages/super-admin/PermissionMatrixPage';
 import { SuperAdminClientsPage } from '../pages/super-admin/ClientsPage';
 import { SuperAdminClientFormPage } from '../pages/super-admin/ClientFormPage';
 import {
@@ -249,7 +248,7 @@ const router = createBrowserRouter([
         path: 'roles',
         children: [
           { index: true, element: <SuperAdminRolesPage /> },
-          { path: 'permission-matrix', element: <SuperAdminPermissionMatrixPage /> },
+          { path: 'permission-matrix', element: <Navigate to="/super-admin/roles" replace /> },
           { path: ':role', element: <SuperAdminRoleDetailPage /> },
         ],
       },

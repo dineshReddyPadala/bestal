@@ -72,6 +72,7 @@ export interface BackgroundCheckListFilters {
   page: number;
   limit: number;
   sort?: string;
+  search?: string;
   candidateId?: number;
   status?: BackgroundCheckStatus;
   type?: BackgroundCheckType;

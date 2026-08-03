@@ -7,6 +7,7 @@ import { ListingPageShell } from '../../components/layout/ListingPageShell';
 import { ActionMenu, type ActionMenuItem } from '../../components/super-admin/ActionMenu';
 import { useConfirmAction } from '../../components/super-admin/useConfirmAction';
 import { useAdminClients, useAdminMutations } from '../../hooks/api/useAdmin';
+import { useDebouncedSearch } from '../../hooks/useDebouncedSearch';
 import { useDemoToast } from '../../lib/use-demo-toast';
 
 type Row = {
@@ -24,7 +25,8 @@ export function SuperAdminClientsPage() {
   const navigate = useNavigate();
   const { message, show, showError } = useDemoToast();
   const { requestConfirm, confirmDialog } = useConfirmAction();
-  const { data, isLoading, isError, error } = useAdminClients({ limit: 100 });
+  const { searchInput, setSearchInput, search, searchParam } = useDebouncedSearch();
+  const { data, isLoading, isError, error } = useAdminClients({ limit: 100, ...searchParam });
   const mutations = useAdminMutations();
   const rows = (data?.data ?? []) as unknown as Row[];
 
@@ -155,9 +157,13 @@ export function SuperAdminClientsPage() {
         }
       >
         <TanStackDataTable
+          key={search}
           columns={columns}
           data={rows}
           searchPlaceholder="Search clients…"
+          searchValue={searchInput}
+          onSearchChange={setSearchInput}
+          serverSideSearch
           pageSize={12}
           stickyHeader
           fillHeight
