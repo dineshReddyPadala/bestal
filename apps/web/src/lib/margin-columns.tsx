@@ -30,7 +30,7 @@ export function marginColumns<T extends RateRow>(): ColumnDef<T>[] {
       accessorFn: (row) => computeMarginPercent(row.payRate, row.billRate),
       cell: ({ row }) => {
         const margin = computeMarginPercent(row.original.payRate, row.original.billRate);
-        return <span className="font-medium text-emerald-600">{margin}%</span>;
+        return <span className="font-medium text-success">{margin}%</span>;
       },
     },
   ];

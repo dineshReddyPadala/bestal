@@ -7,14 +7,16 @@ const publishedCandidates = candidates.filter((c) => c.visibility === 'CLIENT_VI
 export function TalentPage() {
   return (
     <>
-      <section className="bg-navy py-16 text-white lg:py-24">
+      <section className="border-b border-border bg-background py-16 lg:py-24">
         <Container>
           <div className="mx-auto max-w-3xl text-center">
-            <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl">Find Elite Talent</h1>
-            <p className="mt-4 text-lg text-white/75">
+            <h1 className="text-4xl font-extrabold tracking-tight text-foreground sm:text-5xl">
+              Find Elite Talent
+            </h1>
+            <p className="mt-4 text-lg text-muted-foreground">
               Browse our network of rigorously vetted professionals — only the top 3% make it through.
             </p>
-            <p className="mt-2 text-sm text-white/50">
+            <p className="mt-2 text-sm text-muted-foreground">
               {publishedCandidates.length} published profiles available
             </p>
           </div>

@@ -42,7 +42,7 @@ import {
 import { buildPaginationMeta } from '../../validators/common.validator.js';
 import {
   mapCandidateToDtoAsync,
-  mapCandidateToListItem,
+  mapCandidateToListItemAsync,
 } from './candidate.mapper.js';
 import { CandidateRepository } from './candidate.repository.js';
 import type {
@@ -525,8 +525,16 @@ export class CandidateService {
       pendingApproval: query.pendingApproval,
     });
 
+    const data = await Promise.all(
+      items.map((item) =>
+        mapCandidateToListItemAsync(item, (key, bucket, mimeType) =>
+          this.storageService.resolveFileUrl(key, bucket, mimeType),
+        ),
+      ),
+    );
+
     return {
-      data: items.map((item) => mapCandidateToListItem(item)),
+      data,
       meta: buildPaginationMeta(query.page, query.limit, total),
     };
   }

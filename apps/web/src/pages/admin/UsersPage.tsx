@@ -225,7 +225,7 @@ export function UsersPage() {
 
           {bulkPreview && (
             <div className="space-y-2 text-sm">
-              <p className="text-emerald-700">
+              <p className="text-success">
                 {bulkPreview.valid.length} valid row(s) ready to invite
               </p>
               {bulkPreview.invalid.length > 0 && (

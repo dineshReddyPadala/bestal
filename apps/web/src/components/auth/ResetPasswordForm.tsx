@@ -112,7 +112,7 @@ export function ResetPasswordForm({
 
       {message && (
         <div className="space-y-3">
-          <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+          <div className="rounded-lg border border-emerald-200 bg-success/10 px-3 py-2 text-sm text-emerald-800">
             {message}
           </div>
           <p className="text-center text-sm text-muted-foreground">

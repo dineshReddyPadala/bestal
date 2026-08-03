@@ -35,11 +35,13 @@ export function AboutPage() {
 
   return (
     <>
-      <section className="bg-navy py-16 text-white lg:py-24">
+      <section className="border-b border-border bg-background py-16 lg:py-24">
         <Container>
           <div className="mx-auto max-w-3xl text-center">
-            <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl">About BesTal</h1>
-            <p className="mt-4 text-lg text-white/75">
+            <h1 className="text-4xl font-extrabold tracking-tight text-foreground sm:text-5xl">
+              About BesTal
+            </h1>
+            <p className="mt-4 text-lg text-muted-foreground">
               We&apos;re on a mission to connect the world&apos;s best companies with the world&apos;s best talent.
             </p>
           </div>
@@ -68,7 +70,7 @@ export function AboutPage() {
 
       <section className="border-t border-border bg-muted/40 py-20 lg:py-28">
         <Container>
-          <h2 className="text-center text-3xl font-bold text-navy">Our values</h2>
+          <h2 className="text-center text-3xl font-bold text-foreground">Our values</h2>
           <div className="mt-16 grid gap-8 md:grid-cols-2">
             {values.map(({ icon: Icon, title, description }) => (
               <div key={title} className="flex gap-5">

@@ -218,7 +218,7 @@ export function SuperAdminRolesPage() {
       }
     >
       {message ? (
-        <div className="mb-3 rounded-md bg-emerald-50 px-3 py-2 text-sm text-emerald-800">{message}</div>
+        <div className="mb-3 rounded-md bg-success/10 px-3 py-2 text-sm text-emerald-800">{message}</div>
       ) : null}
       <TanStackDataTable
         columns={columns}

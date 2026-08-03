@@ -8,18 +8,20 @@ const stepIcons = [Briefcase, UserCheck, Clock, CheckCircle2] as const;
 export function HowItWorksPage() {
   return (
     <>
-      <section className="bg-navy py-16 text-white lg:py-24">
+      <section className="border-b border-border bg-background py-16 lg:py-24">
         <Container>
           <div className="mx-auto max-w-3xl text-center">
-            <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl">How BesTal Works</h1>
-            <p className="mt-4 text-lg text-white/75">
+            <h1 className="text-4xl font-extrabold tracking-tight text-foreground sm:text-5xl">
+              How BesTal works
+            </h1>
+            <p className="mt-4 text-lg text-muted-foreground">
               From role brief to pilot in four steps — continue only when you are satisfied.
             </p>
           </div>
         </Container>
       </section>
 
-      <section className="py-20 lg:py-28">
+      <section className="bg-card py-20 lg:py-28">
         <Container>
           <div className="space-y-20">
             {HOW_IT_WORKS_STEPS.map((item, index) => {
@@ -35,7 +37,9 @@ export function HowItWorksPage() {
                     <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-brand text-sm font-bold text-white">
                       {item.step}
                     </span>
-                    <h2 className="mt-4 text-3xl font-bold tracking-tight text-navy">{item.title}</h2>
+                    <h2 className="mt-4 text-3xl font-bold tracking-tight text-foreground">
+                      {item.title}
+                    </h2>
                     <p className="mt-4 text-lg leading-relaxed text-muted-foreground">
                       {item.description}
                     </p>
@@ -52,10 +56,10 @@ export function HowItWorksPage() {
         </Container>
       </section>
 
-      <section className="border-t border-border bg-muted/40 py-16">
+      <section className="border-t border-border bg-background py-16">
         <Container>
           <div className="mx-auto max-w-2xl text-center">
-            <h2 className="text-2xl font-bold text-navy">Ready to get started?</h2>
+            <h2 className="text-2xl font-bold text-foreground">Ready to get started?</h2>
             <p className="mt-3 text-muted-foreground">
               Start with a 20-hour pilot — no long-term commitment required.
             </p>

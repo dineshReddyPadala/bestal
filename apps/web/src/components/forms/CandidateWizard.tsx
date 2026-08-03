@@ -2,7 +2,6 @@ import {
   CANDIDATE_AVAILABILITY_LABELS,
   CANDIDATE_AVAILABILITY_STATUSES,
   CANDIDATE_PROFILE_STATUS_LABELS,
-  CANDIDATE_PROFILE_STATUSES,
   CANDIDATE_VISIBILITY_LABELS,
   CANDIDATE_VISIBILITY_STATUSES,
   EVALUATION_RECOMMENDATIONS,
@@ -272,16 +271,7 @@ function BasicDetailsTab({
 
   return (
     <div className="space-y-4">
-      <SectionCard
-        title="Basic Details"
-        action={
-          <span className="rounded-full border border-border bg-muted/40 px-2.5 py-1 text-xs text-muted-foreground">
-            {profileStatus
-              ? CANDIDATE_PROFILE_STATUS_LABELS[profileStatus]
-              : 'Sourced'}
-          </span>
-        }
-      >
+      <SectionCard title="Basic Details">
         <div className="grid gap-4 sm:grid-cols-2">
           <FormField label="First Name" name="firstName" required>
             <Input id="firstName" {...register('firstName')} placeholder="Priya" />
@@ -324,7 +314,7 @@ function BasicDetailsTab({
             onFileSelect={handleResumeSelect}
           />
           {resumeFileName ? (
-            <div className="flex flex-wrap items-center gap-3 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+            <div className="flex flex-wrap items-center gap-3 rounded-lg border border-emerald-200 bg-success/10 px-3 py-2 text-sm text-emerald-800">
               <CheckCircle2 className="h-4 w-4 shrink-0" />
               <span>Resume Uploaded — {resumeFileName}</span>
             </div>
@@ -791,7 +781,7 @@ function EvaluationTab({
             }}
           />
           {evaluationFileName ? (
-            <div className="flex flex-wrap items-center gap-3 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+            <div className="flex flex-wrap items-center gap-3 rounded-lg border border-emerald-200 bg-success/10 px-3 py-2 text-sm text-emerald-800">
               <CheckCircle2 className="h-4 w-4 shrink-0" />
               <span>Evaluation Uploaded — {evaluationFileName}</span>
             </div>
@@ -1028,7 +1018,7 @@ function BackgroundCheckTab({
                 }}
               />
               {watch('bgvConsentFileName') ? (
-                <p className="mt-2 text-sm text-emerald-700">Selected: {watch('bgvConsentFileName')}</p>
+                <p className="mt-2 text-sm text-success">Selected: {watch('bgvConsentFileName')}</p>
               ) : null}
             </div>
             <div>
@@ -1041,7 +1031,7 @@ function BackgroundCheckTab({
                 }}
               />
               {watch('bgvFileName') ? (
-                <p className="mt-2 text-sm text-emerald-700">Selected: {watch('bgvFileName')}</p>
+                <p className="mt-2 text-sm text-success">Selected: {watch('bgvFileName')}</p>
               ) : null}
             </div>
           </div>
@@ -1071,7 +1061,7 @@ function DocumentsTab({ pendingUploads }: { pendingUploads: MutableRefObject<Can
             }}
           />
           {watch('profileImageFileName') ? (
-            <p className="mt-2 text-sm text-emerald-700">Selected: {watch('profileImageFileName')}</p>
+            <p className="mt-2 text-sm text-success">Selected: {watch('profileImageFileName')}</p>
           ) : null}
         </div>
         <div>
@@ -1085,7 +1075,7 @@ function DocumentsTab({ pendingUploads }: { pendingUploads: MutableRefObject<Can
             }}
           />
           {watch('introVideoFileName') ? (
-            <p className="mt-2 text-sm text-emerald-700">Selected: {watch('introVideoFileName')}</p>
+            <p className="mt-2 text-sm text-success">Selected: {watch('introVideoFileName')}</p>
           ) : null}
         </div>
       </div>
@@ -1173,13 +1163,12 @@ function ReviewTab() {
       <SectionCard title="Visibility">
         <div className="grid gap-4 sm:grid-cols-2">
           <FormField label="Profile Status" name="profileStatus">
-            <Select id="profileStatus" {...register('profileStatus')}>
-              {CANDIDATE_PROFILE_STATUSES.map((status) => (
-                <option key={status} value={status}>
-                  {CANDIDATE_PROFILE_STATUS_LABELS[status]}
-                </option>
-              ))}
-            </Select>
+            <input type="hidden" {...register('profileStatus')} />
+            <div className="flex h-11 items-center rounded-md border border-border bg-muted/30 px-3 text-sm font-medium text-foreground">
+              {profileStatus
+                ? CANDIDATE_PROFILE_STATUS_LABELS[profileStatus]
+                : 'Sourced'}
+            </div>
           </FormField>
           <FormField label="Visibility" name="visibility">
             <Select id="visibility" {...register('visibility')}>

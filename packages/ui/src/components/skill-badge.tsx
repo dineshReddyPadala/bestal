@@ -3,9 +3,9 @@ import { Badge } from './badge.js';
 
 const proficiencyColors = {
   BEGINNER: 'bg-slate-100 text-slate-700',
-  INTERMEDIATE: 'bg-blue-50 text-blue-700',
-  ADVANCED: 'bg-indigo-50 text-indigo-700',
-  EXPERT: 'bg-navy/10 text-navy',
+  INTERMEDIATE: 'bg-brand-light/70 text-brand/80',
+  ADVANCED: 'bg-brand-light text-brand',
+  EXPERT: 'bg-brand text-white',
 } as const;
 
 export type SkillBadgeProps = {

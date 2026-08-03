@@ -126,6 +126,7 @@ export interface CandidateListItemDto {
   timezoneOverlap: string | null;
   hasResume: boolean;
   hasProfileImage: boolean;
+  profileImageUrl: string | null;
   hasIntroVideo: boolean;
   profileStatus: string | null;
   evaluationStatus: string | null;

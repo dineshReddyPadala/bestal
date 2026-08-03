@@ -136,7 +136,7 @@ export function ResumeUploadDialog({ open, onClose, onSuccess }: ResumeUploadDia
         )}
 
         {fileName && !extracting && !error && (
-          <div className="flex items-center gap-2 text-sm text-emerald-700">
+          <div className="flex items-center gap-2 text-sm text-success">
             <FileText className="h-4 w-4" />
             Selected: {fileName}
           </div>

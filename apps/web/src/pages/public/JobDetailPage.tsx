@@ -19,7 +19,7 @@ export function JobDetailPage() {
   if (!job) {
     return (
       <Container className="py-24 text-center">
-        <h1 className="text-2xl font-bold text-navy">Job not found</h1>
+        <h1 className="text-2xl font-bold text-foreground">Job not found</h1>
         <Link to="/jobs" className="mt-4 inline-block text-brand hover:underline">
           Back to open roles
         </Link>
@@ -46,7 +46,9 @@ export function JobDetailPage() {
           <div className="flex flex-col gap-8 lg:flex-row lg:gap-12">
             <div className="flex-1">
               <p className="text-sm font-medium text-brand">{job.skillCommunity}</p>
-              <h1 className="mt-2 text-3xl font-bold tracking-tight text-navy sm:text-4xl">{job.title}</h1>
+              <h1 className="mt-2 text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
+                {job.title}
+              </h1>
 
               <div className="mt-6 flex flex-wrap gap-x-5 gap-y-2 text-sm text-muted-foreground">
                 <span className="inline-flex items-center gap-1.5">

@@ -1,4 +1,5 @@
 import { cn } from '@bestal/shared-utils';
+import { ShieldCheck } from 'lucide-react';
 import { type ReactNode } from 'react';
 import { Card, CardContent } from '../components/card.js';
 
@@ -16,10 +17,15 @@ export function AuthLayout({
   className,
 }: AuthLayoutProps) {
   return (
-    <div className="flex min-h-screen flex-col bg-muted/30">
-      <header className="bg-navy px-6 py-4">
-        <a href="/" className="text-lg font-bold text-white">
-          Bestal
+    <div className="flex min-h-screen flex-col bg-background">
+      <header className="border-b border-border bg-card px-6 py-4">
+        <a href="/" className="inline-flex items-center gap-2.5">
+          <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-brand text-white">
+            <ShieldCheck className="h-4 w-4" />
+          </span>
+          <span className="text-lg font-semibold tracking-tight text-foreground">
+            Bes<span className="font-bold">Tal</span>
+          </span>
         </a>
       </header>
 

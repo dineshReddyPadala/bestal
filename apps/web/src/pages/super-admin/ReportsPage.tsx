@@ -231,7 +231,7 @@ function MarginReport() {
         accessorKey: 'marginPercent',
         header: 'Margin %',
         cell: ({ getValue }) => (
-          <span className="font-medium text-emerald-600">{getValue() as number}%</span>
+          <span className="font-medium text-success">{getValue() as number}%</span>
         ),
       },
       {

@@ -38,14 +38,20 @@ const preset = {
           DEFAULT: 'hsl(var(--card))',
           foreground: 'hsl(var(--card-foreground))',
         },
+        success: {
+          DEFAULT: 'hsl(var(--success))',
+          foreground: 'hsl(var(--success-foreground))',
+          soft: 'hsl(var(--success-soft))',
+        },
+        /* CSS variables so HMR picks up palette changes without stale hex utilities */
         navy: {
-          DEFAULT: '#0A2540',
-          light: '#1a365d',
+          DEFAULT: 'hsl(var(--navy))',
+          light: 'hsl(var(--navy-light))',
         },
         brand: {
-          DEFAULT: '#2563eb',
-          hover: '#1d4ed8',
-          light: '#dbeafe',
+          DEFAULT: 'hsl(var(--brand))',
+          hover: 'hsl(var(--brand-hover))',
+          light: 'hsl(var(--brand-light))',
         },
       },
       borderRadius: {

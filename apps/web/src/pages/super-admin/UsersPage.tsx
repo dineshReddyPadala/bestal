@@ -53,6 +53,7 @@ export function SuperAdminUsersPage() {
       {
         id: 'name',
         header: 'Name',
+        accessorFn: (row) => `${row.firstName} ${row.lastName}`.trim(),
         cell: ({ row }) => (
           <Link
             className="font-medium text-brand hover:underline"
@@ -115,7 +116,6 @@ export function SuperAdminUsersPage() {
           const name = userDisplayName(r);
 
           const items: ActionMenuItem[] = [
-            { id: 'view', label: 'View User', href: `/super-admin/users/${r.id}` },
             {
               id: 'edit',
               label: 'Edit User',

@@ -171,7 +171,7 @@ export function SuperAdminRoleDetailPage() {
       />
 
       {message ? (
-        <div className="mx-6 mb-3 rounded-md bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+        <div className="mx-6 mb-3 rounded-md bg-success/10 px-3 py-2 text-sm text-emerald-800">
           {message}
         </div>
       ) : null}

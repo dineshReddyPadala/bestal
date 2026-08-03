@@ -14,11 +14,11 @@ export type PremiumStatCardProps = {
 
 const accentStyles = {
   brand: 'from-brand/10 to-brand/5 text-brand border-brand/20',
-  emerald: 'from-emerald-500/10 to-emerald-500/5 text-emerald-600 border-emerald-500/20',
+  emerald: 'from-emerald-500/10 to-emerald-500/5 text-success border-emerald-500/20',
   amber: 'from-amber-500/10 to-amber-500/5 text-amber-600 border-amber-500/20',
   violet: 'from-violet-500/10 to-violet-500/5 text-violet-600 border-violet-500/20',
   rose: 'from-rose-500/10 to-rose-500/5 text-rose-600 border-rose-500/20',
-  sky: 'from-sky-500/10 to-sky-500/5 text-sky-600 border-sky-500/20',
+  sky: 'from-brand/10 to-brand/5 text-brand border-brand/20',
 };
 
 export function PremiumStatCard({
@@ -50,11 +50,11 @@ export function PremiumStatCard({
           {change !== undefined && (
             <div className="flex flex-wrap items-center gap-1.5 text-xs">
               {isPositive ? (
-                <TrendingUp className="h-3.5 w-3.5 text-emerald-600" />
+                <TrendingUp className="h-3.5 w-3.5 text-success" />
               ) : (
                 <TrendingDown className="h-3.5 w-3.5 text-red-600" />
               )}
-              <span className={cn('font-semibold', isPositive ? 'text-emerald-600' : 'text-red-600')}>
+              <span className={cn('font-semibold', isPositive ? 'text-success' : 'text-red-600')}>
                 {isPositive ? '+' : ''}
                 {change}%
               </span>

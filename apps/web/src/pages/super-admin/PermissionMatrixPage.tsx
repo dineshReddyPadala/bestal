@@ -81,7 +81,7 @@ export function SuperAdminPermissionMatrixPage() {
                             <td key={`${role.code}-${permission}`} className="px-2 py-1.5 text-center">
                               {granted ? (
                                 <Check
-                                  className="mx-auto h-4 w-4 text-emerald-600"
+                                  className="mx-auto h-4 w-4 text-success"
                                   aria-label="granted"
                                 />
                               ) : (

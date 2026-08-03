@@ -104,9 +104,20 @@ export async function mapCandidateToDtoAsync(
   };
 }
 
-export function mapCandidateToListItem(
+export async function mapCandidateToListItemAsync(
   candidate: CandidateWithRelations,
-): CandidateListItemDto {
+  resolveUrl: UrlResolver,
+): Promise<CandidateListItemDto> {
+  const profileImageDoc = candidate.profileImageDocument;
+  const profileImageUrl =
+    profileImageDoc && !profileImageDoc.deletedAt
+      ? ((await resolveUrl(
+          profileImageDoc.s3Key,
+          profileImageDoc.s3Bucket,
+          profileImageDoc.mimeType,
+        )) ?? null)
+      : null;
+
   return {
     id: bigintToNumber(candidate.id),
     firstName: candidate.firstName,
@@ -129,6 +140,7 @@ export function mapCandidateToListItem(
     timezoneOverlap: candidate.timezoneOverlap ?? null,
     hasResume: Boolean(candidate.resumeDocumentId),
     hasProfileImage: Boolean(candidate.profileImageDocumentId),
+    profileImageUrl,
     hasIntroVideo: Boolean(candidate.introVideoDocumentId),
     profileStatus: candidate.profileStatus,
     evaluationStatus: candidate.evaluationStatus,
