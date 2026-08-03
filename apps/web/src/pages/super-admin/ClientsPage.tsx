@@ -1,12 +1,12 @@
-import { Button, StatusBadge, TanStackDataTable } from '@bestal/ui';
+import { Button, Dialog, Select, StatusBadge, TanStackDataTable } from '@bestal/ui';
 import { type ColumnDef } from '@tanstack/react-table';
 import { Plus } from 'lucide-react';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ListingPageShell } from '../../components/layout/ListingPageShell';
 import { ActionMenu, type ActionMenuItem } from '../../components/super-admin/ActionMenu';
 import { useConfirmAction } from '../../components/super-admin/useConfirmAction';
-import { useAdminClients, useAdminMutations } from '../../hooks/api/useAdmin';
+import { useAdminClients, useAdminMutations, useAdminUsers } from '../../hooks/api/useAdmin';
 import { useDebouncedSearch } from '../../hooks/useDebouncedSearch';
 import { useDemoToast } from '../../lib/use-demo-toast';
 
@@ -16,6 +16,7 @@ type Row = {
   industry: string | null;
   contactName?: string | null;
   contactEmail: string | null;
+  accountManagerId?: number | null;
   accountManagerName: string | null;
   status: string;
   createdAt: string;
@@ -27,8 +28,56 @@ export function SuperAdminClientsPage() {
   const { requestConfirm, confirmDialog } = useConfirmAction();
   const { searchInput, setSearchInput, search, searchParam } = useDebouncedSearch();
   const { data, isLoading, isError, error } = useAdminClients({ limit: 100, ...searchParam });
+  const { data: usersData } = useAdminUsers({ limit: 200, sort: 'firstName' });
   const mutations = useAdminMutations();
   const rows = (data?.data ?? []) as unknown as Row[];
+  const managerUsers = useMemo(
+    () =>
+      ((usersData?.data ?? []) as Array<Record<string, unknown>>).filter(
+        (u) => u.role !== 'SUPER_ADMIN' && u.role !== 'CLIENT' && u.isActive !== false,
+      ),
+    [usersData],
+  );
+
+  const [assignTarget, setAssignTarget] = useState<Row | null>(null);
+  const [selectedManagerId, setSelectedManagerId] = useState('');
+  const [assignBusy, setAssignBusy] = useState(false);
+
+  function openAssign(row: Row) {
+    setAssignTarget(row);
+    setSelectedManagerId(
+      row.accountManagerId != null && row.accountManagerId !== undefined
+        ? String(row.accountManagerId)
+        : '',
+    );
+  }
+
+  async function confirmAssign() {
+    if (!assignTarget) return;
+    setAssignBusy(true);
+    try {
+      const accountManagerId =
+        selectedManagerId.trim() === '' ? null : Number(selectedManagerId);
+      if (selectedManagerId.trim() !== '' && !Number.isFinite(accountManagerId)) {
+        showError('Select an account manager');
+        return;
+      }
+      await mutations.assignAccountManager.mutateAsync({
+        id: assignTarget.id,
+        accountManagerId,
+      });
+      show(
+        accountManagerId
+          ? 'Account manager assigned'
+          : 'Account manager cleared',
+      );
+      setAssignTarget(null);
+    } catch (e) {
+      showError(e instanceof Error ? e.message : 'Failed to assign account manager');
+    } finally {
+      setAssignBusy(false);
+    }
+  }
 
   const columns = useMemo<ColumnDef<Row>[]>(
     () => [
@@ -77,7 +126,7 @@ export function SuperAdminClientsPage() {
           const active = r.status === 'ACTIVE';
           const items: ActionMenuItem[] = [
             { id: 'view', label: 'View Client', href: `/super-admin/clients/${r.id}` },
-            { id: 'edit', label: 'Edit Client', href: `/super-admin/clients/${r.id}` },
+            { id: 'edit', label: 'Edit Client', href: `/super-admin/clients/${r.id}/edit` },
             {
               id: 'activate',
               label: 'Activate Client',
@@ -110,29 +159,8 @@ export function SuperAdminClientsPage() {
               id: 'assign',
               label: 'Assign Account Manager',
               separatorBefore: true,
-              onSelect: () => {
-                const raw = window.prompt('Account manager user ID (leave blank to clear)');
-                if (raw == null) return;
-                const accountManagerId = raw.trim() === '' ? null : Number(raw);
-                if (raw.trim() !== '' && !accountManagerId) {
-                  showError('Enter a valid user id');
-                  return;
-                }
-                void mutations.assignAccountManager
-                  .mutateAsync({ id: r.id, accountManagerId })
-                  .then(() => show('Account manager updated'))
-                  .catch((e) => showError(e instanceof Error ? e.message : 'Failed'));
-              },
+              onSelect: () => openAssign(r),
             },
-            {
-              id: 'trials',
-              label: 'View Trials',
-              href: '/super-admin/trials',
-              separatorBefore: true,
-            },
-            { id: 'deployments', label: 'View Deployments', href: '/super-admin/deployments' },
-            { id: 'revenue', label: 'View Revenue', href: '/super-admin/reports?tab=revenue' },
-            { id: 'audit', label: 'View Audit History', href: '/super-admin/audit-logs' },
           ];
           return <ActionMenu items={items} label={`Actions for ${r.name}`} />;
         },
@@ -170,6 +198,56 @@ export function SuperAdminClientsPage() {
           dense
         />
       </ListingPageShell>
+
+      <Dialog
+        open={assignTarget != null}
+        onClose={() => {
+          if (assignBusy) return;
+          setAssignTarget(null);
+        }}
+        title="Assign account manager"
+        description={
+          assignTarget
+            ? `Choose an account manager for ${assignTarget.name}.`
+            : undefined
+        }
+        footer={
+          <>
+            <Button
+              variant="outline"
+              onClick={() => setAssignTarget(null)}
+              disabled={assignBusy}
+            >
+              Cancel
+            </Button>
+            <Button onClick={() => void confirmAssign()} disabled={assignBusy}>
+              {assignBusy ? 'Saving…' : 'Save assignment'}
+            </Button>
+          </>
+        }
+      >
+        <label className="block space-y-1 text-sm">
+          <span className="font-medium">Account manager</span>
+          <Select
+            value={selectedManagerId}
+            onChange={(e) => setSelectedManagerId(e.target.value)}
+          >
+            <option value="">— Unassigned —</option>
+            {managerUsers.map((u) => (
+              <option key={String(u.id)} value={String(u.id)}>
+                {String(u.firstName)} {String(u.lastName)} ({String(u.email)}) —{' '}
+                {String(u.role)}
+              </option>
+            ))}
+          </Select>
+          {managerUsers.length === 0 ? (
+            <p className="text-xs text-muted-foreground">
+              No eligible users found. Create a non–super-admin user first.
+            </p>
+          ) : null}
+        </label>
+      </Dialog>
+
       {confirmDialog}
     </>
   );

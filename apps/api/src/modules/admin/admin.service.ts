@@ -507,7 +507,18 @@ export class AdminService {
       paymentTerms: body.paymentTerms as string | undefined,
       notes: body.notes as string | undefined,
     };
-    if (!mapped.name.trim()) throw new BadRequestError('companyName is required');
+    if (!mapped.name.trim()) throw new BadRequestError('Company name is required');
+    if (!String(mapped.website ?? '').trim()) throw new BadRequestError('Website is required');
+    if (!String(mapped.industry ?? '').trim()) throw new BadRequestError('Industry is required');
+    if (!String(mapped.contactName ?? '').trim()) {
+      throw new BadRequestError('Primary contact name is required');
+    }
+    if (!String(mapped.contactEmail ?? '').trim()) {
+      throw new BadRequestError('Primary contact email is required');
+    }
+    if (!String(mapped.contactPhone ?? '').trim()) {
+      throw new BadRequestError('Primary contact phone is required');
+    }
     const created = await this.clients.create(authUser, mapped);
     await this.auditWrite(authUser, 'CREATE', 'Client', created.id, `Created client ${created.name}`, undefined, ctx);
     return created;
@@ -544,7 +555,21 @@ export class AdminService {
     accountManagerId: number | null,
     ctx?: { ipAddress?: string | null; userAgent?: string | null },
   ) {
-    return this.updateClient(authUser, id, { accountManagerId: accountManagerId ?? undefined }, ctx);
+    await this.clients.update(authUser, id, {
+      accountManagerId: accountManagerId ?? null,
+    } as never);
+    await this.auditWrite(
+      authUser,
+      'UPDATE',
+      'Client',
+      id,
+      accountManagerId
+        ? `Assigned account manager ${accountManagerId}`
+        : 'Cleared account manager',
+      { accountManagerId },
+      ctx,
+    );
+    return this.getClient(authUser, id);
   }
 
   // ── Candidates ───────────────────────────────────────────────────────────

@@ -254,6 +254,7 @@ const router = createBrowserRouter([
       },
       { path: 'clients', element: <SuperAdminClientsPage /> },
       { path: 'clients/new', element: <SuperAdminClientFormPage /> },
+      { path: 'clients/:id/edit', element: <SuperAdminClientFormPage /> },
       { path: 'clients/:id', element: <SuperAdminClientFormPage /> },
       { path: 'candidates', element: <SuperAdminCandidatesPage /> },
       { path: 'candidates/pending', element: <SuperAdminPendingCandidatesPage /> },

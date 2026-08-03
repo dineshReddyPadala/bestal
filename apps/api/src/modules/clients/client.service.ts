@@ -34,7 +34,7 @@ export class ClientService {
   ): Promise<ClientDto> {
     const organizationId = requireOrganization(authUser);
 
-    if (input.accountManagerId) {
+    if (input.accountManagerId != null) {
       await this.validateAccountManager(input.accountManagerId);
     }
 
@@ -68,7 +68,7 @@ export class ClientService {
     const organizationId = requireOrganization(authUser);
     const existing = await this.getClientOrThrow(organizationId, id);
 
-    if (input.accountManagerId) {
+    if (input.accountManagerId != null) {
       await this.validateAccountManager(input.accountManagerId);
     }
 
@@ -135,6 +135,33 @@ export class ClientService {
       throw new NotFoundError('Client not found');
     }
     return client;
+  }
+
+  async listAccountManagers(authUser: AuthenticatedUser): Promise<{
+    data: Array<{
+      id: number;
+      firstName: string;
+      lastName: string;
+      email: string;
+      role: string;
+      label: string;
+    }>;
+  }> {
+    const organizationId = requireOrganization(authUser);
+    const rows = await this.clientRepository.listAccountManagers(organizationId);
+    return {
+      data: rows.map((row) => {
+        const name = `${row.firstName} ${row.lastName}`.trim() || row.email;
+        return {
+          id: Number(row.id),
+          firstName: row.firstName,
+          lastName: row.lastName,
+          email: row.email,
+          role: row.role,
+          label: `${name} (${row.role})`,
+        };
+      }),
+    };
   }
 
   private async validateAccountManager(accountManagerId: number): Promise<void> {

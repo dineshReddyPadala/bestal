@@ -72,7 +72,7 @@ function clientAuditFields(client: {
 export function ClientDetailPage({ basePath }: ClientDetailPageProps) {
   const { id } = useParams();
   const clientId = Number(id);
-  const { message, show } = useDemoToast();
+  const { message } = useDemoToast();
 
   const { data: client, isLoading, isError } = useQuery({
     queryKey: ['clients', 'detail', clientId],
@@ -128,11 +128,6 @@ export function ClientDetailPage({ basePath }: ClientDetailPageProps) {
     );
   }
 
-  const actions = [
-    { id: 'edit', label: 'Edit Account', variant: 'outline' as const },
-    { id: 'shortlist', label: 'Create Shortlist', variant: 'outline' as const },
-  ];
-
   return (
     <DetailPageShell
       title={client.name}
@@ -140,15 +135,6 @@ export function ClientDetailPage({ basePath }: ClientDetailPageProps) {
       backHref={basePath}
       backLabel="Back to clients"
       statusBadges={[client.status]}
-      actions={actions}
-      onAction={(actionId) =>
-        show(
-          {
-            edit: 'Open the clients list to edit this account',
-            shortlist: 'Create a shortlist from Candidates or Shortlists',
-          }[actionId] ?? 'Action noted',
-        )
-      }
       toast={message}
     >
       <div className="mb-6 grid gap-4 md:grid-cols-4">
