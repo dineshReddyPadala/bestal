@@ -557,8 +557,9 @@ export class AdminController {
       return reply.send({ data });
     };
 
-  listRoles = async (_request: FastifyRequest, reply: FastifyReply) => {
-    const result = await this.roles.listRoles();
+  listRoles = async (request: FastifyRequest, reply: FastifyReply) => {
+    const q = request.query as { search?: string };
+    const result = await this.roles.listRoles({ search: q.search });
     return reply.send(result);
   };
 
@@ -601,5 +602,37 @@ export class AdminController {
       this.ctx(request),
     );
     return reply.send({ data });
+  };
+
+  listRoleUsers = async (request: FastifyRequest, reply: FastifyReply) => {
+    const { code } = request.params as { code: string };
+    const q = request.query as { search?: string };
+    const result = await this.roles.listRoleUsers(request.authUser!, code, {
+      search: q.search,
+    });
+    return reply.send(result);
+  };
+
+  assignUserToRole = async (request: FastifyRequest, reply: FastifyReply) => {
+    const { code } = request.params as { code: string };
+    const body = request.body as { userId?: number; clientId?: number | null };
+    const result = await this.roles.assignUserToRole(
+      request.authUser!,
+      code,
+      { userId: Number(body.userId), clientId: body.clientId },
+      this.ctx(request),
+    );
+    return reply.send(result);
+  };
+
+  unassignUserFromRole = async (request: FastifyRequest, reply: FastifyReply) => {
+    const { code, userId } = request.params as { code: string; userId: string };
+    const result = await this.roles.unassignUserFromRole(
+      request.authUser!,
+      code,
+      Number(userId),
+      this.ctx(request),
+    );
+    return reply.send(result);
   };
 }

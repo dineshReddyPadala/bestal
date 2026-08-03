@@ -30,7 +30,8 @@ export type ClientFormValues = {
   primaryContact: string;
   email: string;
   phone: string;
-  accountManager: string;
+  /** User id string for account manager (empty = unassigned). */
+  accountManagerId: string;
   companySize?: string;
   headquarters?: string;
   website?: string;

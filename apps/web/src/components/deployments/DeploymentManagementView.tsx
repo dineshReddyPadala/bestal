@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useCandidatesList } from '../../hooks/api/useCandidates';
 import { useClientsList } from '../../hooks/api/useClients';
 import { useDeploymentMutations, useDeploymentsList } from '../../hooks/api/useDeployments';
+import { useDebouncedSearch } from '../../hooks/useDebouncedSearch';
 import type { DeploymentListItem } from '../../lib/api/types';
 import { useDemoToast } from '../../lib/use-demo-toast';
 import { DeploymentForm } from '../forms/DeploymentForm';
@@ -155,7 +156,12 @@ export function DeploymentManagementView({
   title = 'Deployment Management',
 }: DeploymentManagementViewProps) {
   const { message, show } = useDemoToast();
-  const { data, isLoading, isError, error } = useDeploymentsList({ limit: 100, sort: '-startDate' });
+  const { searchInput, setSearchInput, search, searchParam } = useDebouncedSearch();
+  const { data, isLoading, isError, error } = useDeploymentsList({
+    limit: 100,
+    sort: '-startDate',
+    ...searchParam,
+  });
   const { data: clientsData } = useClientsList({ limit: 100 });
   const { data: candidatesData } = useCandidatesList({ limit: 100 });
   const mutations = useDeploymentMutations();
@@ -407,9 +413,13 @@ export function DeploymentManagementView({
         loadingLabel="Loading deployments…"
       >
         <TanStackDataTable
+          key={search}
           columns={columns}
           data={filteredData}
           searchPlaceholder="Search by client, candidate, or role…"
+          searchValue={searchInput}
+          onSearchChange={setSearchInput}
+          serverSideSearch
           pageSize={12}
           stickyHeader
           fillHeight

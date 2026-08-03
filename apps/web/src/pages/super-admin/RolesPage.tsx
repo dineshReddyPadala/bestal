@@ -7,6 +7,7 @@ import { ActionMenu, type ActionMenuItem } from '../../components/super-admin/Ac
 import { useConfirmAction } from '../../components/super-admin/useConfirmAction';
 import { useDemoToast } from '../../lib/use-demo-toast';
 import { useAdminMutations, useAdminRoles } from '../../hooks/api/useAdmin';
+import { useDebouncedSearch } from '../../hooks/useDebouncedSearch';
 
 type RoleRow = {
   id: number;
@@ -24,7 +25,8 @@ type RoleRow = {
 
 export function SuperAdminRolesPage() {
   const navigate = useNavigate();
-  const { data, isLoading, isError, error } = useAdminRoles();
+  const { searchInput, setSearchInput, search, searchParam } = useDebouncedSearch();
+  const { data, isLoading, isError, error } = useAdminRoles({ ...searchParam });
   const mutations = useAdminMutations();
   const { requestConfirm, confirmDialog } = useConfirmAction();
   const { show, showError, message } = useDemoToast();
@@ -103,14 +105,14 @@ export function SuperAdminRolesPage() {
             ? [
                 { id: 'view', label: 'View Role', href: `/super-admin/roles/${r.code}` },
                 {
+                  id: 'users',
+                  label: 'View Assigned Users',
+                  href: `/super-admin/roles/${r.code}?tab=users`,
+                },
+                {
                   id: 'perms',
                   label: 'View Permissions',
                   href: `/super-admin/roles/${r.code}?tab=permissions`,
-                },
-                {
-                  id: 'users',
-                  label: 'View Assigned Users',
-                  href: `/super-admin/users?role=${r.baseRole}`,
                 },
                 {
                   id: 'audit',
@@ -122,25 +124,20 @@ export function SuperAdminRolesPage() {
             : [
                 { id: 'view', label: 'View Role', href: `/super-admin/roles/${r.code}` },
                 {
+                  id: 'users',
+                  label: 'View Assigned Users',
+                  href: `/super-admin/roles/${r.code}?tab=users`,
+                },
+                {
                   id: 'edit',
                   label: 'Edit Role Permissions',
                   href: `/super-admin/roles/${r.code}?tab=permissions&edit=1`,
                 },
                 {
-                  id: 'users',
-                  label: 'View Assigned Users',
-                  href: `/super-admin/users?role=${r.baseRole}`,
-                },
-                {
-                  id: 'matrix',
-                  label: 'View Permission Matrix',
-                  href: '/super-admin/roles/permission-matrix',
-                  separatorBefore: true,
-                },
-                {
                   id: 'audit',
                   label: 'View Audit History',
                   href: '/super-admin/audit-logs',
+                  separatorBefore: true,
                 },
               ];
 
@@ -221,9 +218,13 @@ export function SuperAdminRolesPage() {
         <div className="mb-3 rounded-md bg-success/10 px-3 py-2 text-sm text-emerald-800">{message}</div>
       ) : null}
       <TanStackDataTable
+        key={search}
         columns={columns}
         data={rows}
         searchPlaceholder="Search roles…"
+        searchValue={searchInput}
+        onSearchChange={setSearchInput}
+        serverSideSearch
         pageSize={12}
         stickyHeader
         fillHeight

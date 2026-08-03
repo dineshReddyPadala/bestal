@@ -156,10 +156,64 @@ export class ClientRepository extends BaseRepository {
           id: BigInt(accountManagerId),
           deletedAt: null,
           isActive: true,
+          memberships: {
+            some: {
+              role: { notIn: ['SUPER_ADMIN', 'CLIENT'] },
+              isActive: true,
+            },
+          },
         },
         select: { id: true },
       })
       .then(Boolean);
+  }
+
+  listAccountManagers(organizationId: number): Promise<
+    Array<{
+      id: bigint;
+      firstName: string;
+      lastName: string;
+      email: string;
+      role: string;
+    }>
+  > {
+    return this.prisma.user.findMany({
+      where: {
+        deletedAt: null,
+        isActive: true,
+        memberships: {
+          some: {
+            organizationId: BigInt(organizationId),
+            isActive: true,
+            role: { notIn: ['SUPER_ADMIN', 'CLIENT'] },
+          },
+        },
+      },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        email: true,
+        memberships: {
+          where: {
+            organizationId: BigInt(organizationId),
+            isActive: true,
+            role: { notIn: ['SUPER_ADMIN', 'CLIENT'] },
+          },
+          select: { role: true },
+          take: 1,
+        },
+      },
+      orderBy: [{ firstName: 'asc' }, { lastName: 'asc' }],
+    }).then((rows) =>
+      rows.map((row) => ({
+        id: row.id,
+        firstName: row.firstName,
+        lastName: row.lastName,
+        email: row.email,
+        role: row.memberships[0]?.role ?? 'VIEWER',
+      })),
+    );
   }
 
   linkUnlinkedClientMemberships(

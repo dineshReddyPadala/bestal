@@ -21,6 +21,11 @@ export class ClientController {
     return reply.status(200).send(result);
   };
 
+  listAccountManagers = async (request: FastifyRequest, reply: FastifyReply) => {
+    const result = await this.clientService.listAccountManagers(request.authUser!);
+    return reply.status(200).send(result);
+  };
+
   getById = async (request: FastifyRequest, reply: FastifyReply) => {
     const { id } = request.params as { id: number };
     const data = await this.clientService.getById(request.authUser!, id);

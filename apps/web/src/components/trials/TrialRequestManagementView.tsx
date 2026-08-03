@@ -20,6 +20,7 @@ import {
   type TrialManagementRow,
 } from '../../hooks/api/useTrials';
 import { useDeploymentMutations } from '../../hooks/api/useDeployments';
+import { useDebouncedSearch } from '../../hooks/useDebouncedSearch';
 import {
   ListingFilterSelect,
   ListingFiltersRow,
@@ -158,7 +159,11 @@ export function TrialRequestManagementView({
   title = 'Trial Request Management',
 }: TrialRequestManagementViewProps) {
   const { message, show } = useDemoToast();
-  const { data, isLoading, isError, error } = useTrialsList({ limit: 100 });
+  const { searchInput, setSearchInput, search, searchParam } = useDebouncedSearch();
+  const { data, isLoading, isError, error } = useTrialsList({
+    limit: 100,
+    ...searchParam,
+  });
   const { approve, reject, update, confirmCandidate } = useTrialMutations();
   const { create: createDeployment } = useDeploymentMutations();
   const [filters, setFilters] = useState(defaultFilters);
@@ -387,9 +392,13 @@ export function TrialRequestManagementView({
         error={isError ? (error instanceof Error ? error.message : 'Failed to load trials') : null}
       >
         <TanStackDataTable
+          key={search}
           columns={columns}
           data={filteredData}
           searchPlaceholder="Search by client, candidate, or role…"
+          searchValue={searchInput}
+          onSearchChange={setSearchInput}
+          serverSideSearch
           pageSize={12}
           stickyHeader
           fillHeight

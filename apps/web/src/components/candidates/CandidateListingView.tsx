@@ -10,6 +10,7 @@ import { MoreHorizontal, FileSpreadsheet, Plus, Send } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useCandidateMutations, useCandidatesList } from '../../hooks/api/useCandidates';
+import { useDebouncedSearch } from '../../hooks/useDebouncedSearch';
 import { usePermissions } from '../../hooks/usePermissions';
 import { getApiErrorMessage } from '../../lib/api/errors';
 import type { CandidateListItem } from '../../lib/api/types';
@@ -176,6 +177,7 @@ export function CandidateListingView({
   const { message, variant, show, showError, dismiss } = useDemoToast();
   const [filters, setFilters] = useState(defaultFilters);
   const [submitting, setSubmitting] = useState(false);
+  const { searchInput, setSearchInput, search, searchParam } = useDebouncedSearch();
 
   const showSubmitActions = enableSubmitForApproval && canWriteCandidates && !readOnly;
 
@@ -183,11 +185,12 @@ export function CandidateListingView({
     () => ({
       limit: 100,
       sort: '-createdAt',
+      ...searchParam,
       status: filters.status === 'all' ? undefined : filters.status,
       visibility: filters.visibility === 'all' ? undefined : filters.visibility,
       approvalStatus: filters.approvalStatus === 'all' ? undefined : filters.approvalStatus,
     }),
-    [filters],
+    [filters, searchParam],
   );
 
   const { data, isLoading, isError, error } = useCandidatesList(listParams);
@@ -411,9 +414,13 @@ export function CandidateListingView({
         error={isError ? (error instanceof Error ? error.message : 'Failed to load candidates') : null}
       >
         <TanStackDataTable
+          key={search}
           columns={columns}
           data={rows}
           searchPlaceholder="Search by name or email…"
+          searchValue={searchInput}
+          onSearchChange={setSearchInput}
+          serverSideSearch
           pageSize={12}
           getRowId={(row) => String(row.id)}
           stickyHeader

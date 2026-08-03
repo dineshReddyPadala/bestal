@@ -58,6 +58,7 @@ export interface TrialListFilters {
   page: number;
   limit: number;
   sort?: string;
+  search?: string;
   candidateId?: number;
   clientId?: number;
   status?: TrialRequestStatus;

@@ -52,15 +52,15 @@ export interface ClientListFilters {
 
 export interface CreateClientInput {
   name: string;
-  accountManagerId?: number;
+  accountManagerId?: number | null;
   status?: ClientStatus;
-  industry?: string;
+  industry: string;
   companySize?: string;
-  website?: string;
+  website: string;
   headquarters?: string;
-  contactName?: string;
-  contactEmail?: string;
-  contactPhone?: string;
+  contactName: string;
+  contactEmail: string;
+  contactPhone: string;
   paymentTerms?: string;
   addressLine1?: string;
   addressLine2?: string;
@@ -71,4 +71,23 @@ export interface CreateClientInput {
   notes?: string;
 }
 
-export interface UpdateClientInput extends Partial<CreateClientInput> {}
+export interface UpdateClientInput {
+  name?: string;
+  accountManagerId?: number | null;
+  status?: ClientStatus;
+  industry?: string;
+  companySize?: string | null;
+  website?: string;
+  headquarters?: string | null;
+  contactName?: string;
+  contactEmail?: string;
+  contactPhone?: string;
+  paymentTerms?: string | null;
+  addressLine1?: string | null;
+  addressLine2?: string | null;
+  city?: string | null;
+  state?: string | null;
+  postalCode?: string | null;
+  country?: string | null;
+  notes?: string | null;
+}

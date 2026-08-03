@@ -6,6 +6,7 @@ import { UserInviteForm } from '../../components/forms/UserInviteForm';
 import type { UserInviteFormValues } from '../../lib/entity-field-metadata';
 import { useDemoToast } from '../../lib/use-demo-toast';
 import { useUserMutations, useUsersList } from '../../hooks/api/useUsers';
+import { useDebouncedSearch } from '../../hooks/useDebouncedSearch';
 import type { UserListItem } from '../../lib/api/users';
 import {
   parseUserInviteCsv,
@@ -16,7 +17,12 @@ import { ListingPageShell } from '../../components/layout/ListingPageShell';
 
 export function UsersPage() {
   const { message, show } = useDemoToast();
-  const { data, isLoading, isError, error } = useUsersList({ limit: 100, sort: '-createdAt' });
+  const { searchInput, setSearchInput, search, searchParam } = useDebouncedSearch();
+  const { data, isLoading, isError, error } = useUsersList({
+    limit: 100,
+    sort: '-createdAt',
+    ...searchParam,
+  });
   const { invite, inviteBulk } = useUserMutations();
   const [inviteOpen, setInviteOpen] = useState(false);
   const [bulkOpen, setBulkOpen] = useState(false);
@@ -159,9 +165,13 @@ export function UsersPage() {
         }
       >
         <TanStackDataTable
+          key={search}
           columns={columns}
           data={data?.data ?? []}
           searchPlaceholder="Search users…"
+          searchValue={searchInput}
+          onSearchChange={setSearchInput}
+          serverSideSearch
           pageSize={12}
           stickyHeader
           fillHeight

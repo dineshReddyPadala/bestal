@@ -239,6 +239,17 @@ export class DeploymentRepository extends BaseRepository {
       where.placementType = filters.placementType;
     }
 
+    const search = filters.search?.trim();
+    if (search) {
+      where.OR = [
+        { roleTitle: { contains: search, mode: 'insensitive' } },
+        { client: { name: { contains: search, mode: 'insensitive' } } },
+        { candidate: { firstName: { contains: search, mode: 'insensitive' } } },
+        { candidate: { lastName: { contains: search, mode: 'insensitive' } } },
+        { candidate: { email: { contains: search, mode: 'insensitive' } } },
+      ];
+    }
+
     return where;
   }
 }

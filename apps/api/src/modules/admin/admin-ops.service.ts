@@ -68,12 +68,24 @@ export class AdminOpsService {
     const organizationId = requireOrganization(authUser);
     const page = Number(query.page ?? 1);
     const limit = Number(query.limit ?? 20);
+    const search = typeof query.search === 'string' ? query.search.trim() : '';
     const where: Prisma.TrialRequestWhereInput = {
       organizationId: BigInt(organizationId),
       deletedAt: null,
       ...(query.status ? { status: query.status as never } : {}),
       ...(query.clientId ? { clientId: BigInt(Number(query.clientId)) } : {}),
       ...(query.candidateId ? { candidateId: BigInt(Number(query.candidateId)) } : {}),
+      ...(search
+        ? {
+            OR: [
+              { roleTitle: { contains: search, mode: 'insensitive' } },
+              { client: { name: { contains: search, mode: 'insensitive' } } },
+              { candidate: { firstName: { contains: search, mode: 'insensitive' } } },
+              { candidate: { lastName: { contains: search, mode: 'insensitive' } } },
+              { candidate: { email: { contains: search, mode: 'insensitive' } } },
+            ],
+          }
+        : {}),
     };
     const [total, items] = await Promise.all([
       this.prisma.trialRequest.count({ where }),
@@ -214,12 +226,24 @@ export class AdminOpsService {
     const organizationId = requireOrganization(authUser);
     const page = Number(query.page ?? 1);
     const limit = Number(query.limit ?? 20);
+    const search = typeof query.search === 'string' ? query.search.trim() : '';
     const where: Prisma.DeploymentWhereInput = {
       organizationId: BigInt(organizationId),
       deletedAt: null,
       ...(query.status ? { status: query.status as never } : {}),
       ...(query.clientId ? { clientId: BigInt(Number(query.clientId)) } : {}),
       ...(query.candidateId ? { candidateId: BigInt(Number(query.candidateId)) } : {}),
+      ...(search
+        ? {
+            OR: [
+              { roleTitle: { contains: search, mode: 'insensitive' } },
+              { client: { name: { contains: search, mode: 'insensitive' } } },
+              { candidate: { firstName: { contains: search, mode: 'insensitive' } } },
+              { candidate: { lastName: { contains: search, mode: 'insensitive' } } },
+              { candidate: { email: { contains: search, mode: 'insensitive' } } },
+            ],
+          }
+        : {}),
     };
     const [total, items] = await Promise.all([
       this.prisma.deployment.count({ where }),
@@ -841,6 +865,42 @@ export class AdminOpsService {
       where.createdAt = {};
       if (query.from) where.createdAt.gte = new Date(String(query.from));
       if (query.to) where.createdAt.lte = new Date(String(query.to));
+    }
+    const search = typeof query.search === 'string' ? query.search.trim() : '';
+    if (search) {
+      const searchUpper = search.toUpperCase();
+      const matchingActions = (
+        [
+          'CREATE',
+          'UPDATE',
+          'DELETE',
+          'RESTORE',
+          'LOGIN',
+          'LOGOUT',
+          'VIEW',
+          'EXPORT',
+          'APPROVE',
+          'REJECT',
+          'ASSIGN',
+          'UNASSIGN',
+        ] as const
+      ).filter((a) => a.includes(searchUpper));
+
+      where.OR = [
+        ...(matchingActions.length > 0 ? [{ action: { in: [...matchingActions] } }] : []),
+        { resourceType: { contains: search, mode: 'insensitive' } },
+        { description: { contains: search, mode: 'insensitive' } },
+        { ipAddress: { contains: search, mode: 'insensitive' } },
+        {
+          actor: {
+            OR: [
+              { firstName: { contains: search, mode: 'insensitive' } },
+              { lastName: { contains: search, mode: 'insensitive' } },
+              { email: { contains: search, mode: 'insensitive' } },
+            ],
+          },
+        },
+      ];
     }
 
     const [total, items] = await Promise.all([

@@ -241,6 +241,17 @@ export class BackgroundCheckRepository extends BaseRepository {
       where.type = filters.type;
     }
 
+    const search = filters.search?.trim();
+    if (search) {
+      where.OR = [
+        { provider: { contains: search, mode: 'insensitive' } },
+        { externalReferenceId: { contains: search, mode: 'insensitive' } },
+        { candidate: { firstName: { contains: search, mode: 'insensitive' } } },
+        { candidate: { lastName: { contains: search, mode: 'insensitive' } } },
+        { candidate: { email: { contains: search, mode: 'insensitive' } } },
+      ];
+    }
+
     return where;
   }
 }

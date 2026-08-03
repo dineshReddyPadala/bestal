@@ -9,6 +9,7 @@ import { ClientForm } from '../forms/ClientForm';
 import type { ClientFormValues } from '../../lib/entity-field-metadata';
 import { useDemoToast } from '../../lib/use-demo-toast';
 import { useClientMutations, useClientsList } from '../../hooks/api/useClients';
+import { useDebouncedSearch } from '../../hooks/useDebouncedSearch';
 import { clientsApi } from '../../lib/api/clients';
 import { queryKeys } from '../../hooks/api/query-keys';
 import type { ClientListItem } from '../../lib/api/types';
@@ -19,6 +20,7 @@ import {
 } from '../layout/ListingPageShell';
 
 type ClientAction = 'View' | 'Edit' | 'Deactivate';
+type FormMode = 'add' | 'edit' | 'view';
 
 type ClientManagementViewProps = {
   title?: string;
@@ -42,14 +44,11 @@ function slugify(value: string): string {
 
 function ClientRowActions({
   record,
-  detailPath,
   onAction,
 }: {
   record: ClientListItem;
-  detailPath?: string;
   onAction: (action: ClientAction) => void;
 }) {
-  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const deactivated = record.status === 'INACTIVE' || record.status === 'SUSPENDED';
@@ -101,11 +100,6 @@ function ClientRowActions({
               }`}
               onClick={() => {
                 if (disabled) return;
-                if (label === 'View' && detailPath) {
-                  navigate(`${detailPath}/${record.id}`);
-                  setOpen(false);
-                  return;
-                }
                 onAction(label);
                 setOpen(false);
               }}
@@ -127,23 +121,25 @@ export function ClientManagementView({
   const navigate = useNavigate();
   const { message, show } = useDemoToast();
   const [filters, setFilters] = useState(defaultFilters);
-  const [formOpen, setFormOpen] = useState<'add' | 'edit' | null>(null);
+  const [formOpen, setFormOpen] = useState<FormMode | null>(null);
   const [editingRecord, setEditingRecord] = useState<ClientListItem | null>(null);
+  const { searchInput, setSearchInput, search, searchParam } = useDebouncedSearch();
   const mutations = useClientMutations();
 
   const { data: editingClient } = useQuery({
     queryKey: queryKeys.clients.detail(editingRecord?.id ?? 0),
     queryFn: () => clientsApi.get(editingRecord!.id),
-    enabled: formOpen === 'edit' && editingRecord != null,
+    enabled: (formOpen === 'edit' || formOpen === 'view') && editingRecord != null,
   });
 
   const listParams = useMemo(
     () => ({
       limit: 100,
       sort: '-createdAt',
+      ...searchParam,
       status: filters.status === 'all' ? undefined : filters.status,
     }),
-    [filters.status],
+    [filters.status, searchParam],
   );
 
   const { data, isLoading, isError, error } = useClientsList(listParams);
@@ -166,6 +162,15 @@ export function ClientManagementView({
 
   const handleAction = useCallback(
     (record: ClientListItem, action: ClientAction) => {
+      if (action === 'View') {
+        if (clientDetailBasePath) {
+          navigate(`${clientDetailBasePath}/${record.id}`);
+          return;
+        }
+        setEditingRecord(record);
+        setFormOpen('view');
+        return;
+      }
       if (action === 'Edit') {
         setEditingRecord(record);
         setFormOpen('edit');
@@ -180,30 +185,33 @@ export function ClientManagementView({
             show(err instanceof Error ? err.message : 'Failed to deactivate client');
           }
         })();
-        return;
       }
-      show(`${action} — ${record.name}`);
     },
-    [mutations.update, show],
+    [clientDetailBasePath, mutations.update, navigate, show],
   );
 
   const handleFormSubmit = useCallback(
     (values: ClientFormValues) => {
       void (async () => {
         try {
+          if (formOpen === 'view') return;
+          const accountManagerId = values.accountManagerId
+            ? Number(values.accountManagerId)
+            : null;
           if (formOpen === 'edit' && editingRecord) {
             await mutations.update.mutateAsync({
               id: editingRecord.id,
               body: {
                 name: values.company,
-                industry: values.industry || undefined,
-                contactEmail: values.email || undefined,
-                contactPhone: values.phone || undefined,
-                contactName: values.primaryContact || undefined,
+                industry: values.industry,
+                contactEmail: values.email,
+                contactPhone: values.phone,
+                contactName: values.primaryContact,
                 companySize: values.companySize || undefined,
                 headquarters: values.headquarters || undefined,
-                website: values.website || undefined,
+                website: values.website,
                 paymentTerms: values.paymentTerms || undefined,
+                accountManagerId,
               },
             });
             show(`Client updated — ${values.company}`);
@@ -211,14 +219,15 @@ export function ClientManagementView({
             await mutations.create.mutateAsync({
               name: values.company,
               slug: slugify(values.company),
-              industry: values.industry || undefined,
-              contactEmail: values.email || undefined,
-              contactPhone: values.phone || undefined,
-              contactName: values.primaryContact || undefined,
+              industry: values.industry,
+              contactEmail: values.email,
+              contactPhone: values.phone,
+              contactName: values.primaryContact,
               companySize: values.companySize || undefined,
               headquarters: values.headquarters || undefined,
-              website: values.website || undefined,
+              website: values.website,
               paymentTerms: values.paymentTerms || undefined,
+              ...(accountManagerId ? { accountManagerId } : {}),
             });
             show(`Client created — ${values.company}`);
           }
@@ -290,13 +299,12 @@ export function ClientManagementView({
         cell: ({ row }) => (
           <ClientRowActions
             record={row.original}
-            detailPath={clientDetailBasePath}
             onAction={(action) => handleAction(row.original, action)}
           />
         ),
       },
     ],
-    [clientDetailBasePath, handleAction],
+    [handleAction],
   );
 
   return (
@@ -309,9 +317,13 @@ export function ClientManagementView({
         error={isError ? (error instanceof Error ? error.message : 'Failed to load clients') : null}
       >
         <TanStackDataTable
+          key={search}
           columns={columns}
           data={filteredData}
           searchPlaceholder="Search by company, email, or manager…"
+          searchValue={searchInput}
+          onSearchChange={setSearchInput}
+          serverSideSearch
           pageSize={12}
           stickyHeader
           fillHeight
@@ -379,44 +391,54 @@ export function ClientManagementView({
           setFormOpen(null);
           setEditingRecord(null);
         }}
-        title={formOpen === 'edit' ? 'Edit client' : 'Add client'}
+        title={
+          formOpen === 'view'
+            ? 'View client'
+            : formOpen === 'edit'
+              ? 'Edit client'
+              : 'Add client'
+        }
         className="max-w-2xl"
+        scrollable
       >
-        <ClientForm
-          key={editingRecord?.id ?? 'new'}
-          formId="client-mgmt-form"
-          submitLabel={formOpen === 'edit' ? 'Save changes' : 'Create client'}
-          defaultValues={
-            editingRecord && editingClient
-              ? {
-                  company: editingClient.name,
-                  industry: editingClient.industry ?? '',
-                  primaryContact: editingClient.contactName ?? '',
-                  email: editingClient.contactEmail ?? '',
-                  phone: editingClient.contactPhone ?? '',
-                  accountManager: editingRecord.accountManagerName ?? '',
-                  companySize: editingClient.companySize ?? '',
-                  headquarters: editingClient.headquarters ?? '',
-                  website: editingClient.website ?? '',
-                  paymentTerms: editingClient.paymentTerms ?? '',
-                }
-              : editingRecord
+        {(formOpen === 'edit' || formOpen === 'view') && !editingClient ? (
+          <p className="py-6 text-sm text-muted-foreground">Loading client details…</p>
+        ) : (
+          <ClientForm
+            key={
+              formOpen === 'add'
+                ? 'new'
+                : `${formOpen}-${editingRecord?.id}-${editingClient?.updatedAt ?? ''}`
+            }
+            formId="client-mgmt-form"
+            readOnly={formOpen === 'view'}
+            submitLabel={formOpen === 'edit' ? 'Save changes' : 'Create client'}
+            defaultValues={
+              editingRecord && editingClient
                 ? {
-                    company: editingRecord.name,
-                    industry: editingRecord.industry ?? '',
-                    primaryContact: '',
-                    email: editingRecord.contactEmail ?? '',
-                    phone: '',
-                    accountManager: editingRecord.accountManagerName ?? '',
+                    company: editingClient.name,
+                    industry: editingClient.industry ?? '',
+                    primaryContact: editingClient.contactName ?? '',
+                    email: editingClient.contactEmail ?? '',
+                    phone: editingClient.contactPhone ?? '',
+                    accountManagerId:
+                      editingClient.accountManagerId != null
+                        ? String(editingClient.accountManagerId)
+                        : '',
+                    companySize: editingClient.companySize ?? '',
+                    headquarters: editingClient.headquarters ?? '',
+                    website: editingClient.website ?? '',
+                    paymentTerms: editingClient.paymentTerms ?? '',
                   }
                 : undefined
-          }
-          onSubmit={handleFormSubmit}
-          onCancel={() => {
-            setFormOpen(null);
-            setEditingRecord(null);
-          }}
-        />
+            }
+            onSubmit={handleFormSubmit}
+            onCancel={() => {
+              setFormOpen(null);
+              setEditingRecord(null);
+            }}
+          />
+        )}
       </Dialog>
     </>
   );

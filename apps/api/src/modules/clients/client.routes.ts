@@ -60,6 +60,19 @@ export async function clientRoutes(fastify: FastifyInstance): Promise<void> {
   );
 
   app.get(
+    '/account-managers',
+    {
+      preHandler: [authenticate, requirePermission(PERMISSIONS.CLIENTS_READ)],
+      schema: {
+        tags: ['Clients'],
+        summary: 'List users eligible to be assigned as account managers',
+        security: [{ bearerAuth: [] }],
+      },
+    },
+    clientController.listAccountManagers,
+  );
+
+  app.get(
     '/:id',
     {
       preHandler: [authenticate, requirePermission(PERMISSIONS.CLIENTS_READ)],

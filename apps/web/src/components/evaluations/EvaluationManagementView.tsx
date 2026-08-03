@@ -9,6 +9,7 @@ import {
   useEvaluationMutations,
   useEvaluationsList,
 } from '../../hooks/api/useEvaluations';
+import { useDebouncedSearch } from '../../hooks/useDebouncedSearch';
 import { mapEvaluationExtractionToForm } from '../../lib/api/ai/evaluation-extraction.mapper';
 import { evaluationsApi } from '../../lib/api/evaluations';
 import { getApiErrorMessage } from '../../lib/api/errors';
@@ -55,7 +56,12 @@ export function EvaluationManagementView({
 }: EvaluationManagementViewProps) {
   const { message, show } = useDemoToast();
   const [searchParams] = useSearchParams();
-  const { data, isLoading, isError, error } = useEvaluationsList({ limit: 100, sort: '-createdAt' });
+  const { searchInput, setSearchInput, search, searchParam } = useDebouncedSearch();
+  const { data, isLoading, isError, error } = useEvaluationsList({
+    limit: 100,
+    sort: '-createdAt',
+    ...searchParam,
+  });
   const { data: candidatesData } = useCandidatesList({ limit: 100 });
   const mutations = useEvaluationMutations();
   const candidateMutations = useCandidateMutations();
@@ -445,9 +451,13 @@ export function EvaluationManagementView({
         loadingLabel="Loading evaluations…"
       >
         <TanStackDataTable
+          key={search}
           columns={columns}
           data={filteredData}
           searchPlaceholder="Search by candidate, evaluator, or type…"
+          searchValue={searchInput}
+          onSearchChange={setSearchInput}
+          serverSideSearch
           pageSize={12}
           stickyHeader
           fillHeight

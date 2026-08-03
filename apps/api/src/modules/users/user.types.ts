@@ -7,6 +7,7 @@ export type CreateUserInput = {
   phone?: string;
   role: Role;
   clientId?: number;
+  platformRoleId?: number | null;
 };
 
 export type BulkUserInput = CreateUserInput;

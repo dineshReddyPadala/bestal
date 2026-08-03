@@ -40,6 +40,7 @@ export interface EvaluationListFilters {
   page: number;
   limit: number;
   sort?: string;
+  search?: string;
   candidateId?: number;
   evaluationType?: string;
 }
