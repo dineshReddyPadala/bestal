@@ -13,6 +13,7 @@ import {
   backgroundCheckMessageResponseSchema,
   backgroundCheckResponseSchema,
   bgvExtractionResponseSchema,
+  bgvExtractAiResponseSchema,
   clarificationBodySchema,
   createBackgroundCheckBodySchema,
   listBackgroundChecksQuerySchema,
@@ -68,7 +69,7 @@ export async function backgroundCheckRoutes(
       schema: {
         tags: ['Background Checks'],
         summary:
-          'Upload BGV PDF/DOCX and extract fields via Python AI (or static stub)',
+          'Upload BGV PDF/DOCX and extract fields (async n8n when configured, else sync Python/static)',
         security: [{ bearerAuth: [] }],
         consumes: ['multipart/form-data'],
         response: {
@@ -244,11 +245,11 @@ export async function backgroundCheckRoutes(
       preHandler: writePre,
       schema: {
         tags: ['Background Checks'],
-        summary: 'Run AI extraction on uploaded BGV report',
+        summary: 'Run AI extraction on uploaded BGV report (async n8n when configured)',
         security: [{ bearerAuth: [] }],
         params: backgroundCheckIdParamSchema,
         response: {
-          200: backgroundCheckResponseSchema,
+          200: bgvExtractAiResponseSchema,
           401: errorResponses[401],
           404: errorResponses[404],
         },

@@ -122,31 +122,45 @@ export const evaluationMessageResponseSchema = z.object({
   }),
 });
 
+export const evaluationExtractionSyncDataSchema = z.object({
+  liveAi: z.boolean(),
+  extraction: z
+    .object({
+      jobId: z.string(),
+      confidence: z.number(),
+      extractedAt: z.string(),
+      extractedText: z.string().optional(),
+      evaluatorName: z.string().optional(),
+      evaluatorCompany: z.string().optional(),
+      evaluationType: z.string().optional(),
+      evaluationDate: z.string().optional(),
+      technicalScore: z.number().optional(),
+      communicationScore: z.number().optional(),
+      problemSolvingScore: z.number().optional(),
+      architectureScore: z.number().optional(),
+      clientReadinessScore: z.number().optional(),
+      recommendation: z.string().optional(),
+      evaluatorComments: z.string().optional(),
+      aiEvaluationSummary: z.string(),
+      recordingUrl: z.string().nullable().optional(),
+      evaluationFileUrl: z.string().nullable().optional(),
+      warnings: z.array(z.string()),
+    })
+    .passthrough(),
+});
+
+/** Async n8n acceptance — numeric IDs only. */
+export const evaluationAnalysisJobAcceptedSchema = z.object({
+  jobId: z.number().int().positive(),
+  status: z.string(),
+  candidateId: z.number().int().positive(),
+  documentId: z.number().int().positive(),
+  evaluationId: z.number().int().positive(),
+});
+
 export const evaluationExtractionResponseSchema = z.object({
-  data: z.object({
-    liveAi: z.boolean(),
-    extraction: z
-      .object({
-        jobId: z.string(),
-        confidence: z.number(),
-        extractedAt: z.string(),
-        extractedText: z.string().optional(),
-        evaluatorName: z.string().optional(),
-        evaluatorCompany: z.string().optional(),
-        evaluationType: z.string().optional(),
-        evaluationDate: z.string().optional(),
-        technicalScore: z.number().optional(),
-        communicationScore: z.number().optional(),
-        problemSolvingScore: z.number().optional(),
-        architectureScore: z.number().optional(),
-        clientReadinessScore: z.number().optional(),
-        recommendation: z.string().optional(),
-        evaluatorComments: z.string().optional(),
-        aiEvaluationSummary: z.string(),
-        recordingUrl: z.string().nullable().optional(),
-        evaluationFileUrl: z.string().nullable().optional(),
-        warnings: z.array(z.string()),
-      })
-      .passthrough(),
-  }),
+  data: z.union([
+    evaluationExtractionSyncDataSchema,
+    evaluationAnalysisJobAcceptedSchema,
+  ]),
 });

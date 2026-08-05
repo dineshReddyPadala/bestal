@@ -10,8 +10,9 @@ import {
   useEvaluationsList,
 } from '../../hooks/api/useEvaluations';
 import { useDebouncedSearch } from '../../hooks/useDebouncedSearch';
+import { AiScreeningStatusBanner } from '../candidates/AiScreeningStatusBanner';
+import { useEvaluationAiJob } from '../../hooks/useEvaluationAiJob';
 import { mapEvaluationExtractionToForm } from '../../lib/api/ai/evaluation-extraction.mapper';
-import { evaluationsApi } from '../../lib/api/evaluations';
 import { getApiErrorMessage } from '../../lib/api/errors';
 import type { EvaluationListItem } from '../../lib/api/types';
 import { useDemoToast } from '../../lib/use-demo-toast';
@@ -81,7 +82,15 @@ export function EvaluationManagementView({
   const [evaluatorComments, setEvaluatorComments] = useState('');
   const [aiEvaluationSummary, setAiEvaluationSummary] = useState('');
   const [evaluationFileUrl, setEvaluationFileUrl] = useState('');
-  const [extractingPdf, setExtractingPdf] = useState(false);
+  const {
+    status: evaluationAiStatus,
+    errorMessage: evaluationAiError,
+    isRunning: extractingPdf,
+    runAnalysis: runEvaluationAnalysis,
+    reset: resetEvaluationAi,
+  } = useEvaluationAiJob();
+  const [pendingEvaluationFile, setPendingEvaluationFile] = useState<File | null>(null);
+  const [draftEvaluationId, setDraftEvaluationId] = useState<number | null>(null);
   const [extractHint, setExtractHint] = useState<string | null>(null);
   const [extractError, setExtractError] = useState<string | null>(null);
   const [createError, setCreateError] = useState<string | null>(null);
@@ -185,10 +194,13 @@ export function EvaluationManagementView({
     setEvaluatorComments('');
     setAiEvaluationSummary('');
     setEvaluationFileUrl('');
+    setPendingEvaluationFile(null);
+    setDraftEvaluationId(null);
     setExtractHint(null);
     setExtractError(null);
     setCreateError(null);
-  }, []);
+    resetEvaluationAi();
+  }, [resetEvaluationAi]);
 
   const applyExtractedFields = useCallback(
     (patch: ReturnType<typeof mapEvaluationExtractionToForm>, message: string) => {
@@ -233,36 +245,54 @@ export function EvaluationManagementView({
         return;
       }
 
-      setExtractingPdf(true);
+      setPendingEvaluationFile(file);
       setExtractError(null);
       setExtractHint(null);
+      setDraftEvaluationId(null);
+      resetEvaluationAi();
 
       try {
-        const { extraction, liveAi } = await evaluationsApi.extractEvaluation(
-          file,
-          candidateId,
-        );
-        const patch = mapEvaluationExtractionToForm(extraction, file.name);
+        const result = await runEvaluationAnalysis(file, candidateId);
+        if (!result) return;
+
+        if (result.evaluationId != null) {
+          setDraftEvaluationId(result.evaluationId);
+        }
+
+        const patch = mapEvaluationExtractionToForm(result.extraction, file.name);
         if (!patch.aiEvaluationSummary) {
           throw new Error('AI did not return an evaluation summary for this document.');
         }
 
-        const confidence = Math.round(extraction.confidence * 100);
+        const confidence = Math.round(result.extraction.confidence * 100);
         const warningNote =
-          extraction.warnings.length > 0 ? ` ${extraction.warnings[0]}` : '';
-        const modeNote = liveAi ? '' : ' (demo/static AI — set AI_EVALUATION_URL on the API)';
+          result.extraction.warnings.length > 0
+            ? ` ${result.extraction.warnings[0]}`
+            : '';
+        const modeNote = result.liveAi
+          ? ''
+          : ' (demo/static AI — set AI_EVALUATION_URL on the API)';
 
         applyExtractedFields(
           patch,
-          `Evaluation extracted (${confidence}% confidence)${modeNote}. Review fields, then save to update BesTal score and notify your team.${warningNote}`,
+          result.evaluationId != null
+            ? `Evaluation analyzed (${confidence}% confidence)${modeNote}. Review fields, then save to update the draft evaluation.${warningNote}`
+            : `Evaluation extracted (${confidence}% confidence)${modeNote}. Review fields, then save to update BesTal score and notify your team.${warningNote}`,
         );
       } catch (err) {
-        setExtractError(getApiErrorMessage(err, 'Evaluation extraction failed'));
-      } finally {
-        setExtractingPdf(false);
+        setExtractError(
+          evaluationAiError ||
+            getApiErrorMessage(err, 'Evaluation extraction failed'),
+        );
       }
     },
-    [applyExtractedFields, selectedCandidateId],
+    [
+      applyExtractedFields,
+      evaluationAiError,
+      resetEvaluationAi,
+      runEvaluationAnalysis,
+      selectedCandidateId,
+    ],
   );
 
   const handleCreate = useCallback(async () => {
@@ -290,7 +320,7 @@ export function EvaluationManagementView({
     }
 
     try {
-      await mutations.create.mutateAsync({
+      const payload = {
         candidateId,
         evaluatorName: name,
         evaluatorCompany: evaluatorCompany.trim() || undefined,
@@ -305,16 +335,31 @@ export function EvaluationManagementView({
         evaluatorComments: evaluatorComments.trim() || undefined,
         aiEvaluationSummary: aiEvaluationSummary.trim() || undefined,
         evaluationFileUrl: evaluationFileUrl.trim() || undefined,
-      });
+      };
+
+      if (draftEvaluationId != null && draftEvaluationId > 0) {
+        const { candidateId: _candidateId, ...updateBody } = payload;
+        await mutations.update.mutateAsync({
+          id: draftEvaluationId,
+          body: updateBody,
+        });
+      } else {
+        await mutations.create.mutateAsync(payload);
+      }
+
       const candidate = candidateOptions.find((c) => c.id === candidateId);
       const suffix = aiEvaluationSummary.trim()
         ? ' BesTal score recalculated and team notified.'
         : '';
-      show(`Evaluation created — ${candidate?.name ?? 'candidate'}.${suffix}`);
+      show(
+        draftEvaluationId != null
+          ? `Evaluation updated — ${candidate?.name ?? 'candidate'}.${suffix}`
+          : `Evaluation created — ${candidate?.name ?? 'candidate'}.${suffix}`,
+      );
       setCreateOpen(false);
       resetCreateForm();
     } catch (err) {
-      const message = getApiErrorMessage(err, 'Create failed');
+      const message = getApiErrorMessage(err, 'Save failed');
       setCreateError(message);
       show(message);
     }
@@ -326,12 +371,14 @@ export function EvaluationManagementView({
     candidateOptions,
     clientReadinessScore,
     communicationScore,
+    draftEvaluationId,
     evaluationDate,
     evaluationType,
     evaluatorComments,
     evaluatorCompany,
     evaluatorName,
     mutations.create,
+    mutations.update,
     needsRecruiterReview,
     problemSolvingScore,
     recommendation,
@@ -631,30 +678,34 @@ export function EvaluationManagementView({
               accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
               hint={
                 extractingPdf
-                  ? 'Extracting text and generating AI summary…'
+                  ? 'Uploading & processing via BesTal API…'
                   : 'PDF or Word · select candidate first'
               }
               onFileSelect={(file) => {
                 if (!extractingPdf) void handlePdfUpload(file);
               }}
             />
-            {extractingPdf && (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Loader2 className="h-4 w-4 animate-spin text-brand" />
-                Processing evaluation document…
-              </div>
-            )}
+            <AiScreeningStatusBanner
+              status={evaluationAiStatus}
+              errorMessage={evaluationAiError || extractError}
+              retrying={extractingPdf}
+              onRetry={
+                evaluationAiStatus === 'FAILED' && pendingEvaluationFile
+                  ? () => void handlePdfUpload(pendingEvaluationFile)
+                  : undefined
+              }
+            />
             {extractHint && (
               <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
                 {extractHint}
               </div>
             )}
-            {extractError && (
+            {extractError && evaluationAiStatus !== 'FAILED' ? (
               <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
                 <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
                 <span>{extractError}</span>
               </div>
-            )}
+            ) : null}
           </section>
 
           <section className="space-y-4 border-t border-border pt-6">

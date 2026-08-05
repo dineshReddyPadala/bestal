@@ -1,0 +1,826 @@
+{
+  "name": "BESTAL_EVALUATION_AI_ANALYSIS",
+  "meta": {
+    "templateCredsSetupCompleted": false,
+    "description": "BesTal Evaluation AI Analysis v1.0.0 — Fastify trigger → OpenAI → Fastify internal callback. Numeric IDs only."
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": ""
+  },
+  "versionId": "1.0.0",
+  "tags": [
+    {
+      "name": "bestal"
+    },
+    {
+      "name": "evaluation-analysis"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "webhook-trigger",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        300
+      ],
+      "webhookId": "bestal-evaluation-analysis",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "evaluation-analysis",
+        "responseMode": "responseNode",
+        "options": {}
+      }
+    },
+    {
+      "id": "validate-request",
+      "name": "Validate Request",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        240,
+        300
+      ],
+      "parameters": {
+        "jsCode": "const DEFAULT_WORKFLOW_NAME = 'BESTAL_EVALUATION_AI_ANALYSIS';\nconst DEFAULT_WORKFLOW_VERSION = '1.0.0';\n\nconst req = $input.first();\nconst headers = req.json.headers || {};\nconst body = req.json.body ?? req.json;\n\nconst workflowName = String(body?.workflowName || DEFAULT_WORKFLOW_NAME).trim();\nconst workflowVersion = String(body?.workflowVersion || DEFAULT_WORKFLOW_VERSION).trim();\n\nconst secretHeader = headers['x-n8n-webhook-secret'] || headers['X-N8N-Webhook-Secret'];\nconst auth = headers.authorization || headers.Authorization || '';\nconst bearer = typeof auth === 'string' && auth.toLowerCase().startsWith('bearer ')\n  ? auth.slice(7).trim()\n  : '';\nconst expected = $env.N8N_WEBHOOK_SECRET;\n\nif (expected) {\n  const ok = (secretHeader && secretHeader === expected) || (bearer && bearer === expected);\n  if (!ok) {\n    return [{\n      json: {\n        ok: false,\n        stage: 'Validate Request',\n        errorCode: 'UNAUTHORIZED',\n        errorMessage: 'Invalid or missing webhook secret',\n        jobId: Number(body?.jobId) || null,\n        candidateId: Number(body?.candidateId) || null,\n        workflowName: workflowName,\n        workflowVersion: workflowVersion,\n      }\n    }];\n  }\n}\n\nfunction asPositiveInt(value, field) {\n  const n = typeof value === 'number' ? value : Number(String(value ?? '').trim());\n  if (!Number.isInteger(n) || n <= 0) {\n    throw new Error(`${field} must be a positive integer`);\n  }\n  if (typeof value === 'string' && /[a-f0-9-]{36}/i.test(value)) {\n    throw new Error(`${field} must not be a UUID`);\n  }\n  return n;\n}\n\ntry {\n  const jobId = asPositiveInt(body.jobId, 'jobId');\n  const candidateId = asPositiveInt(body.candidateId, 'candidateId');\n  const documentId = asPositiveInt(body.documentId, 'documentId');\n  const requestedBy = asPositiveInt(body.requestedBy, 'requestedBy');\n  const documentUrl = String(body.documentUrl || '').trim();\n  if (!/^https?:\\/\\//i.test(documentUrl)) {\n    throw new Error('documentUrl must be an http(s) URL');\n  }\n\n  return [{\n    json: {\n      ok: true,\n      jobId,\n      candidateId,\n      documentId,\n      requestedBy,\n      documentUrl,\n      workflowName: workflowName,\n      workflowVersion: workflowVersion,\n    }\n  }];\n} catch (error) {\n  return [{\n    json: {\n      ok: false,\n      stage: 'Validate Request',\n      errorCode: 'INVALID_INPUT',\n      errorMessage: error.message || 'Invalid input',\n      jobId: Number(body?.jobId) || null,\n      candidateId: Number(body?.candidateId) || null,\n      workflowName: workflowName,\n      workflowVersion: workflowVersion,\n    }\n  }];\n}"
+      }
+    },
+    {
+      "id": "if-valid-input",
+      "name": "Input Valid?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        480,
+        300
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "ok-true",
+              "leftValue": "={{ $json.ok }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "extract-input",
+      "name": "Extract Input",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        720,
+        180
+      ],
+      "parameters": {
+        "mode": "manual",
+        "duplicateItem": false,
+        "assignments": {
+          "assignments": [
+            {
+              "id": "jobId",
+              "name": "jobId",
+              "value": "={{ $json.jobId }}",
+              "type": "number"
+            },
+            {
+              "id": "candidateId",
+              "name": "candidateId",
+              "value": "={{ $json.candidateId }}",
+              "type": "number"
+            },
+            {
+              "id": "documentId",
+              "name": "documentId",
+              "value": "={{ $json.documentId }}",
+              "type": "number"
+            },
+            {
+              "id": "requestedBy",
+              "name": "requestedBy",
+              "value": "={{ $json.requestedBy }}",
+              "type": "number"
+            },
+            {
+              "id": "documentUrl",
+              "name": "documentUrl",
+              "value": "={{ $json.documentUrl }}",
+              "type": "string"
+            },
+            {
+              "id": "workflowName",
+              "name": "workflowName",
+              "value": "={{ $json.workflowName }}",
+              "type": "string"
+            },
+            {
+              "id": "workflowVersion",
+              "name": "workflowVersion",
+              "value": "={{ $json.workflowVersion }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "download-document",
+      "name": "Download Evaluation From Signed URL",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        960,
+        180
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $json.documentUrl }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file",
+              "outputPropertyName": "data"
+            }
+          },
+          "timeout": 60000
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "id": "extract-text",
+      "name": "Extract Evaluation Text",
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        1200,
+        180
+      ],
+      "parameters": {
+        "operation": "pdf",
+        "options": {}
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "id": "prepare-ai-prompt",
+      "name": "Prepare AI Prompt",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1440,
+        180
+      ],
+      "parameters": {
+        "jsCode": "const ctx = $('Extract Input').first().json;\nconst item = $input.first();\nconst text = String(item.json.text || item.json.data || item.json.content || '').trim();\n\nif (!text || text.length < 40) {\n  return [{\n    json: {\n      ok: false,\n      stage: 'Extract Evaluation Text',\n      errorCode: 'EVALUATION_EXTRACTION_FAILED',\n      errorMessage: 'Unable to extract evaluation text',\n      jobId: ctx.jobId,\n      candidateId: ctx.candidateId,\n      workflowName: ctx.workflowName,\n      workflowVersion: ctx.workflowVersion,\n    }\n  }];\n}\n\nconst docText = text.slice(0, 100000);\nconst truncated = text.length > 100000;\n\nconst schema = {\n  confidence: 'number 0-1',\n  warnings: ['string'],\n  evaluatorName: 'string',\n  evaluatorCompany: 'string',\n  evaluationType: 'Coding Test|Live Technical Interview|System Design|Platform-Specific|Communication|Functional|Manual Scorecard',\n  evaluationDate: 'YYYY-MM-DD|null',\n  technicalScore: '0-100 int',\n  communicationScore: '0-100 int',\n  problemSolvingScore: '0-100 int',\n  architectureScore: '0-100 int',\n  clientReadinessScore: '0-100 int',\n  recommendation: 'Strong Hire|Hire|Borderline|Reject',\n  evaluatorComments: 'string',\n  aiEvaluationSummary: 'string',\n  evaluationSummary: 'string optional',\n  extractedText: 'string optional excerpt'\n};\n\nconst prompt = `You are an expert technical interview evaluation engine for BesTal.\\nReturn ONLY valid JSON (camelCase) matching this schema:\\n${JSON.stringify(schema, null, 2)}\\n\\nRules:\\n- Extract facts supported by the document only.\\n- All score fields are integers 0-100.\\n- Convert other scales proportionally to 0-100.\\n- recommendation must be Strong Hire, Hire, Borderline, or Reject.\\n- aiEvaluationSummary is a concise recruiter narrative.\\n- evaluatorComments preserves key evaluator notes.\\n${truncated ? '- Document text was truncated; note in warnings.\\n' : ''}\\nEvaluation document text:\\n\\\"\\\"\\\"\\n${docText}\\n\\\"\\\"\\\"\\n\\nReturn ONLY JSON.`;\n\nreturn [{\n  json: {\n    ok: true,\n    jobId: ctx.jobId,\n    candidateId: ctx.candidateId,\n    documentId: ctx.documentId,\n    requestedBy: ctx.requestedBy,\n    workflowName: ctx.workflowName,\n    workflowVersion: ctx.workflowVersion,\n    prompt,\n  }\n}];"
+      }
+    },
+    {
+      "id": "if-text-ok",
+      "name": "Text Extracted?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1680,
+        180
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "prompt-ok",
+              "leftValue": "={{ $json.ok }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "openai",
+      "name": "OpenAI",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        1920,
+        80
+      ],
+      "parameters": {
+        "resource": "text",
+        "operation": "message",
+        "modelId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o-mini"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "={{ $json.prompt }}"
+            }
+          ]
+        },
+        "options": {
+          "temperature": 0.1,
+          "maxTokens": 4096
+        }
+      },
+      "credentials": {
+        "openAiApi": {
+          "id": "REPLACE_WITH_OPENAI_CREDENTIAL_ID",
+          "name": "OpenAI API"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "id": "validate-structured-json",
+      "name": "Validate Structured JSON",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2160,
+        80
+      ],
+      "parameters": {
+        "jsCode": "const ctx = $('Prepare AI Prompt').first().json;\nconst raw = $input.first().json;\n\nlet content = raw.text || raw.message?.content || raw.content || raw.output || raw;\nif (Array.isArray(content)) content = content.map((p) => p.text || p).join('\\n');\nif (typeof content !== 'string') content = JSON.stringify(content);\ncontent = content.trim().replace(/^```(?:json)?\\s*/i, '').replace(/\\s*```$/,'');\n\nlet parsed;\ntry {\n  parsed = JSON.parse(content);\n} catch {\n  return [{\n    json: {\n      ok: false,\n      stage: 'Validate Structured JSON',\n      errorCode: 'AI_OUTPUT_INVALID',\n      errorMessage: 'OpenAI returned invalid JSON',\n      jobId: ctx.jobId,\n      candidateId: ctx.candidateId,\n      workflowName: ctx.workflowName,\n      workflowVersion: ctx.workflowVersion,\n    }\n  }];\n}\n\nconst aiSummary = String(parsed.aiEvaluationSummary || parsed.ai_evaluation_summary || '').trim();\nconst hasScore = [\n  parsed.technicalScore, parsed.communicationScore, parsed.problemSolvingScore,\n  parsed.architectureScore, parsed.clientReadinessScore,\n  parsed.technical_score, parsed.communication_score, parsed.problem_solving_score,\n  parsed.architecture_score, parsed.client_readiness_score,\n].some((v) => v != null && v !== '');\n\nif (!aiSummary && !hasScore) {\n  return [{\n    json: {\n      ok: false,\n      stage: 'Validate Structured JSON',\n      errorCode: 'AI_OUTPUT_INVALID',\n      errorMessage: 'AI output must include aiEvaluationSummary or at least one score',\n      jobId: ctx.jobId,\n      candidateId: ctx.candidateId,\n      workflowName: ctx.workflowName,\n      workflowVersion: ctx.workflowVersion,\n    }\n  }];\n}\n\nreturn [{\n  json: {\n    ok: true,\n    jobId: ctx.jobId,\n    candidateId: ctx.candidateId,\n    documentId: ctx.documentId,\n    requestedBy: ctx.requestedBy,\n    workflowName: ctx.workflowName,\n    workflowVersion: ctx.workflowVersion,\n    ai: parsed,\n  }\n}];"
+      }
+    },
+    {
+      "id": "if-json-valid",
+      "name": "JSON Valid?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        2400,
+        80
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "json-ok",
+              "leftValue": "={{ $json.ok }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "normalize-result",
+      "name": "Normalize Result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2640,
+        0
+      ],
+      "parameters": {
+        "jsCode": "const item = $input.first().json;\nconst ai = item.ai || {};\n\nfunction score(key, snake) {\n  const raw = ai[key] ?? ai[snake];\n  const n = Number(raw);\n  if (!Number.isFinite(n)) return undefined;\n  return Math.max(0, Math.min(100, Math.round(n)));\n}\n\nconst result = {\n  confidence: typeof ai.confidence === 'number' ? ai.confidence : 0.85,\n  evaluatorName: ai.evaluatorName || ai.evaluator_name || undefined,\n  evaluatorCompany: ai.evaluatorCompany || ai.evaluator_company || undefined,\n  evaluationType: ai.evaluationType || ai.evaluation_type || undefined,\n  evaluationDate: ai.evaluationDate || ai.evaluation_date || undefined,\n  technicalScore: score('technicalScore', 'technical_score'),\n  communicationScore: score('communicationScore', 'communication_score'),\n  problemSolvingScore: score('problemSolvingScore', 'problem_solving_score'),\n  architectureScore: score('architectureScore', 'architecture_score'),\n  clientReadinessScore: score('clientReadinessScore', 'client_readiness_score'),\n  recommendation: ai.recommendation || undefined,\n  evaluatorComments: ai.evaluatorComments || ai.evaluator_comments || undefined,\n  aiEvaluationSummary: ai.aiEvaluationSummary || ai.ai_evaluation_summary || undefined,\n  evaluationSummary: ai.evaluationSummary || ai.evaluation_summary || undefined,\n  extractedText: ai.extractedText || ai.extracted_text || undefined,\n  warnings: Array.isArray(ai.warnings) ? ai.warnings : [],\n};\n\nreturn [{\n  json: {\n    jobId: item.jobId,\n    candidateId: item.candidateId,\n    workflowName: item.workflowName,\n    workflowVersion: item.workflowVersion,\n    result,\n  }\n}];"
+      }
+    },
+    {
+      "id": "prepare-callback-payload",
+      "name": "Prepare Callback Payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2880,
+        0
+      ],
+      "parameters": {
+        "jsCode": "const item = $input.first().json;\nreturn [{\n  json: {\n    callbackBody: {\n      jobId: item.jobId,\n      candidateId: item.candidateId,\n      status: 'COMPLETED',\n      result: item.result,\n    },\n    jobId: item.jobId,\n    candidateId: item.candidateId,\n    workflowName: item.workflowName,\n    workflowVersion: item.workflowVersion,\n  }\n}];"
+      }
+    },
+    {
+      "id": "call-fastify-success",
+      "name": "Call Fastify Internal Callback",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3120,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.BESTAL_API_BASE_URL }}/internal/automation/callbacks/evaluation-analysis",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.AUTOMATION_CALLBACK_SECRET }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.callbackBody }}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 2000
+    },
+    {
+      "id": "handle-success",
+      "name": "Handle Success",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3360,
+        0
+      ],
+      "parameters": {
+        "jsCode": "// Webhook already answered by Respond Trigger Accepted; pipeline finished via internal callback.\nreturn [{\n  json: {\n    ok: true,\n    stage: 'Complete',\n    jobId: $('Prepare Callback Payload').first().json.jobId,\n    workflowName: $('Prepare Callback Payload').first().json.workflowName,\n    workflowVersion: $('Prepare Callback Payload').first().json.workflowVersion,\n  }\n}];"
+      }
+    },
+    {
+      "id": "prepare-failure-payload",
+      "name": "Prepare Failure Payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1920,
+        420
+      ],
+      "parameters": {
+        "jsCode": "const item = $input.first().json;\nconst jobId = Number(item.jobId);\nconst candidateId = Number(item.candidateId);\n\nif (!Number.isInteger(jobId) || jobId <= 0 || !Number.isInteger(candidateId) || candidateId <= 0) {\n  return [{\n    json: {\n      skipCallback: true,\n      respondBody: {\n        ok: false,\n        errorCode: item.errorCode || 'INVALID_INPUT',\n        errorMessage: item.errorMessage || 'Invalid input',\n      }\n    }\n  }];\n}\n\nreturn [{\n  json: {\n    skipCallback: false,\n    jobId,\n    candidateId,\n    callbackBody: {\n      jobId,\n      candidateId,\n      status: 'FAILED',\n      errorCode: item.errorCode || 'INTERNAL_ERROR',\n      errorMessage: item.errorMessage || 'Evaluation AI analysis failed',\n      result: {},\n    },\n    respondBody: {\n      ok: false,\n      jobId,\n      candidateId,\n      errorCode: item.errorCode || 'INTERNAL_ERROR',\n      workflowName: item.workflowName,\n      workflowVersion: item.workflowVersion,\n    }\n  }\n}];"
+      }
+    },
+    {
+      "id": "if-should-fail-callback",
+      "name": "Should Call Failure Callback?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        2160,
+        420
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "skip-false",
+              "leftValue": "={{ $json.skipCallback }}",
+              "rightValue": false,
+              "operator": {
+                "type": "boolean",
+                "operation": "false",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "call-fastify-failure",
+      "name": "Call Fastify Failure Callback",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2400,
+        360
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.BESTAL_API_BASE_URL }}/internal/automation/callbacks/evaluation-analysis",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.AUTOMATION_CALLBACK_SECRET }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.callbackBody }}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 2000,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "handle-failure",
+      "name": "Handle Failure",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        2640,
+        420
+      ],
+      "parameters": {
+        "options": {
+          "responseCode": 200
+        },
+        "respondWith": "json",
+        "responseBody": "={{ $json.respondBody || $('Prepare Failure Payload').item.json.respondBody }}"
+      }
+    },
+    {
+      "id": "map-download-error",
+      "name": "Map Download Error",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1200,
+        360
+      ],
+      "parameters": {
+        "jsCode": "const ctx = $('Extract Input').first().json;\nreturn [{\n  json: {\n    ok: false,\n    stage: 'Download Evaluation From Signed URL',\n    errorCode: 'EVALUATION_DOWNLOAD_FAILED',\n    errorMessage: 'Failed to download evaluation from signed URL',\n    jobId: ctx.jobId,\n    candidateId: ctx.candidateId,\n    workflowName: ctx.workflowName,\n    workflowVersion: ctx.workflowVersion,\n  }\n}];"
+      }
+    },
+    {
+      "id": "map-extract-error",
+      "name": "Map Extract Error",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1440,
+        360
+      ],
+      "parameters": {
+        "jsCode": "const ctx = $('Extract Input').first().json;\nreturn [{\n  json: {\n    ok: false,\n    stage: 'Extract Evaluation Text',\n    errorCode: 'EVALUATION_EXTRACTION_FAILED',\n    errorMessage: 'Unable to extract evaluation text',\n    jobId: ctx.jobId,\n    candidateId: ctx.candidateId,\n    workflowName: ctx.workflowName,\n    workflowVersion: ctx.workflowVersion,\n  }\n}];"
+      }
+    },
+    {
+      "id": "map-openai-error",
+      "name": "Map OpenAI Error",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2160,
+        240
+      ],
+      "parameters": {
+        "jsCode": "const ctx = $('Prepare AI Prompt').first().json;\nreturn [{\n  json: {\n    ok: false,\n    stage: 'OpenAI',\n    errorCode: 'OPENAI_FAILED',\n    errorMessage: 'OpenAI request failed after retries',\n    jobId: ctx.jobId,\n    candidateId: ctx.candidateId,\n    workflowName: ctx.workflowName,\n    workflowVersion: ctx.workflowVersion,\n  }\n}];"
+      }
+    },
+    {
+      "id": "respond-trigger-accepted",
+      "name": "Respond Trigger Accepted",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        600,
+        180
+      ],
+      "parameters": {
+        "options": {},
+        "respondWith": "json",
+        "responseBody": "={{ { ok: true, accepted: true, jobId: $json.jobId, ...($json.candidateId != null && Number($json.candidateId) > 0 ? { candidateId: Number($json.candidateId) } : {}), status: 'PROCESSING', workflowName: $json.workflowName, workflowVersion: $json.workflowVersion } }}"
+      }
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Validate Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Request": {
+      "main": [
+        [
+          {
+            "node": "Input Valid?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Input Valid?": {
+      "main": [
+        [
+          {
+            "node": "Respond Trigger Accepted",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepare Failure Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Input": {
+      "main": [
+        [
+          {
+            "node": "Download Evaluation From Signed URL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Evaluation From Signed URL": {
+      "main": [
+        [
+          {
+            "node": "Extract Evaluation Text",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Map Download Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Map Download Error": {
+      "main": [
+        [
+          {
+            "node": "Prepare Failure Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Evaluation Text": {
+      "main": [
+        [
+          {
+            "node": "Prepare AI Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Map Extract Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Map Extract Error": {
+      "main": [
+        [
+          {
+            "node": "Prepare Failure Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare AI Prompt": {
+      "main": [
+        [
+          {
+            "node": "Text Extracted?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Text Extracted?": {
+      "main": [
+        [
+          {
+            "node": "OpenAI",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepare Failure Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI": {
+      "main": [
+        [
+          {
+            "node": "Validate Structured JSON",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Map OpenAI Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Map OpenAI Error": {
+      "main": [
+        [
+          {
+            "node": "Prepare Failure Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Structured JSON": {
+      "main": [
+        [
+          {
+            "node": "JSON Valid?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "JSON Valid?": {
+      "main": [
+        [
+          {
+            "node": "Normalize Result",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepare Failure Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Result": {
+      "main": [
+        [
+          {
+            "node": "Prepare Callback Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Callback Payload": {
+      "main": [
+        [
+          {
+            "node": "Call Fastify Internal Callback",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call Fastify Internal Callback": {
+      "main": [
+        [
+          {
+            "node": "Handle Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Failure Payload": {
+      "main": [
+        [
+          {
+            "node": "Should Call Failure Callback?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Should Call Failure Callback?": {
+      "main": [
+        [
+          {
+            "node": "Call Fastify Failure Callback",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Handle Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call Fastify Failure Callback": {
+      "main": [
+        [
+          {
+            "node": "Handle Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Respond Trigger Accepted": {
+      "main": [
+        [
+          {
+            "node": "Extract Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

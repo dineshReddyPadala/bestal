@@ -136,8 +136,8 @@ export function normalizeResumeExtractionResponse(
       ? root.warnings.filter((item): item is string => typeof item === 'string')
       : [],
     candidate: {
-      firstName: asString(candidateRaw.firstName ?? candidateRaw.first_name) ?? 'Draft',
-      lastName: asString(candidateRaw.lastName ?? candidateRaw.last_name) ?? 'Candidate',
+      firstName: asString(candidateRaw.firstName ?? candidateRaw.first_name) ?? '',
+      lastName: asString(candidateRaw.lastName ?? candidateRaw.last_name) ?? '',
       email: asString(candidateRaw.email),
       phone: asString(candidateRaw.phone),
       location: asString(candidateRaw.location),

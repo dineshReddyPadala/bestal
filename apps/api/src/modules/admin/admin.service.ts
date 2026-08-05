@@ -519,7 +519,20 @@ export class AdminService {
     if (!String(mapped.contactPhone ?? '').trim()) {
       throw new BadRequestError('Primary contact phone is required');
     }
-    const created = await this.clients.create(authUser, mapped);
+    const created = await this.clients.create(authUser, {
+      name: mapped.name.trim(),
+      website: String(mapped.website ?? '').trim(),
+      industry: String(mapped.industry ?? '').trim(),
+      companySize: mapped.companySize,
+      headquarters: mapped.headquarters,
+      contactName: String(mapped.contactName ?? '').trim(),
+      contactEmail: String(mapped.contactEmail ?? '').trim(),
+      contactPhone: String(mapped.contactPhone ?? '').trim(),
+      accountManagerId: mapped.accountManagerId,
+      status: mapped.status,
+      paymentTerms: mapped.paymentTerms,
+      notes: mapped.notes,
+    });
     await this.auditWrite(authUser, 'CREATE', 'Client', created.id, `Created client ${created.name}`, undefined, ctx);
     return created;
   }

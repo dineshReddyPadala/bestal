@@ -247,3 +247,22 @@ export interface ResumeExtractionDraftResult {
   candidate: CandidateDto;
   extraction: import('../../services/resume-extraction.types.js').ResumeExtractionResponse;
 }
+
+/** Async n8n resume screening acceptance (does not wait for OpenAI). */
+export interface ResumeScreeningJobAccepted {
+  jobId: number;
+  status: string;
+  /** Null when candidate is created after AI screening completes. */
+  candidateId: number | null;
+  documentId: number;
+}
+
+export type ExtractResumeResult =
+  | ResumeExtractionDraftResult
+  | ResumeScreeningJobAccepted;
+
+export function isResumeScreeningJobAccepted(
+  value: ExtractResumeResult,
+): value is ResumeScreeningJobAccepted {
+  return 'jobId' in value && !('extraction' in value);
+}

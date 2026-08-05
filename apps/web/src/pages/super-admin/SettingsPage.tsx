@@ -22,14 +22,14 @@ function Textarea({ className, ...props }: TextareaHTMLAttributes<HTMLTextAreaEl
 }
 
 type SettingsKey =
-  | 'ai'
   | 'security'
   | 'scoring'
   | 'pricing'
   | 'trials'
   | 'notifications'
   | 'integrations'
-  | 'commercials';
+  | 'commercials'
+  | 'workflows';
 
 function asObj(value: unknown): Record<string, unknown> {
   return value && typeof value === 'object' && !Array.isArray(value)
@@ -45,7 +45,6 @@ export function SuperAdminPlatformSettingsPage() {
   const { message, show, showError } = useDemoToast();
   const [saving, setSaving] = useState<SettingsKey | null>(null);
 
-  const [ai, setAi] = useState({ model: 'gpt-4o-mini', enabled: true, maxRetries: '2' });
   const [security, setSecurity] = useState({
     sessionTimeoutMinutes: '480',
     requireMfaForAdmins: false,
@@ -83,10 +82,24 @@ export function SuperAdminPlatformSettingsPage() {
     trialEndingSoonDays: '2',
     deploymentEndingSoonDays: '7',
   });
+  const [workflows, setWorkflows] = useState({
+    enabled: false,
+    baseUrl: '',
+    resumeWorkflowPath: '/webhook/resume-screening',
+    resumeWorkflowName: 'BESTAL_RESUME_AI_SCREENING',
+    resumeWorkflowVersion: '1.0.0',
+    evaluationWorkflowPath: '/webhook/evaluation-analysis',
+    evaluationWorkflowName: 'BESTAL_EVALUATION_AI_ANALYSIS',
+    evaluationWorkflowVersion: '1.0.0',
+    bgvWorkflowPath: '/webhook/bgv-analysis',
+    bgvWorkflowName: 'BESTAL_BGV_AI_ANALYSIS',
+    bgvWorkflowVersion: '1.0.0',
+    webhookSecret: '',
+    requestTimeoutMs: '30000',
+  });
 
   useEffect(() => {
     if (!data) return;
-    const a = asObj(data.ai);
     const s = asObj(data.security);
     const sc = asObj(data.scoring);
     const pr = asObj(data.pricing);
@@ -94,12 +107,8 @@ export function SuperAdminPlatformSettingsPage() {
     const c = asObj(data.commercials);
     const t = asObj(data.trials);
     const n = asObj(data.notifications);
+    const w = asObj(data.workflows);
 
-    setAi({
-      model: String(a.model ?? 'gpt-4o-mini'),
-      enabled: a.enabled === undefined ? true : Boolean(a.enabled),
-      maxRetries: String(a.maxRetries ?? '2'),
-    });
     setSecurity({
       sessionTimeoutMinutes: String(s.sessionTimeoutMinutes ?? '480'),
       requireMfaForAdmins: Boolean(s.requireMfaForAdmins),
@@ -140,6 +149,21 @@ export function SuperAdminPlatformSettingsPage() {
       trialEndingSoonDays: String(n.trialEndingSoonDays ?? '2'),
       deploymentEndingSoonDays: String(n.deploymentEndingSoonDays ?? '7'),
     });
+    setWorkflows({
+      enabled: Boolean(w.enabled),
+      baseUrl: String(w.baseUrl ?? ''),
+      resumeWorkflowPath: String(w.resumeWorkflowPath ?? '/webhook/resume-screening'),
+      resumeWorkflowName: String(w.resumeWorkflowName ?? 'BESTAL_RESUME_AI_SCREENING'),
+      resumeWorkflowVersion: String(w.resumeWorkflowVersion ?? '1.0.0'),
+      evaluationWorkflowPath: String(w.evaluationWorkflowPath ?? '/webhook/evaluation-analysis'),
+      evaluationWorkflowName: String(w.evaluationWorkflowName ?? 'BESTAL_EVALUATION_AI_ANALYSIS'),
+      evaluationWorkflowVersion: String(w.evaluationWorkflowVersion ?? '1.0.0'),
+      bgvWorkflowPath: String(w.bgvWorkflowPath ?? '/webhook/bgv-analysis'),
+      bgvWorkflowName: String(w.bgvWorkflowName ?? 'BESTAL_BGV_AI_ANALYSIS'),
+      bgvWorkflowVersion: String(w.bgvWorkflowVersion ?? '1.0.0'),
+      webhookSecret: String(w.webhookSecret ?? ''),
+      requestTimeoutMs: String(w.requestTimeoutMs ?? '30000'),
+    });
   }, [data]);
 
   async function save(key: SettingsKey, body: Record<string, unknown>, label: string) {
@@ -177,49 +201,6 @@ export function SuperAdminPlatformSettingsPage() {
               label: 'System settings',
               content: (
                 <div className="space-y-6">
-                  <Section
-                    title="AI runtime"
-                    busy={saving === 'ai'}
-                    onSave={() =>
-                      void save(
-                        'ai',
-                        {
-                          model: ai.model,
-                          enabled: ai.enabled,
-                          maxRetries: Number(ai.maxRetries) || 0,
-                        },
-                        'System AI settings',
-                      )
-                    }
-                  >
-                    <Field label="Model">
-                      <Select
-                        value={ai.model}
-                        onChange={(e) => setAi((p) => ({ ...p, model: e.target.value }))}
-                      >
-                        <option value="gpt-4o-mini">gpt-4o-mini</option>
-                        <option value="gpt-4o">gpt-4o</option>
-                        <option value="gpt-4.1-mini">gpt-4.1-mini</option>
-                      </Select>
-                    </Field>
-                    <Field label="Max retries">
-                      <Input
-                        type="number"
-                        min={0}
-                        max={5}
-                        value={ai.maxRetries}
-                        onChange={(e) => setAi((p) => ({ ...p, maxRetries: e.target.value }))}
-                      />
-                    </Field>
-                    <label className="flex items-center gap-2 text-sm sm:col-span-2">
-                      <input
-                        type="checkbox"
-                        checked={ai.enabled}
-                        onChange={(e) => setAi((p) => ({ ...p, enabled: e.target.checked }))}
-                      />
-                      Enable AI extraction / screening
-                    </label>
-                  </Section>
                   <Section
                     title="Security"
                     busy={saving === 'security'}
@@ -499,6 +480,204 @@ export function SuperAdminPlatformSettingsPage() {
                       <option value="INR">INR</option>
                     </Select>
                   </Field>
+                </Section>
+              ),
+            },
+            {
+              id: 'workflows',
+              label: 'Automation',
+              content: (
+                <Section
+                  title="n8n workflow configuration"
+                  busy={saving === 'workflows'}
+                  onSave={() =>
+                    void save(
+                      'workflows',
+                      {
+                        enabled: workflows.enabled,
+                        baseUrl: workflows.baseUrl.trim() || null,
+                        resumeWorkflowPath: workflows.resumeWorkflowPath.trim() || null,
+                        resumeWorkflowName: workflows.resumeWorkflowName.trim() || null,
+                        resumeWorkflowVersion: workflows.resumeWorkflowVersion.trim() || null,
+                        evaluationWorkflowPath:
+                          workflows.evaluationWorkflowPath.trim() || null,
+                        evaluationWorkflowName:
+                          workflows.evaluationWorkflowName.trim() || null,
+                        evaluationWorkflowVersion:
+                          workflows.evaluationWorkflowVersion.trim() || null,
+                        bgvWorkflowPath: workflows.bgvWorkflowPath.trim() || null,
+                        bgvWorkflowName: workflows.bgvWorkflowName.trim() || null,
+                        bgvWorkflowVersion: workflows.bgvWorkflowVersion.trim() || null,
+                        webhookSecret: workflows.webhookSecret.trim() || null,
+                        requestTimeoutMs: Number(workflows.requestTimeoutMs) || 30000,
+                      },
+                      'Automation workflows',
+                    )
+                  }
+                >
+                  <label className="flex items-center gap-2 text-sm sm:col-span-2">
+                    <input
+                      type="checkbox"
+                      checked={workflows.enabled}
+                      onChange={(e) =>
+                        setWorkflows((p) => ({ ...p, enabled: e.target.checked }))
+                      }
+                    />
+                    Enable n8n automation workflows
+                  </label>
+                  <Field label="n8n base URL" className="sm:col-span-2">
+                    <Input
+                      value={workflows.baseUrl}
+                      onChange={(e) =>
+                        setWorkflows((p) => ({ ...p, baseUrl: e.target.value }))
+                      }
+                      placeholder="https://your-instance.app.n8n.cloud"
+                      disabled={!workflows.enabled}
+                    />
+                  </Field>
+                  <Field label="Resume screening webhook path">
+                    <Input
+                      value={workflows.resumeWorkflowPath}
+                      onChange={(e) =>
+                        setWorkflows((p) => ({
+                          ...p,
+                          resumeWorkflowPath: e.target.value,
+                        }))
+                      }
+                      placeholder="/webhook/resume-screening"
+                      disabled={!workflows.enabled}
+                    />
+                  </Field>
+                  <Field label="Resume workflow name">
+                    <Input
+                      value={workflows.resumeWorkflowName}
+                      onChange={(e) =>
+                        setWorkflows((p) => ({
+                          ...p,
+                          resumeWorkflowName: e.target.value,
+                        }))
+                      }
+                      placeholder="BESTAL_RESUME_AI_SCREENING"
+                      disabled={!workflows.enabled}
+                    />
+                  </Field>
+                  <Field label="Resume workflow version">
+                    <Input
+                      value={workflows.resumeWorkflowVersion}
+                      onChange={(e) =>
+                        setWorkflows((p) => ({
+                          ...p,
+                          resumeWorkflowVersion: e.target.value,
+                        }))
+                      }
+                      placeholder="1.0.0"
+                      disabled={!workflows.enabled}
+                    />
+                  </Field>
+                  <Field label="Evaluation analysis webhook path">
+                    <Input
+                      value={workflows.evaluationWorkflowPath}
+                      onChange={(e) =>
+                        setWorkflows((p) => ({
+                          ...p,
+                          evaluationWorkflowPath: e.target.value,
+                        }))
+                      }
+                      placeholder="/webhook/evaluation-analysis"
+                      disabled={!workflows.enabled}
+                    />
+                  </Field>
+                  <Field label="Evaluation workflow name">
+                    <Input
+                      value={workflows.evaluationWorkflowName}
+                      onChange={(e) =>
+                        setWorkflows((p) => ({
+                          ...p,
+                          evaluationWorkflowName: e.target.value,
+                        }))
+                      }
+                      placeholder="BESTAL_EVALUATION_AI_ANALYSIS"
+                      disabled={!workflows.enabled}
+                    />
+                  </Field>
+                  <Field label="Evaluation workflow version">
+                    <Input
+                      value={workflows.evaluationWorkflowVersion}
+                      onChange={(e) =>
+                        setWorkflows((p) => ({
+                          ...p,
+                          evaluationWorkflowVersion: e.target.value,
+                        }))
+                      }
+                      placeholder="1.0.0"
+                      disabled={!workflows.enabled}
+                    />
+                  </Field>
+                  <Field label="BGV analysis webhook path">
+                    <Input
+                      value={workflows.bgvWorkflowPath}
+                      onChange={(e) =>
+                        setWorkflows((p) => ({ ...p, bgvWorkflowPath: e.target.value }))
+                      }
+                      placeholder="/webhook/bgv-analysis"
+                      disabled={!workflows.enabled}
+                    />
+                  </Field>
+                  <Field label="BGV workflow name">
+                    <Input
+                      value={workflows.bgvWorkflowName}
+                      onChange={(e) =>
+                        setWorkflows((p) => ({
+                          ...p,
+                          bgvWorkflowName: e.target.value,
+                        }))
+                      }
+                      placeholder="BESTAL_BGV_AI_ANALYSIS"
+                      disabled={!workflows.enabled}
+                    />
+                  </Field>
+                  <Field label="BGV workflow version">
+                    <Input
+                      value={workflows.bgvWorkflowVersion}
+                      onChange={(e) =>
+                        setWorkflows((p) => ({
+                          ...p,
+                          bgvWorkflowVersion: e.target.value,
+                        }))
+                      }
+                      placeholder="1.0.0"
+                      disabled={!workflows.enabled}
+                    />
+                  </Field>
+                  <Field label="Webhook secret (Fastify → n8n)">
+                    <Input
+                      type="password"
+                      value={workflows.webhookSecret}
+                      onChange={(e) =>
+                        setWorkflows((p) => ({ ...p, webhookSecret: e.target.value }))
+                      }
+                      placeholder="Leave blank to keep existing secret"
+                      disabled={!workflows.enabled}
+                    />
+                  </Field>
+                  <Field label="Request timeout (ms)">
+                    <Input
+                      type="number"
+                      min={5000}
+                      max={120000}
+                      value={workflows.requestTimeoutMs}
+                      onChange={(e) =>
+                        setWorkflows((p) => ({ ...p, requestTimeoutMs: e.target.value }))
+                      }
+                      disabled={!workflows.enabled}
+                    />
+                  </Field>
+                  <p className="text-sm text-muted-foreground sm:col-span-2">
+                    Workflow name and version are sent to n8n on each trigger and stored on
+                    automation jobs. Inbound callback auth ({'`'}AUTOMATION_CALLBACK_SECRET{'`'})
+                    remains in server environment variables. Re-import n8n workflow JSON after
+                    changing paths.
+                  </p>
                 </Section>
               ),
             },

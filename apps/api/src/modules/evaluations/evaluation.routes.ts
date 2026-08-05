@@ -54,7 +54,7 @@ export async function evaluationRoutes(fastify: FastifyInstance): Promise<void> 
       schema: {
         tags: ['Evaluations'],
         summary:
-          'Upload evaluation PDF/DOCX and extract scores via Python AI (or static stub)',
+          'Upload evaluation PDF/DOCX for AI extraction (async n8n when configured, else sync Python/static)',
         security: [{ bearerAuth: [] }],
         consumes: ['multipart/form-data'],
         response: {

@@ -9,7 +9,9 @@ import {
   useBackgroundChecksList,
 } from '../../hooks/api/useEvaluations';
 import { useDebouncedSearch } from '../../hooks/useDebouncedSearch';
+import { useBgvAiJob } from '../../hooks/useBgvAiJob';
 import { usePermissions } from '../../hooks/usePermissions';
+import { AiScreeningStatusBanner } from '../candidates/AiScreeningStatusBanner';
 import { mapBgvExtractionToForm } from '../../lib/api/ai/bgv-extraction.mapper';
 import { getApiErrorMessage } from '../../lib/api/errors';
 import { backgroundChecksApi } from '../../lib/api/evaluations';
@@ -102,7 +104,14 @@ export function BackgroundVerificationManagementView({
   const [aiBgvSummary, setAiBgvSummary] = useState('');
   const [concernNotes, setConcernNotes] = useState('');
   const [resultSummary, setResultSummary] = useState('');
-  const [extractingPdf, setExtractingPdf] = useState(false);
+  const {
+    status: bgvAiStatus,
+    errorMessage: bgvAiError,
+    isRunning: extractingPdf,
+    backgroundCheckId: draftBackgroundCheckId,
+    runAnalysis: runBgvAnalysis,
+    reset: resetBgvAi,
+  } = useBgvAiJob();
   const [extractHint, setExtractHint] = useState<string | null>(null);
   const [extractError, setExtractError] = useState<string | null>(null);
   const [pendingReportFile, setPendingReportFile] = useState<File | null>(null);
@@ -211,7 +220,8 @@ export function BackgroundVerificationManagementView({
     setExtractHint(null);
     setExtractError(null);
     setPendingReportFile(null);
-  }, []);
+    resetBgvAi();
+  }, [resetBgvAi]);
 
   const handleBgvPdfUpload = useCallback(
     async (file: File) => {
@@ -227,14 +237,16 @@ export function BackgroundVerificationManagementView({
         return;
       }
 
-      setExtractingPdf(true);
       setExtractError(null);
       setExtractHint(null);
       setPendingReportFile(file);
+      resetBgvAi();
 
       try {
-        const { extraction, liveAi } = await backgroundChecksApi.extractBgv(file, candidateId);
-        const patch = mapBgvExtractionToForm(extraction);
+        const result = await runBgvAnalysis(file, candidateId);
+        if (!result) return;
+
+        const patch = mapBgvExtractionToForm(result.extraction);
         if (!patch.aiBgvSummary) {
           throw new Error('AI did not return a background verification summary.');
         }
@@ -245,22 +257,26 @@ export function BackgroundVerificationManagementView({
         if (patch.concernNotes) setConcernNotes(patch.concernNotes);
         if (patch.resultSummary) setResultSummary(patch.resultSummary);
 
-        const confidence = Math.round(extraction.confidence * 100);
+        const confidence = Math.round(result.extraction.confidence * 100);
         const warningNote =
-          extraction.warnings.length > 0 ? ` ${extraction.warnings[0]}` : '';
-        const modeNote = liveAi ? '' : ' (demo/static AI — set AI_BGV_URL on the API)';
+          result.extraction.warnings.length > 0 ? ` ${result.extraction.warnings[0]}` : '';
+        const modeNote = result.liveAi
+          ? ''
+          : ' (demo/static AI — set AI_BGV_URL or n8n on the API)';
 
         setExtractHint(
-          `BGV extracted (${confidence}% confidence)${modeNote}. Review fields, then Request BGV.${warningNote}`,
+          result.backgroundCheckId != null
+            ? `BGV analyzed (${confidence}% confidence)${modeNote}. Review fields, then save to update the draft verification.${warningNote}`
+            : `BGV extracted (${confidence}% confidence)${modeNote}. Review fields, then Request BGV.${warningNote}`,
         );
       } catch (err) {
-        setExtractError(getApiErrorMessage(err, 'BGV extraction failed'));
+        setExtractError(
+          bgvAiError || getApiErrorMessage(err, 'BGV extraction failed'),
+        );
         setPendingReportFile(null);
-      } finally {
-        setExtractingPdf(false);
       }
     },
-    [selectedCandidateId],
+    [bgvAiError, resetBgvAi, runBgvAnalysis, selectedCandidateId],
   );
 
   const handleRequest = useCallback(async () => {
@@ -270,27 +286,42 @@ export function BackgroundVerificationManagementView({
       return;
     }
     try {
-      const created = await mutations.create.mutateAsync({
+      const payload = {
         candidateId,
         type: selectedType,
         ...(requestVendorName.trim() ? { provider: requestVendorName.trim() } : {}),
         ...(resultSummary.trim() ? { resultSummary: resultSummary.trim() } : {}),
         ...(aiBgvSummary.trim() ? { aiSummary: aiBgvSummary.trim() } : {}),
         ...(concernNotes.trim() ? { reviewNotes: concernNotes.trim() } : {}),
-      });
+      };
 
-      if (pendingReportFile) {
-        try {
-          await backgroundChecksApi.uploadDocument(created.id, 'REPORT', pendingReportFile);
-        } catch {
-          // Report upload is optional after create; workflow can upload later.
+      if (draftBackgroundCheckId != null && draftBackgroundCheckId > 0) {
+        const { candidateId: _candidateId, type: _type, ...updateBody } = payload;
+        await mutations.update.mutateAsync({
+          id: draftBackgroundCheckId,
+          body: updateBody,
+        });
+        show(`BGV updated — draft verification ${draftBackgroundCheckId}`);
+        applyDetail(await backgroundChecksApi.get(draftBackgroundCheckId), {
+          resetLocalFields: true,
+        });
+      } else {
+        const created = await mutations.create.mutateAsync(payload);
+
+        if (pendingReportFile) {
+          try {
+            await backgroundChecksApi.uploadDocument(created.id, 'REPORT', pendingReportFile);
+          } catch {
+            // Report upload is optional after create; workflow can upload later.
+          }
         }
+
+        show(`BGV requested — ${created.candidateName}`);
+        applyDetail(await backgroundChecksApi.get(created.id), { resetLocalFields: true });
       }
 
-      show(`BGV requested — ${created.candidateName}`);
       setRequestOpen(false);
       resetRequestForm();
-      applyDetail(await backgroundChecksApi.get(created.id), { resetLocalFields: true });
     } catch (err) {
       showError(getApiErrorMessage(err, 'Request failed'));
     }
@@ -298,7 +329,9 @@ export function BackgroundVerificationManagementView({
     aiBgvSummary,
     applyDetail,
     concernNotes,
+    draftBackgroundCheckId,
     mutations.create,
+    mutations.update,
     pendingReportFile,
     requestVendorName,
     resetRequestForm,
@@ -519,22 +552,28 @@ export function BackgroundVerificationManagementView({
               }}
             />
             {extractingPdf && (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Loader2 className="h-4 w-4 animate-spin text-brand" />
-                Processing background verification document…
+              <div className="space-y-2">
+                <AiScreeningStatusBanner
+                  status={bgvAiStatus}
+                  errorMessage={bgvAiError}
+                  onRetry={
+                    bgvAiStatus === 'FAILED' && pendingReportFile
+                      ? () => void handleBgvPdfUpload(pendingReportFile)
+                      : undefined
+                  }
+                />
               </div>
             )}
-            {extractHint && (
+            {extractError && bgvAiStatus !== 'FAILED' ? (
+              <div className="rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+                {extractError}
+              </div>
+            ) : null}
+            {extractHint ? (
               <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
                 {extractHint}
               </div>
-            )}
-            {extractError && (
-              <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-                <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
-                <span>{extractError}</span>
-              </div>
-            )}
+            ) : null}
           </section>
 
           <section className="space-y-4 border-t border-border pt-6">

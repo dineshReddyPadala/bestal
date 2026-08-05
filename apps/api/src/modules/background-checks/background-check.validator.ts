@@ -162,32 +162,48 @@ export const backgroundCheckMessageResponseSchema = z.object({
   }),
 });
 
+export const bgvAnalysisJobAcceptedSchema = z.object({
+  jobId: z.number().int().positive(),
+  status: z.string(),
+  candidateId: z.number().int().positive(),
+  documentId: z.number().int().positive(),
+  backgroundCheckId: z.number().int().positive(),
+});
+
 export const bgvExtractionResponseSchema = z.object({
-  data: z.object({
-    liveAi: z.boolean(),
-    extraction: z
-      .object({
-        jobId: z.string(),
-        confidence: z.number(),
-        extractedAt: z.string(),
-        id: z.string().optional(),
-        candidateId: z.string().optional(),
-        vendorName: z.string().optional(),
-        status: z.string().optional(),
-        idCheckStatus: z.string().optional(),
-        addressCheckStatus: z.string().optional(),
-        employmentCheckStatus: z.string().optional(),
-        educationCheckStatus: z.string().optional(),
-        criminalCheckStatus: z.string().optional(),
-        referenceCheckStatus: z.string().optional(),
-        reportUrl: z.string().nullable().optional(),
-        aiBgvSummary: z.string(),
-        concernNotes: z.string().optional(),
-        initiatedDate: z.string().optional(),
-        completedDate: z.string().optional(),
-        checkType: z.string().optional(),
-        warnings: z.array(z.string()),
-      })
-      .passthrough(),
-  }),
+  data: z.union([
+    z.object({
+      liveAi: z.boolean(),
+      backgroundCheckId: z.number().int().positive().optional(),
+      extraction: z
+        .object({
+          jobId: z.string(),
+          confidence: z.number(),
+          extractedAt: z.string(),
+          id: z.string().optional(),
+          candidateId: z.string().optional(),
+          vendorName: z.string().optional(),
+          status: z.string().optional(),
+          idCheckStatus: z.string().optional(),
+          addressCheckStatus: z.string().optional(),
+          employmentCheckStatus: z.string().optional(),
+          educationCheckStatus: z.string().optional(),
+          criminalCheckStatus: z.string().optional(),
+          referenceCheckStatus: z.string().optional(),
+          reportUrl: z.string().nullable().optional(),
+          aiBgvSummary: z.string(),
+          concernNotes: z.string().optional(),
+          initiatedDate: z.string().optional(),
+          completedDate: z.string().optional(),
+          checkType: z.string().optional(),
+          warnings: z.array(z.string()),
+        })
+        .passthrough(),
+    }),
+    bgvAnalysisJobAcceptedSchema,
+  ]),
+});
+
+export const bgvExtractAiResponseSchema = z.object({
+  data: z.union([backgroundCheckResponseSchema.shape.data, bgvAnalysisJobAcceptedSchema]),
 });

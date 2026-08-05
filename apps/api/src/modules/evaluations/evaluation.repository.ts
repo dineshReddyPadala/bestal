@@ -41,6 +41,7 @@ export class EvaluationRepository extends BaseRepository {
         architectureScore: data.architectureScore,
         clientReadinessScore: data.clientReadinessScore,
         recommendation: data.recommendation,
+        evaluationSummary: data.evaluationSummary,
         evaluatorComments: data.evaluatorComments,
         aiEvaluationSummary: data.aiEvaluationSummary,
         recordingUrl: data.recordingUrl,
@@ -96,6 +97,9 @@ export class EvaluationRepository extends BaseRepository {
           clientReadinessScore: data.clientReadinessScore,
         }),
         ...(data.recommendation !== undefined && { recommendation: data.recommendation }),
+        ...(data.evaluationSummary !== undefined && {
+          evaluationSummary: data.evaluationSummary,
+        }),
         ...(data.evaluatorComments !== undefined && {
           evaluatorComments: data.evaluatorComments,
         }),

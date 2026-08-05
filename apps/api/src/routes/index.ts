@@ -1,6 +1,8 @@
 import type { FastifyInstance } from 'fastify';
 import { API_PREFIX } from '../constants/index.js';
 import { adminRoutes } from '../modules/admin/index.js';
+import { automationRoutes } from '../modules/automation/index.js';
+import { internalAutomationRoutes } from '../modules/automation/internal-automation.routes.js';
 import { authRoutes } from '../modules/auth/auth.routes.js';
 import { backgroundCheckRoutes } from '../modules/background-checks/background-check.routes.js';
 import { candidateRoutes } from '../modules/candidates/candidate.routes.js';
@@ -18,6 +20,11 @@ import { healthRoutes } from './health.routes.js';
 export async function registerRoutes(fastify: FastifyInstance): Promise<void> {
   await fastify.register(healthRoutes, { prefix: '/health' });
 
+  // Service-to-service callbacks (n8n). Not part of the user JWT API surface.
+  await fastify.register(internalAutomationRoutes, {
+    prefix: '/internal/automation',
+  });
+
   await fastify.register(
     async (api) => {
       await api.register(healthRoutes, { prefix: '/health' });
@@ -34,6 +41,7 @@ export async function registerRoutes(fastify: FastifyInstance): Promise<void> {
       await api.register(shortlistRoutes, { prefix: '/shortlists' });
       await api.register(searchRoutes, { prefix: '/search' });
       await api.register(notificationRoutes, { prefix: '/notifications' });
+      await api.register(automationRoutes, { prefix: '/automation' });
     },
     { prefix: API_PREFIX },
   );

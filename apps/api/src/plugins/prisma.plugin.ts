@@ -9,11 +9,40 @@ declare module 'fastify' {
 }
 
 async function prismaPlugin(fastify: FastifyInstance): Promise<void> {
+  const prismaLog = fastify.log.child({ module: 'prisma' });
+
   const prisma = new PrismaClient({
-    log:
-      fastify.config.isDevelopment
-        ? ['query', 'info', 'warn', 'error']
-        : ['warn', 'error'],
+    log: [
+      { emit: 'event', level: 'warn' },
+      { emit: 'event', level: 'error' },
+      // Query/info logs disabled — too noisy in dev; enable below if needed for debugging.
+      // ...(fastify.config.isDevelopment
+      //   ? [
+      //       { emit: 'event', level: 'query' },
+      //       { emit: 'event', level: 'info' },
+      //     ]
+      //   : []),
+    ],
+  });
+
+  // if (fastify.config.isDevelopment) {
+  //   prisma.$on('query', (event) => {
+  //     prismaLog.debug(
+  //       { query: event.query, params: event.params, durationMs: event.duration },
+  //       'prisma query',
+  //     );
+  //   });
+  //   prisma.$on('info', (event) => {
+  //     prismaLog.info({ message: event.message }, 'prisma info');
+  //   });
+  // }
+
+  prisma.$on('warn', (event) => {
+    prismaLog.warn({ message: event.message }, 'prisma warn');
+  });
+
+  prisma.$on('error', (event) => {
+    prismaLog.error({ message: event.message }, 'prisma error');
   });
 
   await prisma.$connect();

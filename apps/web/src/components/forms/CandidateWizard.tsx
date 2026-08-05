@@ -28,12 +28,14 @@ import {
   useWatch,
   type Resolver,
 } from 'react-hook-form';
+import { AiScreeningStatusBanner } from '../candidates/AiScreeningStatusBanner';
 import { useSkillCommunitiesList } from '../../hooks/api/useSkillCommunities';
+import { useAiScreeningJob } from '../../hooks/useAiScreeningJob';
+import { useEvaluationAiJob } from '../../hooks/useEvaluationAiJob';
 import { usePermissions } from '../../hooks/usePermissions';
 import { applyResumeExtractionToWizardForm } from '../../lib/api/ai/resume-extraction.mapper';
 import { mapEvaluationExtractionToForm } from '../../lib/api/ai/evaluation-extraction.mapper';
 import { candidatesApi } from '../../lib/api/candidates';
-import { evaluationsApi } from '../../lib/api/evaluations';
 import { getApiErrorMessage } from '../../lib/api/errors';
 import type { SkillCommunityListItem } from '../../lib/api/types';
 import { getBgvChecksForType } from '../../lib/entity-field-metadata';
@@ -213,13 +215,14 @@ function BasicDetailsTab({
   const skillCommunities = useSkillCommunityOptions();
   const resumeFileName = watch('resumeFileName');
   const profileStatus = watch('profileStatus');
-  const [screening, setScreening] = useState(false);
+  const aiScreening = useAiScreeningJob();
   const [error, setError] = useState<string | null>(null);
 
   function handleResumeSelect(file: File) {
     pendingUploads.current.resume = file;
     setValue('resumeFileName', file.name, { shouldDirty: true, shouldValidate: true });
     setError(null);
+    aiScreening.reset();
     onToast(`Resume "${file.name}" ready — click Run AI Screening`);
   }
 
@@ -234,14 +237,13 @@ function BasicDetailsTab({
       return;
     }
 
-    setScreening(true);
     setError(null);
     try {
       const current = getValues();
-      const { candidate, extraction } = await candidatesApi.extractResume(
-        file,
-        draftCandidateId ?? undefined,
-      );
+      const result = await aiScreening.runScreening(file, draftCandidateId ?? undefined);
+      if (!result) return;
+
+      const { candidate, extraction } = result;
       const mapped = applyResumeExtractionToWizardForm(extraction, skillCommunities, file.name);
       const next: CandidateWizardFormValues = {
         ...candidateWizardDefaults,
@@ -264,8 +266,6 @@ function BasicDetailsTab({
       );
     } catch (err) {
       setError(getApiErrorMessage(err, 'AI screening failed'));
-    } finally {
-      setScreening(false);
     }
   }
 
@@ -319,7 +319,17 @@ function BasicDetailsTab({
               <span>Resume Uploaded — {resumeFileName}</span>
             </div>
           ) : null}
-          {error ? (
+          <AiScreeningStatusBanner
+            status={aiScreening.status}
+            errorMessage={aiScreening.errorMessage ?? error}
+            retrying={aiScreening.isRunning}
+            onRetry={
+              aiScreening.status === 'FAILED' && pendingUploads.current.resume
+                ? () => void runAiScreening()
+                : undefined
+            }
+          />
+          {error && aiScreening.status !== 'FAILED' ? (
             <p className="text-sm text-destructive" role="alert">
               {error}
             </p>
@@ -328,10 +338,10 @@ function BasicDetailsTab({
             type="button"
             variant="primary"
             size="sm"
-            disabled={!resumeFileName || screening}
+            disabled={!resumeFileName || aiScreening.isRunning}
             onClick={() => void runAiScreening()}
           >
-            {screening ? (
+            {aiScreening.isRunning ? (
               <>
                 <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
                 Running AI Screening…
@@ -686,15 +696,70 @@ function EvaluationTab({
   onToast: (message: string) => void;
 }) {
   const { register, setValue, watch } = useFormContext<CandidateWizardFormValues>();
-  const [extracting, setExtracting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const evaluationAi = useEvaluationAiJob();
   const evaluationFileName = watch('evaluationFileName');
+  const extracting = evaluationAi.isRunning;
 
   function handleEvaluationSelect(file: File) {
     pendingUploads.current.evaluationFile = file;
     setValue('evaluationFileName', file.name, { shouldDirty: true });
     setError(null);
+    evaluationAi.reset();
     onToast(`Evaluation "${file.name}" ready — click Run AI Screening`);
+  }
+
+  function applyEvaluationPatch(
+    extraction: Parameters<typeof mapEvaluationExtractionToForm>[0],
+    fileName: string,
+    liveAi: boolean,
+  ) {
+    const patch = mapEvaluationExtractionToForm(extraction, fileName);
+    if (!patch.aiEvaluationSummary?.trim()) {
+      throw new Error('AI did not return an evaluation summary for this document.');
+    }
+
+    if (patch.evaluatorName) {
+      setValue('evaluatorName', patch.evaluatorName, { shouldDirty: true });
+    }
+    if (patch.evaluatorCompany) {
+      setValue('evaluatorCompany', patch.evaluatorCompany, { shouldDirty: true });
+    }
+    if (patch.evaluationType) {
+      setValue('evaluationType', patch.evaluationType, { shouldDirty: true });
+    }
+    if (patch.evaluationDate) {
+      setValue('evaluationDate', patch.evaluationDate, { shouldDirty: true });
+    }
+    if (patch.recommendation) {
+      setValue('evaluationRecommendation', patch.recommendation, { shouldDirty: true });
+    }
+    if (patch.technicalScore != null) {
+      setValue('technicalScore', patch.technicalScore, { shouldDirty: true });
+    }
+    if (patch.communicationScore != null) {
+      setValue('communicationScore', patch.communicationScore, { shouldDirty: true });
+    }
+    if (patch.problemSolvingScore != null) {
+      setValue('problemSolvingScore', patch.problemSolvingScore, { shouldDirty: true });
+    }
+    if (patch.architectureScore != null) {
+      setValue('architectureScore', patch.architectureScore, { shouldDirty: true });
+    }
+    if (patch.clientReadinessScore != null) {
+      setValue('clientReadinessScore', patch.clientReadinessScore, { shouldDirty: true });
+    }
+    if (patch.evaluatorComments) {
+      setValue('evaluatorComments', patch.evaluatorComments, { shouldDirty: true });
+    }
+    setValue('aiEvaluationSummary', patch.aiEvaluationSummary, { shouldDirty: true });
+    setValue('evaluationFileName', fileName, { shouldDirty: true });
+
+    const confidence = Math.round(extraction.confidence * 100);
+    const modeNote = liveAi ? '' : ' (demo/static AI)';
+    onToast(
+      `Evaluation AI screening complete (${confidence}% confidence)${modeNote} — review fields before saving`,
+    );
   }
 
   async function runEvaluationAiScreening() {
@@ -703,64 +768,21 @@ function EvaluationTab({
       setError('Upload an evaluation document first.');
       return;
     }
+    if (draftCandidateId == null || draftCandidateId <= 0) {
+      setError('Save or create the candidate draft before running evaluation AI.');
+      return;
+    }
 
-    setExtracting(true);
     setError(null);
     try {
-      const { extraction, liveAi } = await evaluationsApi.extractEvaluation(
-        file,
-        draftCandidateId ?? undefined,
-      );
-      const patch = mapEvaluationExtractionToForm(extraction, file.name);
-      if (!patch.aiEvaluationSummary?.trim()) {
-        throw new Error('AI did not return an evaluation summary for this document.');
-      }
-
-      if (patch.evaluatorName) {
-        setValue('evaluatorName', patch.evaluatorName, { shouldDirty: true });
-      }
-      if (patch.evaluatorCompany) {
-        setValue('evaluatorCompany', patch.evaluatorCompany, { shouldDirty: true });
-      }
-      if (patch.evaluationType) {
-        setValue('evaluationType', patch.evaluationType, { shouldDirty: true });
-      }
-      if (patch.evaluationDate) {
-        setValue('evaluationDate', patch.evaluationDate, { shouldDirty: true });
-      }
-      if (patch.recommendation) {
-        setValue('evaluationRecommendation', patch.recommendation, { shouldDirty: true });
-      }
-      if (patch.technicalScore != null) {
-        setValue('technicalScore', patch.technicalScore, { shouldDirty: true });
-      }
-      if (patch.communicationScore != null) {
-        setValue('communicationScore', patch.communicationScore, { shouldDirty: true });
-      }
-      if (patch.problemSolvingScore != null) {
-        setValue('problemSolvingScore', patch.problemSolvingScore, { shouldDirty: true });
-      }
-      if (patch.architectureScore != null) {
-        setValue('architectureScore', patch.architectureScore, { shouldDirty: true });
-      }
-      if (patch.clientReadinessScore != null) {
-        setValue('clientReadinessScore', patch.clientReadinessScore, { shouldDirty: true });
-      }
-      if (patch.evaluatorComments) {
-        setValue('evaluatorComments', patch.evaluatorComments, { shouldDirty: true });
-      }
-      setValue('aiEvaluationSummary', patch.aiEvaluationSummary, { shouldDirty: true });
-      setValue('evaluationFileName', file.name, { shouldDirty: true });
-
-      const confidence = Math.round(extraction.confidence * 100);
-      const modeNote = liveAi ? '' : ' (demo/static AI)';
-      onToast(
-        `Evaluation AI screening complete (${confidence}% confidence)${modeNote} — review fields before saving`,
-      );
+      const result = await evaluationAi.runAnalysis(file, draftCandidateId);
+      if (!result) return;
+      applyEvaluationPatch(result.extraction, file.name, result.liveAi);
     } catch (err) {
-      setError(getApiErrorMessage(err, 'Evaluation AI screening failed'));
-    } finally {
-      setExtracting(false);
+      setError(
+        evaluationAi.errorMessage ||
+          getApiErrorMessage(err, 'Evaluation AI screening failed'),
+      );
     }
   }
 
@@ -773,7 +795,7 @@ function EvaluationTab({
             accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
             hint={
               extracting
-                ? 'Uploading & extracting via BesTal API…'
+                ? 'Uploading & processing via BesTal API…'
                 : 'PDF or Word — upload, then run AI to prefill scores and summary'
             }
             onFileSelect={(file) => {
@@ -786,7 +808,17 @@ function EvaluationTab({
               <span>Evaluation Uploaded — {evaluationFileName}</span>
             </div>
           ) : null}
-          {error ? (
+          <AiScreeningStatusBanner
+            status={evaluationAi.status}
+            errorMessage={evaluationAi.errorMessage || error}
+            retrying={extracting}
+            onRetry={
+              evaluationAi.status === 'FAILED'
+                ? () => void runEvaluationAiScreening()
+                : undefined
+            }
+          />
+          {error && evaluationAi.status !== 'FAILED' ? (
             <p className="text-sm text-destructive" role="alert">
               {error}
             </p>

@@ -16,22 +16,11 @@ import errorHandlerPlugin from './plugins/error-handler.plugin.js';
 import multipartPlugin from './plugins/multipart.plugin.js';
 import { registerRoutes } from './routes/index.js';
 import { setRootLogger } from './utils/logger.js';
+import { buildFastifyLoggerConfig } from './utils/pino-config.js';
 
 export async function buildApp(config: AppConfig) {
   const app = Fastify({
-    logger: {
-      level: config.logLevel,
-      transport: config.isDevelopment
-        ? {
-            target: 'pino-pretty',
-            options: {
-              colorize: true,
-              translateTime: 'SYS:standard',
-              ignore: 'pid,hostname',
-            },
-          }
-        : undefined,
-    },
+    logger: buildFastifyLoggerConfig(config),
     trustProxy: config.isProduction,
     requestIdHeader: 'x-request-id',
     disableRequestLogging: true,

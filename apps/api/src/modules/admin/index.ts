@@ -98,7 +98,6 @@ export async function adminRoutes(fastify: FastifyInstance): Promise<void> {
 
   // Settings
   app.get('/settings', { ...secure, schema: { tags: ['Admin'], security: [{ bearerAuth: [] }] } }, controller.getSettings);
-  app.put('/settings/ai', { ...secure, schema: { tags: ['Admin'], security: [{ bearerAuth: [] }] } }, controller.putSetting('ai'));
   app.put('/settings/oorwin', { ...secure, schema: { tags: ['Admin'], security: [{ bearerAuth: [] }] } }, controller.putSetting('oorwin'));
   app.put('/settings/email', { ...secure, schema: { tags: ['Admin'], security: [{ bearerAuth: [] }] } }, controller.putSetting('email'));
   app.put('/settings/security', { ...secure, schema: { tags: ['Admin'], security: [{ bearerAuth: [] }] } }, controller.putSetting('security'));
@@ -109,6 +108,7 @@ export async function adminRoutes(fastify: FastifyInstance): Promise<void> {
   app.put('/settings/notifications', { ...secure, schema: { tags: ['Admin'], security: [{ bearerAuth: [] }] } }, controller.putSetting('notifications'));
   app.put('/settings/integrations', { ...secure, schema: { tags: ['Admin'], security: [{ bearerAuth: [] }] } }, controller.putSetting('integrations'));
   app.put('/settings/commercials', { ...secure, schema: { tags: ['Admin'], security: [{ bearerAuth: [] }] } }, controller.putSetting('commercials'));
+  app.put('/settings/workflows', { ...secure, schema: { tags: ['Admin'], security: [{ bearerAuth: [] }] } }, controller.putSetting('workflows'));
 
   // Roles & permissions
   app.get('/roles', { ...secure, schema: { tags: ['Admin'], querystring: z.object({ search: z.string().max(200).optional() }), security: [{ bearerAuth: [] }] } }, controller.listRoles);
