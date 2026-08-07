@@ -38,6 +38,7 @@ export function mapApiCandidateToClientSearchRecord(
     role,
     yearsExperience: candidate.yearsExperience ?? 0,
     community: skill ?? 'General',
+    primarySkillCommunityName: skill ?? '',
     topSkills: skill ? [skill] : [],
     bestalScore: candidate.bestalScore ?? 0,
     availability: candidate.availabilityStatus ?? 'Available',

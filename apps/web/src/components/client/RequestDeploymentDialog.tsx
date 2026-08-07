@@ -78,8 +78,7 @@ export function RequestDeploymentDialog({
         if (!submitting) onClose();
       }}
       title={`Request deployment — ${candidateName}`}
-      scrollable
-      className="max-w-lg"
+      className="max-w-2xl"
       footer={
         <>
           <Button variant="outline" onClick={onClose} disabled={submitting}>
@@ -91,13 +90,17 @@ export function RequestDeploymentDialog({
         </>
       }
     >
-      <form id="deployment-request-form" onSubmit={(e) => void handleSubmit(e)} className="space-y-4">
+      <form
+        id="deployment-request-form"
+        onSubmit={(e) => void handleSubmit(e)}
+        className="space-y-3"
+      >
         {error ? (
           <p className="rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">
             {error}
           </p>
         ) : null}
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           <Label htmlFor="roleTitle">Role title *</Label>
           <Input
             id="roleTitle"
@@ -106,8 +109,8 @@ export function RequestDeploymentDialog({
             required
           />
         </div>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-2">
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div className="space-y-1.5">
             <Label htmlFor="placementType">Placement type</Label>
             <Select
               id="placementType"
@@ -125,7 +128,7 @@ export function RequestDeploymentDialog({
               <option value="FREELANCE">Freelance</option>
             </Select>
           </div>
-          <div className="space-y-2">
+          <div className="space-y-1.5">
             <Label htmlFor="timezone">Timezone</Label>
             <Select
               id="timezone"
@@ -139,7 +142,7 @@ export function RequestDeploymentDialog({
               ))}
             </Select>
           </div>
-          <div className="space-y-2">
+          <div className="space-y-1.5">
             <Label htmlFor="startDate">Start date</Label>
             <Input
               id="startDate"
@@ -148,7 +151,7 @@ export function RequestDeploymentDialog({
               onChange={(e) => setField('startDate', e.target.value)}
             />
           </div>
-          <div className="space-y-2">
+          <div className="space-y-1.5">
             <Label htmlFor="endDate">End date</Label>
             <Input
               id="endDate"
@@ -157,7 +160,7 @@ export function RequestDeploymentDialog({
               onChange={(e) => setField('endDate', e.target.value)}
             />
           </div>
-          <div className="space-y-2">
+          <div className="space-y-1.5">
             <Label htmlFor="workLocation">Work location</Label>
             <Input
               id="workLocation"
@@ -166,7 +169,7 @@ export function RequestDeploymentDialog({
               onChange={(e) => setField('workLocation', e.target.value)}
             />
           </div>
-          <div className="space-y-2">
+          <div className="space-y-1.5">
             <Label htmlFor="expectedHoursPerWeek">Expected hours / week</Label>
             <Input
               id="expectedHoursPerWeek"
@@ -176,7 +179,7 @@ export function RequestDeploymentDialog({
               onChange={(e) => setField('expectedHoursPerWeek', e.target.value)}
             />
           </div>
-          <div className="space-y-2">
+          <div className="space-y-1.5">
             <Label htmlFor="reportingManagerName">Reporting manager</Label>
             <Input
               id="reportingManagerName"
@@ -184,7 +187,7 @@ export function RequestDeploymentDialog({
               onChange={(e) => setField('reportingManagerName', e.target.value)}
             />
           </div>
-          <div className="space-y-2">
+          <div className="space-y-1.5">
             <Label htmlFor="reportingManagerEmail">Manager email</Label>
             <Input
               id="reportingManagerEmail"

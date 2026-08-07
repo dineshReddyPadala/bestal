@@ -38,7 +38,6 @@ import { applyResumeExtractionToWizardForm } from '../../lib/api/ai/resume-extra
 import { TIMEZONE_OPTIONS } from '../../lib/timezones';
 import { mapEvaluationExtractionToForm } from '../../lib/api/ai/evaluation-extraction.mapper';
 import { mapBgvExtractionToForm } from '../../lib/api/ai/bgv-extraction.mapper';
-import { candidatesApi } from '../../lib/api/candidates';
 import { getApiErrorMessage } from '../../lib/api/errors';
 import type { SkillCommunityListItem } from '../../lib/api/types';
 import { getBgvChecksForType } from '../../lib/entity-field-metadata';
@@ -64,6 +63,8 @@ import {
 type CandidateWizardProps = {
   entryMethod: CandidateEntryMethod;
   initialTab?: WizardTabId;
+  /** When true, do not restore a browser-stored draft (fresh Add Candidate). */
+  freshStart?: boolean;
   initialFormValues?: Partial<CandidateWizardFormValues>;
   initialUploads?: CandidateWizardUploads;
   draftCandidateId?: number | null;
@@ -259,6 +260,9 @@ function BasicDetailsTab({
         location: preferNonEmpty(mapped.location, current.location),
         source: current.source || mapped.source || candidateWizardDefaults.source,
         resumeFileName: file.name,
+        profileStatus:
+          (candidate.profileStatus as CandidateWizardFormValues['profileStatus']) ??
+          mapped.profileStatus,
       };
       reset(next);
       onAiScreeningComplete(candidate.id, mapped);
@@ -708,40 +712,9 @@ function EvaluationTab({
 }) {
   const { register, setValue, watch } = useFormContext<CandidateWizardFormValues>();
   const [error, setError] = useState<string | null>(null);
-  const [recruiterReviewBanner, setRecruiterReviewBanner] = useState<string | null>(null);
-  const [advancingRecruiterReview, setAdvancingRecruiterReview] = useState(false);
   const evaluationAi = useEvaluationAiJob();
   const evaluationFileName = watch('evaluationFileName');
-  const profileStatus = watch('profileStatus');
   const extracting = evaluationAi.isRunning;
-
-  useEffect(() => {
-    if (draftCandidateId == null || draftCandidateId <= 0) return;
-    if (profileStatus !== 'AI_SCREENED') return;
-
-    let cancelled = false;
-    setAdvancingRecruiterReview(true);
-    void candidatesApi
-      .completeRecruiterReview(draftCandidateId)
-      .then(() => {
-        if (cancelled) return;
-        setValue('profileStatus', 'RECRUITER_SCREENED', { shouldDirty: true });
-        setRecruiterReviewBanner(
-          'Recruiter review marked complete — you can run evaluation screening.',
-        );
-      })
-      .catch((err) => {
-        if (cancelled) return;
-        setError(getApiErrorMessage(err, 'Could not complete recruiter review'));
-      })
-      .finally(() => {
-        if (!cancelled) setAdvancingRecruiterReview(false);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [draftCandidateId, profileStatus, setValue]);
 
   function handleEvaluationSelect(file: File) {
     pendingUploads.current.evaluationFile = file;
@@ -830,17 +803,6 @@ function EvaluationTab({
 
   return (
     <div className="space-y-4">
-      {recruiterReviewBanner ? (
-        <div className="rounded-lg border border-emerald-200 bg-success/10 px-3 py-2 text-sm text-emerald-800">
-          {recruiterReviewBanner}
-        </div>
-      ) : null}
-      {advancingRecruiterReview ? (
-        <div className="flex items-center gap-2 rounded-lg border border-border bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
-          <Loader2 className="h-4 w-4 animate-spin" />
-          Completing recruiter review…
-        </div>
-      ) : null}
       <SectionCard title="Evaluation document">
         <div className="space-y-4">
           <FileUpload
@@ -1537,6 +1499,7 @@ function TabContent({
 export function CandidateWizard({
   entryMethod,
   initialTab,
+  freshStart = false,
   initialFormValues,
   initialUploads,
   draftCandidateId,
@@ -1579,6 +1542,12 @@ export function CandidateWizard({
       return;
     }
 
+    if (freshStart) {
+      localStorage.removeItem(DRAFT_STORAGE_KEY);
+      reset({ ...candidateWizardDefaults });
+      return;
+    }
+
     try {
       const raw = localStorage.getItem(DRAFT_STORAGE_KEY);
       if (raw) {
@@ -1588,7 +1557,7 @@ export function CandidateWizard({
     } catch {
       /* ignore corrupt draft */
     }
-  }, [initialFormValues, initialUploads, reset]);
+  }, [freshStart, initialFormValues, initialUploads, reset]);
 
   const currentTab = WIZARD_TABS.find((tab) => tab.id === activeTab) ?? WIZARD_TABS[0]!;
   const currentTabIndex = WIZARD_TABS.findIndex((tab) => tab.id === activeTab);
@@ -1600,8 +1569,8 @@ export function CandidateWizard({
   const handleAiScreeningComplete = useCallback(
     (draftId: number, mapped: Partial<CandidateWizardFormValues>) => {
       onDraftCandidateId?.(draftId);
-      if (mapped.profileStatus == null) {
-        setValue('profileStatus', 'AI_SCREENED');
+      if (mapped.profileStatus != null) {
+        setValue('profileStatus', mapped.profileStatus);
       }
       setActiveTab('professional');
     },

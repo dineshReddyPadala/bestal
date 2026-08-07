@@ -14,19 +14,18 @@ import { UPLOAD_CATEGORIES } from '../../services/storage/storage.constants.js';
 import { buildS3ObjectReference } from '../../services/storage/upload.utils.js';
 import { normalizeUploadToPdf } from '../../services/document-pdf-normalizer.js';
 import {
-  bufferToBase64,
-  BgvExtractionClient,
   formatBgvAiSummaryJson,
   formatBgvCheckStatusesSummary,
   normalizeBgvExtractionResponse,
-  type BgvExtractionResponse,
-} from '../../services/bgv-extraction.client.js';
+} from '../../services/bgv-extraction.mapper.js';
+import type { BgvExtractionResponse } from '../../services/bgv-extraction.types.js';
 import { buildPaginationMeta } from '../../validators/common.validator.js';
 import { notifyBgvAnalysisProcessed } from '../../services/notification-dispatch.service.js';
 import { PERMISSIONS, roleHasPermission } from '../auth/auth.permissions.js';
 import { AutomationService } from '../automation/automation.service.js';
 import type { BgvAnalysisOutput } from '../automation/dto/bgv-analysis.dto.js';
 import { N8nClient } from '../automation/n8n.client.js';
+import { N8N_AUTOMATION_REQUIRED_MESSAGE } from '../automation/automation.constants.js';
 import { readN8nConfig } from '../../services/system-settings.reader.js';
 import { assertCanCreateBackgroundCheck } from '../candidates/candidate-pipeline.js';
 import {
@@ -123,7 +122,6 @@ export class BackgroundCheckService {
   private readonly backgroundCheckRepository: BackgroundCheckRepository;
   private readonly prisma: PrismaClient;
   private readonly storageService: StorageService;
-  private readonly bgvExtractionClient: BgvExtractionClient;
   private readonly fastify: FastifyInstance;
   private readonly webAppUrl: string;
   private readonly config: FastifyInstance['config'];
@@ -139,7 +137,6 @@ export class BackgroundCheckService {
       backgroundCheckRepository ?? new BackgroundCheckRepository(fastify.prisma);
     this.prisma = fastify.prisma;
     this.storageService = new StorageService(fastify.config);
-    this.bgvExtractionClient = new BgvExtractionClient(fastify.config.aiBgvUrl);
   }
 
   private async isN8nBgvAnalysisEnabled(): Promise<boolean> {
@@ -148,9 +145,7 @@ export class BackgroundCheckService {
   }
 
   /**
-   * Upload BGV report and extract analysis fields.
-   * - n8n configured → async AutomationJob (returns jobId immediately)
-   * - otherwise → legacy sync Python/static extraction
+   * Upload BGV report and extract analysis fields via n8n (async AutomationJob).
    */
   async extractBgvDocument(
     authUser: AuthenticatedUser,
@@ -159,59 +154,20 @@ export class BackgroundCheckService {
   ): Promise<BgvExtractResponse> {
     const organizationId = requireOrganization(authUser);
 
-    if (await this.isN8nBgvAnalysisEnabled()) {
-      if (candidateId == null || !Number.isInteger(candidateId) || candidateId <= 0) {
-        throw new BadRequestError('candidateId is required for BGV AI Analysis');
-      }
-      return this.enqueueBgvAnalysisJob({
-        authUser,
-        organizationId,
-        candidateId,
-        file,
-      });
+    if (!(await this.isN8nBgvAnalysisEnabled())) {
+      throw new BadRequestError(N8N_AUTOMATION_REQUIRED_MESSAGE);
     }
 
-    if (candidateId != null && candidateId > 0) {
-      const candidate = await this.prisma.candidate.findFirst({
-        where: {
-          id: BigInt(candidateId),
-          organizationId: BigInt(organizationId),
-          deletedAt: null,
-        },
-        select: { id: true },
-      });
-      if (!candidate) {
-        throw new BadRequestError('Candidate not found');
-      }
+    if (candidateId == null || !Number.isInteger(candidateId) || candidateId <= 0) {
+      throw new BadRequestError('candidateId is required for BGV AI Analysis');
     }
 
-    try {
-      const extraction = await this.bgvExtractionClient.extract({
-        fileName: file.originalName,
-        mimeType: file.mimeType,
-        content: bufferToBase64(file.buffer),
-        ...(candidateId != null && candidateId > 0
-          ? { candidateId: String(candidateId) }
-          : {}),
-      });
-
-      if (!extraction.aiBgvSummary?.trim()) {
-        throw new BadRequestError(
-          'AI did not return a background verification summary for this document.',
-        );
-      }
-
-      return {
-        extraction,
-        liveAi: this.bgvExtractionClient.isLiveAiConfigured,
-      };
-    } catch (error) {
-      throw error instanceof BadRequestError
-        ? error
-        : new BadRequestError(
-            error instanceof Error ? error.message : 'BGV extraction failed',
-          );
-    }
+    return this.enqueueBgvAnalysisJob({
+      authUser,
+      organizationId,
+      candidateId,
+      file,
+    });
   }
 
   /**
@@ -538,26 +494,6 @@ export class BackgroundCheckService {
         'Upload final report',
       );
       patch.reportDocumentId = bigintToNumber(document.id);
-
-      if (!(await this.isN8nBgvAnalysisEnabled())) {
-        // Best-effort sync extract when n8n is not configured.
-        try {
-          const extraction = await this.bgvExtractionClient.extract({
-            fileName: file.originalName,
-            mimeType: file.mimeType,
-            content: bufferToBase64(file.buffer),
-            candidateId: String(bigintToNumber(existing.candidateId)),
-          });
-          patch.aiSummary = formatBgvAiSummaryJson(extraction, {
-            provider: existing.provider,
-            checkType: existing.type,
-            liveAi: this.bgvExtractionClient.isLiveAiConfigured,
-          });
-          patch.resultSummary = formatBgvCheckStatusesSummary(extraction);
-        } catch {
-          // Keep the uploaded report even if AI fails; recruiter can retry via extract-ai.
-        }
-      }
     }
 
     const record = await this.backgroundCheckRepository.update(
@@ -588,9 +524,7 @@ export class BackgroundCheckService {
   }
 
   /**
-   * Runs BGV AI extraction against the uploaded final report.
-   * - n8n configured → async AutomationJob
-   * - otherwise → sync Python/static path
+   * Runs BGV AI extraction against the uploaded final report via n8n.
    */
   async extractAi(
     authUser: AuthenticatedUser,
@@ -605,85 +539,16 @@ export class BackgroundCheckService {
     );
     assertBgvReportUploaded(existing, 'AI extraction');
 
-    if (await this.isN8nBgvAnalysisEnabled()) {
-      return this.enqueueBgvAnalysisForExistingReport({
-        authUser,
-        organizationId,
-        backgroundCheckId: id,
-        existing,
-      });
+    if (!(await this.isN8nBgvAnalysisEnabled())) {
+      throw new BadRequestError(N8N_AUTOMATION_REQUIRED_MESSAGE);
     }
 
-    const reportDoc = await this.prisma.document.findFirst({
-      where: {
-        id: existing.reportDocumentId!,
-        organizationId: BigInt(organizationId),
-        entityType: 'BACKGROUND_CHECK',
-        entityId: BigInt(id),
-        deletedAt: null,
-      },
+    return this.enqueueBgvAnalysisForExistingReport({
+      authUser,
+      organizationId,
+      backgroundCheckId: id,
+      existing,
     });
-    if (!reportDoc?.s3Key || !reportDoc.s3Bucket) {
-      throw new BadRequestError('BGV report document is missing storage metadata');
-    }
-
-    const downloadUrl = await this.storageService.resolveFileUrl(
-      reportDoc.s3Key,
-      reportDoc.s3Bucket,
-      reportDoc.mimeType ?? undefined,
-    );
-    if (!downloadUrl) {
-      throw new BadRequestError('Unable to download BGV report for AI extraction');
-    }
-
-    let fileBuffer: Buffer;
-    try {
-      const fileResponse = await fetch(downloadUrl);
-      if (!fileResponse.ok) {
-        throw new Error(`HTTP ${fileResponse.status}`);
-      }
-      fileBuffer = Buffer.from(await fileResponse.arrayBuffer());
-    } catch (error) {
-      throw new BadRequestError(
-        error instanceof Error
-          ? `Failed to download BGV report: ${error.message}`
-          : 'Failed to download BGV report for AI extraction',
-      );
-    }
-
-    try {
-      const extraction = await this.bgvExtractionClient.extract({
-        fileName: reportDoc.originalName || reportDoc.fileName || 'bgv-report.pdf',
-        mimeType: reportDoc.mimeType || 'application/pdf',
-        content: bufferToBase64(fileBuffer),
-        candidateId: String(bigintToNumber(existing.candidateId)),
-      });
-
-      if (!extraction.aiBgvSummary?.trim()) {
-        throw new BadRequestError(
-          'AI did not return a background verification summary for this report.',
-        );
-      }
-
-      const summary = formatBgvAiSummaryJson(extraction, {
-        provider: existing.provider,
-        checkType: existing.type,
-        liveAi: this.bgvExtractionClient.isLiveAiConfigured,
-      });
-
-      const record = await this.backgroundCheckRepository.update(organizationId, id, {
-        aiSummary: summary,
-        resultSummary: formatBgvCheckStatusesSummary(extraction),
-      });
-
-      return this.toDetailDto(organizationId, record);
-    } catch (error) {
-      throw error instanceof BadRequestError
-        ? error
-        : new BadRequestError(
-            error instanceof Error ? error.message : 'BGV AI extraction failed',
-          );
-    }
   }
 
   async submitForReview(

@@ -76,6 +76,19 @@ export function assertCanCompleteRecruiterReview(candidate: PipelineCandidateSna
   }
 }
 
+/** Admin / super-admin add-candidate flows skip the recruiter review gate. */
+export function isRecruiterReviewBypassRole(role: string | null | undefined): boolean {
+  return role === 'SUPER_ADMIN' || role === 'ADMIN';
+}
+
+export function profileStatusAfterAiScreening(
+  hasScreeningSignal: boolean,
+  skipRecruiterReview: boolean,
+): CandidateProfileStatus {
+  if (!hasScreeningSignal) return 'SOURCED';
+  return skipRecruiterReview ? 'RECRUITER_SCREENED' : 'AI_SCREENED';
+}
+
 export function assertCanCreateEvaluation(candidate: PipelineCandidateSnapshot): void {
   assertProfileStatus(candidate, 'RECRUITER_SCREENED', 'Technical evaluation');
 }

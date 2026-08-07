@@ -20,7 +20,6 @@ import {
   ListingFiltersRow,
   ListingPageShell,
 } from '../layout/ListingPageShell';
-import { ToastHost } from '../ui/ToastHost';
 
 type CandidateListingViewProps = {
   basePath: string;
@@ -335,23 +334,12 @@ export function CandidateListingView({
         accessorKey: 'profileStatus',
         header: 'Pipeline',
         cell: ({ row }) => {
-          const profile = row.original.profileStatus ?? 'SOURCED';
           const approval = row.original.approvalStatus;
-          let outcome: string | null = null;
-          if (approval === 'REJECTED') outcome = 'Rejected';
-          else if (profile === 'ADMIN_APPROVED' || approval === 'APPROVED') outcome = 'Approved';
-          else if (profile === 'RECRUITER_SCREENED' && row.original.submittedForApprovalAt == null) {
-            // May be sent-back; list DTO has no rejectionReason — keep badge only
-            outcome = null;
-          }
-          return (
-            <div className="min-w-[120px]">
-              <StatusBadge status={profile} />
-              {outcome ? (
-                <p className="mt-1 text-[10px] text-muted-foreground">{outcome}</p>
-              ) : null}
-            </div>
-          );
+          const status =
+            approval === 'REJECTED'
+              ? 'REJECTED'
+              : (row.original.profileStatus ?? 'SOURCED');
+          return <StatusBadge status={status} />;
         },
       },
       {
@@ -406,9 +394,11 @@ export function CandidateListingView({
 
   return (
     <>
-      <ToastHost message={message} variant={variant} onDismiss={dismiss} />
       <ListingPageShell
         title={title}
+        message={message}
+        messageVariant={variant}
+        onMessageDismiss={dismiss}
         loading={isLoading}
         loadingLabel="Loading candidates…"
         error={isError ? (error instanceof Error ? error.message : 'Failed to load candidates') : null}

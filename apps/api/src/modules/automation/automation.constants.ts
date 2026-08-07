@@ -54,3 +54,7 @@ export const AUTOMATION_CALLBACK_SECRET_HEADER = 'x-automation-callback-secret';
 
 /** Header Fastify sends when triggering n8n webhooks. */
 export const N8N_WEBHOOK_SECRET_HEADER = 'x-n8n-webhook-secret';
+
+/** Shown when AI endpoints are called without n8n workflow configuration. */
+export const N8N_AUTOMATION_REQUIRED_MESSAGE =
+  'Configure n8n automation in Platform Settings before running AI analysis.';

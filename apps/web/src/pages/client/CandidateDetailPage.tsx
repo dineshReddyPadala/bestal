@@ -1,5 +1,7 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
+import { Home } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
+import { useDashboardHeaderLeading } from '@bestal/ui';
 import { ClientCandidateProfileView } from '../../components/client/ClientCandidateProfileView';
 import { RequestDeploymentDialog } from '../../components/client/RequestDeploymentDialog';
 import { RequestTrialDialog } from '../../components/client/RequestTrialDialog';
@@ -27,6 +29,23 @@ export function CandidateDetailPage() {
   const clientLinked = user?.clientId != null;
   const canRequestTrial = clientLinked;
   const canRequestDeployment = clientLinked && has('deployments:request');
+
+  useDashboardHeaderLeading(
+    useMemo(
+      () => (
+        <nav className="flex min-w-0 items-center gap-2 text-sm text-muted-foreground">
+          <Home className="h-4 w-4 shrink-0" aria-hidden />
+          <span className="text-muted-foreground/60">/</span>
+          <Link to="/client/search" className="truncate hover:text-foreground">
+            Candidate Search
+          </Link>
+          <span className="text-muted-foreground/60">/</span>
+          <span className="truncate font-semibold text-foreground">Profile Summary</span>
+        </nav>
+      ),
+      [],
+    ),
+  );
 
   if (isLoading) {
     return (

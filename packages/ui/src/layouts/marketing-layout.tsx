@@ -1,6 +1,6 @@
 import { type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import { ShieldCheck } from 'lucide-react';
+import { BesTalBrand } from '../components/bestal-brand.js';
 
 export type MarketingNavItem = {
   label: string;
@@ -12,6 +12,7 @@ export type MarketingLayoutProps = {
   children: ReactNode;
   ctaLabel?: string;
   ctaHref?: string;
+  brandLogoSrc?: string;
 };
 
 export function MarketingLayout({
@@ -19,18 +20,14 @@ export function MarketingLayout({
   children,
   ctaLabel = 'Get started',
   ctaHref = '/contact',
+  brandLogoSrc,
 }: MarketingLayoutProps) {
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <header className="sticky top-0 z-50 border-b border-border bg-card shadow-sm">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-          <Link to="/" className="flex items-center gap-2.5">
-            <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-brand text-white">
-              <ShieldCheck className="h-4 w-4" />
-            </span>
-            <span className="text-lg font-semibold tracking-tight text-foreground">
-              Bes<span className="font-bold">Tal</span>
-            </span>
+        <div className="shell-header-h mx-auto flex max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+          <Link to="/">
+            <BesTalBrand logoSrc={brandLogoSrc} wordmarkClassName="text-lg" />
           </Link>
 
           <nav className="hidden items-center gap-8 md:flex">
@@ -62,7 +59,7 @@ export function MarketingLayout({
         </div>
       </header>
 
-      <main className="flex-1">{children}</main>
+      <main className="scrollbar-thin flex-1 overflow-y-auto overflow-x-hidden">{children}</main>
 
       <footer className="border-t border-border bg-card">
         <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">

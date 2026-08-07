@@ -2,6 +2,8 @@ import { Button, PageHeader, StatusBadge } from '@bestal/ui';
 import { ArrowLeft } from 'lucide-react';
 import { type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
+import type { ToastVariant } from '../../lib/use-demo-toast';
+import { ToastHost } from '../ui/ToastHost';
 
 export type WorkflowAction = {
   id: string;
@@ -22,7 +24,8 @@ type DetailPageShellProps = {
   onAction?: (actionId: string) => void;
   children: ReactNode;
   toast?: string | null;
-  toastVariant?: 'success' | 'error';
+  toastVariant?: ToastVariant;
+  onToastDismiss?: () => void;
 };
 
 export function DetailPageShell({
@@ -36,9 +39,12 @@ export function DetailPageShell({
   children,
   toast,
   toastVariant = 'success',
+  onToastDismiss,
 }: DetailPageShellProps) {
   return (
     <div>
+      <ToastHost message={toast ?? null} variant={toastVariant} onDismiss={onToastDismiss} />
+
       <PageHeader
         title={title}
         description={description}
@@ -61,18 +67,6 @@ export function DetailPageShell({
           ) : undefined
         }
       />
-
-      {toast && (
-        <div
-          className={
-            toastVariant === 'error'
-              ? 'mx-6 mt-4 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive'
-              : 'mx-6 mt-4 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700'
-          }
-        >
-          {toast}
-        </div>
-      )}
 
       {actions.length > 0 && (
         <div className="flex flex-wrap gap-2 border-b border-border bg-muted/20 px-6 py-3">

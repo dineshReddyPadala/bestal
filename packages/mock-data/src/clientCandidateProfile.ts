@@ -7,6 +7,7 @@ import {
 
 export type ClientGroupedSkill = {
   readonly skillCommunityName: string;
+  readonly skillName?: string | null;
   readonly proficiencyLevel: string;
   readonly yearsExperience: number | null;
   readonly isPrimary: boolean;
@@ -27,6 +28,8 @@ export type ClientCandidateProfile = {
   readonly yearsExperience: number;
   readonly currentCompany: string;
   readonly currentTitle: string;
+  readonly primarySkillCommunityName: string;
+  readonly education: string;
   readonly bestalScore: number;
   readonly availability: string;
   readonly billRate: number;
@@ -68,6 +71,7 @@ function buildGroupedSkills(candidateId: number): {
 
   const map = cand.skills.map((s) => ({
     skillCommunityName: s.skillCommunityName,
+    skillName: s.skillName ?? null,
     proficiencyLevel: s.proficiencyLevel,
     yearsExperience: s.yearsExperience,
     isPrimary: s.isPrimary,
@@ -112,6 +116,9 @@ export function getClientCandidateProfile(candidateId: number): ClientCandidateP
     yearsExperience: cand.yearsExperience,
     currentCompany: detail.overview.currentCompany ?? '',
     currentTitle: '',
+    primarySkillCommunityName:
+      detail.overview.community ?? grouped.primary[0]?.skillCommunityName ?? '',
+    education: detail.overview.education ?? '',
     bestalScore: detail.overview.bestalScore,
     availability: detail.availabilityDetail.availability,
     billRate: detail.commercial.billRate,

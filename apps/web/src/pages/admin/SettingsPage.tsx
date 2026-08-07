@@ -1,18 +1,14 @@
 import { Button, Card, CardContent, CardHeader, CardTitle, Input, PageHeader, Tabs } from '@bestal/ui';
 import { useDemoToast } from '../../lib/use-demo-toast';
+import { ToastHost } from '../../components/ui/ToastHost';
 
 export function SettingsPage() {
-  const { message, show } = useDemoToast();
+  const { message, variant, show, dismiss } = useDemoToast();
 
   return (
     <div>
+      <ToastHost message={message} variant={variant} onDismiss={dismiss} />
       <PageHeader title="Settings" />
-
-      {message && (
-        <div className="mx-6 mt-4 rounded-lg border border-emerald-200 bg-success/10 px-4 py-3 text-sm text-success">
-          {message}
-        </div>
-      )}
 
       <div className="p-6">
         <Tabs

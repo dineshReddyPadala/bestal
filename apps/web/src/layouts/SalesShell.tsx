@@ -2,6 +2,7 @@ import { DashboardLayout } from '@bestal/ui';
 import { Outlet, useLocation } from 'react-router-dom';
 import { NotificationBell } from '../components/notifications/NotificationBell';
 import { useDashboardUser } from '../hooks/useDashboardUser';
+import { BESTAL_LOGO_SRC } from '../lib/brand';
 import { salesNavItems } from '../lib/nav';
 
 export function SalesShell() {
@@ -19,6 +20,7 @@ export function SalesShell() {
       currentPath={currentPath}
       onLogout={handleLogout}
       headerActions={<NotificationBell />}
+      brandLogoSrc={BESTAL_LOGO_SRC}
     >
       <Outlet />
     </DashboardLayout>

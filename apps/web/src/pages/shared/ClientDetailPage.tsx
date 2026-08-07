@@ -72,7 +72,7 @@ function clientAuditFields(client: {
 export function ClientDetailPage({ basePath }: ClientDetailPageProps) {
   const { id } = useParams();
   const clientId = Number(id);
-  const { message } = useDemoToast();
+  const { message, dismiss } = useDemoToast();
 
   const { data: client, isLoading, isError } = useQuery({
     queryKey: ['clients', 'detail', clientId],
@@ -136,6 +136,7 @@ export function ClientDetailPage({ basePath }: ClientDetailPageProps) {
       backLabel="Back to clients"
       statusBadges={[client.status]}
       toast={message}
+      onToastDismiss={dismiss}
     >
       <div className="mb-6 grid gap-4 md:grid-cols-4">
         <StatCard label="Active deployments" value={String(activeDeployments)} />

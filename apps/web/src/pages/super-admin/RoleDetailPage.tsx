@@ -5,6 +5,7 @@ import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-r
 import { ActionMenu, type ActionMenuItem } from '../../components/super-admin/ActionMenu';
 import { useConfirmAction } from '../../components/super-admin/useConfirmAction';
 import { useDemoToast } from '../../lib/use-demo-toast';
+import { ToastHost } from '../../components/ui/ToastHost';
 import { getApiErrorMessage } from '../../lib/api/errors';
 import {
   useAdminMutations,
@@ -51,7 +52,7 @@ export function SuperAdminRoleDetailPage() {
   const { data: clientsData } = useClientsList({ limit: 100, sort: 'name' });
   const mutations = useAdminMutations();
   const { requestConfirm, confirmDialog } = useConfirmAction();
-  const { show, showError, message } = useDemoToast();
+  const { show, showError, message, variant, dismiss } = useDemoToast();
 
   const [editing, setEditing] = useState(false);
   const [selected, setSelected] = useState<string[]>([]);
@@ -391,11 +392,7 @@ export function SuperAdminRoleDetailPage() {
         actions={<ActionMenu items={menuItems} label={`Actions for ${String(role.name)}`} />}
       />
 
-      {message ? (
-        <div className="mx-6 mb-3 rounded-md bg-success/10 px-3 py-2 text-sm text-emerald-800">
-          {message}
-        </div>
-      ) : null}
+      <ToastHost message={message} variant={variant} onDismiss={dismiss} />
 
       <div className="flex flex-wrap gap-2 px-6 pb-4">
         <Button

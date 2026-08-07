@@ -152,21 +152,8 @@ export function AddCandidatePage() {
   }
 
   return (
-    <div className="flex h-[calc(100svh-4rem)] min-h-0 flex-col overflow-hidden bg-background">
+    <div className="flex h-[calc(100svh-var(--shell-header-h))] min-h-0 flex-col overflow-hidden bg-background">
       <ToastHost message={message} variant={variant} onDismiss={dismiss} />
-
-      {message ? (
-        <div
-          className={`mx-5 mt-3 shrink-0 rounded-lg border px-4 py-2.5 text-sm sm:mx-6 ${
-            variant === 'error'
-              ? 'border-destructive/30 bg-destructive/10 text-destructive'
-              : 'border-emerald-200 bg-emerald-50 text-emerald-700'
-          }`}
-          role="status"
-        >
-          {message}
-        </div>
-      ) : null}
 
       <div className="flex min-h-0 flex-1 flex-col px-5 py-3 sm:px-6 sm:py-4">
         {submittedId !== null ? (
@@ -183,6 +170,7 @@ export function AddCandidatePage() {
                 key={isEdit ? `edit-${editId}-${initialFormValues ? 'ready' : 'loading'}` : 'new'}
                 entryMethod="manual"
                 initialTab="basic"
+                freshStart={!isEdit}
                 initialFormValues={initialFormValues}
                 draftCandidateId={draftCandidateId}
                 onDraftCandidateId={(id) => {

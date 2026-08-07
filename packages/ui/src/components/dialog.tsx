@@ -53,7 +53,7 @@ export function Dialog({
           className,
         )}
       >
-        <div className="flex shrink-0 items-start justify-between border-b border-border px-6 py-4">
+        <div className="flex shrink-0 items-start justify-between border-b border-border px-5 py-3">
           <div className="min-w-0 pr-4">
             <h2 id="dialog-title" className="text-lg font-semibold text-foreground">
               {title}
@@ -66,16 +66,11 @@ export function Dialog({
             <X className="h-4 w-4" />
           </Button>
         </div>
-        <div
-          className={cn(
-            'px-6 py-4',
-            scrollable && 'min-h-0 flex-1 overflow-y-auto',
-          )}
-        >
+        <div className={cn('px-5 py-3', scrollable && 'min-h-0 flex-1 overflow-y-auto scrollbar-thin')}>
           {children}
         </div>
         {footer && (
-          <div className="flex shrink-0 justify-end gap-2 border-t border-border px-6 py-4">
+          <div className="flex shrink-0 justify-end gap-2 border-t border-border px-5 py-3">
             {footer}
           </div>
         )}

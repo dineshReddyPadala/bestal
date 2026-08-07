@@ -1,5 +1,5 @@
 import { cn } from '@bestal/shared-utils';
-import { ChevronDown, ChevronsLeft, ChevronsRight, LogOut, Menu, ShieldCheck, X } from 'lucide-react';
+import { ChevronDown, ChevronsLeft, ChevronsRight, LogOut, Menu, X } from 'lucide-react';
 import {
   createContext,
   useContext,
@@ -13,6 +13,7 @@ import {
 import { Link } from 'react-router-dom';
 import { Avatar } from '../components/avatar.js';
 import { Badge } from '../components/badge.js';
+import { BesTalBrand } from '../components/bestal-brand.js';
 import { resolveIcon } from '../lib/icons.js';
 
 export type DashboardNavItem = {
@@ -41,6 +42,8 @@ export type DashboardLayoutProps = {
   collapsible?: boolean;
   /** localStorage key for collapsed state (used when collapsible). */
   collapseStorageKey?: string;
+  /** Optional logo image URL (e.g. imported JPG from the web app assets folder). */
+  brandLogoSrc?: string;
 };
 
 type DashboardChromeContextValue = {
@@ -84,30 +87,14 @@ function writeCollapsed(key: string, value: boolean) {
   }
 }
 
-function BrandMark({ compact = false }: { compact?: boolean }) {
-  if (compact) {
-    return (
-      <span
-        className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-brand text-white"
-        title="BesTal"
-      >
-        <ShieldCheck className="h-4 w-4" />
-      </span>
-    );
-  }
-
-  return (
-    <div className="flex min-w-0 items-center gap-2.5">
-      <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-brand text-white">
-        <ShieldCheck className="h-4 w-4" />
-      </span>
-      <div className="min-w-0">
-        <span className="block truncate text-base font-semibold leading-none tracking-tight text-foreground">
-          Bes<span className="font-bold">Tal</span>
-        </span>
-      </div>
-    </div>
-  );
+function BrandMark({
+  compact = false,
+  logoSrc,
+}: {
+  compact?: boolean;
+  logoSrc?: string;
+}) {
+  return <BesTalBrand compact={compact} logoSrc={logoSrc} />;
 }
 
 function NavLink({
@@ -131,7 +118,7 @@ function NavLink({
       title={collapsed ? item.label : undefined}
       aria-label={item.label}
       className={cn(
-        'flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+        'flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-[13px] font-medium transition-colors',
         collapsed && 'lg:justify-center lg:px-2',
         isActive
           ? 'bg-brand-light text-brand'
@@ -213,13 +200,15 @@ function ProfileMenu({
         aria-label="Open profile menu"
       >
         <Avatar name={user.name} size="sm" />
-        <div className="hidden min-w-0 sm:block">
+        <div className="hidden min-w-0 md:block lg:max-w-[9rem] xl:max-w-[11rem]">
           <p className="truncate text-sm font-medium leading-tight text-foreground">{user.name}</p>
-          <p className="truncate text-xs leading-tight text-muted-foreground">{user.email}</p>
+          <p className="hidden truncate text-xs leading-tight text-muted-foreground lg:block">
+            {user.email}
+          </p>
         </div>
         <ChevronDown
           className={cn(
-            'hidden h-4 w-4 shrink-0 text-muted-foreground transition-transform sm:block',
+            'hidden h-4 w-4 shrink-0 text-muted-foreground transition-transform md:block',
             open && 'rotate-180',
           )}
         />
@@ -255,7 +244,7 @@ function ProfileMenu({
 
 export function DashboardLayout({
   navItems,
-  portalName,
+  portalName: _portalName,
   user,
   children,
   currentPath = '',
@@ -263,6 +252,7 @@ export function DashboardLayout({
   headerActions,
   collapsible = false,
   collapseStorageKey = DEFAULT_COLLAPSE_KEY,
+  brandLogoSrc,
 }: DashboardLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(() =>
@@ -295,22 +285,19 @@ export function DashboardLayout({
         <aside
           className={cn(
             'fixed inset-y-0 left-0 z-50 flex h-svh shrink-0 flex-col overflow-hidden border-r border-border bg-card transition-[width,transform] duration-200 lg:static lg:translate-x-0',
-            desktopCollapsed ? 'lg:w-[4.5rem]' : 'lg:w-64',
-            'w-64',
+            desktopCollapsed ? 'lg:w-[var(--shell-sidebar-rail)]' : 'lg:w-[var(--shell-sidebar-w)]',
+            'w-[var(--shell-sidebar-w)]',
             sidebarOpen ? 'translate-x-0' : '-translate-x-full',
           )}
         >
           <div
             className={cn(
-              'flex h-16 shrink-0 items-center border-b border-border px-4',
+              'shell-header-h flex shrink-0 items-center border-b border-border px-3',
               desktopCollapsed ? 'justify-between lg:justify-center lg:px-2' : 'justify-between gap-2',
             )}
           >
-            <div className={cn('min-w-0', desktopCollapsed && 'lg:hidden')}>
-              <BrandMark />
-              <p className="mt-1 truncate pl-[2.625rem] text-[11px] leading-none text-muted-foreground">
-                {portalName}
-              </p>
+            <div className={cn('flex min-w-0 items-center', desktopCollapsed && 'lg:hidden')}>
+              <BrandMark logoSrc={brandLogoSrc} />
             </div>
             {desktopCollapsed ? (
               <button
@@ -320,7 +307,7 @@ export function DashboardLayout({
                 aria-label="Expand sidebar"
                 title="Expand sidebar"
               >
-                <BrandMark compact />
+                <BrandMark compact logoSrc={brandLogoSrc} />
                 <ChevronsRight className="h-3.5 w-3.5" />
               </button>
             ) : collapsible ? (
@@ -344,7 +331,7 @@ export function DashboardLayout({
             </button>
           </div>
 
-          <nav className="flex flex-1 flex-col justify-start gap-0.5 overflow-y-auto overflow-x-hidden px-2 py-3">
+          <nav className="scrollbar-thin flex flex-1 flex-col justify-start gap-0.5 overflow-y-auto overflow-x-hidden px-1.5 py-2">
             {navItems.map((item) => (
               <div key={item.href} className="relative">
                 <NavLink
@@ -359,7 +346,7 @@ export function DashboardLayout({
         </aside>
 
         <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-          <header className="z-30 flex h-16 shrink-0 items-center gap-3 border-b border-border bg-card px-4 sm:px-6">
+          <header className="shell-header-h z-30 flex shrink-0 items-center gap-2 border-b border-border bg-card px-3 sm:px-5">
             <button
               type="button"
               className="shrink-0 text-muted-foreground hover:text-foreground lg:hidden"
@@ -377,7 +364,7 @@ export function DashboardLayout({
             </div>
           </header>
 
-          <main className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden bg-background">
+          <main className="scrollbar-thin min-h-0 flex-1 overflow-y-auto overflow-x-hidden bg-background">
             {children}
           </main>
         </div>

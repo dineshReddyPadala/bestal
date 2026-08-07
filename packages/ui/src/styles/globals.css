@@ -45,6 +45,11 @@
 
     --radius: 0.5rem;
 
+    /* App shell dimensions (header + sidebar) */
+    --shell-header-h: 3.5rem;
+    --shell-sidebar-w: 14rem;
+    --shell-sidebar-rail: 3.25rem;
+
     /* Legacy navy tokens remapped to deep teal */
     --navy: 180 76% 21%;
     --navy-light: 174 49% 24%;
@@ -54,9 +59,18 @@
     @apply border-border;
   }
 
+  html {
+    height: 100%;
+  }
+
   body {
     @apply bg-background text-foreground antialiased;
+    min-height: 100%;
     font-feature-settings: 'rlig' 1, 'calt' 1;
+  }
+
+  #root {
+    min-height: 100%;
   }
 }
 
@@ -94,5 +108,36 @@
   }
   .text-navy {
     color: hsl(var(--navy) / var(--tw-text-opacity, 1));
+  }
+
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--border)) transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background-color: hsl(var(--border));
+    border-radius: 9999px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background-color: hsl(var(--muted-foreground) / 0.45);
+  }
+
+  .shell-header-h {
+    height: var(--shell-header-h);
+  }
+
+  .shell-fill-below-header {
+    min-height: calc(100svh - var(--shell-header-h));
   }
 }

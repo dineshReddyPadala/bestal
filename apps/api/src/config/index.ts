@@ -45,9 +45,6 @@ export const envSchema = z
     SMTP_HOST: z.string().default('smtp.gmail.com'),
     SMTP_PORT: z.coerce.number().int().positive().default(587),
     WEB_APP_URL: z.string().url().default('http://localhost:5173'),
-    AI_EXTRACTION_URL: z.string().url().optional(),
-    AI_EVALUATION_URL: z.string().url().optional(),
-    AI_BGV_URL: z.string().url().optional(),
     // Inbound n8n → Fastify callback auth (workflow URLs live in Platform Settings)
     AUTOMATION_CALLBACK_SECRET: z.string().min(1).optional(),
   })
@@ -130,9 +127,6 @@ export interface AppConfig {
   storage: StorageConfig;
   corsOrigins: string[];
   mail: MailConfig;
-  aiExtractionUrl: string | null;
-  aiEvaluationUrl: string | null;
-  aiBgvUrl: string | null;
   automation: AutomationConfig;
   isProduction: boolean;
   isDevelopment: boolean;
@@ -187,9 +181,6 @@ function mapEnvToConfig(env: EnvSchema): AppConfig {
       port: env.SMTP_PORT,
       enabled: Boolean(mailFrom && mailPassword),
     },
-    aiExtractionUrl: env.AI_EXTRACTION_URL ?? null,
-    aiEvaluationUrl: env.AI_EVALUATION_URL ?? null,
-    aiBgvUrl: env.AI_BGV_URL ?? null,
     automation: {
       callbackSecret: env.AUTOMATION_CALLBACK_SECRET ?? null,
     },

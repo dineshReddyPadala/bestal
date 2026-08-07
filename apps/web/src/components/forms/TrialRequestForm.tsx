@@ -21,6 +21,9 @@ type TrialRequestFormProps = {
   showActions?: boolean;
 };
 
+const textareaClassName =
+  'flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
+
 export function TrialRequestForm({
   onSubmit,
   onCancel,
@@ -37,58 +40,65 @@ export function TrialRequestForm({
   });
 
   return (
-    <form id={formId} onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-      <div className="space-y-2">
-        <Label htmlFor="roleTitle">Role title *</Label>
-        <Input id="roleTitle" {...register('roleTitle')} placeholder="Senior Full-Stack Engineer" />
-        {errors.roleTitle && <p className="text-xs text-red-600">{errors.roleTitle.message}</p>}
+    <form id={formId} onSubmit={handleSubmit(onSubmit)} className="space-y-3">
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div className="space-y-1.5 sm:col-span-1">
+          <Label htmlFor="roleTitle">Role title *</Label>
+          <Input
+            id="roleTitle"
+            {...register('roleTitle')}
+            placeholder="Senior Full-Stack Engineer"
+          />
+          {errors.roleTitle ? (
+            <p className="text-xs text-red-600">{errors.roleTitle.message}</p>
+          ) : null}
+        </div>
+        <div className="space-y-1.5 sm:col-span-1">
+          <Label htmlFor="startDate">Start date *</Label>
+          <Input id="startDate" type="date" {...register('startDate')} />
+          {errors.startDate ? (
+            <p className="text-xs text-red-600">{errors.startDate.message}</p>
+          ) : null}
+        </div>
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="startDate">Start date *</Label>
-        <Input id="startDate" type="date" {...register('startDate')} />
-        {errors.startDate && <p className="text-xs text-red-600">{errors.startDate.message}</p>}
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div className="space-y-1.5">
+          <Label htmlFor="taskDescription">Task description</Label>
+          <textarea
+            id="taskDescription"
+            rows={2}
+            className={textareaClassName}
+            {...register('taskDescription')}
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="successCriteria">Success criteria</Label>
+          <textarea
+            id="successCriteria"
+            rows={2}
+            className={textareaClassName}
+            {...register('successCriteria')}
+          />
+        </div>
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="taskDescription">Task description</Label>
-        <textarea
-          id="taskDescription"
-          rows={3}
-          className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          {...register('taskDescription')}
-        />
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="successCriteria">Success criteria</Label>
-        <textarea
-          id="successCriteria"
-          rows={2}
-          className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          {...register('successCriteria')}
-        />
-      </div>
-
-      <div className="space-y-2">
+      <div className="space-y-1.5">
         <Label htmlFor="feedback">Project scope / notes</Label>
-        <textarea
-          id="feedback"
-          rows={3}
-          className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          {...register('feedback')}
-        />
-        {errors.feedback && <p className="text-xs text-red-600">{errors.feedback.message}</p>}
+        <textarea id="feedback" rows={2} className={textareaClassName} {...register('feedback')} />
+        {errors.feedback ? (
+          <p className="text-xs text-red-600">{errors.feedback.message}</p>
+        ) : null}
       </div>
 
-      {showActions && (
-        <div className="flex justify-end gap-2 border-t border-border pt-4">
+      {showActions ? (
+        <div className="flex justify-end gap-2 border-t border-border pt-3">
           <Button type="button" variant="outline" onClick={onCancel}>
             Cancel
           </Button>
           <Button type="submit">{submitLabel}</Button>
         </div>
-      )}
+      ) : null}
     </form>
   );
 }
