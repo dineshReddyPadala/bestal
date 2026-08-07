@@ -54,6 +54,14 @@ export class EvaluationController {
     });
   };
 
+  downloadDocument = async (request: FastifyRequest, reply: FastifyReply) => {
+    const { id } = request.params as { id: number };
+    const file = await this.evaluationService.downloadDocument(request.authUser!, id);
+    reply.header('Content-Type', file.mimeType);
+    reply.header('Content-Disposition', `attachment; filename="${file.fileName}"`);
+    return reply.send(file.buffer);
+  };
+
   extractEvaluation = async (request: FastifyRequest, reply: FastifyReply) => {
     const file = await request.file();
     if (!file) {

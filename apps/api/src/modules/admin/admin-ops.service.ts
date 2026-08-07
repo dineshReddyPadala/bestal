@@ -11,9 +11,12 @@ import { buildPaginationMeta } from '../../validators/common.validator.js';
 import { DeploymentService } from '../deployments/deployment.service.js';
 import { TrialService } from '../trials/trial.service.js';
 import { AuditService } from './audit.service.js';
+import {
+  maskWorkflowsSettingsForAdmin,
+  mergeWorkflowsSettingsUpdate,
+} from '../../services/system-settings.reader.js';
 
 const SETTING_KEYS = [
-  'ai',
   'oorwin',
   'email',
   'security',
@@ -24,6 +27,7 @@ const SETTING_KEYS = [
   'notifications',
   'integrations',
   'commercials',
+  'workflows',
 ] as const;
 export type SettingKey = (typeof SETTING_KEYS)[number];
 
@@ -959,7 +963,6 @@ export class AdminOpsService {
   async getSettings() {
     const rows = await this.prisma.systemSetting.findMany();
     const out: Record<string, unknown> = {
-      ai: {},
       oorwin: {},
       email: {},
       security: {},
@@ -970,9 +973,14 @@ export class AdminOpsService {
       notifications: {},
       integrations: {},
       commercials: {},
+      workflows: {},
     };
     for (const row of rows) {
-      out[row.key] = row.value;
+      if (row.key === 'workflows') {
+        out.workflows = maskWorkflowsSettingsForAdmin(row.value);
+      } else {
+        out[row.key] = row.value;
+      }
     }
     return out;
   }
@@ -984,19 +992,56 @@ export class AdminOpsService {
     ctx?: { ipAddress?: string | null; userAgent?: string | null },
   ) {
     if (!SETTING_KEYS.includes(key)) throw new BadRequestError('Invalid settings key');
+
+    let payload = value;
+    if (key === 'workflows') {
+      const existing = await this.prisma.systemSetting.findUnique({
+        where: { key: 'workflows' },
+      });
+      payload = mergeWorkflowsSettingsUpdate(value, existing?.value);
+      const merged = payload as {
+        enabled: boolean;
+        baseUrl: string | null;
+        resumeWorkflowPath: string | null;
+        evaluationWorkflowPath: string | null;
+        bgvWorkflowPath: string | null;
+        webhookSecret: string | null;
+      };
+      if (merged.enabled) {
+        if (!merged.baseUrl) {
+          throw new BadRequestError('n8n base URL is required when workflows are enabled');
+        }
+        if (!merged.webhookSecret) {
+          throw new BadRequestError('Webhook secret is required when workflows are enabled');
+        }
+        if (
+          !merged.resumeWorkflowPath &&
+          !merged.evaluationWorkflowPath &&
+          !merged.bgvWorkflowPath
+        ) {
+          throw new BadRequestError(
+            'At least one workflow webhook path is required when workflows are enabled',
+          );
+        }
+      }
+    }
+
     const row = await this.prisma.systemSetting.upsert({
       where: { key },
       create: {
         key,
-        value: value as Prisma.InputJsonValue,
+        value: payload as Prisma.InputJsonValue,
         updatedById: BigInt(authUser.id),
       },
       update: {
-        value: value as Prisma.InputJsonValue,
+        value: payload as Prisma.InputJsonValue,
         updatedById: BigInt(authUser.id),
       },
     });
-    await this.auditWrite(authUser, 'UPDATE', 'SystemSetting', bigintToNumber(row.id), `Updated settings.${key}`, value as Prisma.InputJsonValue, ctx);
+    await this.auditWrite(authUser, 'UPDATE', 'SystemSetting', bigintToNumber(row.id), `Updated settings.${key}`, payload as Prisma.InputJsonValue, ctx);
+    if (key === 'workflows') {
+      return { key, value: maskWorkflowsSettingsForAdmin(row.value) };
+    }
     return { key, value: row.value };
   }
 }

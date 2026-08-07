@@ -20,6 +20,23 @@ import { useClientTrialRequests, trialDurationDays } from '../../hooks/useClient
 import { getApiErrorMessage } from '../../lib/api/errors';
 import { useDemoToast } from '../../lib/use-demo-toast';
 
+function formatOptionalDate(value: string | null | undefined): string | null {
+  const trimmed = value?.trim();
+  if (!trimmed) return null;
+  const parsed = new Date(trimmed);
+  if (Number.isNaN(parsed.getTime())) return null;
+  return formatDate(trimmed);
+}
+
+function formatTrialDateRange(startDate: string, endDate: string): string {
+  const start = formatOptionalDate(startDate);
+  const end = formatOptionalDate(endDate);
+  if (start && end) return `${start} – ${end}`;
+  if (start) return `${start} – TBD`;
+  if (end) return `TBD – ${end}`;
+  return 'Dates TBD';
+}
+
 function TrialCard({
   trial,
   onFeedback,
@@ -44,7 +61,7 @@ function TrialCard({
             <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-muted-foreground">
               <span className="inline-flex items-center gap-1.5">
                 <Calendar className="h-4 w-4" />
-                {formatDate(trial.startDate)} – {formatDate(trial.endDate)}
+                {formatTrialDateRange(trial.startDate, trial.endDate)}
               </span>
               {trial.rate > 0 && (
                 <span>{formatCurrency(trial.rate, trial.currency)}/hr</span>

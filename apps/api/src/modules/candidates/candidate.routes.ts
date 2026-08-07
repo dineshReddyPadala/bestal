@@ -181,6 +181,18 @@ export async function candidateRoutes(fastify: FastifyInstance): Promise<void> {
     candidateController.create,
   );
 
+  /**
+   * Resume upload + AI screening entry point.
+   *
+   * Multipart body:
+   * - `file` (required) — resume PDF/DOCX
+   * - `candidateId` (optional) — re-screen an existing candidate; omit for a new upload
+   *
+   * Response shape (201 for new upload, 200 when `candidateId` is supplied):
+   * - Sync (n8n not configured): `{ candidate, extraction }` — candidate exists immediately
+   * - Async (n8n configured): `{ jobId, status, candidateId, documentId }` — poll
+   *   `GET /automation/jobs/:id`; `candidateId` is null until screening completes
+   */
   app.post(
     '/extract-resume',
     {
@@ -188,7 +200,7 @@ export async function candidateRoutes(fastify: FastifyInstance): Promise<void> {
       schema: {
         tags: ['Candidates'],
         summary:
-          'Upload resume to storage, extract via Python AI, and create a SOURCED draft candidate',
+          'Upload resume and start AI screening (async n8n when configured; otherwise sync Python/static)',
         security: [{ bearerAuth: [] }],
         consumes: ['multipart/form-data'],
         response: { 201: resumeExtractionDraftResponseSchema },

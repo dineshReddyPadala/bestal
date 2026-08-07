@@ -2,14 +2,9 @@ import {
   CANDIDATE_PROFILE_STATUS_LABELS,
   type CandidateProfileStatusValue,
 } from '@bestal/shared-utils';
-import { Button, Card, CardContent, CardHeader, CardTitle, StatusBadge } from '@bestal/ui';
-import { CheckCircle2, Circle, Loader2 } from 'lucide-react';
-import { useState } from 'react';
-import { useCandidate, useCandidateMutations } from '../../hooks/api/useCandidates';
-import { usePermissions } from '../../hooks/usePermissions';
-import { getApiErrorMessage } from '../../lib/api/errors';
-import { useDemoToast } from '../../lib/use-demo-toast';
-import { ToastHost } from '../ui/ToastHost';
+import { Card, CardContent, CardHeader, CardTitle, StatusBadge } from '@bestal/ui';
+import { Loader2 } from 'lucide-react';
+import { useCandidate } from '../../hooks/api/useCandidates';
 
 const PIPELINE_STEPS: CandidateProfileStatusValue[] = [
   'SOURCED',
@@ -42,32 +37,12 @@ function formatWhen(value: string | null | undefined): string {
 
 type CandidatePipelinePanelProps = {
   candidateId: number;
-  basePath?: '/admin/candidates' | '/recruiter/candidates' | '/super-admin/candidates';
 };
 
-export function CandidatePipelinePanel({
-  candidateId,
-  basePath = '/recruiter/candidates',
-}: CandidatePipelinePanelProps) {
+export function CandidatePipelinePanel({ candidateId }: CandidatePipelinePanelProps) {
   const { data: candidate, isLoading, isError, error } = useCandidate(candidateId);
-  const mutations = useCandidateMutations();
-  const { canWriteCandidates } = usePermissions();
-  const { message, variant, show, showError, dismiss } = useDemoToast();
-  const [busy, setBusy] = useState<string | null>(null);
 
   const currentIdx = stepIndex(candidate?.profileStatus);
-
-  const run = async (key: string, action: () => Promise<unknown>, success: string) => {
-    setBusy(key);
-    try {
-      await action();
-      show(success);
-    } catch (err) {
-      showError(getApiErrorMessage(err, 'Action failed'));
-    } finally {
-      setBusy(null);
-    }
-  };
 
   if (isLoading) {
     return (
@@ -90,18 +65,12 @@ export function CandidatePipelinePanel({
     );
   }
 
-  const hasResume = Boolean(candidate.hasResume ?? candidate.resume);
-
   return (
-    <>
-      <ToastHost message={message} variant={variant} onDismiss={dismiss} />
     <Card>
       <CardHeader className="pb-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <CardTitle className="text-base">Candidate pipeline</CardTitle>
-          <div className="flex flex-wrap items-center gap-2">
-            <StatusBadge status={candidate.profileStatus ?? 'SOURCED'} />
-          </div>
+          <StatusBadge status={candidate.profileStatus ?? 'SOURCED'} />
         </div>
         {candidate.profileStatus === 'PENDING_APPROVAL' ||
         candidate.approvalStatus === 'APPROVED' ||
@@ -113,9 +82,7 @@ export function CandidatePipelinePanel({
                 ? 'border-red-200 bg-red-50 text-red-800'
                 : candidate.approvalStatus === 'APPROVED'
                   ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
-                  : candidate.profileStatus === 'PENDING_APPROVAL'
-                    ? 'border-amber-200 bg-amber-50 text-amber-900'
-                    : 'border-amber-200 bg-amber-50 text-amber-900'
+                  : 'border-amber-200 bg-amber-50 text-amber-900'
             }`}
           >
             {candidate.profileStatus === 'PENDING_APPROVAL' ? (
@@ -148,113 +115,34 @@ export function CandidatePipelinePanel({
           </div>
         ) : null}
       </CardHeader>
-      <CardContent className="space-y-5">
-        <ol className="grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
+      <CardContent>
+        <div className="flex flex-wrap items-center gap-x-1 gap-y-2 text-xs">
           {PIPELINE_STEPS.map((step, idx) => {
             const done = currentIdx > idx;
             const active = candidate.profileStatus === step;
             return (
-              <li
-                key={step}
-                className={`flex items-start gap-2 rounded-lg border px-3 py-2 text-xs ${
-                  active
-                    ? 'border-brand bg-brand/5'
-                    : done
-                      ? 'border-border/60 bg-muted/30'
-                      : 'border-border/40 text-muted-foreground'
-                }`}
-              >
-                {done ? (
-                  <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-brand" />
-                ) : (
-                  <Circle className="mt-0.5 h-3.5 w-3.5 shrink-0 opacity-50" />
-                )}
-                <span>{CANDIDATE_PROFILE_STATUS_LABELS[step]}</span>
-              </li>
+              <span key={step} className="inline-flex items-center gap-1">
+                {idx > 0 ? (
+                  <span className="mx-0.5 text-muted-foreground/50" aria-hidden>
+                    →
+                  </span>
+                ) : null}
+                <span
+                  className={
+                    active
+                      ? 'rounded-full bg-brand/10 px-2 py-0.5 font-medium text-brand'
+                      : done
+                        ? 'text-foreground'
+                        : 'text-muted-foreground'
+                  }
+                >
+                  {CANDIDATE_PROFILE_STATUS_LABELS[step]}
+                </span>
+              </span>
             );
           })}
-        </ol>
-
-        {canWriteCandidates ? (
-          <div className="flex flex-wrap gap-2">
-            {['SOURCED', 'AI_SCREENED', 'RECRUITER_SCREENED', 'PROFILE_DRAFT'].includes(
-              candidate.profileStatus ?? '',
-            ) ? (
-              <Button size="sm" variant="outline" to={`${basePath}/${candidateId}/edit`}>
-                Edit profile
-              </Button>
-            ) : null}
-
-            {candidate.profileStatus === 'SOURCED' ? (
-              <Button
-                size="sm"
-                disabled={!hasResume || busy !== null}
-                onClick={() =>
-                  run(
-                    'ai',
-                    () => mutations.runAiScreening.mutateAsync({ id: candidateId }),
-                    'AI screening complete',
-                  )
-                }
-              >
-                {busy === 'ai' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                Run AI screening
-              </Button>
-            ) : null}
-
-            {candidate.profileStatus === 'AI_SCREENED' ? (
-              <Button
-                size="sm"
-                disabled={busy !== null}
-                onClick={() =>
-                  run(
-                    'recruiter',
-                    () => mutations.completeRecruiterReview.mutateAsync({ id: candidateId }),
-                    'Recruiter review complete',
-                  )
-                }
-              >
-                Complete recruiter review
-              </Button>
-            ) : null}
-
-            {candidate.profileStatus === 'BGV_COMPLETE' ? (
-              <Button
-                size="sm"
-                disabled={busy !== null}
-                onClick={() =>
-                  run(
-                    'pricing',
-                    () => mutations.completePricing.mutateAsync(candidateId),
-                    'Pricing marked complete — profile draft',
-                  )
-                }
-              >
-                Complete pricing & availability
-              </Button>
-            ) : null}
-
-            {candidate.profileStatus === 'PROFILE_DRAFT' &&
-            !candidate.submittedForApprovalAt ? (
-              <Button
-                size="sm"
-                disabled={busy !== null}
-                onClick={() =>
-                  run(
-                    'submit',
-                    () => mutations.submitForApproval.mutateAsync(candidateId),
-                    'Submitted for admin approval',
-                  )
-                }
-              >
-                Submit for approval
-              </Button>
-            ) : null}
-          </div>
-        ) : null}
-
+        </div>
       </CardContent>
     </Card>
-    </>
   );
 }

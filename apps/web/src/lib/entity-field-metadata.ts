@@ -582,9 +582,6 @@ export function buildInterviewRequestPayload(
 export type TrialRequestFormValues = {
   roleTitle: string;
   startDate: string;
-  endDate: string;
-  trialType?: string;
-  maxTrialHours?: number;
   taskDescription?: string;
   successCriteria?: string;
   feedback?: string;
@@ -612,15 +609,6 @@ export type TrialRequestPayload = {
   deletedAt: string | null;
 };
 
-function durationDaysInclusive(startDate: string, endDate: string): number | null {
-  if (!startDate || !endDate) return null;
-  const start = new Date(startDate);
-  const end = new Date(endDate);
-  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || end < start) return null;
-  const ms = end.getTime() - start.getTime();
-  return Math.floor(ms / 86_400_000) + 1;
-}
-
 export function buildTrialRequestPayload(
   form: TrialRequestFormValues,
   candidateId: number,
@@ -638,8 +626,8 @@ export function buildTrialRequestPayload(
     status: 'REQUESTED',
     roleTitle: form.roleTitle.trim(),
     startDate: form.startDate,
-    endDate: form.endDate,
-    durationDays: durationDaysInclusive(form.startDate, form.endDate),
+    endDate: existing?.endDate ?? form.startDate,
+    durationDays: existing?.durationDays ?? null,
     feedback: form.feedback?.trim() || null,
     outcome: existing?.outcome ?? null,
     approvedAt: existing?.approvedAt ?? null,

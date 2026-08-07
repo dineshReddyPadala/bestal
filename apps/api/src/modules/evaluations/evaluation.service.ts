@@ -1,9 +1,14 @@
 import type { FastifyInstance } from 'fastify';
 import type { PrismaClient } from '@prisma/client';
+import {
+  EVALUATION_RECOMMENDATIONS,
+  EVALUATION_TYPES,
+} from '@bestal/shared-utils';
 import type { AuthenticatedUser } from '../../types/index.js';
 import {
   BadRequestError,
   NotFoundError,
+  bigintToNumber,
   requireOrganization,
 } from '../../utils/index.js';
 import { buildPaginationMeta } from '../../validators/common.validator.js';
@@ -13,6 +18,15 @@ import {
   EvaluationExtractionClient,
   type EvaluationExtractionResponse,
 } from '../../services/evaluation-extraction.client.js';
+import { StorageService } from '../../services/storage.service.js';
+import { readStoredDocumentBuffer, type DocumentDownloadPayload } from '../../services/document-buffer.util.js';
+import { UPLOAD_CATEGORIES } from '../../services/storage/storage.constants.js';
+import { buildS3ObjectReference } from '../../services/storage/upload.utils.js';
+import { normalizeUploadToPdf } from '../../services/document-pdf-normalizer.js';
+import { AutomationService } from '../automation/automation.service.js';
+import type { EvaluationAnalysisOutput } from '../automation/dto/evaluation-analysis.dto.js';
+import { N8nClient } from '../automation/n8n.client.js';
+import { readN8nConfig } from '../../services/system-settings.reader.js';
 import { assertCanCreateEvaluation } from '../candidates/candidate-pipeline.js';
 import { recalculateCandidateScoresFromEvaluations } from './candidate-score.service.js';
 import {
@@ -22,11 +36,14 @@ import {
 import { EvaluationRepository } from './evaluation.repository.js';
 import type {
   CreateEvaluationInput,
+  EvaluationAnalysisJobAccepted,
   EvaluationDto,
   EvaluationListItemDto,
   UpdateEvaluationInput,
 } from './evaluation.types.js';
 import type { ListEvaluationsQuery } from './evaluation.validator.js';
+
+const DRAFT_EVALUATOR_NAME = 'Pending AI Analysis';
 
 function wasAiProcessed(input: {
   aiEvaluationSummary?: string | null;
@@ -51,17 +68,24 @@ export type EvaluationExtractResult = {
   liveAi: boolean;
 };
 
+export type EvaluationExtractResponse =
+  | EvaluationExtractResult
+  | EvaluationAnalysisJobAccepted;
+
 export class EvaluationService {
   private readonly evaluationRepository: EvaluationRepository;
   private readonly prisma: PrismaClient;
   private readonly webAppUrl: string;
   private readonly config: FastifyInstance['config'];
   private readonly evaluationExtractionClient: EvaluationExtractionClient;
+  private readonly storageService: StorageService;
+  private readonly fastify: FastifyInstance;
 
   constructor(
     fastify: FastifyInstance,
     evaluationRepository?: EvaluationRepository,
   ) {
+    this.fastify = fastify;
     this.evaluationRepository =
       evaluationRepository ?? new EvaluationRepository(fastify.prisma);
     this.prisma = fastify.prisma;
@@ -70,11 +94,18 @@ export class EvaluationService {
     this.evaluationExtractionClient = new EvaluationExtractionClient(
       fastify.config.aiEvaluationUrl,
     );
+    this.storageService = new StorageService(fastify.config);
+  }
+
+  private async isN8nEvaluationAnalysisEnabled(): Promise<boolean> {
+    const config = await readN8nConfig(this.prisma);
+    return new N8nClient(config).isEvaluationConfigured();
   }
 
   /**
-   * Calls Python ai-service (or static stub) with the uploaded evaluation document.
-   * Does not persist an evaluation row — UI reviews fields then POSTs /evaluations.
+   * Upload evaluation document and extract scores.
+   * - n8n configured → async AutomationJob (returns jobId immediately)
+   * - otherwise → legacy sync Python/static extraction
    */
   async extractEvaluationDocument(
     authUser: AuthenticatedUser,
@@ -85,8 +116,22 @@ export class EvaluationService {
       size: number;
     },
     candidateId?: number,
-  ): Promise<EvaluationExtractResult> {
+  ): Promise<EvaluationExtractResponse> {
     const organizationId = requireOrganization(authUser);
+
+    if (await this.isN8nEvaluationAnalysisEnabled()) {
+      if (candidateId == null || !Number.isInteger(candidateId) || candidateId <= 0) {
+        throw new BadRequestError(
+          'candidateId is required for Evaluation AI Analysis',
+        );
+      }
+      return this.enqueueEvaluationAnalysisJob({
+        authUser,
+        organizationId,
+        candidateId,
+        file,
+      });
+    }
 
     if (candidateId != null && candidateId > 0) {
       const candidate = await this.prisma.candidate.findFirst({
@@ -128,6 +173,158 @@ export class EvaluationService {
         : new BadRequestError(
             error instanceof Error ? error.message : 'Evaluation extraction failed',
           );
+    }
+  }
+
+  /**
+   * Persist validated n8n evaluation output (transactional, idempotent caller).
+   * Updates the existing evaluation — never creates a second row for the same job.
+   */
+  async applyEvaluationAnalysisFromAutomation(params: {
+    organizationId: number;
+    candidateId: number;
+    evaluationId: number;
+    automationJobId: number;
+    output: EvaluationAnalysisOutput;
+    requestedBy: number;
+  }): Promise<void> {
+    const {
+      organizationId,
+      candidateId,
+      evaluationId,
+      automationJobId,
+      output,
+      requestedBy,
+    } = params;
+
+    const existing = await this.evaluationRepository.findById(
+      organizationId,
+      evaluationId,
+    );
+    if (!existing) {
+      throw new NotFoundError('Evaluation not found');
+    }
+    if (bigintToNumber(existing.candidateId) !== candidateId) {
+      throw new BadRequestError(
+        'evaluationId does not belong to the callback candidateId',
+      );
+    }
+
+    const evaluatorName =
+      output.evaluatorName?.trim() ||
+      (existing.evaluatorName === DRAFT_EVALUATOR_NAME
+        ? 'AI Evaluator'
+        : existing.evaluatorName);
+    const recommendation = normalizeRecommendation(output.recommendation);
+    const evaluationType = normalizeEvaluationType(output.evaluationType);
+    const evaluationDate = normalizeEvaluationDate(output.evaluationDate);
+    const aiEvaluationSummary =
+      output.aiEvaluationSummary?.trim() ||
+      output.evaluationSummary?.trim() ||
+      undefined;
+    const evaluatorComments =
+      output.evaluatorComments?.trim() ||
+      output.extractedText?.trim() ||
+      undefined;
+
+    const candidate = await this.prisma.candidate.findFirst({
+      where: {
+        id: BigInt(candidateId),
+        organizationId: BigInt(organizationId),
+        deletedAt: null,
+      },
+      select: { firstName: true, lastName: true },
+    });
+    if (!candidate) {
+      throw new NotFoundError('Candidate not found');
+    }
+
+    await this.prisma.$transaction(async (tx) => {
+      const locked = await tx.$queryRaw<Array<{ id: bigint; status: string }>>`
+        SELECT id, status
+        FROM automation_jobs
+        WHERE id = ${BigInt(automationJobId)}
+        FOR UPDATE
+      `;
+      const jobRow = locked[0];
+      if (!jobRow) {
+        throw new NotFoundError('Automation job not found');
+      }
+      if (jobRow.status === 'COMPLETED' || jobRow.status === 'CANCELLED') {
+        return;
+      }
+
+      await tx.evaluation.update({
+        where: {
+          id: BigInt(evaluationId),
+          organizationId: BigInt(organizationId),
+        },
+        data: {
+          evaluatorName,
+          evaluatorCompany:
+            output.evaluatorCompany?.trim() || existing.evaluatorCompany,
+          evaluationType: evaluationType ?? existing.evaluationType,
+          evaluationDate:
+            evaluationDate !== undefined
+              ? evaluationDate
+              : existing.evaluationDate,
+          technicalScore: output.technicalScore ?? existing.technicalScore,
+          communicationScore:
+            output.communicationScore ?? existing.communicationScore,
+          problemSolvingScore:
+            output.problemSolvingScore ?? existing.problemSolvingScore,
+          architectureScore:
+            output.architectureScore ?? existing.architectureScore,
+          clientReadinessScore:
+            output.clientReadinessScore ?? existing.clientReadinessScore,
+          recommendation: recommendation ?? existing.recommendation,
+          evaluationSummary:
+            output.evaluationSummary?.trim() || existing.evaluationSummary,
+          evaluatorComments: evaluatorComments ?? existing.evaluatorComments,
+          aiEvaluationSummary:
+            aiEvaluationSummary ?? existing.aiEvaluationSummary,
+        },
+      });
+
+      await tx.candidate.update({
+        where: {
+          id: BigInt(candidateId),
+          organizationId: BigInt(organizationId),
+        },
+        data: { profileStatus: 'EVALUATION_PENDING' },
+      });
+
+      await tx.automationJob.update({
+        where: { id: BigInt(automationJobId) },
+        data: {
+          status: 'COMPLETED',
+          completedAt: new Date(),
+          errorCode: null,
+          errorMessage: null,
+          outputReference: output as object,
+        },
+      });
+    });
+
+    if (
+      wasAiProcessed({
+        aiEvaluationSummary,
+        technicalScore: output.technicalScore,
+        communicationScore: output.communicationScore,
+        problemSolvingScore: output.problemSolvingScore,
+        architectureScore: output.architectureScore,
+        clientReadinessScore: output.clientReadinessScore,
+      })
+    ) {
+      await this.runPostProcessing(
+        organizationId,
+        BigInt(candidateId),
+        candidate.firstName,
+        candidate.lastName,
+        evaluationId,
+        requestedBy,
+        output.bestalScore,
+      );
     }
   }
 
@@ -223,16 +420,234 @@ export class EvaluationService {
       evaluationType: query.evaluationType,
     });
 
+    const evaluationIds = items.map((item) => bigintToNumber(item.id));
+    const documentIdByEvaluation = await this.resolveEvaluationDocumentIds(
+      organizationId,
+      evaluationIds,
+    );
+
     return {
-      data: items.map(mapEvaluationToListItem),
+      data: items.map((item) =>
+        mapEvaluationToListItem(
+          item,
+          documentIdByEvaluation.get(bigintToNumber(item.id)) ?? null,
+        ),
+      ),
       meta: buildPaginationMeta(query.page, query.limit, total),
     };
+  }
+
+  async downloadDocument(
+    authUser: AuthenticatedUser,
+    evaluationId: number,
+  ): Promise<DocumentDownloadPayload> {
+    const organizationId = requireOrganization(authUser);
+    await this.getEvaluationOrThrow(organizationId, evaluationId);
+    const documentId =
+      (await this.resolveEvaluationDocumentIds(organizationId, [evaluationId])).get(
+        evaluationId,
+      ) ?? null;
+
+    if (documentId == null) {
+      throw new NotFoundError('Evaluation document not found');
+    }
+
+    const document = await this.prisma.document.findFirst({
+      where: {
+        id: BigInt(documentId),
+        organizationId: BigInt(organizationId),
+        deletedAt: null,
+      },
+    });
+    if (!document) {
+      throw new NotFoundError('Evaluation document not found');
+    }
+
+    return readStoredDocumentBuffer(document, this.config, this.storageService);
+  }
+
+  private async resolveEvaluationDocumentIds(
+    _organizationId: number,
+    evaluationIds: number[],
+  ): Promise<Map<number, number>> {
+    const map = new Map<number, number>();
+    if (evaluationIds.length === 0) return map;
+
+    const jobs = await this.prisma.automationJob.findMany({
+      where: {
+        jobType: 'EVALUATION_ANALYSIS',
+        documentId: { not: null },
+        OR: evaluationIds.map((evaluationId) => ({
+          inputReference: {
+            path: ['evaluationId'],
+            equals: evaluationId,
+          },
+        })),
+      },
+      select: {
+        documentId: true,
+        inputReference: true,
+        createdAt: true,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    for (const job of jobs) {
+      const ref = job.inputReference as { evaluationId?: number } | null;
+      const evaluationId = ref?.evaluationId;
+      if (
+        evaluationId != null &&
+        !map.has(evaluationId) &&
+        job.documentId != null
+      ) {
+        map.set(evaluationId, bigintToNumber(job.documentId));
+      }
+    }
+
+    return map;
   }
 
   async getById(authUser: AuthenticatedUser, id: number): Promise<EvaluationDto> {
     const organizationId = requireOrganization(authUser);
     const evaluation = await this.getEvaluationOrThrow(organizationId, id);
     return mapEvaluationToDto(evaluation);
+  }
+
+  private async enqueueEvaluationAnalysisJob(params: {
+    authUser: AuthenticatedUser;
+    organizationId: number;
+    candidateId: number;
+    file: {
+      buffer: Buffer;
+      originalName: string;
+      mimeType: string;
+      size: number;
+    };
+  }): Promise<EvaluationAnalysisJobAccepted> {
+    const { authUser, organizationId, candidateId, file } = params;
+
+    await this.validateCandidate(organizationId, candidateId);
+
+    this.storageService.validateFile(UPLOAD_CATEGORIES.EVALUATION, {
+      mimeType: file.mimeType,
+      size: file.size,
+      originalName: file.originalName,
+    });
+
+    const uploadFile = await normalizeUploadToPdf(file);
+
+    let evaluationId: number | null = null;
+    let documentId: number | null = null;
+
+    try {
+      const draft = await this.evaluationRepository.create(organizationId, {
+        candidateId,
+        evaluatorName: DRAFT_EVALUATOR_NAME,
+        evaluationFileUrl: uploadFile.originalName,
+      });
+      evaluationId = bigintToNumber(draft.id);
+
+      const storageKey = this.storageService.buildEvaluationAssetKey(
+        organizationId,
+        evaluationId,
+        uploadFile.originalName,
+      );
+
+      const uploadResult = await this.storageService.upload(
+        storageKey,
+        {
+          buffer: uploadFile.buffer,
+          originalName: uploadFile.originalName,
+          mimeType: uploadFile.mimeType,
+          size: uploadFile.size,
+        },
+        {
+          category: UPLOAD_CATEGORIES.EVALUATION,
+          organizationId,
+          entityId: evaluationId,
+        },
+      );
+
+      const storedFileUrl = buildS3ObjectReference(uploadResult.bucket, uploadResult.key);
+
+      const signedUrl =
+        (await this.storageService.resolveFileUrl(
+          uploadResult.key,
+          uploadResult.bucket,
+          uploadFile.mimeType,
+        )) ?? storedFileUrl;
+
+      const document = await this.prisma.document.create({
+        data: {
+          organizationId: BigInt(organizationId),
+          uploadedById: BigInt(authUser.id),
+          entityType: 'CANDIDATE',
+          entityId: BigInt(candidateId),
+          kind: 'GENERAL',
+          fileName: uploadResult.key.split('/').pop() ?? uploadFile.originalName,
+          originalName: uploadFile.originalName,
+          s3Key: uploadResult.key,
+          s3Bucket: uploadResult.bucket,
+          fileUrl: storedFileUrl,
+          mimeType: uploadFile.mimeType,
+          fileSize: BigInt(uploadFile.size),
+          status: 'UPLOADED',
+        },
+      });
+      documentId = bigintToNumber(document.id);
+
+      await this.evaluationRepository.update(organizationId, evaluationId, {
+        evaluationFileUrl: storedFileUrl,
+      });
+
+      const automation = new AutomationService(this.fastify);
+      const candidateRow = await this.prisma.candidate.findFirst({
+        where: {
+          id: BigInt(candidateId),
+          organizationId: BigInt(organizationId),
+          deletedAt: null,
+        },
+        select: { bestalScore: true },
+      });
+      const previousBestalScore = candidateRow?.bestalScore ?? null;
+
+      const job = await automation.enqueueEvaluationAnalysis({
+        candidateId,
+        documentId,
+        requestedBy: authUser.id,
+        documentUrl: signedUrl,
+        previousBestalScore,
+        inputReference: {
+          candidateId,
+          documentId,
+          evaluationId,
+          fileName: uploadFile.originalName,
+          mimeType: uploadFile.mimeType,
+          previousBestalScore,
+        },
+      });
+
+      return {
+        jobId: job.id,
+        status: job.status,
+        candidateId,
+        documentId,
+        evaluationId,
+      };
+    } catch (error) {
+      if (evaluationId != null) {
+        await this.evaluationRepository
+          .softDelete(organizationId, evaluationId)
+          .catch(() => undefined);
+      }
+      throw error instanceof BadRequestError
+        ? error
+        : new BadRequestError(
+            error instanceof Error
+              ? error.message
+              : 'Evaluation AI analysis enqueue failed',
+          );
+    }
   }
 
   private async runPostProcessing(
@@ -242,11 +657,13 @@ export class EvaluationService {
     lastName: string,
     evaluationId: number,
     triggeredByUserId: number,
+    bestalScoreOverride?: number | null,
   ): Promise<void> {
     const { bestalScore } = await recalculateCandidateScoresFromEvaluations(
       this.prisma,
       organizationId,
       Number(candidateId),
+      bestalScoreOverride != null ? { bestalScoreOverride } : undefined,
     );
 
     await notifyEvaluationProcessed(this.prisma, this.config, {
@@ -298,4 +715,43 @@ export class EvaluationService {
 
     assertCanCreateEvaluation(candidate);
   }
+}
+
+function normalizeRecommendation(value: string | undefined): string | undefined {
+  if (!value?.trim()) return undefined;
+  const normalized = value.trim().toLowerCase().replace(/[_-]+/g, ' ');
+  const exact = EVALUATION_RECOMMENDATIONS.find(
+    (item) => item.toLowerCase() === normalized,
+  );
+  if (exact) return exact;
+  const aliases: Record<string, (typeof EVALUATION_RECOMMENDATIONS)[number]> = {
+    rejected: 'Reject',
+    reject: 'Reject',
+    'no hire': 'Reject',
+    'strong no hire': 'Reject',
+    'do not hire': 'Reject',
+    hold: 'Borderline',
+    maybe: 'Borderline',
+    'strong hire': 'Strong Hire',
+    hire: 'Hire',
+  };
+  return aliases[normalized] ?? value.trim().slice(0, 100);
+}
+
+function normalizeEvaluationType(value: string | undefined): string | undefined {
+  if (!value?.trim()) return undefined;
+  const normalized = value.trim().toLowerCase();
+  const exact = EVALUATION_TYPES.find((item) => item.toLowerCase() === normalized);
+  return exact ?? value.trim().slice(0, 100);
+}
+
+function normalizeEvaluationDate(
+  value: string | undefined,
+): Date | null | undefined {
+  if (value == null) return undefined;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  const match = trimmed.match(/^(\d{4}-\d{2}-\d{2})/);
+  if (!match) return undefined;
+  return new Date(`${match[1]}T00:00:00.000Z`);
 }

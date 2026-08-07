@@ -28,12 +28,17 @@ import {
   useWatch,
   type Resolver,
 } from 'react-hook-form';
+import { AiScreeningStatusBanner } from '../candidates/AiScreeningStatusBanner';
 import { useSkillCommunitiesList } from '../../hooks/api/useSkillCommunities';
+import { useAiScreeningJob } from '../../hooks/useAiScreeningJob';
+import { useBgvAiJob } from '../../hooks/useBgvAiJob';
+import { useEvaluationAiJob } from '../../hooks/useEvaluationAiJob';
 import { usePermissions } from '../../hooks/usePermissions';
 import { applyResumeExtractionToWizardForm } from '../../lib/api/ai/resume-extraction.mapper';
+import { TIMEZONE_OPTIONS } from '../../lib/timezones';
 import { mapEvaluationExtractionToForm } from '../../lib/api/ai/evaluation-extraction.mapper';
+import { mapBgvExtractionToForm } from '../../lib/api/ai/bgv-extraction.mapper';
 import { candidatesApi } from '../../lib/api/candidates';
-import { evaluationsApi } from '../../lib/api/evaluations';
 import { getApiErrorMessage } from '../../lib/api/errors';
 import type { SkillCommunityListItem } from '../../lib/api/types';
 import { getBgvChecksForType } from '../../lib/entity-field-metadata';
@@ -45,6 +50,7 @@ import {
   candidateWizardFormSchema,
   candidateWizardSaveSchema,
   candidateWizardSubmitSchema,
+  PREFERRED_SHIFT_OPTIONS,
   DRAFT_STORAGE_KEY,
   getInitialTabForEntryMethod,
   WIZARD_TABS,
@@ -212,14 +218,14 @@ function BasicDetailsTab({
   } = useFormContext<CandidateWizardFormValues>();
   const skillCommunities = useSkillCommunityOptions();
   const resumeFileName = watch('resumeFileName');
-  const profileStatus = watch('profileStatus');
-  const [screening, setScreening] = useState(false);
+  const aiScreening = useAiScreeningJob();
   const [error, setError] = useState<string | null>(null);
 
   function handleResumeSelect(file: File) {
     pendingUploads.current.resume = file;
     setValue('resumeFileName', file.name, { shouldDirty: true, shouldValidate: true });
     setError(null);
+    aiScreening.reset();
     onToast(`Resume "${file.name}" ready — click Run AI Screening`);
   }
 
@@ -234,14 +240,13 @@ function BasicDetailsTab({
       return;
     }
 
-    setScreening(true);
     setError(null);
     try {
       const current = getValues();
-      const { candidate, extraction } = await candidatesApi.extractResume(
-        file,
-        draftCandidateId ?? undefined,
-      );
+      const result = await aiScreening.runScreening(file, draftCandidateId ?? undefined);
+      if (!result) return;
+
+      const { candidate, extraction } = result;
       const mapped = applyResumeExtractionToWizardForm(extraction, skillCommunities, file.name);
       const next: CandidateWizardFormValues = {
         ...candidateWizardDefaults,
@@ -264,8 +269,6 @@ function BasicDetailsTab({
       );
     } catch (err) {
       setError(getApiErrorMessage(err, 'AI screening failed'));
-    } finally {
-      setScreening(false);
     }
   }
 
@@ -319,7 +322,17 @@ function BasicDetailsTab({
               <span>Resume Uploaded — {resumeFileName}</span>
             </div>
           ) : null}
-          {error ? (
+          <AiScreeningStatusBanner
+            status={aiScreening.status}
+            errorMessage={aiScreening.errorMessage ?? error}
+            retrying={aiScreening.isRunning}
+            onRetry={
+              aiScreening.status === 'FAILED' && pendingUploads.current.resume
+                ? () => void runAiScreening()
+                : undefined
+            }
+          />
+          {error && aiScreening.status !== 'FAILED' ? (
             <p className="text-sm text-destructive" role="alert">
               {error}
             </p>
@@ -328,10 +341,10 @@ function BasicDetailsTab({
             type="button"
             variant="primary"
             size="sm"
-            disabled={!resumeFileName || screening}
+            disabled={!resumeFileName || aiScreening.isRunning}
             onClick={() => void runAiScreening()}
           >
-            {screening ? (
+            {aiScreening.isRunning ? (
               <>
                 <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
                 Running AI Screening…
@@ -390,12 +403,12 @@ function ProfessionalDetailsTab() {
           </FormField>
           <FormField label="Timezone" name="timezone">
             <Select id="timezone" {...register('timezone')}>
-              <option value="Asia/Kolkata">IST (Asia/Kolkata)</option>
-              <option value="America/New_York">EST (America/New_York)</option>
-              <option value="America/Chicago">CST (America/Chicago)</option>
-              <option value="America/Los_Angeles">PST (America/Los_Angeles)</option>
-              <option value="Europe/London">GMT (Europe/London)</option>
-              <option value="UTC">UTC</option>
+              <option value="">— Select —</option>
+              {TIMEZONE_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
             </Select>
           </FormField>
           <FormField label="LinkedIn" name="linkedinUrl">
@@ -576,7 +589,14 @@ function AvailabilityTab() {
           />
         </FormField>
         <FormField label="Preferred Shift" name="preferredShift">
-          <Input id="preferredShift" {...register('preferredShift')} placeholder="e.g. IST mornings" />
+          <Select id="preferredShift" {...register('preferredShift')}>
+            <option value="">— Select —</option>
+            {PREFERRED_SHIFT_OPTIONS.map((shift) => (
+              <option key={shift} value={shift}>
+                {shift}
+              </option>
+            ))}
+          </Select>
         </FormField>
         <FormField label="Min Hours / Week" name="minHoursPerWeek">
           <Input
@@ -614,17 +634,13 @@ function PricingTab() {
   const { canViewPayRate } = usePermissions();
   const payRate = watch('payRate');
   const billRate = watch('billRate');
-  const margin =
-    typeof payRate === 'number' &&
-    typeof billRate === 'number' &&
-    !Number.isNaN(payRate) &&
-    !Number.isNaN(billRate)
-      ? billRate - payRate
-      : null;
+  const pay = typeof payRate === 'number' && Number.isFinite(payRate) ? payRate : null;
+  const bill = typeof billRate === 'number' && Number.isFinite(billRate) ? billRate : null;
+  const margin = pay != null && bill != null ? bill - pay : null;
 
   return (
     <SectionCard title="Pricing (Internal Only)">
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-4 sm:grid-cols-3">
         {canViewPayRate && (
           <FormField label="Candidate Pay Rate ($/hr)" name="payRate">
             <Input
@@ -645,13 +661,15 @@ function PricingTab() {
             {...register('billRate', { valueAsNumber: true })}
           />
         </FormField>
-        <FormField label="Margin" name="margin" hint="Auto calculated">
-          <Input id="margin" readOnly value={margin == null ? '' : `${margin}/hr`} placeholder="—" />
+        <FormField label="Gross Margin ($/hr)" name="margin" hint="Auto calculated">
+          <Input
+            id="margin"
+            readOnly
+            value={margin == null ? '' : String(margin)}
+            placeholder="—"
+          />
         </FormField>
-        <FormField label="Currency" name="currency">
-          <Input id="currency" maxLength={3} {...register('currency')} />
-        </FormField>
-        <FormField label="Expected Rate" name="expectedRate">
+        <FormField label="Expected Rate ($/hr)" name="expectedRate">
           <Input
             id="expectedRate"
             type="number"
@@ -659,6 +677,9 @@ function PricingTab() {
             step={0.01}
             {...register('expectedRate', { valueAsNumber: true })}
           />
+        </FormField>
+        <FormField label="Currency" name="currency">
+          <Input id="currency" maxLength={3} {...register('currency')} />
         </FormField>
         <div className="sm:col-span-2">
           <FormField label="Pricing Notes" name="pricingNotes">
@@ -686,15 +707,101 @@ function EvaluationTab({
   onToast: (message: string) => void;
 }) {
   const { register, setValue, watch } = useFormContext<CandidateWizardFormValues>();
-  const [extracting, setExtracting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [recruiterReviewBanner, setRecruiterReviewBanner] = useState<string | null>(null);
+  const [advancingRecruiterReview, setAdvancingRecruiterReview] = useState(false);
+  const evaluationAi = useEvaluationAiJob();
   const evaluationFileName = watch('evaluationFileName');
+  const profileStatus = watch('profileStatus');
+  const extracting = evaluationAi.isRunning;
+
+  useEffect(() => {
+    if (draftCandidateId == null || draftCandidateId <= 0) return;
+    if (profileStatus !== 'AI_SCREENED') return;
+
+    let cancelled = false;
+    setAdvancingRecruiterReview(true);
+    void candidatesApi
+      .completeRecruiterReview(draftCandidateId)
+      .then(() => {
+        if (cancelled) return;
+        setValue('profileStatus', 'RECRUITER_SCREENED', { shouldDirty: true });
+        setRecruiterReviewBanner(
+          'Recruiter review marked complete — you can run evaluation screening.',
+        );
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        setError(getApiErrorMessage(err, 'Could not complete recruiter review'));
+      })
+      .finally(() => {
+        if (!cancelled) setAdvancingRecruiterReview(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [draftCandidateId, profileStatus, setValue]);
 
   function handleEvaluationSelect(file: File) {
     pendingUploads.current.evaluationFile = file;
     setValue('evaluationFileName', file.name, { shouldDirty: true });
     setError(null);
+    evaluationAi.reset();
     onToast(`Evaluation "${file.name}" ready — click Run AI Screening`);
+  }
+
+  function applyEvaluationPatch(
+    extraction: Parameters<typeof mapEvaluationExtractionToForm>[0],
+    fileName: string,
+    liveAi: boolean,
+  ) {
+    const patch = mapEvaluationExtractionToForm(extraction, fileName);
+    if (!patch.aiEvaluationSummary?.trim()) {
+      throw new Error('AI did not return an evaluation summary for this document.');
+    }
+
+    if (patch.evaluatorName) {
+      setValue('evaluatorName', patch.evaluatorName, { shouldDirty: true });
+    }
+    if (patch.evaluatorCompany) {
+      setValue('evaluatorCompany', patch.evaluatorCompany, { shouldDirty: true });
+    }
+    if (patch.evaluationType) {
+      setValue('evaluationType', patch.evaluationType, { shouldDirty: true });
+    }
+    if (patch.evaluationDate) {
+      setValue('evaluationDate', patch.evaluationDate, { shouldDirty: true });
+    }
+    if (patch.recommendation) {
+      setValue('evaluationRecommendation', patch.recommendation, { shouldDirty: true });
+    }
+    if (patch.technicalScore != null) {
+      setValue('technicalScore', patch.technicalScore, { shouldDirty: true });
+    }
+    if (patch.communicationScore != null) {
+      setValue('communicationScore', patch.communicationScore, { shouldDirty: true });
+    }
+    if (patch.problemSolvingScore != null) {
+      setValue('problemSolvingScore', patch.problemSolvingScore, { shouldDirty: true });
+    }
+    if (patch.architectureScore != null) {
+      setValue('architectureScore', patch.architectureScore, { shouldDirty: true });
+    }
+    if (patch.clientReadinessScore != null) {
+      setValue('clientReadinessScore', patch.clientReadinessScore, { shouldDirty: true });
+    }
+    if (patch.evaluatorComments) {
+      setValue('evaluatorComments', patch.evaluatorComments, { shouldDirty: true });
+    }
+    setValue('aiEvaluationSummary', patch.aiEvaluationSummary, { shouldDirty: true });
+    setValue('evaluationFileName', fileName, { shouldDirty: true });
+
+    const confidence = Math.round(extraction.confidence * 100);
+    const modeNote = liveAi ? '' : ' (demo/static AI)';
+    onToast(
+      `Evaluation AI screening complete (${confidence}% confidence)${modeNote} — review fields before saving`,
+    );
   }
 
   async function runEvaluationAiScreening() {
@@ -703,69 +810,37 @@ function EvaluationTab({
       setError('Upload an evaluation document first.');
       return;
     }
+    if (draftCandidateId == null || draftCandidateId <= 0) {
+      setError('Save or create the candidate draft before running evaluation AI.');
+      return;
+    }
 
-    setExtracting(true);
     setError(null);
     try {
-      const { extraction, liveAi } = await evaluationsApi.extractEvaluation(
-        file,
-        draftCandidateId ?? undefined,
-      );
-      const patch = mapEvaluationExtractionToForm(extraction, file.name);
-      if (!patch.aiEvaluationSummary?.trim()) {
-        throw new Error('AI did not return an evaluation summary for this document.');
-      }
-
-      if (patch.evaluatorName) {
-        setValue('evaluatorName', patch.evaluatorName, { shouldDirty: true });
-      }
-      if (patch.evaluatorCompany) {
-        setValue('evaluatorCompany', patch.evaluatorCompany, { shouldDirty: true });
-      }
-      if (patch.evaluationType) {
-        setValue('evaluationType', patch.evaluationType, { shouldDirty: true });
-      }
-      if (patch.evaluationDate) {
-        setValue('evaluationDate', patch.evaluationDate, { shouldDirty: true });
-      }
-      if (patch.recommendation) {
-        setValue('evaluationRecommendation', patch.recommendation, { shouldDirty: true });
-      }
-      if (patch.technicalScore != null) {
-        setValue('technicalScore', patch.technicalScore, { shouldDirty: true });
-      }
-      if (patch.communicationScore != null) {
-        setValue('communicationScore', patch.communicationScore, { shouldDirty: true });
-      }
-      if (patch.problemSolvingScore != null) {
-        setValue('problemSolvingScore', patch.problemSolvingScore, { shouldDirty: true });
-      }
-      if (patch.architectureScore != null) {
-        setValue('architectureScore', patch.architectureScore, { shouldDirty: true });
-      }
-      if (patch.clientReadinessScore != null) {
-        setValue('clientReadinessScore', patch.clientReadinessScore, { shouldDirty: true });
-      }
-      if (patch.evaluatorComments) {
-        setValue('evaluatorComments', patch.evaluatorComments, { shouldDirty: true });
-      }
-      setValue('aiEvaluationSummary', patch.aiEvaluationSummary, { shouldDirty: true });
-      setValue('evaluationFileName', file.name, { shouldDirty: true });
-
-      const confidence = Math.round(extraction.confidence * 100);
-      const modeNote = liveAi ? '' : ' (demo/static AI)';
-      onToast(
-        `Evaluation AI screening complete (${confidence}% confidence)${modeNote} — review fields before saving`,
-      );
+      const result = await evaluationAi.runAnalysis(file, draftCandidateId);
+      if (!result) return;
+      applyEvaluationPatch(result.extraction, file.name, result.liveAi);
     } catch (err) {
-      setError(getApiErrorMessage(err, 'Evaluation AI screening failed'));
-    } finally {
-      setExtracting(false);
+      setError(
+        evaluationAi.errorMessage ||
+          getApiErrorMessage(err, 'Evaluation AI screening failed'),
+      );
     }
   }
 
   return (
     <div className="space-y-4">
+      {recruiterReviewBanner ? (
+        <div className="rounded-lg border border-emerald-200 bg-success/10 px-3 py-2 text-sm text-emerald-800">
+          {recruiterReviewBanner}
+        </div>
+      ) : null}
+      {advancingRecruiterReview ? (
+        <div className="flex items-center gap-2 rounded-lg border border-border bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          Completing recruiter review…
+        </div>
+      ) : null}
       <SectionCard title="Evaluation document">
         <div className="space-y-4">
           <FileUpload
@@ -773,7 +848,7 @@ function EvaluationTab({
             accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
             hint={
               extracting
-                ? 'Uploading & extracting via BesTal API…'
+                ? 'Uploading & processing via BesTal API…'
                 : 'PDF or Word — upload, then run AI to prefill scores and summary'
             }
             onFileSelect={(file) => {
@@ -786,7 +861,18 @@ function EvaluationTab({
               <span>Evaluation Uploaded — {evaluationFileName}</span>
             </div>
           ) : null}
-          {error ? (
+          <AiScreeningStatusBanner
+            context="evaluation"
+            status={evaluationAi.status}
+            errorMessage={evaluationAi.errorMessage || error}
+            retrying={extracting}
+            onRetry={
+              evaluationAi.status === 'FAILED'
+                ? () => void runEvaluationAiScreening()
+                : undefined
+            }
+          />
+          {error && evaluationAi.status !== 'FAILED' ? (
             <p className="text-sm text-destructive" role="alert">
               {error}
             </p>
@@ -927,12 +1013,30 @@ function EvaluationTab({
   );
 }
 
+function mapExtractionStatusToWizardBgvStatus(status: string | undefined): string {
+  const raw = (status ?? '').trim().toUpperCase().replace(/\s+/g, '_');
+  if (raw === 'CLEAR' || raw === 'COMPLETED_CLEAR') return 'CLEAR';
+  if (raw === 'FAILED' || raw === 'REJECTED') return 'FAILED';
+  if (raw === 'NOT_STARTED') return 'NOT_STARTED';
+  return 'IN_PROGRESS';
+}
+
 function BackgroundCheckTab({
   pendingUploads,
+  draftCandidateId,
+  onToast,
 }: {
   pendingUploads: MutableRefObject<CandidateWizardUploads>;
+  draftCandidateId?: number | null;
+  onToast: (message: string) => void;
 }) {
   const { register, setValue, watch } = useFormContext<CandidateWizardFormValues>();
+  const [error, setError] = useState<string | null>(null);
+  const bgvAi = useBgvAiJob();
+  const bgvFileName = watch('bgvFileName');
+  const aiBgvSummary = watch('aiBgvSummary');
+  const bgvResultSummary = watch('bgvResultSummary');
+  const extracting = bgvAi.isRunning;
   const checkType = watch('bgvCheckType');
 
   useEffect(() => {
@@ -945,8 +1049,148 @@ function BackgroundCheckTab({
     setValue('bgvCriminal', checks.criminal);
   }, [checkType, setValue]);
 
+  function handleBgvReportSelect(file: File) {
+    pendingUploads.current.bgvFile = file;
+    setValue('bgvFileName', file.name, { shouldDirty: true });
+    setError(null);
+    bgvAi.reset();
+    onToast(`BGV report "${file.name}" ready — click Run BGV AI Analysis`);
+  }
+
+  function applyBgvPatch(
+    extraction: Parameters<typeof mapBgvExtractionToForm>[0],
+    fileName: string,
+    liveAi: boolean,
+    backgroundCheckId?: number,
+  ) {
+    const patch = mapBgvExtractionToForm(extraction);
+    if (!patch.aiBgvSummary?.trim()) {
+      throw new Error('AI did not return a background verification summary.');
+    }
+
+    if (patch.vendorName) {
+      setValue('bgvVendor', patch.vendorName, { shouldDirty: true });
+    }
+    if (patch.checkType) {
+      setValue('bgvCheckType', patch.checkType as CandidateWizardFormValues['bgvCheckType'], {
+        shouldDirty: true,
+      });
+    }
+    setValue('aiBgvSummary', patch.aiBgvSummary, { shouldDirty: true });
+    if (patch.resultSummary) {
+      setValue('bgvResultSummary', patch.resultSummary, { shouldDirty: true });
+    }
+    if (patch.concernNotes) {
+      setValue('bgvConcernNotes', patch.concernNotes, { shouldDirty: true });
+      setValue('bgvNotes', patch.concernNotes, { shouldDirty: true });
+    }
+    setValue('bgvStatus', mapExtractionStatusToWizardBgvStatus(extraction.status), {
+      shouldDirty: true,
+    });
+    setValue('bgvFileName', fileName, { shouldDirty: true });
+    if (backgroundCheckId != null && backgroundCheckId > 0) {
+      setValue('bgvBackgroundCheckId', backgroundCheckId, { shouldDirty: true });
+    }
+
+    const confidence = Math.round(extraction.confidence * 100);
+    const modeNote = liveAi ? '' : ' (demo/static AI)';
+    onToast(
+      `BGV AI analysis complete (${confidence}% confidence)${modeNote} — review fields before submitting`,
+    );
+  }
+
+  async function runBgvAiAnalysis() {
+    const file = pendingUploads.current.bgvFile;
+    if (!file) {
+      setError('Upload a BGV report first.');
+      return;
+    }
+    if (draftCandidateId == null || draftCandidateId <= 0) {
+      setError('Save the candidate draft first (Next on any prior tab), then run BGV AI analysis.');
+      return;
+    }
+
+    setError(null);
+    try {
+      const result = await bgvAi.runAnalysis(file, draftCandidateId);
+      if (!result) return;
+      applyBgvPatch(
+        result.extraction,
+        file.name,
+        result.liveAi,
+        result.backgroundCheckId ?? bgvAi.backgroundCheckId ?? undefined,
+      );
+    } catch (err) {
+      setError(bgvAi.errorMessage || getApiErrorMessage(err, 'BGV AI analysis failed'));
+    }
+  }
+
   return (
     <div className="space-y-4">
+      <div className="rounded-xl border border-brand/20 bg-brand/5 px-4 py-3 text-sm text-muted-foreground">
+        <div className="flex items-start gap-2">
+          <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-brand" />
+          <p>
+            Upload the vendor BGV report and run AI analysis. When n8n is configured, BesTal extracts
+            check statuses, updates the BGV record, syncs the candidate badge, and notifies admins.
+          </p>
+        </div>
+      </div>
+
+      <SectionCard title="BGV report & AI analysis">
+        <div className="space-y-4">
+          <FileUpload
+            label="Upload BGV report"
+            accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            hint={
+              extracting
+                ? 'Analyzing BGV report via BesTal API…'
+                : 'PDF or Word — save draft first, then run AI analysis'
+            }
+            onFileSelect={(file) => {
+              if (!extracting) handleBgvReportSelect(file);
+            }}
+          />
+          {bgvFileName ? (
+            <div className="flex flex-wrap items-center gap-3 rounded-lg border border-emerald-200 bg-success/10 px-3 py-2 text-sm text-emerald-800">
+              <CheckCircle2 className="h-4 w-4 shrink-0" />
+              <span>BGV Report — {bgvFileName}</span>
+            </div>
+          ) : null}
+          <AiScreeningStatusBanner
+            context="bgv"
+            status={bgvAi.status}
+            errorMessage={bgvAi.errorMessage || error}
+            retrying={extracting}
+            onRetry={bgvAi.status === 'FAILED' ? () => void runBgvAiAnalysis() : undefined}
+          />
+          {error && bgvAi.status !== 'FAILED' ? (
+            <p className="text-sm text-destructive" role="alert">
+              {error}
+            </p>
+          ) : null}
+          <Button
+            type="button"
+            variant="primary"
+            size="sm"
+            disabled={!bgvFileName || extracting}
+            onClick={() => void runBgvAiAnalysis()}
+          >
+            {extracting ? (
+              <>
+                <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                Running BGV AI Analysis…
+              </>
+            ) : (
+              <>
+                <Sparkles className="mr-1.5 h-3.5 w-3.5" />
+                Run BGV AI Analysis
+              </>
+            )}
+          </Button>
+        </div>
+      </SectionCard>
+
       <SectionCard title="Background Verification details">
         <div className="grid gap-4 sm:grid-cols-2">
           <FormField label="Status" name="bgvStatus">
@@ -1002,39 +1246,57 @@ function BackgroundCheckTab({
         </div>
       </SectionCard>
 
-      <SectionCard title="Notes & documents">
+      <SectionCard title="AI results & notes">
         <div className="space-y-4">
+          {bgvResultSummary?.trim() ? (
+            <div className="rounded-lg border border-border/70 bg-muted/20 p-3">
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Check statuses
+              </p>
+              <pre className="max-h-32 overflow-auto whitespace-pre-wrap text-xs text-foreground">
+                {bgvResultSummary}
+              </pre>
+            </div>
+          ) : null}
+          <FormField label="AI BGV summary" name="aiBgvSummary">
+            <textarea
+              id="aiBgvSummary"
+              rows={3}
+              className={textareaClass}
+              {...register('aiBgvSummary')}
+              placeholder="Populated after BGV AI analysis"
+            />
+          </FormField>
+          <FormField label="Concern notes" name="bgvConcernNotes">
+            <textarea
+              id="bgvConcernNotes"
+              rows={2}
+              className={textareaClass}
+              {...register('bgvConcernNotes')}
+            />
+          </FormField>
           <FormField label="Notes" name="bgvNotes">
             <textarea id="bgvNotes" rows={3} className={textareaClass} {...register('bgvNotes')} />
           </FormField>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <FileUpload
-                label="Consent form"
-                accept=".pdf,.doc,.docx"
-                onFileSelect={(file) => {
-                  pendingUploads.current.bgvConsentFile = file;
-                  setValue('bgvConsentFileName', file.name, { shouldDirty: true });
-                }}
-              />
-              {watch('bgvConsentFileName') ? (
-                <p className="mt-2 text-sm text-success">Selected: {watch('bgvConsentFileName')}</p>
-              ) : null}
-            </div>
-            <div>
-              <FileUpload
-                label="Report document"
-                accept=".pdf,.doc,.docx,.png,.jpg,.jpeg"
-                onFileSelect={(file) => {
-                  pendingUploads.current.bgvFile = file;
-                  setValue('bgvFileName', file.name, { shouldDirty: true });
-                }}
-              />
-              {watch('bgvFileName') ? (
-                <p className="mt-2 text-sm text-success">Selected: {watch('bgvFileName')}</p>
-              ) : null}
-            </div>
+          <div>
+            <FileUpload
+              label="Consent form (optional)"
+              accept=".pdf,.doc,.docx"
+              onFileSelect={(file) => {
+                pendingUploads.current.bgvConsentFile = file;
+                setValue('bgvConsentFileName', file.name, { shouldDirty: true });
+              }}
+            />
+            {watch('bgvConsentFileName') ? (
+              <p className="mt-2 text-sm text-success">Selected: {watch('bgvConsentFileName')}</p>
+            ) : null}
           </div>
+          {aiBgvSummary?.trim() ? (
+            <p className="text-xs text-muted-foreground">
+              BGV analysis complete — candidate badge will reflect status on save. Admins are notified
+              when analysis runs on an existing BGV record.
+            </p>
+          ) : null}
         </div>
       </SectionCard>
     </div>
@@ -1086,6 +1348,7 @@ function DocumentsTab({ pendingUploads }: { pendingUploads: MutableRefObject<Can
 function ReviewTab() {
   const { register, watch } = useFormContext<CandidateWizardFormValues>();
   const values = watch();
+  const profileStatus = values.profileStatus;
 
   return (
     <div className="space-y-4">
@@ -1152,6 +1415,14 @@ function ReviewTab() {
           <div>
             <dt className="text-muted-foreground">BGV Vendor</dt>
             <dd className="font-medium">{values.bgvVendor || '—'}</dd>
+          </div>
+          <div>
+            <dt className="text-muted-foreground">BGV Report</dt>
+            <dd className="font-medium">{values.bgvFileName || '—'}</dd>
+          </div>
+          <div className="sm:col-span-2">
+            <dt className="text-muted-foreground">AI BGV Summary</dt>
+            <dd className="font-medium whitespace-pre-wrap">{values.aiBgvSummary || '—'}</dd>
           </div>
           <div>
             <dt className="text-muted-foreground">Resume</dt>
@@ -1238,6 +1509,10 @@ function TabContent({
       return <AvailabilityTab />;
     case 'pricing':
       return <PricingTab />;
+    case 'documents':
+      return <DocumentsTab pendingUploads={pendingUploads} />;
+    case 'review':
+      return <ReviewTab />;
     case 'evaluation':
       return (
         <EvaluationTab
@@ -1245,12 +1520,15 @@ function TabContent({
           draftCandidateId={draftCandidateId}
           onToast={onToast}
         />
-      );    case 'background-check':
-      return <BackgroundCheckTab pendingUploads={pendingUploads} />;
-    case 'documents':
-      return <DocumentsTab pendingUploads={pendingUploads} />;
-    case 'review':
-      return <ReviewTab />;
+      );
+    case 'background-check':
+      return (
+        <BackgroundCheckTab
+          pendingUploads={pendingUploads}
+          draftCandidateId={draftCandidateId}
+          onToast={onToast}
+        />
+      );
     default:
       return null;
   }
@@ -1368,7 +1646,7 @@ export function CandidateWizard({
   async function submitForApproval(formValuesToSubmit: CandidateWizardFormValues) {
     if (!canSubmitCandidateForApproval(formValuesToSubmit)) {
       onToast(
-        'Complete Basic Details (with AI screening), Skills, Availability, and Pricing before submitting',
+        'Complete Basic Details (with AI screening), Skills, Availability, Pricing, Evaluation, and Background Verification before submitting',
       );
       return;
     }
@@ -1515,7 +1793,7 @@ export function CandidateWizard({
                     title={
                       submitReady
                         ? undefined
-                        : 'Complete Basic Details (with AI screening), Skills, Availability, and Pricing first'
+                        : 'Complete Basic Details (with AI screening), Skills, Availability, Pricing, Evaluation, and Background Verification first'
                     }
                   >
                     {isSubmitting ? 'Submitting…' : 'Submit for Approval'}
@@ -1525,8 +1803,8 @@ export function CandidateWizard({
             </div>
             {isLastTab && !submitReady ? (
               <p className="mt-2 text-right text-xs text-muted-foreground">
-                Submit unlocks after Basic Details (with AI screening), Skills, Availability, and Pricing
-                are complete.
+                Submit unlocks after Basic Details (with AI screening), Skills, Availability, Pricing,
+                Evaluation, and Background Verification are complete.
               </p>
             ) : null}
           </div>

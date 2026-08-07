@@ -204,4 +204,12 @@ export class BackgroundCheckController {
     const data = await this.backgroundCheckService.reopen(request.authUser!, id);
     return reply.status(200).send({ data });
   };
+
+  downloadReport = async (request: FastifyRequest, reply: FastifyReply) => {
+    const { id } = request.params as { id: number };
+    const file = await this.backgroundCheckService.downloadReport(request.authUser!, id);
+    reply.header('Content-Type', file.mimeType);
+    reply.header('Content-Disposition', `attachment; filename="${file.fileName}"`);
+    return reply.send(file.buffer);
+  };
 }

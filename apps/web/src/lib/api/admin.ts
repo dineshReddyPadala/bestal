@@ -245,7 +245,6 @@ export const adminApi = {
   getSettings: () => apiGet<Record<string, unknown>>('/admin/settings'),
   putSetting: async (
     key:
-      | 'ai'
       | 'oorwin'
       | 'security'
       | 'scoring'
@@ -253,7 +252,8 @@ export const adminApi = {
       | 'trials'
       | 'notifications'
       | 'integrations'
-      | 'commercials',
+      | 'commercials'
+      | 'workflows',
     body: unknown,
   ) => {
     const json = await apiRequest<{ data: Record<string, unknown> }>(`/admin/settings/${key}`, {

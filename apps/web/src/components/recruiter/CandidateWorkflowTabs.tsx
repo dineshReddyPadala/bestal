@@ -7,6 +7,7 @@ import {
 } from '@bestal/mock-data';
 import { formatCurrency, formatDate } from '@bestal/shared-utils';
 import { usePermissions } from '../../hooks/usePermissions';
+import { TIMEZONE_OPTIONS } from '../../lib/timezones';
 import {
   Badge,
   Button,
@@ -207,7 +208,13 @@ export function CandidateWorkflowTabs({ candidate }: CandidateWorkflowTabsProps)
               </Select>
             </FormField>
             <FormField label="Timezone" htmlFor="timezone">
-              <Input id="timezone" defaultValue={availability?.timezone ?? 'America/New_York'} />
+              <Select id="timezone" defaultValue={availability?.timezone ?? 'America/New_York'}>
+                {TIMEZONE_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </Select>
             </FormField>
             <FormField label="Notice period (days)" htmlFor="notice">
               <Input

@@ -62,6 +62,7 @@ export async function recalculateCandidateScoresFromEvaluations(
   prisma: PrismaClient,
   organizationId: number,
   candidateId: number,
+  options?: { bestalScoreOverride?: number | null },
 ): Promise<{ bestalScore: number | null; evaluationStatus: string }> {
   const latest = await prisma.evaluation.findFirst({
     where: {
@@ -85,7 +86,10 @@ export async function recalculateCandidateScoresFromEvaluations(
     return { bestalScore: null, evaluationStatus: 'NOT_STARTED' };
   }
 
-  const bestalScore = computeBestalScore(latest);
+  const bestalScore =
+    options?.bestalScoreOverride != null
+      ? options.bestalScoreOverride
+      : computeBestalScore(latest);
   const evaluationStatus = deriveEvaluationStatus(latest);
 
   await prisma.candidate.update({

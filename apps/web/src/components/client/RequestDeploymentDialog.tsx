@@ -1,6 +1,7 @@
 import { Button, Dialog, Input, Select } from '@bestal/ui';
 import { useState } from 'react';
 import { getApiErrorMessage } from '../../lib/api/errors';
+import { TIMEZONE_OPTIONS } from '../../lib/timezones';
 import { Label } from '../ui/label';
 
 export type DeploymentRequestFormValues = {
@@ -126,11 +127,17 @@ export function RequestDeploymentDialog({
           </div>
           <div className="space-y-2">
             <Label htmlFor="timezone">Timezone</Label>
-            <Input
+            <Select
               id="timezone"
               value={values.timezone}
               onChange={(e) => setField('timezone', e.target.value)}
-            />
+            >
+              {TIMEZONE_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </Select>
           </div>
           <div className="space-y-2">
             <Label htmlFor="startDate">Start date</Label>

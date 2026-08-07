@@ -1,18 +1,13 @@
 import type { ClientSearchRecord } from '@bestal/mock-data';
-import { isBgvClear } from './candidate-approval-gates';
 
 export type ClientSearchFilters = {
   query: string;
   community: string;
-  role: string;
   experience: string;
   rate: string;
   availability: string;
   timezone: string;
   minScore: number;
-  evaluation: string;
-  bgv: string;
-  trialEligible: string;
 };
 
 export type ClientSearchSort =
@@ -25,21 +20,12 @@ export type ClientSearchSort =
 export const DEFAULT_CLIENT_SEARCH_FILTERS: ClientSearchFilters = {
   query: '',
   community: 'all',
-  role: 'all',
   experience: 'all',
   rate: 'all',
   availability: 'all',
   timezone: 'all',
   minScore: 0,
-  evaluation: 'all',
-  bgv: 'all',
-  trialEligible: 'all',
 };
-
-function matchesBgvFilter(recordStatus: string, filter: string): boolean {
-  if (filter === 'CLEAR') return isBgvClear(recordStatus);
-  return recordStatus === filter;
-}
 
 export function filterClientSearchRecords(
   records: readonly ClientSearchRecord[],
@@ -66,7 +52,6 @@ export function filterClientSearchRecords(
     }
 
     if (filters.community !== 'all' && r.community !== filters.community) return false;
-    if (filters.role !== 'all' && r.role !== filters.role) return false;
 
     if (filters.experience !== 'all') {
       const [min, max] = filters.experience.split('-').map(Number);
@@ -84,11 +69,6 @@ export function filterClientSearchRecords(
 
     if (filters.timezone !== 'all' && r.timezone !== filters.timezone) return false;
     if (r.bestalScore < filters.minScore) return false;
-    if (filters.evaluation !== 'all' && r.evaluationStatus !== filters.evaluation) return false;
-    if (filters.bgv !== 'all' && !matchesBgvFilter(r.bgvStatus, filters.bgv)) return false;
-
-    if (filters.trialEligible === 'yes' && !r.trialEligible) return false;
-    if (filters.trialEligible === 'no' && r.trialEligible) return false;
 
     return true;
   });
@@ -136,15 +116,11 @@ export function countActiveFilters(filters: ClientSearchFilters): number {
   let n = 0;
   if (filters.query) n++;
   if (filters.community !== 'all') n++;
-  if (filters.role !== 'all') n++;
   if (filters.experience !== 'all') n++;
   if (filters.rate !== 'all') n++;
   if (filters.availability !== 'all') n++;
   if (filters.timezone !== 'all') n++;
   if (filters.minScore > 0) n++;
-  if (filters.evaluation !== 'all') n++;
-  if (filters.bgv !== 'all') n++;
-  if (filters.trialEligible !== 'all') n++;
   return n;
 }
 

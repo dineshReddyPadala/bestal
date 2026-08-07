@@ -12,7 +12,6 @@ type PremiumSearchFiltersProps = {
   onChange: (filters: ClientSearchFilters) => void;
   resultCount: number;
   communityOptions?: readonly string[];
-  roleOptions?: readonly string[];
   timezoneOptions?: readonly string[];
   /** `panel` = stacked left sidebar; `inline` = horizontal wrap (legacy). */
   layout?: 'panel' | 'inline';
@@ -57,14 +56,12 @@ function FilterFields({
   filters,
   set,
   communityOptions,
-  roleOptions,
   timezoneOptions,
   stacked,
 }: {
   filters: ClientSearchFilters;
   set: (patch: Partial<ClientSearchFilters>) => void;
   communityOptions: readonly string[];
-  roleOptions: readonly string[];
   timezoneOptions: readonly string[];
   stacked: boolean;
 }) {
@@ -78,16 +75,6 @@ function FilterFields({
         options={[
           { value: 'all', label: 'All communities' },
           ...communityOptions.map((c) => ({ value: c, label: c })),
-        ]}
-      />
-      <FilterSelect
-        label="Role"
-        value={filters.role}
-        onChange={(v) => set({ role: v })}
-        fullWidth={stacked}
-        options={[
-          { value: 'all', label: 'All roles' },
-          ...roleOptions.map((r) => ({ value: r, label: r })),
         ]}
       />
       <FilterSelect
@@ -158,43 +145,6 @@ function FilterFields({
           <span className="w-8 shrink-0 text-xs font-medium tabular-nums">{filters.minScore}+</span>
         </div>
       </label>
-      <FilterSelect
-        label="Evaluation"
-        value={filters.evaluation}
-        onChange={(v) => set({ evaluation: v })}
-        fullWidth={stacked}
-        options={[
-          { value: 'all', label: 'All' },
-          { value: 'COMPLETED', label: 'Completed' },
-          { value: 'IN_PROGRESS', label: 'In Progress' },
-          { value: 'DRAFT', label: 'Draft' },
-          { value: 'NOT_STARTED', label: 'Not Started' },
-        ]}
-      />
-      <FilterSelect
-        label="BGV"
-        value={filters.bgv}
-        onChange={(v) => set({ bgv: v })}
-        fullWidth={stacked}
-        options={[
-          { value: 'all', label: 'All' },
-          { value: 'CLEAR', label: 'Clear' },
-          { value: 'IN_PROGRESS', label: 'In Progress' },
-          { value: 'PENDING', label: 'Pending' },
-          { value: 'NOT_STARTED', label: 'Not Started' },
-        ]}
-      />
-      <FilterSelect
-        label="Trial Eligible"
-        value={filters.trialEligible}
-        onChange={(v) => set({ trialEligible: v })}
-        fullWidth={stacked}
-        options={[
-          { value: 'all', label: 'Any' },
-          { value: 'yes', label: 'Eligible' },
-          { value: 'no', label: 'Not eligible' },
-        ]}
-      />
     </>
   );
 }
@@ -204,7 +154,6 @@ export function PremiumSearchFilters({
   onChange,
   resultCount,
   communityOptions = [],
-  roleOptions = [],
   timezoneOptions = [],
   layout = 'panel',
   className,
@@ -264,7 +213,6 @@ export function PremiumSearchFilters({
             filters={filters}
             set={set}
             communityOptions={communityOptions}
-            roleOptions={roleOptions}
             timezoneOptions={timezoneOptions}
             stacked={false}
           />
@@ -313,7 +261,6 @@ export function PremiumSearchFilters({
             filters={filters}
             set={set}
             communityOptions={communityOptions}
-            roleOptions={roleOptions}
             timezoneOptions={timezoneOptions}
             stacked
           />

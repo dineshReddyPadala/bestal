@@ -128,8 +128,12 @@ export type TrialListItem = {
   id: number;
   candidateId: number;
   candidateName: string;
+  candidateEmail?: string | null;
   clientId: number;
   clientName: string;
+  clientContactName?: string | null;
+  clientContactEmail?: string | null;
+  clientContactPhone?: string | null;
   status: string;
   roleTitle: string | null;
   startDate: string | null;
@@ -450,6 +454,7 @@ export type EvaluationListItem = {
   evaluationDate?: string | null;
   recommendation?: string | null;
   technicalScore?: number | null;
+  documentId?: number | null;
   communicationScore?: number | null;
   problemSolvingScore?: number | null;
   architectureScore?: number | null;
@@ -473,6 +478,7 @@ export type BackgroundCheckListItem = {
   consentConfirmedAt?: string | null;
   aiSummary?: string | null;
   hasReportDocument?: boolean;
+  documentId?: number | null;
   requestedAt?: string | null;
   initiatedAt?: string | null;
   completedAt: string | null;

@@ -2,6 +2,8 @@
 
 Multi-tenant recruiting SaaS platform — Toptal-inspired UI with vetted talent marketplace experience.
 
+**Architecture & data flow:** [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
+
 ## Frontend (React + Vite)
 
 Single web app at `apps/web` — marketing site plus admin, recruiter, and client portals.

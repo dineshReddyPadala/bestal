@@ -93,3 +93,58 @@ export function assertUniqueSkillCommunities(
     );
   }
 }
+
+/**
+ * Normalize AI/import skills for persistence:
+ * 1) dedupe by skill name
+ * 2) collapse rows that share the same skillCommunityId into one row
+ *    (protects against legacy unique(candidate_id, skill_community_id))
+ */
+export function normalizeSkillsForPersistence(
+  skills: CreateCandidateSkillInput[] | undefined,
+): CreateCandidateSkillInput[] | undefined {
+  const byName = normalizeCandidateSkills(skills);
+  if (!byName?.length) {
+    return byName;
+  }
+
+  const withoutCommunity: CreateCandidateSkillInput[] = [];
+  const byCommunity = new Map<number, CreateCandidateSkillInput>();
+
+  for (const skill of byName) {
+    const communityId = skill.skillCommunityId;
+    if (communityId == null) {
+      withoutCommunity.push(skill);
+      continue;
+    }
+
+    const existing = byCommunity.get(communityId);
+    if (!existing) {
+      byCommunity.set(communityId, { ...skill });
+      continue;
+    }
+
+    const existingRank = PROFICIENCY_RANK[existing.proficiencyLevel ?? 'INTERMEDIATE'];
+    const incomingRank = PROFICIENCY_RANK[skill.proficiencyLevel ?? 'INTERMEDIATE'];
+    byCommunity.set(communityId, {
+      ...existing,
+      skillName: mergeSkillNames(existing.skillName, skillLabel(skill)),
+      skillCategory: existing.skillCategory ?? skill.skillCategory,
+      notes:
+        [existing.notes, skill.notes].filter(Boolean).join('; ').slice(0, 5000) ||
+        undefined,
+      isPrimary: Boolean(existing.isPrimary || skill.isPrimary),
+      yearsExperience:
+        Math.max(existing.yearsExperience ?? 0, skill.yearsExperience ?? 0) ||
+        undefined,
+      proficiencyLevel:
+        incomingRank > existingRank
+          ? skill.proficiencyLevel ?? existing.proficiencyLevel
+          : existing.proficiencyLevel,
+    });
+  }
+
+  const merged = [...byCommunity.values(), ...withoutCommunity];
+  // Final pass ensures unique skill names after community merges.
+  return normalizeCandidateSkills(merged);
+}

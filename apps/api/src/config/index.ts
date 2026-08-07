@@ -11,6 +11,11 @@ export const envSchema = z
     LOG_LEVEL: z
       .enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace'])
       .default('info'),
+    LOG_FILE: z.string().default('./logs/api.log'),
+    LOG_CONSOLE: z
+      .enum(['true', 'false'])
+      .optional()
+      .transform((value) => value === 'true'),
     DATABASE_URL: z.string().min(1),
     JWT_SECRET: z.string().min(32),
     JWT_ACCESS_EXPIRY: z.string().default('15m'),
@@ -43,6 +48,8 @@ export const envSchema = z
     AI_EXTRACTION_URL: z.string().url().optional(),
     AI_EVALUATION_URL: z.string().url().optional(),
     AI_BGV_URL: z.string().url().optional(),
+    // Inbound n8n → Fastify callback auth (workflow URLs live in Platform Settings)
+    AUTOMATION_CALLBACK_SECRET: z.string().min(1).optional(),
   })
   .superRefine((env, ctx) => {
     if (env.STORAGE_DRIVER === 's3') {
@@ -89,6 +96,20 @@ export interface MailConfig {
   enabled: boolean;
 }
 
+/** Outbound n8n webhook configuration (secrets never sent to the frontend). */
+export interface N8nConfig {
+  baseUrl: string | null;
+  resumeWorkflowPath: string | null;
+  evaluationWorkflowPath: string | null;
+  bgvWorkflowPath: string | null;
+  webhookSecret: string | null;
+  requestTimeoutMs: number;
+}
+
+export interface AutomationConfig {
+  callbackSecret: string | null;
+}
+
 export interface AppConfig {
   nodeEnv: EnvSchema['NODE_ENV'];
   appName: string;
@@ -96,6 +117,8 @@ export interface AppConfig {
   webAppUrl: string;
   port: number;
   logLevel: EnvSchema['LOG_LEVEL'];
+  logFile: string;
+  logConsole: boolean;
   databaseUrl: string;
   jwt: {
     secret: string;
@@ -110,6 +133,7 @@ export interface AppConfig {
   aiExtractionUrl: string | null;
   aiEvaluationUrl: string | null;
   aiBgvUrl: string | null;
+  automation: AutomationConfig;
   isProduction: boolean;
   isDevelopment: boolean;
 }
@@ -125,6 +149,8 @@ function mapEnvToConfig(env: EnvSchema): AppConfig {
     webAppUrl: env.WEB_APP_URL,
     port: env.PORT,
     logLevel: env.LOG_LEVEL,
+    logFile: env.LOG_FILE,
+    logConsole: env.LOG_CONSOLE ?? false,
     databaseUrl: env.DATABASE_URL,
     jwt: {
       secret: env.JWT_SECRET,
@@ -164,6 +190,9 @@ function mapEnvToConfig(env: EnvSchema): AppConfig {
     aiExtractionUrl: env.AI_EXTRACTION_URL ?? null,
     aiEvaluationUrl: env.AI_EVALUATION_URL ?? null,
     aiBgvUrl: env.AI_BGV_URL ?? null,
+    automation: {
+      callbackSecret: env.AUTOMATION_CALLBACK_SECRET ?? null,
+    },
     isProduction: env.NODE_ENV === 'production',
     isDevelopment: env.NODE_ENV === 'development',
   };

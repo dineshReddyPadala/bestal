@@ -324,7 +324,7 @@ export class DeploymentService {
     const existing = await this.getDeploymentOrThrow(organizationId, id);
     const deployment = await this.deploymentRepository.update(organizationId, id, {
       endDate,
-      notes: clearExtensionRequest(existing.notes),
+      notes: clearExtensionRequest(existing.notes) ?? undefined,
     });
     return mapDeploymentToDto(deployment);
   }

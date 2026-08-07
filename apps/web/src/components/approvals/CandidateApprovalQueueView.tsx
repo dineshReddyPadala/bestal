@@ -8,14 +8,12 @@ import {
 } from '@bestal/ui';
 import { type ColumnDef } from '@tanstack/react-table';
 import {
-  Check,
   CheckCircle,
   ClipboardList,
   EyeOff,
   Globe,
   MoreHorizontal,
   RotateCcw,
-  X,
   XCircle,
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -62,24 +60,7 @@ type ApprovalRow = {
   evaluationStatus: string | null;
   bgvStatus: string | null;
   submittedForApprovalAt: string | null;
-  hasResume: boolean;
-  hasAiSummary: boolean;
-  hasSkills: boolean;
-  hasAvailability: boolean;
-  hasCommercials: boolean;
 };
-
-function ChecklistCell({ ok, label }: { ok: boolean; label: string }) {
-  return (
-    <span
-      className={`inline-flex items-center gap-1 text-xs ${ok ? 'text-emerald-700' : 'text-muted-foreground'}`}
-      title={label}
-    >
-      {ok ? <Check className="h-3 w-3" /> : <X className="h-3 w-3" />}
-      <span className="hidden lg:inline">{label}</span>
-    </span>
-  );
-}
 
 function toApprovalRow(candidate: CandidateListItem): ApprovalRow {
   return {
@@ -93,11 +74,6 @@ function toApprovalRow(candidate: CandidateListItem): ApprovalRow {
     evaluationStatus: candidate.evaluationStatus,
     bgvStatus: candidate.bgvStatus,
     submittedForApprovalAt: candidate.submittedForApprovalAt,
-    hasResume: Boolean(candidate.hasResume),
-    hasAiSummary: Boolean(candidate.hasAiSummary),
-    hasSkills: Boolean(candidate.hasSkills),
-    hasAvailability: Boolean(candidate.hasAvailability),
-    hasCommercials: Boolean(candidate.hasCommercials),
   };
 }
 
@@ -394,25 +370,11 @@ export function CandidateApprovalQueueView({
         ),
       },
       {
-        id: 'checklist',
-        header: 'Review',
-        cell: ({ row }) => {
-          const r = row.original;
-          return (
-            <div className="flex flex-wrap gap-x-2 gap-y-1">
-              <ChecklistCell ok={r.hasResume} label="Resume" />
-              <ChecklistCell ok={r.hasAiSummary} label="AI" />
-              <ChecklistCell ok={r.hasSkills} label="Skills" />
-              <ChecklistCell ok={r.evaluationStatus === 'COMPLETED'} label="Eval" />
-              <ChecklistCell
-                ok={Boolean(r.bgvStatus) && r.bgvStatus !== 'NOT_STARTED' && r.bgvStatus !== 'FAILED'}
-                label="BGV"
-              />
-              <ChecklistCell ok={r.hasAvailability} label="Avail" />
-              <ChecklistCell ok={r.hasCommercials} label="Rate" />
-            </div>
-          );
-        },
+        accessorKey: 'profileStatus',
+        header: 'Profile status',
+        cell: ({ getValue }) => (
+          <StatusBadge status={(getValue() as string) || 'SOURCED'} />
+        ),
       },
       {
         accessorKey: 'evaluationStatus',

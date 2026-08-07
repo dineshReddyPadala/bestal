@@ -73,6 +73,7 @@ export function mapBackgroundCheckToListItem(
     consentConfirmedAt: record.consentConfirmedAt?.toISOString() ?? null,
     aiSummary: record.aiSummary,
     hasReportDocument: Boolean(record.reportDocumentId),
+    documentId: record.reportDocumentId ? bigintToNumber(record.reportDocumentId) : null,
     initiatedAt: record.initiatedAt?.toISOString() ?? null,
     completedAt: record.completedAt?.toISOString() ?? null,
     createdAt: record.createdAt.toISOString(),

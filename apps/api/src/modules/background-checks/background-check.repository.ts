@@ -132,6 +132,24 @@ export class BackgroundCheckRepository extends BaseRepository {
           reportDocumentId:
             data.reportDocumentId != null ? BigInt(data.reportDocumentId) : null,
         }),
+        ...(data.idCheckStatus !== undefined && {
+          idCheckStatus: data.idCheckStatus,
+        }),
+        ...(data.addressCheckStatus !== undefined && {
+          addressCheckStatus: data.addressCheckStatus,
+        }),
+        ...(data.employmentCheckStatus !== undefined && {
+          employmentCheckStatus: data.employmentCheckStatus,
+        }),
+        ...(data.educationCheckStatus !== undefined && {
+          educationCheckStatus: data.educationCheckStatus,
+        }),
+        ...(data.criminalCheckStatus !== undefined && {
+          criminalCheckStatus: data.criminalCheckStatus,
+        }),
+        ...(data.referenceCheckStatus !== undefined && {
+          referenceCheckStatus: data.referenceCheckStatus,
+        }),
         ...(data.initiatedAt !== undefined && {
           initiatedAt: data.initiatedAt ? new Date(data.initiatedAt) : null,
         }),

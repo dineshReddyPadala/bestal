@@ -535,7 +535,6 @@ export class AdminController {
   putSetting =
     (
       key:
-        | 'ai'
         | 'oorwin'
         | 'email'
         | 'security'
@@ -545,7 +544,8 @@ export class AdminController {
         | 'trials'
         | 'notifications'
         | 'integrations'
-        | 'commercials',
+        | 'commercials'
+        | 'workflows',
     ) =>
     async (request: FastifyRequest, reply: FastifyReply) => {
       const data = await this.ops.putSetting(

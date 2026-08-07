@@ -7,6 +7,15 @@ import {
 } from '@bestal/shared-utils';
 import { z } from 'zod';
 
+export const PREFERRED_SHIFT_OPTIONS = [
+  'IST Morning',
+  'IST Evening',
+  'US Eastern',
+  'US Pacific',
+  'Flexible',
+  'Custom/Other',
+] as const;
+
 const optionalNumber = z.preprocess(
   (v) =>
     v === '' || v === null || v === undefined || (typeof v === 'number' && Number.isNaN(v))
@@ -112,6 +121,10 @@ export const candidateWizardFormSchema = z.object({
   bgvNotes: z.string().max(2000).optional().nullable(),
   bgvConsentFileName: z.string().optional().nullable(),
   bgvFileName: z.string().optional().nullable(),
+  aiBgvSummary: z.string().max(10000).optional().nullable(),
+  bgvResultSummary: z.string().max(5000).optional().nullable(),
+  bgvConcernNotes: z.string().max(5000).optional().nullable(),
+  bgvBackgroundCheckId: z.number().int().positive().optional().nullable(),
   profileStatus: z.enum(CANDIDATE_PROFILE_STATUSES).optional().nullable(),
   visibility: z.enum(CANDIDATE_VISIBILITY_STATUSES).optional().nullable(),
   publishAfterApproval: z.boolean().optional(),
@@ -242,6 +255,10 @@ export const candidateWizardDefaults: CandidateWizardFormValues = {
   bgvNotes: '',
   bgvConsentFileName: '',
   bgvFileName: '',
+  aiBgvSummary: '',
+  bgvResultSummary: '',
+  bgvConcernNotes: '',
+  bgvBackgroundCheckId: null,
   profileStatus: 'SOURCED',
   visibility: 'INTERNAL_ONLY',
   publishAfterApproval: false,
@@ -299,10 +316,10 @@ export const WIZARD_PROGRESS_STEPS = [
   { id: 'skills', label: 'Skills', tabId: 'skills' },
   { id: 'availability', label: 'Availability', tabId: 'availability' },
   { id: 'pricing', label: 'Pricing', tabId: 'pricing' },
-  { id: 'evaluation', label: 'Evaluation', tabId: 'evaluation' },
-  { id: 'background-check', label: 'Background Check', tabId: 'background-check' },
   { id: 'documents', label: 'Documents', tabId: 'documents' },
   { id: 'review', label: 'Review', tabId: 'review' },
+  { id: 'evaluation', label: 'Evaluation', tabId: 'evaluation' },
+  { id: 'background-check', label: 'Background Check', tabId: 'background-check' },
 ] as const;
 
 /** Tabbed sections for create-candidate wizard. */
@@ -333,16 +350,6 @@ export const WIZARD_TABS = [
     description: 'Pay rate, bill rate, and margin',
   },
   {
-    id: 'evaluation',
-    label: 'Evaluation',
-    description: 'Technical and communication scores',
-  },
-  {
-    id: 'background-check',
-    label: 'Background Verification',
-    description: 'BGV status and report',
-  },
-  {
     id: 'documents',
     label: 'Documents',
     description: 'Photo, video, and supporting files',
@@ -351,6 +358,16 @@ export const WIZARD_TABS = [
     id: 'review',
     label: 'Review',
     description: 'Confirm details, visibility, and recruiter notes',
+  },
+  {
+    id: 'evaluation',
+    label: 'Evaluation',
+    description: 'Technical and communication scores',
+  },
+  {
+    id: 'background-check',
+    label: 'Background Verification',
+    description: 'BGV status and report',
   },
 ] as const;
 
@@ -404,9 +421,11 @@ export function isProgressStepComplete(
       );
     case 'background-check':
       return Boolean(
-        values.bgvStatus &&
-          values.bgvStatus !== 'NOT_STARTED' &&
-          values.bgvStatus !== 'FAILED',
+        values.aiBgvSummary?.trim() ||
+          (values.bgvStatus &&
+            values.bgvStatus !== 'NOT_STARTED' &&
+            values.bgvStatus !== 'FAILED' &&
+            values.bgvVendor?.trim()),
       );
     case 'documents':
       return Boolean(values.resumeFileName?.trim() || values.profileImageFileName?.trim());
@@ -499,6 +518,10 @@ export const USER_FIELD_LABELS: Record<keyof CandidateWizardFormValues, string> 
   bgvNotes: 'BGV Notes',
   bgvConsentFileName: 'BGV Consent',
   bgvFileName: 'BGV Report',
+  aiBgvSummary: 'AI BGV Summary',
+  bgvResultSummary: 'BGV Check Statuses',
+  bgvConcernNotes: 'BGV Concern Notes',
+  bgvBackgroundCheckId: 'BGV Record ID',
   profileStatus: 'Profile Status',
   visibility: 'Visibility',
   publishAfterApproval: 'Publish after Approval',
@@ -596,8 +619,9 @@ export function mergeWizardSkills<
 export function mapWizardToApiCreateBody(
   form: CandidateWizardFormValues,
 ): Record<string, unknown> {
-  const grossMargin =
-    form.billRate != null && form.payRate != null ? form.billRate - form.payRate : undefined;
+  const pay = finiteNumberOrUndefined(form.payRate);
+  const bill = finiteNumberOrUndefined(form.billRate);
+  const grossMargin = pay != null && bill != null ? bill - pay : undefined;
   const aiSummary = form.aiSummary?.trim() || form.summary?.trim() || undefined;
   const primarySkillCommunityId = positiveIdOrUndefined(form.primarySkillCommunityId);
   const skills = mergeWizardSkills(form.skills)

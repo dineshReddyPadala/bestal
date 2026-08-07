@@ -61,6 +61,7 @@ export interface BackgroundCheckListItemDto {
   consentConfirmedAt: string | null;
   aiSummary: string | null;
   hasReportDocument: boolean;
+  documentId: number | null;
   initiatedAt: string | null;
   completedAt: string | null;
   createdAt: string;
@@ -107,6 +108,12 @@ export interface UpdateBackgroundCheckInput {
   reviewedAt?: string | null;
   consentDocumentId?: number | null;
   reportDocumentId?: number | null;
+  idCheckStatus?: string | null;
+  addressCheckStatus?: string | null;
+  employmentCheckStatus?: string | null;
+  educationCheckStatus?: string | null;
+  criminalCheckStatus?: string | null;
+  referenceCheckStatus?: string | null;
   initiatedAt?: string | null;
   completedAt?: string | null;
   expiresAt?: string | null;
@@ -117,4 +124,13 @@ export type UploadBgvAssetInput = {
   originalName: string;
   mimeType: string;
   size: number;
+};
+
+/** Async n8n BGV analysis acceptance (does not wait for OpenAI). */
+export type BgvAnalysisJobAccepted = {
+  jobId: number;
+  status: string;
+  candidateId: number;
+  documentId: number;
+  backgroundCheckId: number;
 };

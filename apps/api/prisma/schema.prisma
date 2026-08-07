@@ -126,6 +126,21 @@ enum CandidateImportRowAction {
   FAIL
 }
 
+enum AutomationJobType {
+  RESUME_SCREENING
+  EVALUATION_ANALYSIS
+  BGV_ANALYSIS
+}
+
+enum AutomationJobStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  RETRYING
+  CANCELLED
+}
+
 enum DocumentKind {
   GENERAL
   RESUME
@@ -317,6 +332,7 @@ model User {
   candidateImportBatches   CandidateImportBatch[] @relation("CandidateImportBatchCreator")
   platformRolesCreated     PlatformRole[]      @relation("PlatformRoleCreator")
   platformRolesUpdated     PlatformRole[]      @relation("PlatformRoleUpdatedBy")
+  automationJobsRequested  AutomationJob[]     @relation("AutomationJobRequester")
 
   @@index([deletedAt])
   @@index([isActive, deletedAt])
@@ -563,6 +579,7 @@ model Candidate {
   trialRequests         TrialRequest[]
   deployments           Deployment[]
   importRows            CandidateImportRow[]
+  automationJobs        AutomationJob[]
 
   @@unique([organizationId, email])
   @@unique([organizationId, source, sourceCandidateId])
@@ -898,6 +915,7 @@ model Document {
   candidateIntroVideo  Candidate?   @relation("CandidateIntroVideo")
   backgroundCheckConsent BackgroundCheck[] @relation("BackgroundCheckConsentDocument")
   backgroundCheckReport  BackgroundCheck[] @relation("BackgroundCheckReportDocument")
+  automationJobs         AutomationJob[]
 
   @@index([organizationId, entityType, entityId, deletedAt])
   @@index([organizationId, entityType, entityId, kind, deletedAt])
@@ -1133,4 +1151,43 @@ model CandidateImportError {
 
   @@index([batchId, sheetName, rowNumber])
   @@map("candidate_import_errors")
+}
+
+// ---------------------------------------------------------------------------
+// Automation (n8n AI workflow tracking)
+// ---------------------------------------------------------------------------
+
+model AutomationJob {
+  id              BigInt               @id @default(autoincrement())
+  candidateId     BigInt?              @map("candidate_id")
+  documentId      BigInt?              @map("document_id")
+  jobType         AutomationJobType    @map("job_type")
+  status          AutomationJobStatus  @default(PENDING)
+  workflowName    String?              @map("workflow_name") @db.VarChar(150)
+  workflowVersion String?              @map("workflow_version") @db.VarChar(50)
+  n8nExecutionId  String?              @map("n8n_execution_id") @db.VarChar(100)
+  inputReference  Json?                @map("input_reference") @db.JsonB
+  outputReference Json?                @map("output_reference") @db.JsonB
+  attempts        Int                  @default(0)
+  maxAttempts     Int                  @default(3) @map("max_attempts")
+  errorCode       String?              @map("error_code") @db.VarChar(80)
+  errorMessage    String?              @map("error_message") @db.Text
+  requestedById   BigInt               @map("requested_by")
+  startedAt       DateTime?            @map("started_at")
+  completedAt     DateTime?            @map("completed_at")
+  createdAt       DateTime             @default(now()) @map("created_at")
+  updatedAt       DateTime             @updatedAt @map("updated_at")
+
+  candidate   Candidate? @relation(fields: [candidateId], references: [id], onDelete: SetNull)
+  document    Document?  @relation(fields: [documentId], references: [id], onDelete: SetNull)
+  requestedBy User       @relation("AutomationJobRequester", fields: [requestedById], references: [id], onDelete: Restrict)
+
+  @@index([candidateId])
+  @@index([documentId])
+  @@index([jobType])
+  @@index([status])
+  @@index([n8nExecutionId])
+  @@index([requestedById])
+  @@index([status, jobType, createdAt])
+  @@map("automation_jobs")
 }

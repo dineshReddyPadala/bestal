@@ -31,6 +31,7 @@ export interface EvaluationListItemDto {
   evaluationDate: string | null;
   recommendation: string | null;
   technicalScore: number | null;
+  documentId: number | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -57,6 +58,7 @@ export interface CreateEvaluationInput {
   architectureScore?: number;
   clientReadinessScore?: number;
   recommendation?: string;
+  evaluationSummary?: string;
   evaluatorComments?: string;
   aiEvaluationSummary?: string;
   recordingUrl?: string;
@@ -74,8 +76,18 @@ export interface UpdateEvaluationInput {
   architectureScore?: number | null;
   clientReadinessScore?: number | null;
   recommendation?: string | null;
+  evaluationSummary?: string | null;
   evaluatorComments?: string | null;
   aiEvaluationSummary?: string | null;
   recordingUrl?: string | null;
   evaluationFileUrl?: string | null;
 }
+
+/** Async n8n evaluation analysis acceptance (does not wait for OpenAI). */
+export type EvaluationAnalysisJobAccepted = {
+  jobId: number;
+  status: string;
+  candidateId: number;
+  documentId: number;
+  evaluationId: number;
+};

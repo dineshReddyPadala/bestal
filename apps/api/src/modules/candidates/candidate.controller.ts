@@ -79,6 +79,10 @@ export class CandidateController {
     return this.handleUpload(request, reply, 'INTRO_VIDEO');
   };
 
+  /**
+   * Handles multipart resume upload for `/extract-resume`.
+   * Delegates to {@link CandidateService.extractResumeAndCreateDraft}.
+   */
   extractResume = async (request: FastifyRequest, reply: FastifyReply) => {
     const file = await request.file();
     if (!file) {
@@ -92,6 +96,7 @@ export class CandidateController {
       originalName: file.filename,
     });
 
+    // Optional form field — when set, resume is attached to an existing candidate (re-screen).
     const candidateIdField = file.fields?.candidateId;
     const candidateIdValue =
       candidateIdField &&
@@ -114,6 +119,7 @@ export class CandidateController {
         : undefined,
     );
 
+    // 201 = new candidate path; 200 = re-screen on an existing record.
     return reply.status(existingCandidateId ? 200 : 201).send({ data });
   };
 

@@ -1,0 +1,14 @@
+/** Shared timezone options for forms and filters (IANA values + labels). */
+export const TIMEZONE_OPTIONS = [
+  { value: 'Asia/Kolkata', label: 'IST (Asia/Kolkata)' },
+  { value: 'America/New_York', label: 'EST (America/New_York)' },
+  { value: 'America/Chicago', label: 'CST (America/Chicago)' },
+  { value: 'America/Los_Angeles', label: 'PST (America/Los_Angeles)' },
+  { value: 'Europe/London', label: 'GMT (Europe/London)' },
+  { value: 'Europe/Berlin', label: 'CET (Europe/Berlin)' },
+  { value: 'Asia/Singapore', label: 'SGT (Asia/Singapore)' },
+  { value: 'Australia/Sydney', label: 'AEST (Australia/Sydney)' },
+  { value: 'UTC', label: 'UTC' },
+] as const;
+
+export type TimezoneOption = (typeof TIMEZONE_OPTIONS)[number];

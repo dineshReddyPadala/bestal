@@ -37,8 +37,12 @@ export interface TrialListItemDto {
   id: number;
   candidateId: number;
   candidateName: string;
+  candidateEmail: string | null;
   clientId: number;
   clientName: string;
+  clientContactName: string | null;
+  clientContactEmail: string | null;
+  clientContactPhone: string | null;
   status: TrialRequestStatus;
   roleTitle: string | null;
   startDate: string | null;

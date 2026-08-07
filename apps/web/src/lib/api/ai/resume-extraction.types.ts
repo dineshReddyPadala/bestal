@@ -43,6 +43,7 @@ export type ResumeExtractionResponse = {
   primaryRole: string | null;
   seniority: string | null;
   community: string | null;
+  currentCompany?: string | null;
   skills: ResumeExtractionSkill[];
   experience: ResumeExtractionExperience[];
   education: ResumeExtractionEducation[];
