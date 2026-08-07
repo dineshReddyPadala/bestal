@@ -1,5 +1,6 @@
 // Components
 export { Button, type ButtonProps } from './components/button.js';
+export { BesTalBrand, BesTalWordmark, type BesTalBrandProps } from './components/bestal-brand.js';
 export {
   Card,
   CardHeader,

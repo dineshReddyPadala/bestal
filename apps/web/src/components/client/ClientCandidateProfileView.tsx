@@ -1,13 +1,21 @@
-import type { ClientCandidateProfile } from '@bestal/mock-data';
-import { formatCurrency } from '@bestal/shared-utils';
-import { Avatar, Badge, Button, Tabs } from '@bestal/ui';
-import { ArrowLeft, Calendar, FlaskConical, MapPin, Star } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import type { ClientCandidateProfile, ClientGroupedSkill } from '@bestal/mock-data';
+import { cn, formatCurrency, initials } from '@bestal/shared-utils';
+import { Button, Tabs } from '@bestal/ui';
+import {
+  ArrowRight,
+  BadgeCheck,
+  Calendar,
+  Clock,
+  FlaskConical,
+  Globe,
+  Laptop,
+  Star,
+} from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   clientBgvStatusText,
   clientEvaluationStatusText,
   formatClientBgvLabel,
-  formatClientEvaluationLabel,
 } from '../../lib/client-status-labels';
 
 type ClientCandidateProfileViewProps = {
@@ -16,32 +24,82 @@ type ClientCandidateProfileViewProps = {
   onRequestDeployment?: () => void;
   /** @deprecated Use onTrial */
   onPilot?: () => void;
-  /** When false, Free trial is disabled (e.g. client account not linked). */
   canRequestTrial?: boolean;
   canRequestDeployment?: boolean;
 };
 
-function ScoreDisplay({ score }: { score: number }) {
+const PROFICIENCY_SCORE: Record<string, number> = {
+  EXPERT: 96,
+  ADVANCED: 88,
+  INTERMEDIATE: 75,
+  BEGINNER: 60,
+};
+
+function proficiencyScore(level: string): number {
+  return PROFICIENCY_SCORE[level.toUpperCase()] ?? 70;
+}
+
+function skillLabel(skill: ClientGroupedSkill): string {
+  return skill.skillName?.trim() || skill.skillCommunityName;
+}
+
+function ProfilePhoto({ name, src }: { name: string; src?: string | null }) {
+  const [failed, setFailed] = useState(false);
+  const imageSrc = src?.trim();
+  const showImage = Boolean(imageSrc) && !failed;
+
+  useEffect(() => {
+    setFailed(false);
+  }, [imageSrc]);
+
   return (
-    <div className="text-center">
-      <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-        BesTal score
-      </p>
-      <p className="mt-0.5 flex items-center justify-center gap-1 text-2xl font-bold tabular-nums">
-        <Star className="h-5 w-5 fill-amber-400 text-amber-400" />
-        {score}
-      </p>
+    <div className="h-28 w-28 shrink-0 overflow-hidden rounded-xl bg-muted ring-1 ring-border/60 sm:h-32 sm:w-32">
+      {showImage ? (
+        <img
+          src={imageSrc}
+          alt={name}
+          className="h-full w-full object-cover object-top"
+          onError={() => setFailed(true)}
+        />
+      ) : (
+        <div className="flex h-full w-full items-center justify-center bg-brand-light text-2xl font-semibold text-brand">
+          {initials(name)}
+        </div>
+      )}
     </div>
   );
 }
 
-function MetricPill({ label, value }: { label: string; value: string }) {
+function MetadataItem({ icon: Icon, label }: { icon: typeof Laptop; label: string }) {
   return (
-    <div className="rounded-xl border border-border/60 bg-white px-4 py-3 text-center shadow-sm">
-      <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-        {label}
-      </p>
-      <p className="mt-1 text-sm font-semibold text-foreground">{value}</p>
+    <span className="inline-flex items-center gap-1.5 text-sm text-muted-foreground">
+      <Icon className="h-4 w-4 shrink-0 text-muted-foreground/80" />
+      <span>{label}</span>
+    </span>
+  );
+}
+
+function StatusPill({ children }: { children: string }) {
+  return (
+    <span className="inline-flex rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-800 ring-1 ring-emerald-200/70">
+      {children}
+    </span>
+  );
+}
+
+function SkillBar({ label, score }: { label: string; score: number }) {
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-center justify-between gap-3 text-sm">
+        <span className="font-medium text-foreground">{label}</span>
+        <span className="tabular-nums text-muted-foreground">{score}/100</span>
+      </div>
+      <div className="h-2 overflow-hidden rounded-full bg-muted">
+        <div
+          className="h-full rounded-full bg-emerald-500 transition-all"
+          style={{ width: `${Math.min(Math.max(score, 0), 100)}%` }}
+        />
+      </div>
     </div>
   );
 }
@@ -60,47 +118,78 @@ export function ClientCandidateProfileView({
 }: ClientCandidateProfileViewProps) {
   const rateLabel = `${formatCurrency(profile.billRate, profile.currency)}/hr`;
   const trialHandler = onTrial ?? onPilot;
-  const companyLine = [profile.currentCompany, profile.currentTitle].filter(Boolean).join(' · ');
   const trialEnabled = profile.trialEligible && canRequestTrial;
   const deployEnabled = Boolean(onRequestDeployment) && canRequestDeployment;
+  const companyLine = [profile.currentCompany, profile.currentTitle].filter(Boolean).join(' | ');
+  const timezoneLabel =
+    profile.availabilityDetail.timezone.replace(/_/g, ' ') || profile.location;
+  const locationLine = profile.location ? `${timezoneLabel}` : timezoneLabel;
+  const primarySkill =
+    profile.primarySkillCommunityName.trim() ||
+    profile.primarySkills[0]?.skillCommunityName ||
+    profile.role;
+  const isExpert = profile.bestalScore >= 85;
+
+  const rankedSkills = useMemo(() => {
+    const all = [...profile.primarySkills, ...profile.secondarySkills];
+    return [...all]
+      .sort((a, b) => proficiencyScore(b.proficiencyLevel) - proficiencyScore(a.proficiencyLevel))
+      .slice(0, 6);
+  }, [profile.primarySkills, profile.secondarySkills]);
+
+  const expertiseTags = useMemo(() => {
+    const tags = new Set<string>();
+    for (const domain of profile.industryExperience) tags.add(domain);
+    for (const skill of [...profile.primarySkills, ...profile.secondarySkills]) {
+      if (skill.skillCommunityName) tags.add(skill.skillCommunityName);
+    }
+    return [...tags].slice(0, 8);
+  }, [profile.industryExperience, profile.primarySkills, profile.secondarySkills]);
 
   const summaryTab = (
     <div className="space-y-8">
       <section>
-        <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-          Client AI Summary
-        </h3>
-        <p className="text-base leading-relaxed text-foreground/90">{profile.clientAiSummary}</p>
+        <h3 className="mb-3 text-sm font-semibold text-foreground">Client Summary</h3>
+        <p className="text-sm leading-relaxed text-muted-foreground">
+          {profile.clientAiSummary.trim() || 'Summary is not available yet.'}
+        </p>
       </section>
-      <section>
-        <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-          Strengths
-        </h3>
-        {profile.strengths.length > 0 ? (
-          <ul className="space-y-2">
-            {profile.strengths.map((s) => (
-              <li key={s} className="flex gap-2 text-sm leading-relaxed text-foreground">
-                <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-brand" />
-                {s}
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="text-sm text-muted-foreground">No strengths listed yet.</p>
-        )}
-      </section>
-      {profile.industryExperience.length > 0 ? (
+
+      {rankedSkills.length > 0 ? (
         <section>
-          <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-            Industry Experience
-          </h3>
-          <div className="flex flex-wrap gap-2">
-            {profile.industryExperience.map((d) => (
-              <Badge key={d} variant="secondary" className="font-normal">
-                {d}
-              </Badge>
+          <h3 className="mb-4 text-sm font-semibold text-foreground">Skills</h3>
+          <div className="space-y-4">
+            {rankedSkills.map((skill) => (
+              <SkillBar
+                key={`${skill.skillCommunityName}-${skill.skillName ?? ''}`}
+                label={skillLabel(skill)}
+                score={proficiencyScore(skill.proficiencyLevel)}
+              />
             ))}
           </div>
+        </section>
+      ) : null}
+
+      {expertiseTags.length > 0 ? (
+        <section>
+          <h3 className="mb-3 text-sm font-semibold text-foreground">Expertise</h3>
+          <div className="flex flex-wrap gap-2">
+            {expertiseTags.map((tag) => (
+              <span
+                key={tag}
+                className="inline-flex rounded-md bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-900 ring-1 ring-amber-200/80"
+              >
+                {tag}
+              </span>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
+      {profile.education.trim() ? (
+        <section>
+          <h3 className="mb-2 text-sm font-semibold text-foreground">Education</h3>
+          <p className="text-sm text-muted-foreground">{profile.education}</p>
         </section>
       ) : null}
     </div>
@@ -110,21 +199,31 @@ export function ClientCandidateProfileView({
     <div className="space-y-6">
       <div className="flex flex-wrap items-center gap-2">
         <span className="text-sm font-medium text-muted-foreground">Status</span>
-        <Badge variant="secondary">{formatClientEvaluationLabel(profile.evaluation.status)}</Badge>
+        <StatusPill>{clientEvaluationStatusText(profile.evaluation.status)}</StatusPill>
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <MetricPill label="Technical" value={scoreOrDash(profile.evaluation.technical)} />
-        <MetricPill label="Communication" value={scoreOrDash(profile.evaluation.communication)} />
-        <MetricPill label="Architecture" value={scoreOrDash(profile.evaluation.architecture)} />
-        <MetricPill label="BesTal score" value={String(profile.bestalScore)} />
+        {[
+          { label: 'Technical', value: scoreOrDash(profile.evaluation.technical) },
+          { label: 'Communication', value: scoreOrDash(profile.evaluation.communication) },
+          { label: 'Architecture', value: scoreOrDash(profile.evaluation.architecture) },
+          { label: 'BesTal Score', value: String(profile.bestalScore) },
+        ].map((item) => (
+          <div
+            key={item.label}
+            className="rounded-xl border border-border/60 bg-muted/20 px-4 py-3 text-center"
+          >
+            <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+              {item.label}
+            </p>
+            <p className="mt-1 text-lg font-semibold tabular-nums text-foreground">{item.value}</p>
+          </div>
+        ))}
       </div>
 
       <section>
-        <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-          Recommendation
-        </h3>
-        <p className="text-sm leading-relaxed text-foreground/90">
+        <h3 className="mb-2 text-sm font-semibold text-foreground">Recommendation</h3>
+        <p className="text-sm leading-relaxed text-muted-foreground">
           {profile.evaluation.recommendation?.trim() || 'No recommendation recorded yet.'}
         </p>
       </section>
@@ -135,23 +234,19 @@ export function ClientCandidateProfileView({
     <div className="space-y-6">
       <div className="flex flex-wrap items-center gap-2">
         <span className="text-sm font-medium text-muted-foreground">Status</span>
-        <Badge variant="secondary">{formatClientBgvLabel(profile.bgv.status)}</Badge>
+        <StatusPill>{clientBgvStatusText(profile.bgv.status)}</StatusPill>
       </div>
 
       <section>
-        <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-          Summary
-        </h3>
-        <p className="text-sm leading-relaxed text-foreground/90">
+        <h3 className="mb-2 text-sm font-semibold text-foreground">Summary</h3>
+        <p className="text-sm leading-relaxed text-muted-foreground">
           {profile.bgv.summary?.trim() || 'Background verification summary is not available yet.'}
         </p>
       </section>
 
-      <section>
-        <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-          Checks
-        </h3>
-        {profile.bgv.completedChecks.length > 0 ? (
+      {profile.bgv.completedChecks.length > 0 ? (
+        <section>
+          <h3 className="mb-3 text-sm font-semibold text-foreground">Checks</h3>
           <div className="space-y-2">
             {profile.bgv.completedChecks.map((check) => (
               <div
@@ -159,102 +254,97 @@ export function ClientCandidateProfileView({
                 className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border/50 bg-muted/20 px-4 py-3"
               >
                 <span className="text-sm font-medium text-foreground">{check.label}</span>
-                <Badge variant="outline" className="font-normal">
+                <span className="text-xs font-medium text-emerald-700">
                   {formatClientBgvLabel(check.status)}
-                </Badge>
+                </span>
               </div>
             ))}
           </div>
-        ) : (
-          <p className="text-sm text-muted-foreground">
-            Individual check details are not available. Overall status:{' '}
-            {formatClientBgvLabel(profile.bgv.status)}.
-          </p>
-        )}
-      </section>
+        </section>
+      ) : null}
     </div>
   );
 
   return (
     <div className="min-h-full bg-muted/10">
       <div className="border-b border-border/60 bg-white">
-        <div className="mx-auto max-w-6xl px-4 py-3 sm:px-6">
-          <Link
-            to="/client/search"
-            className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-          >
-            <ArrowLeft className="h-3.5 w-3.5" />
-            Back to search
-          </Link>
-        </div>
+        <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6">
+          <div className="flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between">
+            <div className="flex min-w-0 flex-col gap-5 sm:flex-row sm:items-start">
+              <ProfilePhoto name={profile.fullName} src={profile.photoUrl} />
 
-        <div className="mx-auto max-w-6xl px-4 pb-8 pt-4 sm:px-6">
-          <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
-            <div className="flex flex-col gap-6 sm:flex-row sm:items-start">
-              <Avatar
-                name={profile.fullName}
-                src={profile.photoUrl}
-                size="lg"
-                className="h-24 w-24 shrink-0 rounded-2xl ring-2 ring-border/40 sm:h-28 sm:w-28"
-              />
               <div className="min-w-0 space-y-3">
-                <div>
+                <div className="flex flex-wrap items-center gap-2">
                   <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-                    {profile.displayName}
+                    {profile.fullName}
                   </h1>
-                  <p className="mt-1 text-lg text-muted-foreground">{profile.role}</p>
-                  {companyLine ? (
-                    <p className="mt-1 text-sm text-muted-foreground">{companyLine}</p>
+                  {isExpert ? (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-800 ring-1 ring-emerald-200/70">
+                      <BadgeCheck className="h-3.5 w-3.5" />
+                      Expert
+                    </span>
                   ) : null}
                 </div>
-                <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted-foreground">
-                  <span className="inline-flex items-center gap-1">
-                    <MapPin className="h-4 w-4 shrink-0" />
-                    {profile.location}
-                  </span>
-                  <span>{profile.yearsExperience} years experience</span>
-                  <span className="inline-flex items-center gap-1 font-semibold text-foreground">
-                    <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
-                    {profile.bestalScore} BesTal
-                  </span>
-                  <span className="inline-flex items-center gap-1">
-                    <Calendar className="h-4 w-4 shrink-0" />
-                    {profile.availability}
-                  </span>
-                  <span className="font-semibold text-foreground">{rateLabel}</span>
+
+                <div>
+                  <p className="text-lg font-medium text-foreground">{profile.role}</p>
+                  {companyLine ? (
+                    <p className="mt-0.5 text-sm text-muted-foreground">{companyLine}</p>
+                  ) : null}
                 </div>
-                <div className="flex flex-wrap items-center gap-1.5">
-                  <span className="inline-flex items-center rounded-full bg-muted/70 px-2.5 py-1 text-xs font-medium text-foreground/80">
-                    {clientBgvStatusText(profile.bgv.status)}
+
+                <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+                  <MetadataItem icon={Laptop} label={primarySkill} />
+                  <MetadataItem
+                    icon={Clock}
+                    label={`${profile.yearsExperience} Years Experience`}
+                  />
+                  <MetadataItem icon={Globe} label={locationLine} />
+                  <MetadataItem icon={Calendar} label={profile.availability} />
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2">
+                  <StatusPill>{clientBgvStatusText(profile.bgv.status)}</StatusPill>
+                  <StatusPill>{clientEvaluationStatusText(profile.evaluation.status)}</StatusPill>
+                  {profile.trialEligible ? (
+                    <StatusPill>Trial: eligible</StatusPill>
+                  ) : null}
+                </div>
+
+                <div className="flex flex-wrap items-center gap-4 pt-1">
+                  <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-foreground">
+                    <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
+                    {profile.bestalScore} BesTal Score
                   </span>
-                  <span className="inline-flex items-center rounded-full bg-muted/70 px-2.5 py-1 text-xs font-medium text-foreground/80">
-                    {clientEvaluationStatusText(profile.evaluation.status)}
+                  <span className="text-sm font-semibold tabular-nums text-foreground">
+                    {rateLabel}
                   </span>
                 </div>
               </div>
             </div>
 
-            <div className="flex flex-wrap gap-2 lg:shrink-0">
+            <div className="flex shrink-0 flex-wrap gap-2 xl:pt-1">
               <Button
                 variant="primary"
                 onClick={trialHandler}
                 disabled={!trialEnabled}
                 title={
                   trialEnabled
-                    ? 'Request a free trial'
+                    ? 'Request a trial'
                     : !canRequestTrial
                       ? 'Your login is not linked to a client account'
                       : 'Candidate is not yet trial eligible'
                 }
               >
                 <FlaskConical className="mr-1.5 h-4 w-4" />
-                Free trial
+                Request Trial
               </Button>
               {onRequestDeployment ? (
                 <Button
-                  variant="outline"
+                  variant="ghost"
                   onClick={onRequestDeployment}
                   disabled={!deployEnabled}
+                  className={cn(!deployEnabled && 'opacity-50')}
                   title={
                     deployEnabled
                       ? 'Request deployment'
@@ -263,25 +353,17 @@ export function ClientCandidateProfileView({
                         : 'Request deployment'
                   }
                 >
-                  Request deployment
+                  Request Deployment
+                  <ArrowRight className="ml-1.5 h-4 w-4" />
                 </Button>
               ) : null}
-            </div>
-          </div>
-
-          <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:hidden">
-            <MetricPill label="Experience" value={`${profile.yearsExperience} yrs`} />
-            <MetricPill label="Score" value={String(profile.bestalScore)} />
-            <MetricPill label="Rate" value={rateLabel} />
-            <div className="col-span-2 sm:col-span-1">
-              <ScoreDisplay score={profile.bestalScore} />
             </div>
           </div>
         </div>
       </div>
 
-      <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
-        <div className="rounded-2xl border border-border/60 bg-white p-6 shadow-sm sm:p-8">
+      <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6">
+        <div className="rounded-xl border border-border/70 bg-white p-5 shadow-sm sm:p-6">
           <Tabs
             defaultTab="summary"
             tabs={[

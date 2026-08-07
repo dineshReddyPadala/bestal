@@ -6,25 +6,23 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
-  DataTable,
   DataTableBody,
   DataTableCell,
   DataTableHead,
   DataTableHeader,
   DataTableRow,
+  Dialog,
   useDashboardHeaderLeading,
 } from '@bestal/ui';
 import {
-  AlertCircle,
-  ArrowLeft,
+  ChevronLeft,
+  ChevronRight,
   Download,
-  FileSpreadsheet,
   Loader2,
   RefreshCw,
   Upload,
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState, type DragEvent } from 'react';
-import { Link } from 'react-router-dom';
 import {
   candidatesApi,
   type CandidateImportBatch,
@@ -32,11 +30,13 @@ import {
   type CandidateImportHistoryItem,
 } from '../../lib/api/candidates';
 import { getApiErrorMessage } from '../../lib/api/errors';
+import type { PaginationMeta } from '../../lib/api/types';
+import { useDemoToast } from '../../lib/use-demo-toast';
+import { ToastHost } from '../ui/ToastHost';
 
 type CandidateImportScreenProps = {
-  cancelPath: string;
+  cancelPath?: string;
   title?: string;
-  description?: string;
   embedded?: boolean;
   onBack?: () => void;
 };
@@ -44,6 +44,15 @@ type CandidateImportScreenProps = {
 type Tab = 'upload' | 'history';
 
 const ACTIVE_STATUSES = new Set(['QUEUED', 'VALIDATING', 'PROCESSING', 'CONFIRMING']);
+const HISTORY_PAGE_SIZE = 8;
+
+function statusBadgeVariant(status: string): 'secondary' | 'destructive' | 'success' | 'warning' {
+  const tone = statusTone(status);
+  if (tone === 'error') return 'destructive';
+  if (tone === 'success') return 'success';
+  if (tone === 'warn') return 'warning';
+  return 'secondary';
+}
 
 function statusTone(status: string): 'default' | 'success' | 'warn' | 'error' {
   if (status === 'COMPLETED') return 'success';
@@ -89,10 +98,168 @@ function formatWhen(value: string | null | undefined): string {
   }
 }
 
+function HistoryPagination({
+  meta,
+  onPageChange,
+}: {
+  meta: PaginationMeta | null;
+  onPageChange: (page: number) => void;
+}) {
+  const total = meta?.total ?? 0;
+  const page = meta?.page ?? 1;
+  const limit = meta?.limit ?? HISTORY_PAGE_SIZE;
+  const totalPages = Math.max(meta?.totalPages ?? 1, 1);
+  const rangeStart = total === 0 ? 0 : (page - 1) * limit + 1;
+  const rangeEnd = Math.min(page * limit, total);
+
+  return (
+    <div className="flex shrink-0 items-center justify-between border-t border-border bg-background px-3 py-1.5 text-xs text-muted-foreground">
+      <span className="tabular-nums">
+        {total === 0
+          ? '0 of 0'
+          : rangeStart === rangeEnd
+            ? `${rangeStart} of ${total}`
+            : `${rangeStart}–${rangeEnd} of ${total}`}
+      </span>
+      <div className="-mr-1 flex items-center">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-7 w-7 px-0"
+          onClick={() => onPageChange(page - 1)}
+          disabled={page <= 1}
+          aria-label="Previous page"
+        >
+          <ChevronLeft className="h-4 w-4" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-7 w-7 px-0"
+          onClick={() => onPageChange(page + 1)}
+          disabled={page >= totalPages}
+          aria-label="Next page"
+        >
+          <ChevronRight className="h-4 w-4" />
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function BatchDetailContent({
+  batch,
+  failedRows,
+  onDownloadSource,
+  onDownloadErrors,
+}: {
+  batch: CandidateImportBatch;
+  failedRows: CandidateImportErrorItem[];
+  onDownloadSource: () => void;
+  onDownloadErrors: () => void;
+}) {
+  return (
+    <div className="space-y-4">
+      <div className="space-y-1">
+        <p className="truncate text-sm font-medium">{batch.fileName}</p>
+        <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+          <Badge variant={statusBadgeVariant(batch.status)}>{batch.status}</Badge>
+          <span>By {batch.uploadedBy ?? '—'}</span>
+          <span>{formatWhen(batch.createdAt)}</span>
+        </div>
+        {batch.errorSummary ? (
+          <p className="text-sm text-amber-700">{batch.errorSummary}</p>
+        ) : null}
+      </div>
+
+      {ACTIVE_STATUSES.has(batch.status) ? (
+        <div className="space-y-1">
+          <div className="flex justify-between text-xs text-muted-foreground">
+            <span>Processing…</span>
+            <span>
+              {batch.processed} / {batch.total || '—'}
+            </span>
+          </div>
+          <div className="h-2 overflow-hidden rounded-full bg-muted">
+            <div
+              className="h-full bg-primary transition-all"
+              style={{
+                width: `${
+                  batch.total > 0
+                    ? Math.min(100, Math.round((batch.processed / batch.total) * 100))
+                    : 10
+                }%`,
+              }}
+            />
+          </div>
+        </div>
+      ) : null}
+
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+        <SummaryStat label="Created" value={batch.created} tone="success" />
+        <SummaryStat label="Updated" value={batch.updated} />
+        <SummaryStat label="Skipped" value={batch.skipped} tone="warn" />
+        <SummaryStat label="Failed" value={batch.failed} tone="error" />
+      </div>
+
+      <div className="flex flex-wrap gap-2">
+        {batch.hasSourceFile ? (
+          <Button variant="outline" size="sm" onClick={onDownloadSource}>
+            <Download className="mr-2 h-4 w-4" />
+            Download uploaded file
+          </Button>
+        ) : null}
+        {batch.hasErrorReport || batch.failed > 0 ? (
+          <Button variant="outline" size="sm" onClick={onDownloadErrors}>
+            <Download className="mr-2 h-4 w-4" />
+            Download error report
+          </Button>
+        ) : null}
+      </div>
+
+      <div>
+        <p className="mb-2 text-sm font-medium">Failed records</p>
+        {failedRows.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            {ACTIVE_STATUSES.has(batch.status)
+              ? 'No failures recorded yet.'
+              : 'No failed records for this import.'}
+          </p>
+        ) : (
+          <div className="scrollbar-thin max-h-72 min-w-0 overflow-auto rounded-lg border border-border/60">
+            <table className="w-full min-w-[520px] caption-bottom text-sm">
+              <DataTableHeader>
+                <DataTableRow>
+                  <DataTableHead className="w-[18%]">Sheet</DataTableHead>
+                  <DataTableHead className="w-[10%]">Row</DataTableHead>
+                  <DataTableHead className="w-[18%]">Candidate</DataTableHead>
+                  <DataTableHead className="w-[54%]">Message</DataTableHead>
+                </DataTableRow>
+              </DataTableHeader>
+              <DataTableBody>
+                {failedRows.map((row) => (
+                  <DataTableRow key={row.id}>
+                    <DataTableCell className="text-xs">{row.sheetName}</DataTableCell>
+                    <DataTableCell className="tabular-nums text-xs">
+                      {row.rowNumber ?? '—'}
+                    </DataTableCell>
+                    <DataTableCell className="truncate text-xs">
+                      {row.sourceCandidateId ?? '—'}
+                    </DataTableCell>
+                    <DataTableCell className="text-xs">{row.message}</DataTableCell>
+                  </DataTableRow>
+                ))}
+              </DataTableBody>
+            </table>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export function CandidateImportScreen({
-  cancelPath,
   title = 'Candidate Data Import',
-  description = 'Upload the standard BesTal Excel template. Processing runs in the background — check Import History for success or failures.',
   embedded = false,
   onBack,
 }: CandidateImportScreenProps) {
@@ -101,11 +268,13 @@ export function CandidateImportScreen({
   const [dragging, setDragging] = useState(false);
   const [busy, setBusy] = useState(false);
   const [fileName, setFileName] = useState<string | null>(null);
-  const [toast, setToast] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const { message, variant, show, showError, dismiss } = useDemoToast();
   const [history, setHistory] = useState<CandidateImportHistoryItem[]>([]);
+  const [historyMeta, setHistoryMeta] = useState<PaginationMeta | null>(null);
+  const [historyPage, setHistoryPage] = useState(1);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [selectedBatchId, setSelectedBatchId] = useState<number | null>(null);
+  const [detailOpen, setDetailOpen] = useState(false);
   const [selectedBatch, setSelectedBatch] = useState<CandidateImportBatch | null>(null);
   const [failedRows, setFailedRows] = useState<CandidateImportErrorItem[]>([]);
   const [detailLoading, setDetailLoading] = useState(false);
@@ -113,37 +282,30 @@ export function CandidateImportScreen({
   const headerLeading = useMemo(
     () =>
       embedded ? null : (
-        <div className="flex min-w-0 items-center gap-3">
-          <Link
-            to={cancelPath}
-            className="inline-flex shrink-0 items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-          >
-            <ArrowLeft className="h-3.5 w-3.5" />
-            Back
-          </Link>
-          <span className="hidden h-4 w-px bg-border sm:block" aria-hidden />
-          <div className="min-w-0">
-            <h1 className="truncate text-lg font-semibold tracking-tight text-foreground sm:text-xl">
-              {title}
-            </h1>
-          </div>
-        </div>
+        <h1 className="truncate text-lg font-semibold tracking-tight text-foreground sm:text-xl">
+          {title}
+        </h1>
       ),
-    [cancelPath, embedded, title],
+    [embedded, title],
   );
   useDashboardHeaderLeading(headerLeading);
 
-  const loadHistory = useCallback(async () => {
+  const loadHistory = useCallback(async (page = historyPage) => {
     setHistoryLoading(true);
     try {
-      const result = await candidatesApi.listImportHistory({ page: 1, limit: 30 });
+      const result = await candidatesApi.listImportHistory({
+        page,
+        limit: HISTORY_PAGE_SIZE,
+      });
       setHistory(result.data);
+      setHistoryMeta(result.meta);
+      setHistoryPage(result.meta.page);
     } catch (err) {
-      setError(getApiErrorMessage(err, 'Failed to load import history'));
+      showError(getApiErrorMessage(err, 'Failed to load import history'));
     } finally {
       setHistoryLoading(false);
     }
-  }, []);
+  }, [historyPage, showError]);
 
   const loadBatchDetail = useCallback(async (batchId: number) => {
     setDetailLoading(true);
@@ -155,10 +317,22 @@ export function CandidateImportScreen({
       setSelectedBatch(batch);
       setFailedRows(errors.data);
     } catch (err) {
-      setError(getApiErrorMessage(err, 'Failed to load import details'));
+      showError(getApiErrorMessage(err, 'Failed to load import details'));
     } finally {
       setDetailLoading(false);
     }
+  }, [showError]);
+
+  const openBatchDetail = useCallback((batchId: number) => {
+    setSelectedBatchId(batchId);
+    setDetailOpen(true);
+  }, []);
+
+  const closeBatchDetail = useCallback(() => {
+    setDetailOpen(false);
+    setSelectedBatchId(null);
+    setSelectedBatch(null);
+    setFailedRows([]);
   }, []);
 
   useEffect(() => {
@@ -166,44 +340,43 @@ export function CandidateImportScreen({
   }, [loadHistory]);
 
   useEffect(() => {
-    if (selectedBatchId == null) return;
+    if (selectedBatchId == null || !detailOpen) return;
     void loadBatchDetail(selectedBatchId);
-  }, [selectedBatchId, loadBatchDetail]);
+  }, [selectedBatchId, detailOpen, loadBatchDetail]);
 
   useEffect(() => {
-    if (!selectedBatch || !ACTIVE_STATUSES.has(selectedBatch.status)) return;
+    if (!detailOpen || !selectedBatch || !ACTIVE_STATUSES.has(selectedBatch.status)) return;
     const timer = window.setInterval(() => {
       void loadBatchDetail(selectedBatch.batchId);
-      void loadHistory();
+      void loadHistory(historyPage);
     }, 4000);
     return () => window.clearInterval(timer);
-  }, [selectedBatch, loadBatchDetail, loadHistory]);
+  }, [detailOpen, selectedBatch, loadBatchDetail, loadHistory, historyPage]);
 
   const handleFile = useCallback(
     async (file: File) => {
       if (!file.name.toLowerCase().endsWith('.xlsx')) {
-        setError('Please upload a .xlsx workbook using the BesTal standard template.');
+        showError('Please upload a .xlsx workbook using the BesTal standard template.');
         return;
       }
       setBusy(true);
-      setError(null);
-      setToast(null);
       setFileName(file.name);
       try {
         const data = await candidatesApi.enqueueImport(file);
-        setToast('Import started. Track progress in Import History.');
-        setSelectedBatchId(data.batchId);
+        show('Import started. Track progress in Import History.');
+        openBatchDetail(data.batchId);
         setTab('history');
-        await loadHistory();
+        setHistoryPage(1);
+        await loadHistory(1);
         await loadBatchDetail(data.batchId);
       } catch (err) {
-        setError(getApiErrorMessage(err, 'Failed to start import'));
+        showError(getApiErrorMessage(err, 'Failed to start import'));
       } finally {
         setBusy(false);
         if (inputRef.current) inputRef.current.value = '';
       }
     },
-    [loadBatchDetail, loadHistory],
+    [loadBatchDetail, loadHistory, openBatchDetail, show, showError],
   );
 
   const onDrop = useCallback(
@@ -219,57 +392,46 @@ export function CandidateImportScreen({
   const downloadTemplate = useCallback(async () => {
     try {
       await candidatesApi.downloadImportTemplate();
+      show(
+        'BesTal import template downloaded. Fill in candidate rows, save as .xlsx, then upload it on the Upload tab.',
+      );
     } catch (err) {
-      setError(getApiErrorMessage(err, 'Failed to download template'));
+      showError(getApiErrorMessage(err, 'Could not download the import template. Please try again.'));
     }
-  }, []);
+  }, [show, showError]);
 
   const downloadErrors = useCallback(async (batchId: number) => {
     try {
       await candidatesApi.downloadImportErrorReport(batchId);
+      show('Error report downloaded.');
     } catch (err) {
-      setError(getApiErrorMessage(err, 'Failed to download error report'));
+      showError(getApiErrorMessage(err, 'Failed to download error report'));
     }
-  }, []);
+  }, [show, showError]);
 
-  const downloadSourceFile = useCallback(async (batchId: number, fileName?: string) => {
+  const downloadSourceFile = useCallback(async (batchId: number, sourceName?: string) => {
     try {
-      await candidatesApi.downloadImportSourceFile(batchId, fileName);
+      await candidatesApi.downloadImportSourceFile(batchId, sourceName);
+      show('Uploaded file downloaded.');
     } catch (err) {
-      setError(getApiErrorMessage(err, 'Failed to download uploaded file'));
+      showError(getApiErrorMessage(err, 'Failed to download uploaded file'));
     }
-  }, []);
+  }, [show, showError]);
 
   return (
-    <div className={cn('space-y-6', embedded ? 'p-0' : 'p-6')}>
-      {!embedded && (
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <Link
-            to={cancelPath}
-            className="inline-flex items-center rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground"
-          >
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to candidates
-          </Link>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={() => void downloadTemplate()}>
-              <Download className="mr-2 h-4 w-4" />
-              Download template
-            </Button>
-            {onBack && (
-              <Button variant="ghost" onClick={onBack}>
-                Cancel
-              </Button>
-            )}
-          </div>
+    <>
+      <ToastHost message={message} variant={variant} onDismiss={dismiss} />
+
+      <div className={cn('flex min-w-0 flex-col gap-6', embedded ? 'p-0' : 'p-6')}>
+      {embedded && onBack ? (
+        <div className="flex justify-end">
+          <Button variant="ghost" onClick={onBack}>
+            Cancel
+          </Button>
         </div>
-      )}
+      ) : null}
 
-      <div>
-        <p className="text-sm text-muted-foreground">{description}</p>
-      </div>
-
-      <div className="flex gap-2 border-b border-border/60 pb-2">
+      <div className="flex flex-wrap items-center gap-2 border-b border-border/60 pb-2">
         <Button
           variant={tab === 'upload' ? 'default' : 'ghost'}
           size="sm"
@@ -282,26 +444,20 @@ export function CandidateImportScreen({
           size="sm"
           onClick={() => {
             setTab('history');
-            void loadHistory();
+            void loadHistory(historyPage);
           }}
         >
           Import History
         </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => void downloadTemplate()}
+        >
+          <Download className="mr-2 h-4 w-4" />
+          Download template
+        </Button>
       </div>
-
-      {toast && (
-        <div className="flex items-start gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
-          <FileSpreadsheet className="mt-0.5 h-4 w-4 shrink-0" />
-          <span>{toast}</span>
-        </div>
-      )}
-
-      {error && (
-        <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
-          <span>{error}</span>
-        </div>
-      )}
 
       {tab === 'upload' && (
         <Card>
@@ -356,221 +512,132 @@ export function CandidateImportScreen({
       )}
 
       {tab === 'history' && (
-        <div className="grid gap-6 lg:grid-cols-[1.2fr_1fr]">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0">
+        <div className="flex min-w-0 flex-col gap-6">
+          <Card className="min-w-0 overflow-hidden">
+            <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 border-b border-border/60 pb-4">
               <CardTitle className="text-base">Previous imports</CardTitle>
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => void loadHistory()}
+                onClick={() => void loadHistory(historyPage)}
                 disabled={historyLoading}
+                aria-label="Refresh import history"
               >
                 <RefreshCw className={cn('h-4 w-4', historyLoading && 'animate-spin')} />
               </Button>
             </CardHeader>
-            <CardContent className="p-0">
-              <DataTable>
-                <DataTableHeader>
-                  <DataTableRow>
-                    <DataTableHead>File</DataTableHead>
-                    <DataTableHead>Status</DataTableHead>
-                    <DataTableHead>Created</DataTableHead>
-                    <DataTableHead>Failed</DataTableHead>
-                    <DataTableHead>When</DataTableHead>
-                    <DataTableHead className="w-[70px]" />
-                  </DataTableRow>
-                </DataTableHeader>
-                <DataTableBody>
-                  {history.length === 0 && !historyLoading ? (
+            <CardContent className="flex min-w-0 flex-col p-0">
+              <div className="scrollbar-thin min-w-0 overflow-x-auto">
+                <table className="w-full min-w-[640px] caption-bottom text-sm">
+                  <DataTableHeader>
                     <DataTableRow>
-                      <DataTableCell colSpan={6} className="py-8 text-center text-sm text-muted-foreground">
-                        No imports yet.
-                      </DataTableCell>
+                      <DataTableHead className="w-[34%]">File</DataTableHead>
+                      <DataTableHead className="w-[14%]">Status</DataTableHead>
+                      <DataTableHead className="w-[10%] text-right">Created</DataTableHead>
+                      <DataTableHead className="w-[10%] text-right">Failed</DataTableHead>
+                      <DataTableHead className="w-[22%]">Uploaded</DataTableHead>
+                      <DataTableHead className="w-[10%] text-right">Actions</DataTableHead>
                     </DataTableRow>
-                  ) : (
-                    history.map((item) => (
-                      <DataTableRow
-                        key={item.batchId}
-                        className={cn(
-                          'cursor-pointer',
-                          selectedBatchId === item.batchId && 'bg-muted/40',
-                        )}
-                        onClick={() => setSelectedBatchId(item.batchId)}
-                      >
-                        <DataTableCell className="max-w-[180px] truncate font-medium">
-                          {item.fileName}
-                        </DataTableCell>
-                        <DataTableCell>
-                          <Badge variant={statusTone(item.status) === 'error' ? 'destructive' : 'secondary'}>
-                            {item.status}
-                          </Badge>
-                        </DataTableCell>
-                        <DataTableCell className="tabular-nums">{item.created}</DataTableCell>
-                        <DataTableCell className="tabular-nums">{item.failed}</DataTableCell>
-                        <DataTableCell className="whitespace-nowrap text-xs text-muted-foreground">
-                          {formatWhen(item.createdAt)}
-                        </DataTableCell>
-                        <DataTableCell>
-                          {item.hasSourceFile ? (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              title="Download uploaded file"
-                              onClick={(event) => {
-                                event.stopPropagation();
-                                void downloadSourceFile(item.batchId, item.fileName);
-                              }}
-                            >
-                              <Download className="h-4 w-4" />
-                            </Button>
-                          ) : null}
+                  </DataTableHeader>
+                  <DataTableBody>
+                    {historyLoading && history.length === 0 ? (
+                      <DataTableRow>
+                        <DataTableCell colSpan={6} className="py-10 text-center text-sm text-muted-foreground">
+                          <Loader2 className="mx-auto mb-2 h-5 w-5 animate-spin" />
+                          Loading import history…
                         </DataTableCell>
                       </DataTableRow>
-                    ))
-                  )}
-                </DataTableBody>
-              </DataTable>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Batch details</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {!selectedBatchId && (
-                <p className="text-sm text-muted-foreground">
-                  Select an import from the history list to view details and failed records.
-                </p>
-              )}
-              {detailLoading && !selectedBatch && (
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Loading…
-                </div>
-              )}
-              {selectedBatch && (
-                <>
-                  <div className="space-y-1">
-                    <p className="truncate text-sm font-medium">{selectedBatch.fileName}</p>
-                    <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                      <Badge variant={statusTone(selectedBatch.status) === 'error' ? 'destructive' : 'secondary'}>
-                        {selectedBatch.status}
-                      </Badge>
-                      <span>By {selectedBatch.uploadedBy ?? '—'}</span>
-                      <span>{formatWhen(selectedBatch.createdAt)}</span>
-                    </div>
-                    {selectedBatch.errorSummary && (
-                      <p className="text-sm text-amber-700">{selectedBatch.errorSummary}</p>
-                    )}
-                  </div>
-
-                  {ACTIVE_STATUSES.has(selectedBatch.status) && (
-                    <div className="space-y-1">
-                      <div className="flex justify-between text-xs text-muted-foreground">
-                        <span>Processing…</span>
-                        <span>
-                          {selectedBatch.processed} / {selectedBatch.total || '—'}
-                        </span>
-                      </div>
-                      <div className="h-2 overflow-hidden rounded-full bg-muted">
-                        <div
-                          className="h-full bg-primary transition-all"
-                          style={{
-                            width: `${
-                              selectedBatch.total > 0
-                                ? Math.min(
-                                    100,
-                                    Math.round(
-                                      (selectedBatch.processed / selectedBatch.total) * 100,
-                                    ),
-                                  )
-                                : 10
-                            }%`,
-                          }}
-                        />
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                    <SummaryStat label="Created" value={selectedBatch.created} tone="success" />
-                    <SummaryStat label="Updated" value={selectedBatch.updated} />
-                    <SummaryStat label="Skipped" value={selectedBatch.skipped} tone="warn" />
-                    <SummaryStat label="Failed" value={selectedBatch.failed} tone="error" />
-                  </div>
-
-                  <div className="flex flex-wrap gap-2">
-                    {selectedBatch.hasSourceFile ? (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() =>
-                          void downloadSourceFile(selectedBatch.batchId, selectedBatch.fileName)
-                        }
-                      >
-                        <Download className="mr-2 h-4 w-4" />
-                        Download uploaded file
-                      </Button>
-                    ) : null}
-                    {(selectedBatch.hasErrorReport || selectedBatch.failed > 0) && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => void downloadErrors(selectedBatch.batchId)}
-                      >
-                        <Download className="mr-2 h-4 w-4" />
-                        Download error report
-                      </Button>
-                    )}
-                  </div>
-
-                  <div>
-                    <p className="mb-2 text-sm font-medium">Failed records</p>
-                    {failedRows.length === 0 ? (
-                      <p className="text-sm text-muted-foreground">
-                        {ACTIVE_STATUSES.has(selectedBatch.status)
-                          ? 'No failures recorded yet.'
-                          : 'No failed records for this import.'}
-                      </p>
+                    ) : history.length === 0 ? (
+                      <DataTableRow>
+                        <DataTableCell colSpan={6} className="py-10 text-center text-sm text-muted-foreground">
+                          No imports yet.
+                        </DataTableCell>
+                      </DataTableRow>
                     ) : (
-                      <div className="max-h-72 overflow-auto rounded-lg border border-border/60">
-                        <DataTable>
-                          <DataTableHeader>
-                            <DataTableRow>
-                              <DataTableHead>Sheet</DataTableHead>
-                              <DataTableHead>Row</DataTableHead>
-                              <DataTableHead>Candidate</DataTableHead>
-                              <DataTableHead>Message</DataTableHead>
-                            </DataTableRow>
-                          </DataTableHeader>
-                          <DataTableBody>
-                            {failedRows.map((row) => (
-                              <DataTableRow key={row.id}>
-                                <DataTableCell className="text-xs">{row.sheetName}</DataTableCell>
-                                <DataTableCell className="tabular-nums text-xs">
-                                  {row.rowNumber ?? '—'}
-                                </DataTableCell>
-                                <DataTableCell className="text-xs">
-                                  {row.sourceCandidateId ?? '—'}
-                                </DataTableCell>
-                                <DataTableCell className="max-w-[220px] text-xs">
-                                  {row.message}
-                                </DataTableCell>
-                              </DataTableRow>
-                            ))}
-                          </DataTableBody>
-                        </DataTable>
-                      </div>
+                      history.map((item) => (
+                        <DataTableRow
+                          key={item.batchId}
+                          className={cn(
+                            'cursor-pointer',
+                            selectedBatchId === item.batchId && 'bg-muted/50',
+                          )}
+                          onClick={() => openBatchDetail(item.batchId)}
+                        >
+                          <DataTableCell className="max-w-0 truncate font-medium" title={item.fileName}>
+                            {item.fileName}
+                          </DataTableCell>
+                          <DataTableCell>
+                            <Badge variant={statusBadgeVariant(item.status)}>{item.status}</Badge>
+                          </DataTableCell>
+                          <DataTableCell className="text-right tabular-nums">{item.created}</DataTableCell>
+                          <DataTableCell className="text-right tabular-nums">{item.failed}</DataTableCell>
+                          <DataTableCell className="whitespace-nowrap text-xs text-muted-foreground">
+                            <span className="block truncate">{formatWhen(item.createdAt)}</span>
+                            <span className="block truncate text-[11px]">{item.uploadedBy || '—'}</span>
+                          </DataTableCell>
+                          <DataTableCell className="text-right">
+                            {item.hasSourceFile ? (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 px-0"
+                                title="Download uploaded file"
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  void downloadSourceFile(item.batchId, item.fileName);
+                                }}
+                              >
+                                <Download className="h-4 w-4" />
+                              </Button>
+                            ) : (
+                              <span className="inline-block w-8" aria-hidden />
+                            )}
+                          </DataTableCell>
+                        </DataTableRow>
+                      ))
                     )}
-                  </div>
-                </>
-              )}
+                  </DataTableBody>
+                </table>
+              </div>
+              <HistoryPagination
+                meta={historyMeta}
+                onPageChange={(page) => {
+                  void loadHistory(page);
+                }}
+              />
             </CardContent>
           </Card>
         </div>
       )}
-    </div>
+      </div>
+
+      <Dialog
+        open={detailOpen}
+        onClose={closeBatchDetail}
+        title="Import batch details"
+        scrollable
+        className="max-w-3xl"
+      >
+        {detailLoading && !selectedBatch ? (
+          <div className="flex items-center gap-2 py-8 text-sm text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            Loading batch details…
+          </div>
+        ) : selectedBatch ? (
+          <BatchDetailContent
+            batch={selectedBatch}
+            failedRows={failedRows}
+            onDownloadSource={() =>
+              void downloadSourceFile(selectedBatch.batchId, selectedBatch.fileName)
+            }
+            onDownloadErrors={() => void downloadErrors(selectedBatch.batchId)}
+          />
+        ) : (
+          <p className="py-4 text-sm text-muted-foreground">
+            Select an import from the history list to view details.
+          </p>
+        )}
+      </Dialog>
+    </>
   );
 }

@@ -38,7 +38,7 @@ const portals = [
 
 export function PortalLoginPage() {
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <p className="text-center text-sm text-muted-foreground">
         Select the portal that matches your role
       </p>
@@ -46,10 +46,10 @@ export function PortalLoginPage() {
         <Link
           key={id}
           to={href}
-          className="group flex items-center gap-4 rounded-xl border border-border p-4 transition-all hover:border-brand/40 hover:bg-muted/50 hover:shadow-card"
+          className="group flex items-center gap-3 rounded-xl border border-border p-3 transition-all hover:border-brand/40 hover:bg-muted/50 hover:shadow-card sm:gap-4 sm:p-4"
         >
-          <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${color}`}>
-            <Icon className="h-6 w-6" />
+          <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl sm:h-11 sm:w-11 ${color}`}>
+            <Icon className="h-5 w-5" />
           </div>
           <div className="min-w-0 flex-1">
             <p className="font-semibold text-foreground">{name}</p>

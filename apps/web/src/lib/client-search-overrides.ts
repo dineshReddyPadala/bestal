@@ -41,6 +41,7 @@ export function getClientSearchRecordsLive(): ClientSearchRecord[] {
         role: listRec.role,
         yearsExperience: listRec.yearsExperience,
         community: listRec.community,
+        primarySkillCommunityName: listRec.community,
         topSkills: cand.skills.slice(0, 4).map((s) => s.skillCommunityName),
         bestalScore: listRec.bestalScore,
         availability: listRec.availability,

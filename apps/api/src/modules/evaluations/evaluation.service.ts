@@ -13,11 +13,7 @@ import {
 } from '../../utils/index.js';
 import { buildPaginationMeta } from '../../validators/common.validator.js';
 import { notifyEvaluationProcessed } from '../../services/notification-dispatch.service.js';
-import {
-  bufferToBase64,
-  EvaluationExtractionClient,
-  type EvaluationExtractionResponse,
-} from '../../services/evaluation-extraction.client.js';
+import type { EvaluationExtractionResponse } from '../../services/evaluation-extraction.types.js';
 import { StorageService } from '../../services/storage.service.js';
 import { readStoredDocumentBuffer, type DocumentDownloadPayload } from '../../services/document-buffer.util.js';
 import { UPLOAD_CATEGORIES } from '../../services/storage/storage.constants.js';
@@ -26,6 +22,7 @@ import { normalizeUploadToPdf } from '../../services/document-pdf-normalizer.js'
 import { AutomationService } from '../automation/automation.service.js';
 import type { EvaluationAnalysisOutput } from '../automation/dto/evaluation-analysis.dto.js';
 import { N8nClient } from '../automation/n8n.client.js';
+import { N8N_AUTOMATION_REQUIRED_MESSAGE } from '../automation/automation.constants.js';
 import { readN8nConfig } from '../../services/system-settings.reader.js';
 import { assertCanCreateEvaluation } from '../candidates/candidate-pipeline.js';
 import { recalculateCandidateScoresFromEvaluations } from './candidate-score.service.js';
@@ -77,7 +74,6 @@ export class EvaluationService {
   private readonly prisma: PrismaClient;
   private readonly webAppUrl: string;
   private readonly config: FastifyInstance['config'];
-  private readonly evaluationExtractionClient: EvaluationExtractionClient;
   private readonly storageService: StorageService;
   private readonly fastify: FastifyInstance;
 
@@ -91,9 +87,6 @@ export class EvaluationService {
     this.prisma = fastify.prisma;
     this.config = fastify.config;
     this.webAppUrl = fastify.config.webAppUrl;
-    this.evaluationExtractionClient = new EvaluationExtractionClient(
-      fastify.config.aiEvaluationUrl,
-    );
     this.storageService = new StorageService(fastify.config);
   }
 
@@ -103,9 +96,7 @@ export class EvaluationService {
   }
 
   /**
-   * Upload evaluation document and extract scores.
-   * - n8n configured → async AutomationJob (returns jobId immediately)
-   * - otherwise → legacy sync Python/static extraction
+   * Upload evaluation document and extract scores via n8n (async AutomationJob).
    */
   async extractEvaluationDocument(
     authUser: AuthenticatedUser,
@@ -119,61 +110,22 @@ export class EvaluationService {
   ): Promise<EvaluationExtractResponse> {
     const organizationId = requireOrganization(authUser);
 
-    if (await this.isN8nEvaluationAnalysisEnabled()) {
-      if (candidateId == null || !Number.isInteger(candidateId) || candidateId <= 0) {
-        throw new BadRequestError(
-          'candidateId is required for Evaluation AI Analysis',
-        );
-      }
-      return this.enqueueEvaluationAnalysisJob({
-        authUser,
-        organizationId,
-        candidateId,
-        file,
-      });
+    if (!(await this.isN8nEvaluationAnalysisEnabled())) {
+      throw new BadRequestError(N8N_AUTOMATION_REQUIRED_MESSAGE);
     }
 
-    if (candidateId != null && candidateId > 0) {
-      const candidate = await this.prisma.candidate.findFirst({
-        where: {
-          id: BigInt(candidateId),
-          organizationId: BigInt(organizationId),
-          deletedAt: null,
-        },
-        select: { id: true },
-      });
-      if (!candidate) {
-        throw new BadRequestError('Candidate not found');
-      }
+    if (candidateId == null || !Number.isInteger(candidateId) || candidateId <= 0) {
+      throw new BadRequestError(
+        'candidateId is required for Evaluation AI Analysis',
+      );
     }
 
-    try {
-      const extraction = await this.evaluationExtractionClient.extract({
-        fileName: file.originalName,
-        mimeType: file.mimeType,
-        content: bufferToBase64(file.buffer),
-        ...(candidateId != null && candidateId > 0
-          ? { candidateId: String(candidateId) }
-          : {}),
-      });
-
-      if (!extraction.aiEvaluationSummary?.trim()) {
-        throw new BadRequestError(
-          'AI did not return an evaluation summary for this document.',
-        );
-      }
-
-      return {
-        extraction,
-        liveAi: this.evaluationExtractionClient.isLiveAiConfigured,
-      };
-    } catch (error) {
-      throw error instanceof BadRequestError
-        ? error
-        : new BadRequestError(
-            error instanceof Error ? error.message : 'Evaluation extraction failed',
-          );
-    }
+    return this.enqueueEvaluationAnalysisJob({
+      authUser,
+      organizationId,
+      candidateId,
+      file,
+    });
   }
 
   /**

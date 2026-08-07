@@ -1,35 +1,4 @@
-import type {
-  BgvExtractionRequestBody,
-  BgvExtractionResponse,
-} from './bgv-extraction.types.js';
-
-export type {
-  BgvExtractionRequestBody,
-  BgvExtractionResponse,
-} from './bgv-extraction.types.js';
-
-const STATIC_BGV_EXTRACTION: BgvExtractionResponse = {
-  jobId: 'bgv-demo-001',
-  confidence: 0.88,
-  extractedAt: new Date().toISOString(),
-  id: 'bgv-static-id',
-  vendorName: 'VerifyCorp Screening',
-  status: 'CLEAR',
-  idCheckStatus: 'CLEAR',
-  addressCheckStatus: 'CLEAR',
-  employmentCheckStatus: 'CLEAR',
-  educationCheckStatus: 'CLEAR',
-  criminalCheckStatus: 'CLEAR',
-  referenceCheckStatus: 'CLEAR',
-  reportUrl: null,
-  aiBgvSummary:
-    'Comprehensive background verification completed with no adverse findings across identity, address, employment, education, criminal, and reference checks.',
-  concernNotes: '',
-  initiatedDate: new Date().toISOString().slice(0, 10),
-  completedDate: new Date().toISOString().slice(0, 10),
-  checkType: 'COMPREHENSIVE',
-  warnings: ['Demo BGV extraction — configure AI_BGV_URL for live AI.'],
-};
+import type { BgvExtractionResponse } from './bgv-extraction.types.js';
 
 function asString(value: unknown): string | undefined {
   if (value == null) return undefined;
@@ -108,60 +77,6 @@ export function normalizeBgvExtractionResponse(raw: unknown): BgvExtractionRespo
   };
 }
 
-export class BgvExtractionClient {
-  constructor(private readonly aiBgvUrl: string | null) {}
-
-  get isLiveAiConfigured(): boolean {
-    return Boolean(this.aiBgvUrl);
-  }
-
-  /**
-   * - No AI_BGV_URL → hardcoded static response.
-   * - AI_BGV_URL set → POST to Python ai-service and normalize.
-   */
-  async extract(request: BgvExtractionRequestBody): Promise<BgvExtractionResponse> {
-    if (!this.aiBgvUrl) {
-      await new Promise((resolve) => setTimeout(resolve, 300));
-      return {
-        ...STATIC_BGV_EXTRACTION,
-        jobId: `bgv-static-${Date.now()}`,
-        extractedAt: new Date().toISOString(),
-        warnings: [
-          ...STATIC_BGV_EXTRACTION.warnings,
-          `Static AI response for "${request.fileName}" — AI_BGV_URL is not configured.`,
-        ],
-      };
-    }
-
-    const response = await fetch(this.aiBgvUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-      body: JSON.stringify({
-        fileName: request.fileName,
-        mimeType: request.mimeType,
-        content: request.content,
-        ...(request.candidateId ? { candidateId: request.candidateId } : {}),
-        ...(request.jobId ? { jobId: request.jobId } : {}),
-      }),
-    });
-
-    if (!response.ok) {
-      const detail = await response.text().catch(() => '');
-      throw new Error(
-        detail
-          ? `AI BGV extraction failed: ${detail}`
-          : `AI BGV extraction failed: ${response.status} ${response.statusText}`,
-      );
-    }
-
-    return normalizeBgvExtractionResponse(await response.json());
-  }
-}
-
-export function bufferToBase64(buffer: Buffer): string {
-  return buffer.toString('base64');
-}
-
 /** Build a human-readable resultSummary from per-check statuses. */
 export function formatBgvCheckStatusesSummary(extraction: BgvExtractionResponse): string {
   const lines = [
@@ -197,7 +112,7 @@ export function formatBgvAiSummaryJson(
       summary: extraction.aiBgvSummary ?? '',
       concernNotes: extraction.concernNotes ?? '',
       warnings: extraction.warnings,
-      liveAi: meta?.liveAi ?? false,
+      liveAi: meta?.liveAi ?? true,
       generatedAt: extraction.extractedAt || new Date().toISOString(),
     },
     null,

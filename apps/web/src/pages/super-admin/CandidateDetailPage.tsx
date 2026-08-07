@@ -6,13 +6,14 @@ import { ActionMenu, type ActionMenuItem } from '../../components/super-admin/Ac
 import { useConfirmAction } from '../../components/super-admin/useConfirmAction';
 import { useAdminCandidate, useAdminMutations } from '../../hooks/api/useAdmin';
 import { useDemoToast } from '../../lib/use-demo-toast';
+import { ToastHost } from '../../components/ui/ToastHost';
 
 export function SuperAdminCandidateDetailPage() {
   const { id } = useParams();
   const candidateId = Number(id);
   const { data, isLoading, isError, error, refetch } = useAdminCandidate(candidateId);
   const mutations = useAdminMutations();
-  const { message, show, showError } = useDemoToast();
+  const { message, variant, show, showError, dismiss } = useDemoToast();
   const { requestConfirm, confirmDialog } = useConfirmAction();
 
   const c = (data?.candidate ?? {}) as Record<string, unknown>;
@@ -165,6 +166,7 @@ export function SuperAdminCandidateDetailPage() {
 
   return (
     <div>
+      <ToastHost message={message} variant={variant} onDismiss={dismiss} />
       <PageHeader
         title={name}
         description={String(c.primaryRole ?? c.email ?? '')}
@@ -187,11 +189,6 @@ export function SuperAdminCandidateDetailPage() {
           </>
         }
       />
-      {message && (
-        <div className="mx-6 mb-4 rounded-xl border border-emerald-200 bg-success/10 px-4 py-3 text-sm text-success">
-          {message}
-        </div>
-      )}
 
       <div className="grid gap-4 px-6 pb-8 lg:grid-cols-2">
         <Section title="Basic details">

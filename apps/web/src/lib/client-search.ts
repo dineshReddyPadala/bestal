@@ -17,6 +17,18 @@ export type ClientSearchSort =
   | 'experience'
   | 'availability';
 
+export const DEFAULT_CLIENT_SEARCH_SORT: Exclude<ClientSearchSort, 'best-match'> = 'highest-score';
+
+export const CLIENT_SEARCH_SORT_OPTIONS: {
+  value: Exclude<ClientSearchSort, 'best-match'>;
+  label: string;
+}[] = [
+  { value: 'highest-score', label: 'Highest Score' },
+  { value: 'lowest-rate', label: 'Lowest Rate' },
+  { value: 'experience', label: 'Experience' },
+  { value: 'availability', label: 'Availability' },
+];
+
 export const DEFAULT_CLIENT_SEARCH_FILTERS: ClientSearchFilters = {
   query: '',
   community: 'all',
@@ -126,4 +138,87 @@ export function countActiveFilters(filters: ClientSearchFilters): number {
 
 export function uniqueSorted(values: readonly string[]): string[] {
   return [...new Set(values.filter(Boolean))].sort((a, b) => a.localeCompare(b));
+}
+
+export type ClientSearchFilterChip = {
+  key: keyof ClientSearchFilters;
+  label: string;
+};
+
+const EXPERIENCE_LABELS: Record<string, string> = {
+  '0-5': '0-5 yrs',
+  '6-10': '6-10 yrs',
+  '11-99': '11+ yrs',
+};
+
+const RATE_LABELS: Record<string, string> = {
+  '0-100': '<$100/hr',
+  '0-130': 'Under $130/hr',
+  '130-160': '$130–160/hr',
+  '160-999': '$160+/hr',
+};
+
+const AVAILABILITY_LABELS: Record<string, string> = {
+  IMMEDIATE: 'Immediate',
+  WITHIN_2_WEEKS: 'Within 2 weeks',
+  NOT_AVAILABLE: 'Not available',
+};
+
+export function getActiveFilterChips(filters: ClientSearchFilters): ClientSearchFilterChip[] {
+  const chips: ClientSearchFilterChip[] = [];
+  if (filters.community !== 'all') {
+    chips.push({ key: 'community', label: filters.community });
+  }
+  if (filters.experience !== 'all') {
+    chips.push({
+      key: 'experience',
+      label: EXPERIENCE_LABELS[filters.experience] ?? filters.experience,
+    });
+  }
+  if (filters.rate !== 'all') {
+    chips.push({ key: 'rate', label: RATE_LABELS[filters.rate] ?? filters.rate });
+  }
+  if (filters.timezone !== 'all') {
+    chips.push({
+      key: 'timezone',
+      label: filters.timezone.replace(/_/g, ' '),
+    });
+  }
+  if (filters.availability !== 'all') {
+    chips.push({
+      key: 'availability',
+      label: AVAILABILITY_LABELS[filters.availability] ?? filters.availability,
+    });
+  }
+  if (filters.minScore > 0) {
+    chips.push({ key: 'minScore', label: `${filters.minScore}+` });
+  }
+  if (filters.query.trim()) {
+    chips.push({ key: 'query', label: `"${filters.query.trim()}"` });
+  }
+  return chips;
+}
+
+export function clearFilterChip(
+  filters: ClientSearchFilters,
+  key: keyof ClientSearchFilters,
+): ClientSearchFilters {
+  switch (key) {
+    case 'query':
+      return { ...filters, query: '' };
+    case 'community':
+      return { ...filters, community: 'all' };
+    case 'experience':
+      return { ...filters, experience: 'all' };
+    case 'rate':
+      return { ...filters, rate: 'all' };
+    case 'availability':
+      return { ...filters, availability: 'all' };
+    case 'timezone':
+      return { ...filters, timezone: 'all' };
+    case 'minScore':
+      return { ...filters, minScore: 0 };
+    default:
+      return filters;
+  }
 }

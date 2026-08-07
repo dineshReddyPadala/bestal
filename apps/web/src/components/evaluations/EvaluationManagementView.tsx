@@ -640,9 +640,8 @@ export function EvaluationManagementView({
             <div className="flex items-start gap-2">
               <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-brand" />
               <p>
-                Upload a PDF/Word evaluation. The BesTal API stores the request and calls the Python
-                ai-service when <code className="rounded bg-white/80 px-1">AI_EVALUATION_URL</code> is
-                configured; otherwise a demo extraction is returned.
+                Upload a PDF/Word evaluation. BesTal stores the document and runs AI analysis
+                through n8n when automation workflows are configured in Platform Settings.
               </p>
             </div>
           </div>

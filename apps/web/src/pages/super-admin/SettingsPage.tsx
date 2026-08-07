@@ -1,7 +1,7 @@
 import { Button, Dialog, Input, PageHeader, Select, Tabs, StatusBadge, TanStackDataTable } from '@bestal/ui';
 import { type ColumnDef } from '@tanstack/react-table';
 import { Plus } from 'lucide-react';
-import { useEffect, useMemo, useState, type TextareaHTMLAttributes } from 'react';
+import { useEffect, useMemo, useRef, useState, type TextareaHTMLAttributes } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { ActionMenu, type ActionMenuItem } from '../../components/super-admin/ActionMenu';
 import { useConfirmAction } from '../../components/super-admin/useConfirmAction';
@@ -11,6 +11,26 @@ import {
   useAdminSkillCommunities,
 } from '../../hooks/api/useAdmin';
 import { useDemoToast } from '../../lib/use-demo-toast';
+import { ToastHost } from '../../components/ui/ToastHost';
+import { getApiErrorMessage } from '../../lib/api/errors';
+
+function workflowsFromApi(w: Record<string, unknown>) {
+  return {
+    enabled: Boolean(w.enabled),
+    baseUrl: String(w.baseUrl ?? ''),
+    resumeWorkflowPath: String(w.resumeWorkflowPath ?? ''),
+    resumeWorkflowName: String(w.resumeWorkflowName ?? 'BESTAL_RESUME_AI_SCREENING'),
+    resumeWorkflowVersion: String(w.resumeWorkflowVersion ?? '1.0.0'),
+    evaluationWorkflowPath: String(w.evaluationWorkflowPath ?? ''),
+    evaluationWorkflowName: String(w.evaluationWorkflowName ?? 'BESTAL_EVALUATION_AI_ANALYSIS'),
+    evaluationWorkflowVersion: String(w.evaluationWorkflowVersion ?? '1.0.0'),
+    bgvWorkflowPath: String(w.bgvWorkflowPath ?? ''),
+    bgvWorkflowName: String(w.bgvWorkflowName ?? 'BESTAL_BGV_AI_ANALYSIS'),
+    bgvWorkflowVersion: String(w.bgvWorkflowVersion ?? '1.0.0'),
+    webhookSecret: String(w.webhookSecret ?? ''),
+    requestTimeoutMs: String(w.requestTimeoutMs ?? '30000'),
+  };
+}
 
 function Textarea({ className, ...props }: TextareaHTMLAttributes<HTMLTextAreaElement>) {
   return (
@@ -42,8 +62,9 @@ export function SuperAdminPlatformSettingsPage() {
   const defaultTab = params.get('tab') ?? 'system';
   const { data, isLoading } = useAdminSettings();
   const mutations = useAdminMutations();
-  const { message, show, showError } = useDemoToast();
+  const { message, variant, show, showError, dismiss } = useDemoToast();
   const [saving, setSaving] = useState<SettingsKey | null>(null);
+  const settingsHydrated = useRef(false);
 
   const [security, setSecurity] = useState({
     sessionTimeoutMinutes: '480',
@@ -82,24 +103,20 @@ export function SuperAdminPlatformSettingsPage() {
     trialEndingSoonDays: '2',
     deploymentEndingSoonDays: '7',
   });
-  const [workflows, setWorkflows] = useState({
-    enabled: false,
-    baseUrl: '',
-    resumeWorkflowPath: '/webhook/resume-screening',
-    resumeWorkflowName: 'BESTAL_RESUME_AI_SCREENING',
-    resumeWorkflowVersion: '1.0.0',
-    evaluationWorkflowPath: '/webhook/evaluation-analysis',
-    evaluationWorkflowName: 'BESTAL_EVALUATION_AI_ANALYSIS',
-    evaluationWorkflowVersion: '1.0.0',
-    bgvWorkflowPath: '/webhook/bgv-analysis',
-    bgvWorkflowName: 'BESTAL_BGV_AI_ANALYSIS',
-    bgvWorkflowVersion: '1.0.0',
-    webhookSecret: '',
-    requestTimeoutMs: '30000',
-  });
+  const [workflows, setWorkflows] = useState(() =>
+    workflowsFromApi({
+      resumeWorkflowName: 'BESTAL_RESUME_AI_SCREENING',
+      resumeWorkflowVersion: '1.0.0',
+      evaluationWorkflowName: 'BESTAL_EVALUATION_AI_ANALYSIS',
+      evaluationWorkflowVersion: '1.0.0',
+      bgvWorkflowName: 'BESTAL_BGV_AI_ANALYSIS',
+      bgvWorkflowVersion: '1.0.0',
+    }),
+  );
 
   useEffect(() => {
-    if (!data) return;
+    if (!data || settingsHydrated.current) return;
+    settingsHydrated.current = true;
     const s = asObj(data.security);
     const sc = asObj(data.scoring);
     const pr = asObj(data.pricing);
@@ -149,30 +166,22 @@ export function SuperAdminPlatformSettingsPage() {
       trialEndingSoonDays: String(n.trialEndingSoonDays ?? '2'),
       deploymentEndingSoonDays: String(n.deploymentEndingSoonDays ?? '7'),
     });
-    setWorkflows({
-      enabled: Boolean(w.enabled),
-      baseUrl: String(w.baseUrl ?? ''),
-      resumeWorkflowPath: String(w.resumeWorkflowPath ?? '/webhook/resume-screening'),
-      resumeWorkflowName: String(w.resumeWorkflowName ?? 'BESTAL_RESUME_AI_SCREENING'),
-      resumeWorkflowVersion: String(w.resumeWorkflowVersion ?? '1.0.0'),
-      evaluationWorkflowPath: String(w.evaluationWorkflowPath ?? '/webhook/evaluation-analysis'),
-      evaluationWorkflowName: String(w.evaluationWorkflowName ?? 'BESTAL_EVALUATION_AI_ANALYSIS'),
-      evaluationWorkflowVersion: String(w.evaluationWorkflowVersion ?? '1.0.0'),
-      bgvWorkflowPath: String(w.bgvWorkflowPath ?? '/webhook/bgv-analysis'),
-      bgvWorkflowName: String(w.bgvWorkflowName ?? 'BESTAL_BGV_AI_ANALYSIS'),
-      bgvWorkflowVersion: String(w.bgvWorkflowVersion ?? '1.0.0'),
-      webhookSecret: String(w.webhookSecret ?? ''),
-      requestTimeoutMs: String(w.requestTimeoutMs ?? '30000'),
-    });
+    setWorkflows(workflowsFromApi(w));
   }, [data]);
 
   async function save(key: SettingsKey, body: Record<string, unknown>, label: string) {
     setSaving(key);
     try {
-      await mutations.putSetting.mutateAsync({ key, body });
+      const result = (await mutations.putSetting.mutateAsync({ key, body })) as {
+        key?: string;
+        value?: unknown;
+      };
+      if (key === 'workflows' && result?.value && typeof result.value === 'object') {
+        setWorkflows(workflowsFromApi(result.value as Record<string, unknown>));
+      }
       show(`${label} saved`);
     } catch (err) {
-      showError(err instanceof Error ? err.message : 'Save failed');
+      showError(getApiErrorMessage(err, 'Save failed'));
     } finally {
       setSaving(null);
     }
@@ -184,14 +193,10 @@ export function SuperAdminPlatformSettingsPage() {
 
   return (
     <div>
+      <ToastHost message={message} variant={variant} onDismiss={dismiss} />
       <PageHeader
         title="Platform Settings"
       />
-      {message && (
-        <div className="mx-6 mb-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
-          {message}
-        </div>
-      )}
       <div className="p-6">
         <Tabs
           defaultTab={defaultTab}
@@ -490,7 +495,29 @@ export function SuperAdminPlatformSettingsPage() {
                 <Section
                   title="n8n workflow configuration"
                   busy={saving === 'workflows'}
-                  onSave={() =>
+                  onSave={() => {
+                    if (workflows.enabled) {
+                      if (!workflows.baseUrl.trim()) {
+                        showError('n8n base URL is required when workflows are enabled');
+                        return;
+                      }
+                      if (!workflows.webhookSecret.trim()) {
+                        showError(
+                          'Webhook secret is required when workflows are enabled (leave blank only after one is already saved)',
+                        );
+                        return;
+                      }
+                      if (
+                        !workflows.resumeWorkflowPath.trim() &&
+                        !workflows.evaluationWorkflowPath.trim() &&
+                        !workflows.bgvWorkflowPath.trim()
+                      ) {
+                        showError(
+                          'Enter at least one workflow webhook path when workflows are enabled',
+                        );
+                        return;
+                      }
+                    }
                     void save(
                       'workflows',
                       {
@@ -512,8 +539,8 @@ export function SuperAdminPlatformSettingsPage() {
                         requestTimeoutMs: Number(workflows.requestTimeoutMs) || 30000,
                       },
                       'Automation workflows',
-                    )
-                  }
+                    );
+                  }}
                 >
                   <label className="flex items-center gap-2 text-sm sm:col-span-2">
                     <input
@@ -525,6 +552,10 @@ export function SuperAdminPlatformSettingsPage() {
                     />
                     Enable n8n automation workflows
                   </label>
+                  <p className="text-sm text-muted-foreground sm:col-span-2">
+                    When enabled, base URL, webhook secret, and at least one webhook path are
+                    required. You can fill in the fields below before checking this box.
+                  </p>
                   <Field label="n8n base URL" className="sm:col-span-2">
                     <Input
                       value={workflows.baseUrl}
@@ -532,7 +563,6 @@ export function SuperAdminPlatformSettingsPage() {
                         setWorkflows((p) => ({ ...p, baseUrl: e.target.value }))
                       }
                       placeholder="https://your-instance.app.n8n.cloud"
-                      disabled={!workflows.enabled}
                     />
                   </Field>
                   <Field label="Resume screening webhook path">
@@ -545,7 +575,6 @@ export function SuperAdminPlatformSettingsPage() {
                         }))
                       }
                       placeholder="/webhook/resume-screening"
-                      disabled={!workflows.enabled}
                     />
                   </Field>
                   <Field label="Resume workflow name">
@@ -558,7 +587,6 @@ export function SuperAdminPlatformSettingsPage() {
                         }))
                       }
                       placeholder="BESTAL_RESUME_AI_SCREENING"
-                      disabled={!workflows.enabled}
                     />
                   </Field>
                   <Field label="Resume workflow version">
@@ -571,7 +599,6 @@ export function SuperAdminPlatformSettingsPage() {
                         }))
                       }
                       placeholder="1.0.0"
-                      disabled={!workflows.enabled}
                     />
                   </Field>
                   <Field label="Evaluation analysis webhook path">
@@ -584,7 +611,6 @@ export function SuperAdminPlatformSettingsPage() {
                         }))
                       }
                       placeholder="/webhook/evaluation-analysis"
-                      disabled={!workflows.enabled}
                     />
                   </Field>
                   <Field label="Evaluation workflow name">
@@ -597,7 +623,6 @@ export function SuperAdminPlatformSettingsPage() {
                         }))
                       }
                       placeholder="BESTAL_EVALUATION_AI_ANALYSIS"
-                      disabled={!workflows.enabled}
                     />
                   </Field>
                   <Field label="Evaluation workflow version">
@@ -610,7 +635,6 @@ export function SuperAdminPlatformSettingsPage() {
                         }))
                       }
                       placeholder="1.0.0"
-                      disabled={!workflows.enabled}
                     />
                   </Field>
                   <Field label="BGV analysis webhook path">
@@ -620,7 +644,6 @@ export function SuperAdminPlatformSettingsPage() {
                         setWorkflows((p) => ({ ...p, bgvWorkflowPath: e.target.value }))
                       }
                       placeholder="/webhook/bgv-analysis"
-                      disabled={!workflows.enabled}
                     />
                   </Field>
                   <Field label="BGV workflow name">
@@ -633,7 +656,6 @@ export function SuperAdminPlatformSettingsPage() {
                         }))
                       }
                       placeholder="BESTAL_BGV_AI_ANALYSIS"
-                      disabled={!workflows.enabled}
                     />
                   </Field>
                   <Field label="BGV workflow version">
@@ -646,7 +668,6 @@ export function SuperAdminPlatformSettingsPage() {
                         }))
                       }
                       placeholder="1.0.0"
-                      disabled={!workflows.enabled}
                     />
                   </Field>
                   <Field label="Webhook secret (Fastify → n8n)">
@@ -656,8 +677,7 @@ export function SuperAdminPlatformSettingsPage() {
                       onChange={(e) =>
                         setWorkflows((p) => ({ ...p, webhookSecret: e.target.value }))
                       }
-                      placeholder="Leave blank to keep existing secret"
-                      disabled={!workflows.enabled}
+                      placeholder="Required when enabling workflows; leave as ******** to keep existing"
                     />
                   </Field>
                   <Field label="Request timeout (ms)">
@@ -669,7 +689,6 @@ export function SuperAdminPlatformSettingsPage() {
                       onChange={(e) =>
                         setWorkflows((p) => ({ ...p, requestTimeoutMs: e.target.value }))
                       }
-                      disabled={!workflows.enabled}
                     />
                   </Field>
                   <p className="text-sm text-muted-foreground sm:col-span-2">
@@ -829,7 +848,7 @@ export function SuperAdminPlatformSettingsPage() {
 export const SuperAdminSettingsPage = SuperAdminPlatformSettingsPage;
 
 function SkillCommunitiesPanel() {
-  const { message, show, showError } = useDemoToast();
+  const { message, variant, show, showError, dismiss } = useDemoToast();
   const { requestConfirm, confirmDialog } = useConfirmAction();
   const { data, isLoading, isError, error } = useAdminSkillCommunities({ limit: 100 });
   const mutations = useAdminMutations();
@@ -940,11 +959,7 @@ function SkillCommunitiesPanel() {
           Add
         </Button>
       </div>
-      {message && (
-        <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
-          {message}
-        </div>
-      )}
+      <ToastHost message={message} variant={variant} onDismiss={dismiss} />
       {isError && (
         <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           {error instanceof Error ? error.message : 'Failed'}

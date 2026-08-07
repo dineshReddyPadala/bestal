@@ -18,6 +18,7 @@ import {
 } from './candidate-skills.js';
 import type { ResumeScreeningOutput } from '../automation/dto/resume-screening.dto.js';
 import { AutomationService } from '../automation/automation.service.js';
+import { N8N_AUTOMATION_REQUIRED_MESSAGE } from '../automation/automation.constants.js';
 import { N8nClient } from '../automation/n8n.client.js';
 import { readN8nConfig } from '../../services/system-settings.reader.js';
 import {
@@ -28,17 +29,14 @@ import {
   assertCanRunAiScreening,
   assertCanSubmitForApproval,
   isPricingComplete,
+  isRecruiterReviewBypassRole,
+  profileStatusAfterAiScreening,
   type PipelineCandidateSnapshot,
 } from './candidate-pipeline.js';
 import { isClearBgvStatus } from './candidate-import-status.js';
 import { notifyCandidatePendingApproval } from '../../services/notification-events.js';
 import { StorageService } from '../../services/storage.service.js';
 import { normalizeUploadToPdf } from '../../services/document-pdf-normalizer.js';
-import {
-  bufferToBase64,
-  ResumeExtractionClient,
-} from '../../services/resume-extraction.client.js';
-import type { ResumeExtractionResponse } from '../../services/resume-extraction.types.js';
 import type { UploadCategory } from '../../services/storage/storage.constants.js';
 import {
   AuthorizationError,
@@ -72,7 +70,6 @@ import type { ListCandidatesQuery } from './candidate.validator.js';
 export class CandidateService {
   private readonly candidateRepository: CandidateRepository;
   private readonly storageService: StorageService;
-  private readonly resumeExtractionClient: ResumeExtractionClient;
   private readonly prisma: PrismaClient;
   private readonly fastify: FastifyInstance;
 
@@ -85,15 +82,29 @@ export class CandidateService {
       fastify.prisma,
     );
     this.storageService = new StorageService(fastify.config);
-    this.resumeExtractionClient = new ResumeExtractionClient(
-      fastify.config.aiExtractionUrl,
-    );
     this.prisma = fastify.prisma;
   }
 
   private async isN8nResumeScreeningEnabled(): Promise<boolean> {
     const config = await readN8nConfig(this.prisma);
     return new N8nClient(config).isResumeConfigured();
+  }
+
+  private async shouldSkipRecruiterReviewForUser(
+    organizationId: number,
+    userId: number | null | undefined,
+  ): Promise<boolean> {
+    if (userId == null || userId <= 0) return false;
+    const membership = await this.prisma.membership.findUnique({
+      where: {
+        userId_organizationId: {
+          userId: BigInt(userId),
+          organizationId: BigInt(organizationId),
+        },
+      },
+      select: { role: true },
+    });
+    return isRecruiterReviewBypassRole(membership?.role);
   }
 
   async create(
@@ -138,14 +149,11 @@ export class CandidateService {
   }
 
   /**
-   * Uploads a resume and starts AI screening.
+   * Uploads a resume and starts AI screening via n8n.
    *
-   * Branches on `existingCandidateId` and n8n availability:
-   * 1. **Re-screen** (`existingCandidateId` set) — upload to existing candidate, then sync or async screening.
-   * 2. **New + n8n** — upload with placeholder document owner; candidate created on callback when AI returns a name.
-   * 3. **New + sync** — extract first, create candidate with real names, then upload and apply fields.
-   *
-   * Never creates placeholder names like "Draft Candidate".
+   * Branches on `existingCandidateId`:
+   * 1. **Re-screen** — upload to existing candidate, enqueue async screening.
+   * 2. **New upload** — upload with placeholder document owner; candidate created on callback.
    */
   async extractResumeAndCreateDraft(
     authUser: AuthenticatedUser,
@@ -161,92 +169,38 @@ export class CandidateService {
       originalName: file.originalName,
     });
 
-    const n8nEnabled = await this.isN8nResumeScreeningEnabled();
-    const uploadFile = n8nEnabled ? await normalizeUploadToPdf(file) : file;
+    if (!(await this.isN8nResumeScreeningEnabled())) {
+      throw new BadRequestError(N8N_AUTOMATION_REQUIRED_MESSAGE);
+    }
+
+    const uploadFile = await normalizeUploadToPdf(file);
 
     if (existingCandidateId != null && existingCandidateId > 0) {
-      // --- Re-screen: attach resume to an existing candidate ---
       const existing = await this.getCandidateOrThrow(
         organizationId,
         existingCandidateId,
       );
-      const candidate = existing;
 
       try {
         const uploaded = await this.uploadResumeForDraft({
           authUser,
           organizationId,
-          candidate,
+          candidate: existing,
           candidateId: existingCandidateId,
           file: uploadFile,
           uploadCategory,
         });
 
-        if (n8nEnabled) {
-          // Return immediately; frontend polls GET /automation/jobs/:id.
-          return this.enqueueResumeScreeningJob({
-            authUser,
-            organizationId,
-            candidateId: existingCandidateId,
-            documentId: uploaded.documentId,
-            documentUrl: uploaded.signedUrl,
-            fileName: uploadFile.originalName,
-            mimeType: uploadFile.mimeType,
-          });
-        }
-
-        const extraction = await this.resumeExtractionClient.extract({
-          fileName: file.originalName,
-          mimeType: file.mimeType,
-          content: bufferToBase64(file.buffer),
-        });
-
-        const updated = await this.applyExtractionToDraft(
-          organizationId,
-          existingCandidateId,
-          existing.email,
-          extraction,
-        );
-
-        return {
-          candidate: await this.toDto(updated, authUser),
-          extraction,
-        };
-      } catch (error) {
-        throw error instanceof BadRequestError || error instanceof ConflictError
-          ? error
-          : new BadRequestError(
-              error instanceof Error ? error.message : 'Resume extraction failed',
-            );
-      }
-    }
-
-    if (n8nEnabled) {
-      // --- New upload + async n8n: defer candidate creation until callback ---
-      let uploaded: { documentId: number; signedUrl: string } | null = null;
-      try {
-        uploaded = await this.uploadResumePendingScreening({
+        return this.enqueueResumeScreeningJob({
           authUser,
           organizationId,
-          file: uploadFile,
-          uploadCategory,
-        });
-        return await this.enqueueResumeScreeningJob({
-          authUser,
-          organizationId,
-          candidateId: null, // linked in applyResumeScreeningFromAutomation on COMPLETED
+          candidateId: existingCandidateId,
           documentId: uploaded.documentId,
           documentUrl: uploaded.signedUrl,
           fileName: uploadFile.originalName,
           mimeType: uploadFile.mimeType,
         });
       } catch (error) {
-        // Orphan document cleanup when enqueue/trigger fails before a candidate exists.
-        if (uploaded?.documentId) {
-          await this.candidateRepository
-            .softDeleteDocument(BigInt(uploaded.documentId))
-            .catch(() => undefined);
-        }
         throw error instanceof BadRequestError || error instanceof ConflictError
           ? error
           : new BadRequestError(
@@ -255,56 +209,27 @@ export class CandidateService {
       }
     }
 
-    let candidateId: number | null = null;
+    let uploaded: { documentId: number; signedUrl: string } | null = null;
     try {
-      // --- New upload + sync extraction: extract → create → upload → apply ---
-      const extraction = await this.resumeExtractionClient.extract({
-        fileName: file.originalName,
-        mimeType: file.mimeType,
-        content: bufferToBase64(file.buffer),
-      });
-
-      const identity = await this.resolveExtractionIdentity(
-        organizationId,
-        extraction,
-      );
-      const draft = await this.candidateRepository.create(organizationId, {
-        firstName: identity.firstName,
-        lastName: identity.lastName,
-        email: identity.email,
-        source: 'JOB_BOARD',
-        profileStatus: 'SOURCED',
-        visibility: 'INTERNAL_ONLY',
-        createdById: authUser.id,
-      });
-      candidateId = bigintToNumber(draft.id);
-
-      const candidate = await this.getCandidateOrThrow(organizationId, candidateId);
-      await this.uploadResumeForDraft({
+      uploaded = await this.uploadResumePendingScreening({
         authUser,
         organizationId,
-        candidate,
-        candidateId,
-        file,
+        file: uploadFile,
         uploadCategory,
       });
-
-      const updated = await this.applyExtractionToDraft(
+      return await this.enqueueResumeScreeningJob({
+        authUser,
         organizationId,
-        candidateId,
-        identity.email,
-        extraction,
-      );
-
-      return {
-        candidate: await this.toDto(updated, authUser),
-        extraction,
-      };
+        candidateId: null,
+        documentId: uploaded.documentId,
+        documentUrl: uploaded.signedUrl,
+        fileName: uploadFile.originalName,
+        mimeType: uploadFile.mimeType,
+      });
     } catch (error) {
-      // Roll back candidate if upload/apply fails after sync create.
-      if (candidateId != null) {
+      if (uploaded?.documentId) {
         await this.candidateRepository
-          .softDelete(organizationId, candidateId)
+          .softDeleteDocument(BigInt(uploaded.documentId))
           .catch(() => undefined);
       }
       throw error instanceof BadRequestError || error instanceof ConflictError
@@ -313,43 +238,6 @@ export class CandidateService {
             error instanceof Error ? error.message : 'Resume extraction failed',
           );
     }
-  }
-
-  /** Resolves display identity from sync extraction; rejects when no name is found. */
-  private async resolveExtractionIdentity(
-    organizationId: number,
-    extraction: ResumeExtractionResponse,
-    fallbackEmail?: string,
-  ): Promise<{ firstName: string; lastName: string; email: string }> {
-    const extracted = extraction.candidate;
-    const firstName = extracted.firstName?.trim() ?? '';
-    const lastName = extracted.lastName?.trim() ?? '';
-    if (!firstName && !lastName) {
-      throw new BadRequestError(
-        'Resume extraction did not identify a candidate name',
-      );
-    }
-
-    let email =
-      extracted.email?.trim().toLowerCase() ||
-      fallbackEmail ||
-      `draft-${randomUUID()}@draft.bestal.local`;
-
-    if (email !== fallbackEmail) {
-      const existing = await this.candidateRepository.findByEmail(
-        organizationId,
-        email,
-      );
-      if (existing) {
-        extraction.warnings = [
-          ...(extraction.warnings ?? []),
-          `Email ${email} already exists — using a temporary email until you change it.`,
-        ];
-        email = fallbackEmail ?? `draft-${randomUUID()}@draft.bestal.local`;
-      }
-    }
-
-    return { firstName, lastName, email };
   }
 
   /** Creates AutomationJob and triggers n8n; does not wait for OpenAI. */
@@ -504,6 +392,18 @@ export class CandidateService {
       Boolean(aiSummary) ||
       Boolean(output.strengths?.trim());
 
+    const skipRecruiterReview = await this.shouldSkipRecruiterReviewForUser(
+      organizationId,
+      params.createdById ??
+        (candidate?.createdById != null
+          ? bigintToNumber(candidate.createdById)
+          : undefined),
+    );
+    const nextProfileStatus = profileStatusAfterAiScreening(
+      hasScreeningSignal,
+      skipRecruiterReview,
+    );
+
     const clientBillRate = output.recommendedClientRate;
     const candidatePayRate = output.recommendedCandidateRate;
     const grossMargin =
@@ -645,7 +545,7 @@ export class CandidateService {
           primarySkillCommunityId: primarySkillCommunityId
             ? BigInt(primarySkillCommunityId)
             : undefined,
-          profileStatus: hasScreeningSignal ? 'AI_SCREENED' : 'SOURCED',
+          profileStatus: nextProfileStatus,
           aiScreeningStatus: 'COMPLETED',
           ...(normalizedSkills?.length
             ? {
@@ -867,184 +767,6 @@ export class CandidateService {
     }
 
     return { documentId, signedUrl, durableFileUrl };
-  }
-
-  /** Applies sync Python/static extraction fields onto an existing candidate row. */
-  private async applyExtractionToDraft(
-    organizationId: number,
-    candidateId: number,
-    draftEmail: string,
-    extraction: ResumeExtractionResponse,
-  ) {
-    const extracted = extraction.candidate;
-    const firstName = extracted.firstName?.trim() ?? '';
-    const lastName = extracted.lastName?.trim() ?? '';
-    if (!firstName && !lastName) {
-      throw new BadRequestError(
-        'Resume extraction did not identify a candidate name',
-      );
-    }
-    let email = extracted.email?.trim().toLowerCase() || draftEmail;
-
-    if (email !== draftEmail) {
-      const existing = await this.candidateRepository.findByEmail(organizationId, email);
-      if (existing && bigintToNumber(existing.id) !== candidateId) {
-        extraction.warnings = [
-          ...(extraction.warnings ?? []),
-          `Email ${email} already exists — draft kept temporary email until you change it.`,
-        ];
-        email = draftEmail;
-      }
-    }
-
-    const communities = await this.prisma.skillCommunity.findMany({
-      where: { deletedAt: null },
-      select: { id: true, name: true },
-    });
-
-    const matchCommunityId = (skillName: string): number | null => {
-      const normalized = skillName.toLowerCase().trim();
-      if (!normalized) return null;
-      const exact = communities.find((c) => c.name.toLowerCase() === normalized);
-      if (exact) return Number(exact.id);
-      const partial = communities.find(
-        (c) =>
-          normalized.includes(c.name.toLowerCase()) ||
-          c.name.toLowerCase().includes(normalized),
-      );
-      return partial ? Number(partial.id) : null;
-    };
-
-    const communityFromExtraction = extraction.community
-      ? matchCommunityId(extraction.community)
-      : null;
-
-    const fallbackCommunityId = communities[0] ? Number(communities[0].id) : null;
-    const mappedSkills = (extraction.skills ?? [])
-      .map((skill, index) => {
-        // Match each skill first; community-wide fallback only when no name match.
-        const skillCommunityId =
-          matchCommunityId(skill.name) ??
-          communityFromExtraction ??
-          fallbackCommunityId;
-        if (!skillCommunityId) return null;
-        const skillLabel = skill.name.trim().slice(0, 150);
-        return {
-          skillCommunityId,
-          skillName: skillLabel,
-          proficiencyLevel: skill.proficiencyLevel,
-          yearsExperience: skill.yearsExperience ?? undefined,
-          isPrimary: skill.isPrimary || index === 0,
-          notes: skillLabel,
-        };
-      })
-      .filter((skill): skill is NonNullable<typeof skill> => skill !== null);
-
-    const normalizedSkills = normalizeSkillsForPersistence(mappedSkills);
-    const primarySkillCommunityId =
-      communityFromExtraction ??
-      normalizedSkills?.find((s) => s.isPrimary)?.skillCommunityId ??
-      normalizedSkills?.[0]?.skillCommunityId ??
-      fallbackCommunityId ??
-      undefined;
-
-    const latestJob = extraction.experience?.[0];
-    const education = (extraction.education ?? [])
-      .map((entry) =>
-        [entry.degree, entry.fieldOfStudy, entry.institution, entry.graduationYear]
-          .filter((part) => part != null && part !== '')
-          .join(', '),
-      )
-      .filter(Boolean)
-      .join('; ');
-
-    const aiSummary =
-      extraction.aiSummary ??
-      extracted.summary ??
-      extraction.rawSections?.summary ??
-      undefined;
-    const hasScreeningSignal =
-      extraction.bestalScore != null ||
-      Boolean(extraction.aiSummary?.trim()) ||
-      Boolean(extraction.strengths?.trim());
-
-    const clientBillRate = extraction.recommendedClientRate;
-    const candidatePayRate = extraction.recommendedCandidateRate;
-    const grossMargin =
-      clientBillRate != null && candidatePayRate != null
-        ? clientBillRate - candidatePayRate
-        : undefined;
-
-    await this.prisma.candidateSkill.deleteMany({
-      where: {
-        candidateId: BigInt(candidateId),
-      },
-    });
-
-    return this.prisma.candidate.update({
-      where: {
-        id: BigInt(candidateId),
-        organizationId: BigInt(organizationId),
-      },
-      data: {
-        firstName,
-        lastName,
-        email,
-        phone: extracted.phone ?? undefined,
-        location: extracted.location ?? undefined,
-        linkedinUrl: extracted.linkedinUrl ?? undefined,
-        headline: extracted.headline ?? extraction.primaryRole ?? undefined,
-        summary: extracted.summary ?? extraction.rawSections?.summary ?? undefined,
-        yearsExperience: extracted.yearsExperience ?? undefined,
-        displayName: `${firstName} ${lastName}`.trim(),
-        primaryRole:
-          extraction.primaryRole ?? latestJob?.title ?? extracted.headline ?? undefined,
-        currentCompany: latestJob?.company ?? undefined,
-        education: education || undefined,
-        clientProfileSummary:
-          extracted.summary ?? extraction.rawSections?.summary ?? undefined,
-        strengths: extraction.strengths ?? extraction.rawSections?.skills ?? undefined,
-        weaknesses: extraction.weaknesses ?? undefined,
-        riskFlags: extraction.riskFlags ?? undefined,
-        aiSummary,
-        bestalScore: extraction.bestalScore ?? undefined,
-        clientBillRate: clientBillRate ?? undefined,
-        candidatePayRate: candidatePayRate ?? undefined,
-        grossMargin,
-        primarySkillCommunityId: primarySkillCommunityId
-          ? BigInt(primarySkillCommunityId)
-          : undefined,
-        profileStatus: hasScreeningSignal ? 'AI_SCREENED' : 'SOURCED',
-        ...(normalizedSkills?.length
-          ? {
-              skills: {
-                create: normalizedSkills.map((skill) => ({
-                  skillCommunityId:
-                    skill.skillCommunityId != null
-                      ? BigInt(skill.skillCommunityId)
-                      : null,
-                  skillName: skill.skillName?.trim() || 'Skill',
-                  skillCategory: skill.skillCategory,
-                  proficiencyLevel: skill.proficiencyLevel ?? 'INTERMEDIATE',
-                  yearsExperience: skill.yearsExperience,
-                  isPrimary: skill.isPrimary ?? false,
-                  notes: skill.notes,
-                })),
-              },
-            }
-          : {}),
-      },
-      include: {
-        primarySkillCommunity: { select: { id: true, name: true } },
-        resumeDocument: true,
-        profileImageDocument: true,
-        introVideoDocument: true,
-        skills: {
-          where: { deletedAt: null },
-          include: { skillCommunity: { select: { name: true } } },
-        },
-      },
-    });
   }
 
   async update(
@@ -1364,11 +1086,13 @@ export class CandidateService {
 
     assertCanRunAiScreening(this.toPipelineSnapshot(candidate));
 
+    const skipRecruiterReview = isRecruiterReviewBypassRole(authUser.role);
+
     const updated = await this.candidateRepository.updatePipelineState(
       organizationId,
       id,
       {
-        profileStatus: 'AI_SCREENED',
+        profileStatus: profileStatusAfterAiScreening(true, skipRecruiterReview),
         ...(input.aiSummary !== undefined ? { aiSummary: input.aiSummary } : {}),
         ...(input.strengths !== undefined ? { strengths: input.strengths } : {}),
         ...(input.weaknesses !== undefined ? { weaknesses: input.weaknesses } : {}),

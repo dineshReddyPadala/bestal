@@ -2,6 +2,7 @@ import { Select, useDashboardHeaderLeading } from '@bestal/ui';
 import { useMemo, type ReactNode } from 'react';
 
 import type { ToastVariant } from '../../lib/use-demo-toast';
+import { ToastHost } from '../ui/ToastHost';
 
 type ListingPageShellProps = {
   title: string;
@@ -9,6 +10,7 @@ type ListingPageShellProps = {
   error?: string | null;
   message?: string | null;
   messageVariant?: ToastVariant;
+  onMessageDismiss?: () => void;
   loading?: boolean;
   loadingLabel?: string;
   children: ReactNode;
@@ -21,13 +23,14 @@ export function ListingPageShell({
   error,
   message,
   messageVariant = 'success',
+  onMessageDismiss,
   loading = false,
   loadingLabel = 'Loading…',
   children,
 }: ListingPageShellProps) {
   const headerLeading = useMemo(
     () => (
-      <h1 className="truncate text-lg font-semibold tracking-tight text-foreground sm:text-xl">
+      <h1 className="truncate text-base font-semibold tracking-tight text-foreground sm:text-lg">
         {title}
       </h1>
     ),
@@ -36,23 +39,12 @@ export function ListingPageShell({
   useDashboardHeaderLeading(headerLeading);
 
   return (
-    <div className="flex h-[calc(100svh-4rem)] min-h-0 flex-col overflow-hidden bg-background">
+    <div className="flex h-[calc(100svh-var(--shell-header-h))] min-h-0 flex-col overflow-hidden bg-background">
+      <ToastHost message={message} variant={messageVariant} onDismiss={onMessageDismiss} />
+
       {actions ? (
         <div className="flex shrink-0 items-center justify-end gap-2 px-5 pt-3 sm:px-6">
           {actions}
-        </div>
-      ) : null}
-
-      {message ? (
-        <div
-          className={`mx-5 mt-3 shrink-0 rounded-lg border px-4 py-2.5 text-sm sm:mx-6 ${
-            messageVariant === 'error'
-              ? 'border-destructive/30 bg-destructive/10 text-destructive'
-              : 'border-emerald-200 bg-emerald-50 text-emerald-700'
-          }`}
-          role="status"
-        >
-          {message}
         </div>
       ) : null}
 
@@ -62,7 +54,7 @@ export function ListingPageShell({
         </div>
       ) : null}
 
-      <div className="flex min-h-0 flex-1 flex-col px-5 py-4 sm:px-6">
+      <div className="scrollbar-thin flex min-h-0 flex-1 flex-col overflow-y-auto px-5 py-4 sm:px-6">
         {loading ? (
           <div className="flex flex-1 items-center justify-center rounded-lg border border-border text-sm text-muted-foreground">
             {loadingLabel}

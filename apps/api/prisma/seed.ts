@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import argon2 from 'argon2';
 import {
   PrismaClient,
@@ -6,14 +7,190 @@ import {
   CandidateStatus,
   CandidateVisibility,
   CandidateApprovalStatus,
+  CandidateProfileStatus,
+  AiScreeningStatus,
   CandidateSource,
   TrialRequestStatus,
 } from '@prisma/client';
+import { PERMISSIONS } from '../src/modules/auth/auth.permissions.js';
 
 const prisma = new PrismaClient();
 
+const ALL_PERMISSIONS = Object.values(PERMISSIONS);
+
+const PLATFORM_ROLE_SEED = [
+  {
+    code: 'SUPER_ADMIN',
+    name: 'Super Admin',
+    description: 'Full platform access including platform settings and user provisioning.',
+    portal: 'ADMIN',
+    baseRole: Role.SUPER_ADMIN,
+    permissions: [...ALL_PERMISSIONS],
+    isProtected: true,
+  },
+  {
+    code: 'ADMIN',
+    name: 'Admin',
+    description: 'Daily platform operations: candidates, evaluations, BGV, clients, trials.',
+    portal: 'ADMIN',
+    baseRole: Role.ADMIN,
+    permissions: ALL_PERMISSIONS.filter((p) => p !== PERMISSIONS.ADMIN_PLATFORM),
+    isProtected: false,
+  },
+  {
+    code: 'RECRUITER',
+    name: 'Recruiter',
+    description: 'Candidate pipeline, evaluations, and BGV.',
+    portal: 'RECRUITER',
+    baseRole: Role.RECRUITER,
+    permissions: [
+      PERMISSIONS.AUTH_ME,
+      PERMISSIONS.AUTH_CHANGE_PASSWORD,
+      PERMISSIONS.ORG_READ,
+      PERMISSIONS.CLIENTS_READ,
+      PERMISSIONS.CANDIDATES_READ,
+      PERMISSIONS.CANDIDATES_WRITE,
+      PERMISSIONS.CANDIDATES_DELETE,
+      PERMISSIONS.SKILLS_READ,
+      PERMISSIONS.SKILLS_WRITE,
+      PERMISSIONS.EVALUATIONS_READ,
+      PERMISSIONS.EVALUATIONS_WRITE,
+      PERMISSIONS.BACKGROUND_CHECKS_READ,
+      PERMISSIONS.BACKGROUND_CHECKS_WRITE,
+      PERMISSIONS.TRIALS_READ,
+      PERMISSIONS.TRIALS_WRITE,
+      PERMISSIONS.DEPLOYMENTS_READ,
+      PERMISSIONS.DEPLOYMENTS_WRITE,
+      PERMISSIONS.DOCUMENTS_READ,
+      PERMISSIONS.DOCUMENTS_WRITE,
+      PERMISSIONS.NOTIFICATIONS_READ,
+    ],
+    isProtected: false,
+  },
+  {
+    code: 'SALES',
+    name: 'Sales',
+    description: 'Client accounts, trials, deployments, and margin tracking.',
+    portal: 'SALES',
+    baseRole: Role.SALES,
+    permissions: [
+      PERMISSIONS.AUTH_ME,
+      PERMISSIONS.AUTH_CHANGE_PASSWORD,
+      PERMISSIONS.ORG_READ,
+      PERMISSIONS.CLIENTS_READ,
+      PERMISSIONS.CLIENTS_WRITE,
+      PERMISSIONS.CANDIDATES_READ,
+      PERMISSIONS.CANDIDATES_EDIT_LIMITED,
+      PERMISSIONS.CANDIDATES_VIEW_PAY_RATE,
+      PERMISSIONS.SKILLS_READ,
+      PERMISSIONS.SHORTLISTS_READ,
+      PERMISSIONS.TRIALS_READ,
+      PERMISSIONS.TRIALS_WRITE,
+      PERMISSIONS.DEPLOYMENTS_READ,
+      PERMISSIONS.DEPLOYMENTS_WRITE,
+      PERMISSIONS.SALES_PIPELINE_READ,
+      PERMISSIONS.SALES_PIPELINE_WRITE,
+      PERMISSIONS.SALES_REPORTS_READ,
+      PERMISSIONS.BACKGROUND_CHECKS_READ,
+      PERMISSIONS.DOCUMENTS_READ,
+      PERMISSIONS.DOCUMENTS_WRITE,
+      PERMISSIONS.NOTIFICATIONS_READ,
+    ],
+    isProtected: false,
+  },
+  {
+    code: 'CLIENT',
+    name: 'Client',
+    description: 'Browse candidates, request trials, and view deployments.',
+    portal: 'CLIENT',
+    baseRole: Role.CLIENT,
+    permissions: [
+      PERMISSIONS.AUTH_ME,
+      PERMISSIONS.AUTH_CHANGE_PASSWORD,
+      PERMISSIONS.ORG_READ,
+      PERMISSIONS.CANDIDATES_READ,
+      PERMISSIONS.TRIALS_READ,
+      PERMISSIONS.TRIALS_WRITE,
+      PERMISSIONS.DEPLOYMENTS_READ,
+      PERMISSIONS.DEPLOYMENTS_REQUEST,
+      PERMISSIONS.DOCUMENTS_READ,
+      PERMISSIONS.NOTIFICATIONS_READ,
+    ],
+    isProtected: false,
+  },
+] as const;
+
+function isSchemaMissingError(error: unknown): boolean {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'code' in error &&
+    (error as { code: string }).code === 'P2021'
+  );
+}
+
+async function assertSchemaReady(): Promise<void> {
+  try {
+    await prisma.organization.findFirst({ select: { id: true } });
+  } catch (error) {
+    if (isSchemaMissingError(error)) {
+      console.error(
+        [
+          'Database schema is not initialized (missing tables).',
+          'Run migrations first, then seed again:',
+          '',
+          '  npm run db:migrate:deploy -w @bestal/api',
+          '  npm run db:seed -w @bestal/api',
+          '',
+          'Or in one step:',
+          '  npm run db:setup -w @bestal/api',
+        ].join('\n'),
+      );
+      process.exit(1);
+    }
+    throw error;
+  }
+}
+
+async function seedPlatformRoles(): Promise<Map<string, bigint>> {
+  const roleIds = new Map<string, bigint>();
+
+  for (const seed of PLATFORM_ROLE_SEED) {
+    const role = await prisma.platformRole.upsert({
+      where: { code: seed.code },
+      create: {
+        code: seed.code,
+        name: seed.name,
+        description: seed.description,
+        portal: seed.portal,
+        baseRole: seed.baseRole,
+        permissions: seed.permissions,
+        isSystem: true,
+        isProtected: seed.isProtected,
+        isActive: true,
+      },
+      update: {
+        name: seed.name,
+        description: seed.description,
+        portal: seed.portal,
+        baseRole: seed.baseRole,
+        isSystem: true,
+        isProtected: seed.isProtected,
+        deletedAt: null,
+      },
+    });
+    roleIds.set(seed.code, role.id);
+  }
+
+  console.log(`Seeded ${PLATFORM_ROLE_SEED.length} platform roles.`);
+  return roleIds;
+}
+
 async function main() {
+  await assertSchemaReady();
+
   const passwordHash = await argon2.hash('Password123!');
+  const platformRoleIds = await seedPlatformRoles();
 
   let organization = await prisma.organization.findFirst({
     where: { slug: { in: ['amnet-digital', 'bestal-demo'] } },
@@ -22,7 +199,7 @@ async function main() {
   if (organization) {
     organization = await prisma.organization.update({
       where: { id: organization.id },
-      data: { name: 'Amnet Digital', slug: 'amnet-digital' },
+      data: { name: 'Amnet Digital', slug: 'amnet-digital', isActive: true },
     });
   } else {
     organization = await prisma.organization.create({
@@ -90,6 +267,8 @@ async function main() {
 
     userIds[entry.email] = user.id;
 
+    const platformRoleId = platformRoleIds.get(entry.role);
+
     await prisma.membership.upsert({
       where: {
         userId_organizationId: {
@@ -97,11 +276,16 @@ async function main() {
           organizationId: orgId,
         },
       },
-      update: { role: entry.role },
+      update: {
+        role: entry.role,
+        platformRoleId: platformRoleId ?? null,
+        isActive: true,
+      },
       create: {
         userId: user.id,
         organizationId: orgId,
         role: entry.role,
+        platformRoleId: platformRoleId ?? null,
       },
     });
 
@@ -109,6 +293,7 @@ async function main() {
   }
 
   const salesUserId = userIds['sales@bestal.com'];
+  const recruiterUserId = userIds['recruiter@bestal.com'];
 
   const client = await prisma.client.upsert({
     where: {
@@ -145,19 +330,37 @@ async function main() {
     });
   }
 
+  const fullStackCommunity = await prisma.skillCommunity.findUnique({
+    where: { slug: 'full-stack' },
+    select: { id: true },
+  });
+
   const candidate = await prisma.candidate.upsert({
     where: {
       organizationId_email: { organizationId: orgId, email: 'alexandra.petrov@demo.bestal.com' },
     },
-    update: {},
+    update: {
+      displayName: 'Alexandra Petrov',
+      profileStatus: CandidateProfileStatus.ADMIN_APPROVED,
+      aiScreeningStatus: AiScreeningStatus.COMPLETED,
+      evaluationStatus: 'COMPLETE',
+      bgvStatus: 'CLEAR',
+    },
     create: {
       organizationId: orgId,
+      createdById: recruiterUserId,
+      primarySkillCommunityId: fullStackCommunity?.id,
       firstName: 'Alexandra',
       lastName: 'Petrov',
+      displayName: 'Alexandra Petrov',
       email: 'alexandra.petrov@demo.bestal.com',
       status: CandidateStatus.ACTIVE,
       visibility: CandidateVisibility.CLIENT_VISIBLE,
       approvalStatus: CandidateApprovalStatus.APPROVED,
+      profileStatus: CandidateProfileStatus.ADMIN_APPROVED,
+      aiScreeningStatus: AiScreeningStatus.COMPLETED,
+      evaluationStatus: 'COMPLETE',
+      bgvStatus: 'CLEAR',
       source: CandidateSource.LINKEDIN,
       headline: 'Senior Full-Stack Engineer',
       location: 'San Francisco, CA',
@@ -168,22 +371,38 @@ async function main() {
     },
   });
 
-  await prisma.trialRequest.upsert({
-    where: { id: BigInt(1) },
-    update: {},
-    create: {
-      id: BigInt(1),
+  const existingTrial = await prisma.trialRequest.findFirst({
+    where: {
       organizationId: orgId,
       candidateId: candidate.id,
       clientId: client.id,
-      requestedById: userIds['client@bestal.com'],
-      status: TrialRequestStatus.REQUESTED,
-      roleTitle: 'Senior Backend Engineer — Payments',
-      startDate: new Date('2026-07-14'),
-      endDate: new Date('2026-07-28'),
-      durationDays: 15,
+      deletedAt: null,
     },
+    select: { id: true },
   });
+
+  const trialData = {
+    organizationId: orgId,
+    candidateId: candidate.id,
+    clientId: client.id,
+    requestedById: userIds['client@bestal.com'],
+    assignedRecruiterId: recruiterUserId,
+    status: TrialRequestStatus.REQUESTED,
+    roleTitle: 'Senior Backend Engineer — Payments',
+    startDate: new Date('2026-07-14'),
+    endDate: new Date('2026-07-28'),
+    durationDays: 15,
+    maxTrialHours: 20,
+  };
+
+  if (existingTrial) {
+    await prisma.trialRequest.update({
+      where: { id: existingTrial.id },
+      data: trialData,
+    });
+  } else {
+    await prisma.trialRequest.create({ data: trialData });
+  }
 
   console.log('Seed completed with demo client, candidate, and trial.');
 }

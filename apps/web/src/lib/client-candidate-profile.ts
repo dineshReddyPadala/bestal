@@ -16,6 +16,7 @@ function mapSkills(candidate: CandidateDto): {
 } {
   const skills = (candidate.skills ?? []).map((s) => ({
     skillCommunityName: s.skillCommunityName || s.skillName || 'Skill',
+    skillName: s.skillName,
     proficiencyLevel: s.proficiencyLevel,
     yearsExperience: s.yearsExperience,
     isPrimary: s.isPrimary,
@@ -46,6 +47,9 @@ export function mapCandidateDtoToClientProfile(
     yearsExperience: candidate.yearsExperience ?? 0,
     currentCompany: candidate.currentCompany ?? '',
     currentTitle: candidate.currentTitle ?? '',
+    primarySkillCommunityName:
+      candidate.primarySkillCommunityName ?? primary[0]?.skillCommunityName ?? '',
+    education: candidate.education ?? '',
     bestalScore: candidate.bestalScore ?? 0,
     availability: candidate.availabilityStatus ?? 'Available',
     billRate,

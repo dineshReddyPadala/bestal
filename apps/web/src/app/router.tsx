@@ -4,6 +4,7 @@ import { createBrowserRouter, Navigate, Outlet, RouterProvider } from 'react-rou
 import { AdminShell } from '../layouts/AdminShell';
 import { ClientShell } from '../layouts/ClientShell';
 import { RecruiterShell } from '../layouts/RecruiterShell';
+import { BESTAL_LOGO_SRC } from '../lib/brand';
 import { BackgroundChecksPage as AdminBackgroundChecksPage } from '../pages/admin/BackgroundChecksPage';
 import { CandidateCsvImportPage as AdminCandidateCsvImportPage } from '../pages/admin/CandidateCsvImportPage';
 import { CandidateApprovalsPage } from '../pages/admin/CandidateApprovalsPage';
@@ -142,7 +143,12 @@ const marketingNav = publicNav.map(({ label, href }) => ({ label, href }));
 
 function MarketingShell() {
   return (
-    <MarketingLayout navItems={[...marketingNav]} ctaLabel="Hire Talent" ctaHref="/contact">
+    <MarketingLayout
+      navItems={[...marketingNav]}
+      ctaLabel="Hire Talent"
+      ctaHref="/contact"
+      brandLogoSrc={BESTAL_LOGO_SRC}
+    >
       <Outlet />
     </MarketingLayout>
   );
@@ -150,7 +156,7 @@ function MarketingShell() {
 
 function PortalSelectorShell() {
   return (
-    <AuthLayout title="Welcome to BesTal">
+    <AuthLayout title="Welcome to BesTal" brandLogoSrc={BESTAL_LOGO_SRC}>
       <Outlet />
     </AuthLayout>
   );
@@ -158,7 +164,7 @@ function PortalSelectorShell() {
 
 function AdminAuthShell() {
   return (
-    <AuthLayout title="Admin Portal">
+    <AuthLayout title="Admin Portal" brandLogoSrc={BESTAL_LOGO_SRC}>
       <Outlet />
     </AuthLayout>
   );

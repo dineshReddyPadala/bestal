@@ -29,7 +29,6 @@ import {
 } from '../layout/ListingPageShell';
 import { getApiErrorMessage } from '../../lib/api/errors';
 import { useDemoToast } from '../../lib/use-demo-toast';
-import { ToastHost } from '../ui/ToastHost';
 
 type QueueFilter = 'pending' | 'all' | 'approved' | 'published' | 'rejected';
 
@@ -418,11 +417,11 @@ export function CandidateApprovalQueueView({
 
   return (
     <>
-      <ToastHost message={message} variant={variant} onDismiss={dismiss} />
       <ListingPageShell
         title="Approvals"
         message={message}
         messageVariant={variant}
+        onMessageDismiss={dismiss}
         error={listError}
         loading={isLoading}
         loadingLabel="Loading approval queue…"

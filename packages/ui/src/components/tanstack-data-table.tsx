@@ -1,5 +1,5 @@
 import { cn } from '@bestal/shared-utils';
-import { ChevronDown, ChevronUp, ChevronsUpDown } from 'lucide-react';
+import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp, ChevronsUpDown } from 'lucide-react';
 import { type ReactNode, useState } from 'react';
 import {
   flexRender,
@@ -52,11 +52,10 @@ export type TanStackDataTableProps<TData> = {
   /** Controlled search (e.g. server-side). When set, search box is controlled by the parent. */
   searchValue?: string;
   onSearchChange?: (value: string) => void;
-  /**
-   * When true, do not apply client-side text filtering (parent/server already filtered).
-   * Search box still updates via onSearchChange / internal state.
-   */
+  /** When true, do not apply client-side text filtering (parent/server already filtered). */
   serverSideSearch?: boolean;
+  /** Hide the built-in search field (e.g. when filters are provided externally). */
+  hideSearch?: boolean;
 };
 
 export function TanStackDataTable<TData>({
@@ -81,6 +80,7 @@ export function TanStackDataTable<TData>({
   searchValue,
   onSearchChange,
   serverSideSearch = false,
+  hideSearch = false,
 }: TanStackDataTableProps<TData>) {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [internalFilter, setInternalFilter] = useState('');
@@ -133,32 +133,43 @@ export function TanStackDataTable<TData>({
   const rows = table.getRowModel().rows;
   const selectedRows = table.getFilteredSelectedRowModel().rows.map((r) => r.original);
   const totalFiltered = table.getFilteredRowModel().rows.length;
-  const pageCount = Math.max(table.getPageCount(), 1);
   const pageIndex = table.getState().pagination.pageIndex;
 
+  const rangeStart = totalFiltered === 0 ? 0 : pageIndex * pageSize + 1;
+  const rangeEnd = Math.min((pageIndex + 1) * pageSize, totalFiltered);
+
   const paginationBar = (
-    <div className="flex shrink-0 items-center justify-between border-t border-border bg-background px-1 py-3 text-sm text-muted-foreground">
-      <span>
-        Page {pageIndex + 1} of {pageCount}
-        {' · '}
-        Showing {totalFiltered} row{totalFiltered === 1 ? '' : 's'}
+    <div
+      className={cn(
+        'flex shrink-0 items-center justify-between border-t border-border bg-background text-muted-foreground',
+        dense ? 'min-h-8 px-2 py-1 text-xs' : 'min-h-9 px-3 py-1.5 text-xs',
+      )}
+    >
+      <span className="tabular-nums">
+        {rangeStart === rangeEnd
+          ? `${rangeStart} of ${totalFiltered}`
+          : `${rangeStart}–${rangeEnd} of ${totalFiltered}`}
       </span>
-      <div className="flex gap-2">
+      <div className="-mr-1 flex items-center">
         <Button
-          variant="outline"
+          variant="ghost"
           size="sm"
+          className="h-7 w-7 px-0"
           onClick={() => table.previousPage()}
           disabled={!table.getCanPreviousPage()}
+          aria-label="Previous page"
         >
-          Previous
+          <ChevronLeft className="h-4 w-4" />
         </Button>
         <Button
-          variant="outline"
+          variant="ghost"
           size="sm"
+          className="h-7 w-7 px-0"
           onClick={() => table.nextPage()}
           disabled={!table.getCanNextPage()}
+          aria-label="Next page"
         >
-          Next
+          <ChevronRight className="h-4 w-4" />
         </Button>
       </div>
     </div>
@@ -172,18 +183,20 @@ export function TanStackDataTable<TData>({
     >
       {filtersInline ? (
         <div className="flex shrink-0 flex-wrap items-end gap-x-3 gap-y-2">
-          <div className="flex w-full min-w-[10rem] max-w-xs shrink-0 flex-col gap-1 sm:w-52">
-            <span className="text-[10px] font-semibold uppercase tracking-wider text-transparent select-none">
-              Search
-            </span>
-            <SearchInput
-              placeholder={searchPlaceholder}
-              value={globalFilter}
-              onChange={(e) => setGlobalFilter(e.target.value)}
-              onClear={() => setGlobalFilter('')}
-              className="w-full"
-            />
-          </div>
+          {!hideSearch ? (
+            <div className="flex w-full min-w-[10rem] max-w-xs shrink-0 flex-col gap-1 sm:w-52">
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-transparent select-none">
+                Search
+              </span>
+              <SearchInput
+                placeholder={searchPlaceholder}
+                value={globalFilter}
+                onChange={(e) => setGlobalFilter(e.target.value)}
+                onClear={() => setGlobalFilter('')}
+                className="w-full"
+              />
+            </div>
+          ) : null}
           {filters}
           {toolbar ? (
             <div className="flex shrink-0 flex-col gap-1 sm:ml-auto">
@@ -194,16 +207,18 @@ export function TanStackDataTable<TData>({
             </div>
           ) : null}
         </div>
-      ) : (
+      ) : hideSearch && !toolbar && !filters ? null : (
         <>
           <div className="flex shrink-0 flex-wrap items-end gap-3">
-            <SearchInput
-              placeholder={searchPlaceholder}
-              value={globalFilter}
-              onChange={(e) => setGlobalFilter(e.target.value)}
-              onClear={() => setGlobalFilter('')}
-              className="w-full min-w-[10rem] max-w-xs sm:w-52"
-            />
+            {!hideSearch ? (
+              <SearchInput
+                placeholder={searchPlaceholder}
+                value={globalFilter}
+                onChange={(e) => setGlobalFilter(e.target.value)}
+                onClear={() => setGlobalFilter('')}
+                className="w-full min-w-[10rem] max-w-xs sm:w-52"
+              />
+            ) : null}
             {toolbar ? (
               <div className="flex shrink-0 flex-wrap items-end gap-2 sm:ml-auto">{toolbar}</div>
             ) : null}

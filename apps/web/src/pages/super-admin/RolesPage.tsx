@@ -29,7 +29,7 @@ export function SuperAdminRolesPage() {
   const { data, isLoading, isError, error } = useAdminRoles({ ...searchParam });
   const mutations = useAdminMutations();
   const { requestConfirm, confirmDialog } = useConfirmAction();
-  const { show, showError, message } = useDemoToast();
+  const { show, showError, message, dismiss } = useDemoToast();
 
   const [createOpen, setCreateOpen] = useState(false);
   const [name, setName] = useState('');
@@ -205,6 +205,8 @@ export function SuperAdminRolesPage() {
   return (
     <ListingPageShell
       title="Role Management"
+      message={message}
+      onMessageDismiss={dismiss}
       error={isError ? (error instanceof Error ? error.message : 'Failed') : null}
       loading={isLoading}
       loadingLabel="Loading roles…"
@@ -214,9 +216,6 @@ export function SuperAdminRolesPage() {
         </Button>
       }
     >
-      {message ? (
-        <div className="mb-3 rounded-md bg-success/10 px-3 py-2 text-sm text-emerald-800">{message}</div>
-      ) : null}
       <TanStackDataTable
         key={search}
         columns={columns}

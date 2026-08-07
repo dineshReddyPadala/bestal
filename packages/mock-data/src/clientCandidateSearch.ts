@@ -12,6 +12,7 @@ export type ClientSearchRecord = {
   readonly role: string;
   readonly yearsExperience: number;
   readonly community: string;
+  readonly primarySkillCommunityName: string;
   readonly topSkills: readonly string[];
   readonly bestalScore: number;
   readonly availability: string;
@@ -65,6 +66,7 @@ function buildSearchRecord(listRec: (typeof candidateListingRecords)[number]): C
     role: listRec.role,
     yearsExperience: listRec.yearsExperience,
     community: listRec.community,
+    primarySkillCommunityName: listRec.community,
     topSkills: sortedSkills.slice(0, 5).map((s) => s.skillCommunityName),
     bestalScore: listRec.bestalScore,
     availability: listRec.availability,

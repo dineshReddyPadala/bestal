@@ -73,16 +73,13 @@ export function CandidatePipelinePanel({ candidateId }: CandidatePipelinePanelPr
           <StatusBadge status={candidate.profileStatus ?? 'SOURCED'} />
         </div>
         {candidate.profileStatus === 'PENDING_APPROVAL' ||
-        candidate.approvalStatus === 'APPROVED' ||
         candidate.approvalStatus === 'REJECTED' ||
         (candidate.profileStatus === 'RECRUITER_SCREENED' && candidate.rejectionReason) ? (
           <div
             className={`mt-3 rounded-lg border px-3 py-2 text-xs ${
               candidate.approvalStatus === 'REJECTED'
                 ? 'border-red-200 bg-red-50 text-red-800'
-                : candidate.approvalStatus === 'APPROVED'
-                  ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
-                  : 'border-amber-200 bg-amber-50 text-amber-900'
+                : 'border-amber-200 bg-amber-50 text-amber-900'
             }`}
           >
             {candidate.profileStatus === 'PENDING_APPROVAL' ? (
@@ -92,12 +89,6 @@ export function CandidatePipelinePanel({ candidateId }: CandidatePipelinePanelPr
                   ? ` since ${formatWhen(candidate.submittedForApprovalAt)}`
                   : ''}
                 .
-              </p>
-            ) : null}
-            {candidate.approvalStatus === 'APPROVED' ? (
-              <p>
-                Approved by admin
-                {candidate.approvedAt ? ` on ${formatWhen(candidate.approvedAt)}` : ''}.
               </p>
             ) : null}
             {candidate.approvalStatus === 'REJECTED' ? (

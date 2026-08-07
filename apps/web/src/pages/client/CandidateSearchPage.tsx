@@ -1,31 +1,33 @@
 import { mapApiCandidateToClientSearchRecord } from '../../lib/client-search-api';
 import { useCandidatesList } from '../../hooks/api/useCandidates';
-import { Button, EmptyState, PageHeader, Select } from '@bestal/ui';
-import { Grid3X3, List, Users } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { cn } from '@bestal/shared-utils';
+import { Button, EmptyState, useDashboardHeaderLeading } from '@bestal/ui';
+import { Home, Users } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { ToptalCandidateCard } from '../../components/client/ToptalCandidateCard';
-import { PremiumSearchFilters } from '../../components/client/PremiumSearchFilters';
+import { ClientCandidateSearchCard } from '../../components/client/ClientCandidateSearchCard';
+import { ClientSearchToolbar } from '../../components/client/ClientSearchToolbar';
 import { RequestTrialDialog } from '../../components/client/RequestTrialDialog';
 import { useAuth } from '../../contexts/AuthContext';
 import { useClientTrialRequests } from '../../hooks/useClientEngagementRequests';
 import {
-  countActiveFilters,
   DEFAULT_CLIENT_SEARCH_FILTERS,
+  DEFAULT_CLIENT_SEARCH_SORT,
   filterClientSearchRecords,
   sortClientSearchRecords,
   uniqueSorted,
   type ClientSearchFilters,
   type ClientSearchSort,
 } from '../../lib/client-search';
+import type { TrialRequestFormValues } from '../../lib/entity-field-metadata';
 import { useDemoToast } from '../../lib/use-demo-toast';
-import { cn } from '@bestal/shared-utils';
+import { ToastHost } from '../../components/ui/ToastHost';
 
 export function CandidateSearchPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { user } = useAuth();
-  const { message, show, showError } = useDemoToast();
+  const { message, variant, show, showError, dismiss } = useDemoToast();
   const { addRequest: addTrialRequest } = useClientTrialRequests();
   const canRequestTrial = user?.clientId != null;
 
@@ -33,10 +35,14 @@ export function CandidateSearchPage() {
     ...DEFAULT_CLIENT_SEARCH_FILTERS,
     query: searchParams.get('q') ?? '',
   }));
-  const [sort, setSort] = useState<ClientSearchSort>('best-match');
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [sort, setSort] = useState<Exclude<ClientSearchSort, 'best-match'>>(
+    DEFAULT_CLIENT_SEARCH_SORT,
+  );
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
-  const [bulkDialogOpen, setBulkDialogOpen] = useState(false);
+  const [trialDialog, setTrialDialog] = useState<{
+    ids: number[];
+    label: string;
+  } | null>(null);
 
   const searchParam = filters.query.trim() || undefined;
   const { data: apiCandidates, isLoading } = useCandidatesList({
@@ -62,9 +68,35 @@ export function CandidateSearchPage() {
     return sortClientSearchRecords(rows, sort);
   }, [allRecords, filters, sort]);
 
+  useEffect(() => {
+    setSelectedIds((prev) => {
+      const visible = new Set(filtered.map((record) => record.id));
+      const next = new Set([...prev].filter((id) => visible.has(id)));
+      return next.size === prev.size ? prev : next;
+    });
+  }, [filtered]);
+
+  useDashboardHeaderLeading(
+    useMemo(
+      () => (
+        <nav className="flex min-w-0 items-center gap-2 text-sm text-muted-foreground">
+          <Home className="h-4 w-4 shrink-0" aria-hidden />
+          <span className="text-muted-foreground/60">/</span>
+          <span className="truncate font-semibold text-foreground">Candidate Search</span>
+        </nav>
+      ),
+      [],
+    ),
+  );
+
   const selectedRecords = useMemo(
     () => filtered.filter((r) => selectedIds.has(r.id)),
     [filtered, selectedIds],
+  );
+
+  const eligibleSelectedRecords = useMemo(
+    () => selectedRecords.filter((record) => record.trialEligible),
+    [selectedRecords],
   );
 
   function toggleSelected(id: number, next: boolean) {
@@ -76,176 +108,118 @@ export function CandidateSearchPage() {
     });
   }
 
+  function openTrialDialog(records: typeof filtered) {
+    if (records.length === 0) return;
+    setTrialDialog({
+      ids: records.map((r) => r.id),
+      label:
+        records.length === 1
+          ? records[0]!.fullName
+          : `${records.length} candidates`,
+    });
+  }
+
+  async function submitTrialRequest(values: TrialRequestFormValues) {
+    if (!trialDialog) return;
+    const records = filtered.filter((r) => trialDialog.ids.includes(r.id));
+    try {
+      await Promise.all(
+        records.map((record) => addTrialRequest(record.id, record.fullName, values)),
+      );
+      show(
+        `Free trial requested for ${records.length} candidate${
+          records.length === 1 ? '' : 's'
+        }`,
+      );
+      setSelectedIds(new Set());
+      setTrialDialog(null);
+    } catch (err) {
+      showError(err instanceof Error ? err.message : 'Free trial request failed');
+      throw err;
+    }
+  }
+
+  const hasSelection = selectedIds.size > 0;
+
   return (
-    <div className="min-h-full bg-muted/10">
-      <PageHeader title="Candidate Search" />
+    <div className={cn('flex min-h-full flex-col', hasSelection && 'pb-2')}>
+      <ToastHost message={message} variant={variant} onDismiss={dismiss} />
 
-      {message && (
-        <div className="mx-6 mt-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
-          {message}
-        </div>
-      )}
+      <div className="flex-1 space-y-4 p-4 sm:p-6">
+        <ClientSearchToolbar
+          filters={filters}
+          onChange={setFilters}
+          sort={sort}
+          onSortChange={setSort}
+          resultCount={filtered.length}
+          communityOptions={communityOptions}
+          timezoneOptions={timezoneOptions}
+        />
 
-      <div className="flex flex-col gap-4 p-4 md:flex-row md:items-start md:gap-6 sm:p-6">
-        <aside className="w-full shrink-0 md:sticky md:top-4 md:w-72 lg:w-80">
-          <PremiumSearchFilters
-            layout="panel"
-            filters={filters}
-            onChange={setFilters}
-            resultCount={filtered.length}
-            communityOptions={communityOptions}
-            timezoneOptions={timezoneOptions}
+        {isLoading ? (
+          <p className="text-sm text-muted-foreground">Loading talent pool…</p>
+        ) : filtered.length === 0 ? (
+          <EmptyState
+            icon={<Users className="h-8 w-8" />}
+            title="No candidates match your filters"
           />
-        </aside>
-
-        <div className="min-w-0 flex-1 space-y-4">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <p className="text-sm text-muted-foreground">
-              {isLoading
-                ? 'Loading candidates…'
-                : `${filtered.length} result${filtered.length === 1 ? '' : 's'}`}
-              {!isLoading && countActiveFilters(filters) > 0 && (
-                <span> · {countActiveFilters(filters)} filter(s) active</span>
-              )}
-            </p>
-            <div className="flex flex-wrap items-center gap-2">
-              <Select
-                value={sort}
-                onChange={(e) => setSort(e.target.value as ClientSearchSort)}
-                className="h-9 w-44 text-sm"
-              >
-                <option value="best-match">Best Match</option>
-                <option value="highest-score">Highest Score</option>
-                <option value="lowest-rate">Lowest Rate</option>
-                <option value="experience">Experience</option>
-                <option value="availability">Availability</option>
-              </Select>
-              <div className="flex rounded-lg border border-border p-0.5">
-                <button
-                  type="button"
-                  className={cn(
-                    'rounded-md p-2 transition-colors',
-                    viewMode === 'grid'
-                      ? 'bg-brand text-white'
-                      : 'text-muted-foreground hover:bg-muted',
-                  )}
-                  onClick={() => setViewMode('grid')}
-                  aria-label="Grid view"
-                >
-                  <Grid3X3 className="h-4 w-4" />
-                </button>
-                <button
-                  type="button"
-                  className={cn(
-                    'rounded-md p-2 transition-colors',
-                    viewMode === 'list'
-                      ? 'bg-brand text-white'
-                      : 'text-muted-foreground hover:bg-muted',
-                  )}
-                  onClick={() => setViewMode('list')}
-                  aria-label="List view"
-                >
-                  <List className="h-4 w-4" />
-                </button>
-              </div>
-            </div>
+        ) : (
+          <div className="grid auto-rows-[252px] grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {filtered.map((record) => (
+              <ClientCandidateSearchCard
+                key={record.id}
+                record={record}
+                canRequestTrial={canRequestTrial}
+                selected={selectedIds.has(record.id)}
+                onSelectedChange={(next) => toggleSelected(record.id, next)}
+                onView={() => navigate(`/client/candidates/${record.id}`)}
+                onRequestTrial={() => openTrialDialog([record])}
+              />
+            ))}
           </div>
-
-          {isLoading ? (
-            <p className="text-sm text-muted-foreground">Loading talent pool…</p>
-          ) : filtered.length === 0 ? (
-            <EmptyState
-              icon={<Users className="h-8 w-8" />}
-              title="No candidates match your filters"
-            />
-          ) : viewMode === 'grid' ? (
-            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-              {filtered.map((record) => (
-                <ToptalCandidateCard
-                  key={record.id}
-                  record={record}
-                  layout="grid"
-                  canRequestTrial={canRequestTrial}
-                  selected={selectedIds.has(record.id)}
-                  onSelectedChange={(next) => toggleSelected(record.id, next)}
-                  onView={() => navigate(`/client/candidates/${record.id}`)}
-                />
-              ))}
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {filtered.map((record) => (
-                <ToptalCandidateCard
-                  key={record.id}
-                  record={record}
-                  layout="list"
-                  canRequestTrial={canRequestTrial}
-                  selected={selectedIds.has(record.id)}
-                  onSelectedChange={(next) => toggleSelected(record.id, next)}
-                  onView={() => navigate(`/client/candidates/${record.id}`)}
-                />
-              ))}
-            </div>
-          )}
-        </div>
+        )}
       </div>
 
-      {selectedIds.size > 0 ? (
-        <div className="sticky bottom-0 z-20 border-t border-border bg-background/95 px-4 py-3 shadow-lg backdrop-blur sm:px-6">
-          <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3">
-            <p className="text-sm font-medium">
-              {selectedIds.size} candidate{selectedIds.size === 1 ? '' : 's'} selected
+      {hasSelection ? (
+        <div className="sticky bottom-0 z-20 shrink-0 border-t border-border bg-background/95 px-4 py-2.5 shadow-[0_-4px_16px_rgba(0,0,0,0.06)] backdrop-blur sm:px-6">
+          <div className="mx-auto flex max-w-[1600px] flex-wrap items-center justify-between gap-3">
+            <p className="text-sm text-muted-foreground">
+              <span className="font-semibold text-foreground">{selectedIds.size}</span> selected
             </p>
             <div className="flex gap-2">
               <Button
-                variant="outline"
+                variant="primary"
                 size="sm"
-                onClick={() => setSelectedIds(new Set())}
+                disabled={!canRequestTrial || eligibleSelectedRecords.length === 0}
+                onClick={() => openTrialDialog(eligibleSelectedRecords)}
               >
-                Clear
+                Request Trial free ({eligibleSelectedRecords.length})
               </Button>
-              <Button
-                size="sm"
-                disabled={!canRequestTrial}
-                onClick={() => setBulkDialogOpen(true)}
-              >
-                Request free trial ({selectedIds.size})
-              </Button>
+              {selectedIds.size === 1 ? (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const id = selectedRecords[0]?.id;
+                    if (id) navigate(`/client/candidates/${id}`);
+                  }}
+                >
+                  Profile →
+                </Button>
+              ) : null}
             </div>
           </div>
         </div>
       ) : null}
 
-      {bulkDialogOpen && (
+      {trialDialog ? (
         <RequestTrialDialog
           open
-          onClose={() => setBulkDialogOpen(false)}
-          candidateName={
-            selectedRecords.length === 1
-              ? selectedRecords[0]!.fullName
-              : `${selectedRecords.length} candidates`
-          }
-          onSubmit={async (values) => {
-            try {
-              await Promise.all(
-                selectedRecords.map((record) =>
-                  addTrialRequest(record.id, record.fullName, values),
-                ),
-              );
-              show(
-                `Free trial requested for ${selectedRecords.length} candidate${
-                  selectedRecords.length === 1 ? '' : 's'
-                }`,
-              );
-              setSelectedIds(new Set());
-              setBulkDialogOpen(false);
-            } catch (err) {
-              showError(err instanceof Error ? err.message : 'Free trial request failed');
-              throw err;
-            }
-          }}
+          onClose={() => setTrialDialog(null)}
+          candidateName={trialDialog.label}
+          onSubmit={submitTrialRequest}
         />
-      )}
+      ) : null}
     </div>
   );
 }
