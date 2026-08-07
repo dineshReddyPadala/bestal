@@ -29,9 +29,11 @@ services:
       DB_POSTGRESDB_USER: postgres_admin_user
       DB_POSTGRESDB_PASSWORD: 'pg_admin_user_pwd_caa_fa_$%^&OIukhjgcvbn'
       # BesTal workflow env (BESTAL_RESUME_AI_SCREENING.json)
-      BESTAL_API_BASE_URL: http://164.52.222.169:9002 
+      BESTAL_API_BASE_URL: http://host.docker.internal:3000
       N8N_WEBHOOK_SECRET: n8n-secret-key-bestal-api
       AUTOMATION_CALLBACK_SECRET: n8n-secret-key-bestal-apicallback
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
     volumes:
       - n8n_storage_dev:/home/node/.n8n
 
