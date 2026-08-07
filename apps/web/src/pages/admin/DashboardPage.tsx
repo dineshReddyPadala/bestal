@@ -73,20 +73,12 @@ export function DashboardPage() {
       <PageHeader
         title="Admin Dashboard"
         actions={
-          <div className="flex flex-wrap gap-2">
-            <Link
-              to="/admin/candidates/new"
-              className="inline-flex h-9 items-center rounded-md bg-brand px-4 text-sm font-medium text-white hover:bg-brand-hover"
-            >
-              Add candidate
-            </Link>
-            <Link
-              to="/admin/candidate-approvals"
-              className="inline-flex h-9 items-center rounded-md border border-border bg-background px-4 text-sm font-medium hover:bg-muted"
-            >
-              Review approvals
-            </Link>
-          </div>
+          <Link
+            to="/admin/candidate-approvals"
+            className="inline-flex h-9 items-center rounded-md border border-border bg-background px-4 text-sm font-medium hover:bg-muted"
+          >
+            Review approvals
+          </Link>
         }
       />
 
