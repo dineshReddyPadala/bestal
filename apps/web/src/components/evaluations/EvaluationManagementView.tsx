@@ -1,7 +1,7 @@
 import { formatDate, EVALUATION_RECOMMENDATIONS, EVALUATION_TYPES } from '@bestal/shared-utils';
 import { Button, Dialog, FileUpload, Input, Select, StatusBadge, TanStackDataTable } from '@bestal/ui';
 import { type ColumnDef } from '@tanstack/react-table';
-import { AlertCircle, Loader2, Plus, Sparkles } from 'lucide-react';
+import { AlertCircle, Download, Loader2, Plus, Sparkles } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useCandidatesList, useCandidateMutations } from '../../hooks/api/useCandidates';
@@ -14,6 +14,8 @@ import { AiScreeningStatusBanner } from '../candidates/AiScreeningStatusBanner';
 import { useEvaluationAiJob } from '../../hooks/useEvaluationAiJob';
 import { mapEvaluationExtractionToForm } from '../../lib/api/ai/evaluation-extraction.mapper';
 import { getApiErrorMessage } from '../../lib/api/errors';
+import { evaluationsApi } from '../../lib/api/evaluations';
+import { SearchableSelect } from '../ui/SearchableSelect';
 import type { EvaluationListItem } from '../../lib/api/types';
 import { useDemoToast } from '../../lib/use-demo-toast';
 import {
@@ -474,8 +476,30 @@ export function EvaluationManagementView({
           <span className="text-muted-foreground">{formatDate(getValue() as string)}</span>
         ),
       },
+      {
+        id: 'download',
+        header: 'Download',
+        cell: ({ row }) =>
+          row.original.documentId ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() =>
+                void evaluationsApi
+                  .downloadDocument(row.original.id)
+                  .catch((err) => show(getApiErrorMessage(err, 'Download failed')))
+              }
+            >
+              <Download className="mr-1 h-3.5 w-3.5" />
+              PDF
+            </Button>
+          ) : (
+            <span className="text-muted-foreground">—</span>
+          ),
+      },
     ],
-    [],
+    [show],
   );
 
   const updateFilter = (key: keyof typeof defaultFilters, value: string) => {
@@ -526,15 +550,19 @@ export function EvaluationManagementView({
           }
           filters={
             <ListingFiltersRow>
-              <ListingFilterSelect
-                label="CANDIDATE"
-                value={filters.candidate}
-                onChange={(v) => updateFilter('candidate', v)}
-                options={[
-                  { value: 'all', label: 'All candidates' },
-                  ...candidateNames.map((c) => ({ value: c, label: c })),
-                ]}
-              />
+              <label className="flex min-w-[180px] flex-1 flex-col gap-1">
+                <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                  Candidate
+                </span>
+                <SearchableSelect
+                  value={filters.candidate}
+                  onChange={(v) => updateFilter('candidate', v)}
+                  options={[
+                    { value: 'all', label: 'All candidates' },
+                    ...candidateNames.map((c) => ({ value: c, label: c })),
+                  ]}
+                />
+              </label>
               <ListingFilterSelect
                 label="EVALUATOR"
                 value={filters.evaluator}
@@ -625,23 +653,21 @@ export function EvaluationManagementView({
               <label htmlFor="eval-candidate" className="text-sm font-medium">
                 Candidate *
               </label>
-              <Select
+              <SearchableSelect
                 id="eval-candidate"
-                className="h-10"
                 value={selectedCandidateId}
-                onChange={(e) => {
-                  setSelectedCandidateId(e.target.value);
+                onChange={(value) => {
+                  setSelectedCandidateId(value);
                   setCreateError(null);
                 }}
-              >
-                <option value="">— Select —</option>
-                {candidateOptions.map((c) => (
-                  <option key={c.id} value={String(c.id)}>
-                    {c.name}
-                    {c.profileStatus ? ` (${c.profileStatus})` : ''}
-                  </option>
-                ))}
-              </Select>
+                options={[
+                  { value: '', label: '— Select —' },
+                  ...candidateOptions.map((c) => ({
+                    value: String(c.id),
+                    label: `${c.name}${c.profileStatus ? ` (${c.profileStatus})` : ''}`,
+                  })),
+                ]}
+              />
             </div>
 
             {needsRecruiterReview ? (
@@ -686,6 +712,7 @@ export function EvaluationManagementView({
               }}
             />
             <AiScreeningStatusBanner
+              context="evaluation"
               status={evaluationAiStatus}
               errorMessage={evaluationAiError || extractError}
               retrying={extractingPdf}

@@ -1,6 +1,6 @@
 import { apiAction, apiCreate, apiDelete, apiGet, apiList, apiRequest, apiUpdate, type ListQuery } from './client';
-import { getAccessToken, getRefreshToken, setTokens, clearTokens } from './auth-storage';
-import type { CandidateDto, CandidateListItem, LoginRequest, TokenPair, ApiDataResponse } from './types';
+import { downloadAuthenticatedBlob } from './download-blob';
+import type { CandidateDto, CandidateListItem } from './types';
 import type { ResumeExtractionResponse } from './ai/resume-extraction.types';
 import { waitForAutomationJob } from './automation';
 import type { AiScreeningJobStatus } from '../ai-screening-status';
@@ -35,6 +35,92 @@ function candidateToExtraction(
       ? confidenceRaw
       : 0.9;
 
+  const parseExperience = (): ResumeExtractionResponse['experience'] => {
+    const fromOutput = [
+      ...(Array.isArray(output?.experience) ? output.experience : []),
+      ...(Array.isArray(output?.workExperience) ? output.workExperience : []),
+      ...(Array.isArray(output?.employment) ? output.employment : []),
+    ];
+    if (fromOutput.length > 0) {
+      return fromOutput
+        .map((entry) => {
+          if (!entry || typeof entry !== 'object') return null;
+          const row = entry as Record<string, unknown>;
+          const company = String(
+            row.company ?? row.employer ?? row.organization ?? row.companyName ?? '',
+          ).trim();
+          if (!company) return null;
+          return {
+            company,
+            title: String(row.title ?? row.role ?? candidate.primaryRole ?? '').trim(),
+            startDate: typeof row.startDate === 'string' ? row.startDate : null,
+            endDate: typeof row.endDate === 'string' ? row.endDate : null,
+            description: typeof row.description === 'string' ? row.description : null,
+          };
+        })
+        .filter((entry): entry is NonNullable<typeof entry> => entry !== null);
+    }
+    if (candidate.currentCompany?.trim()) {
+      return [
+        {
+          company: candidate.currentCompany.trim(),
+          title: candidate.primaryRole?.trim() ?? '',
+          startDate: null,
+          endDate: null,
+          description: null,
+        },
+      ];
+    }
+    return [];
+  };
+
+  const parseEducation = (): ResumeExtractionResponse['education'] => {
+    const fromOutput = output?.educationHistory ?? output?.education;
+    if (Array.isArray(fromOutput) && fromOutput.length > 0) {
+      return fromOutput
+        .map((entry) => {
+          if (!entry || typeof entry !== 'object') return null;
+          const row = entry as Record<string, unknown>;
+          const institution = String(row.institution ?? '').trim();
+          if (!institution) return null;
+          const graduationYearRaw = row.graduationYear;
+          return {
+            institution,
+            degree: typeof row.degree === 'string' ? row.degree : null,
+            fieldOfStudy: typeof row.fieldOfStudy === 'string' ? row.fieldOfStudy : null,
+            graduationYear:
+              typeof graduationYearRaw === 'number' && Number.isFinite(graduationYearRaw)
+                ? graduationYearRaw
+                : null,
+          };
+        })
+        .filter((entry): entry is NonNullable<typeof entry> => entry !== null);
+    }
+    return [];
+  };
+
+  const educationText =
+    (typeof output?.education === 'string' ? output.education : null) ??
+    candidate.education ??
+    null;
+
+  const experience = parseExperience();
+  const headline =
+    candidate.headline ??
+    (typeof output?.headline === 'string' ? output.headline : null);
+  const headlineCompany = headline?.match(/\bat\s+([^|,]+)/i)?.[1]?.trim() ?? null;
+  const currentJob =
+    experience.find((job) => {
+      const end = job.endDate?.trim().toLowerCase() ?? '';
+      return !end || end === 'present' || end === 'current' || end === 'now';
+    }) ?? experience[0];
+  const currentCompany =
+    (typeof output?.currentCompany === 'string' ? output.currentCompany.trim() : null) ||
+    currentJob?.company?.trim() ||
+    candidate.currentCompany?.trim() ||
+    headlineCompany ||
+    null;
+
   return {
     jobId: String(jobId),
     confidence,
@@ -46,16 +132,17 @@ function candidateToExtraction(
       firstName: candidate.firstName,
       lastName: candidate.lastName,
       email: candidate.email,
-      phone: candidate.phone,
-      location: candidate.location,
-      linkedinUrl: candidate.linkedinUrl,
-      headline: candidate.headline,
-      summary: candidate.summary,
-      yearsExperience: candidate.yearsExperience,
+      phone: candidate.phone ?? null,
+      location: candidate.location ?? null,
+      linkedinUrl: candidate.linkedinUrl ?? null,
+      headline: candidate.headline ?? null,
+      summary: candidate.summary ?? null,
+      yearsExperience: candidate.yearsExperience ?? null,
     },
-    primaryRole: candidate.primaryRole,
+    primaryRole: candidate.primaryRole ?? null,
     seniority: null,
-    community: candidate.primarySkillCommunityName,
+    community: candidate.primarySkillCommunityName ?? null,
+    currentCompany: currentCompany ?? null,
     skills: (candidate.skills ?? []).map((skill) => ({
       name: skill.skillName ?? skill.skillCommunityName ?? 'Skill',
       proficiencyLevel:
@@ -64,23 +151,23 @@ function candidateToExtraction(
       yearsExperience: skill.yearsExperience,
       isPrimary: skill.isPrimary,
     })),
-    experience: [],
-    education: [],
-    aiSummary: candidate.aiSummary,
-    strengths: candidate.strengths,
-    weaknesses: candidate.weaknesses,
-    riskFlags: candidate.riskFlags,
-    bestalScore: candidate.bestalScore,
-    recommendedClientRate: candidate.clientBillRate,
-    recommendedCandidateRate: candidate.candidatePayRate,
+    experience,
+    education: parseEducation(),
+    aiSummary: candidate.aiSummary ?? null,
+    strengths: candidate.strengths ?? null,
+    weaknesses: candidate.weaknesses ?? null,
+    riskFlags: candidate.riskFlags ?? null,
+    bestalScore: candidate.bestalScore ?? null,
+    recommendedClientRate: candidate.clientBillRate ?? null,
+    recommendedCandidateRate: candidate.candidatePayRate ?? null,
     rawSections: {
-      summary: candidate.summary,
+      summary: candidate.summary ?? null,
       skills: (candidate.skills ?? [])
         .map((s) => s.skillName)
         .filter(Boolean)
         .join(', '),
-      experience: null,
-      education: null,
+      experience: currentCompany,
+      education: educationText,
     },
   };
 }
@@ -166,54 +253,6 @@ export type CandidateImportErrorItem = {
   errorCode: string;
   message: string;
 };
-
-const BASE_URL =
-  import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, '') ?? '/api/v1';
-
-async function downloadAuthenticatedBlob(path: string, fallbackName: string): Promise<void> {
-  const headers: Record<string, string> = { Accept: '*/*' };
-  const token = getAccessToken();
-  if (token) headers.Authorization = `Bearer ${token}`;
-
-  let response = await fetch(`${BASE_URL}${path}`, { headers });
-  if (response.status === 401 && getRefreshToken()) {
-    const refreshResponse = await fetch(`${BASE_URL}/auth/refresh`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ refreshToken: getRefreshToken() }),
-    });
-    if (refreshResponse.ok) {
-      const json = (await refreshResponse.json()) as ApiDataResponse<TokenPair>;
-      const portal = localStorage.getItem('bestal-portal') as LoginRequest['portal'] | null;
-      if (portal) setTokens(json.data, portal);
-      else {
-        localStorage.setItem('bestal-access-token', json.data.accessToken);
-        localStorage.setItem('bestal-refresh-token', json.data.refreshToken);
-      }
-      headers.Authorization = `Bearer ${json.data.accessToken}`;
-      response = await fetch(`${BASE_URL}${path}`, { headers });
-    } else {
-      clearTokens();
-    }
-  }
-
-  if (!response.ok) {
-    throw new Error('Failed to download file');
-  }
-
-  const blob = await response.blob();
-  const disposition = response.headers.get('Content-Disposition');
-  const match = disposition?.match(/filename="?([^"]+)"?/i);
-  const fileName = match?.[1] ?? fallbackName;
-  const url = URL.createObjectURL(blob);
-  const anchor = document.createElement('a');
-  anchor.href = url;
-  anchor.download = fileName;
-  document.body.appendChild(anchor);
-  anchor.click();
-  anchor.remove();
-  URL.revokeObjectURL(url);
-}
 
 export const candidatesApi = {
   list: (query?: ListQuery) => apiList<CandidateListItem>('/candidates', query),
@@ -329,7 +368,11 @@ export const candidatesApi = {
       throw new Error(job.errorMessage || `AI screening ${job.status}`);
     }
     const resolvedCandidateId = job.candidateId ?? started.candidateId;
-    if (!Number.isInteger(resolvedCandidateId) || resolvedCandidateId <= 0) {
+    if (
+      resolvedCandidateId == null ||
+      !Number.isInteger(resolvedCandidateId) ||
+      resolvedCandidateId <= 0
+    ) {
       throw new Error('AI screening completed without a candidate record');
     }
     return candidatesApi.finalizeResumeScreeningJob(

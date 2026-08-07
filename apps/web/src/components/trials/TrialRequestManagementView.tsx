@@ -1,11 +1,12 @@
-import { formatDate } from '@bestal/shared-utils';
 import { Button, Dialog, StatusBadge, TanStackDataTable } from '@bestal/ui';
 import { type ColumnDef } from '@tanstack/react-table';
 import { CheckCircle2, MoreHorizontal } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import { DeploymentForm } from '../forms/DeploymentForm';
 import { TrialCompleteForm } from '../forms/TrialCompleteForm';
 import { TrialRejectForm } from '../forms/TrialRejectForm';
+import { SearchableSelect } from '../ui/SearchableSelect';
 import {
   buildDeploymentPayload,
   type DeploymentFormValues,
@@ -61,6 +62,14 @@ const defaultFilters = {
 };
 
 const TODAY = new Date('2026-06-30');
+
+function usePortalBasePath() {
+  const { pathname } = useLocation();
+  if (pathname.startsWith('/super-admin')) return '/super-admin';
+  if (pathname.startsWith('/admin')) return '/admin';
+  if (pathname.startsWith('/sales')) return '/sales';
+  return '/recruiter';
+}
 
 function isActivePeriod(start: string | null, end: string | null): boolean {
   if (!start || !end) return false;
@@ -158,6 +167,7 @@ function TrialRowActions({
 export function TrialRequestManagementView({
   title = 'Trial Request Management',
 }: TrialRequestManagementViewProps) {
+  const portalBase = usePortalBasePath();
   const { message, show } = useDemoToast();
   const { searchInput, setSearchInput, search, searchParam } = useDebouncedSearch();
   const { data, isLoading, isError, error } = useTrialsList({
@@ -300,47 +310,54 @@ export function TrialRequestManagementView({
         cell: ({ getValue }) => <span className="font-medium">{getValue() as string}</span>,
       },
       {
-        accessorKey: 'candidateName',
-        header: 'Candidate',
-        cell: ({ getValue }) => <span className="font-medium">{getValue() as string}</span>,
-      },
-      {
-        accessorKey: 'roleTitle',
-        header: 'Role',
+        accessorKey: 'clientContactName',
+        header: 'Primary contact',
         cell: ({ getValue }) => (
-          <span className="max-w-[200px] truncate text-sm text-muted-foreground">
-            {getValue() as string}
-          </span>
+          <span className="text-muted-foreground">{(getValue() as string | null) ?? '—'}</span>
         ),
       },
       {
-        accessorKey: 'durationDays',
-        header: () => <span className="block text-right">Days</span>,
-        meta: { headerClassName: 'text-right', cellClassName: 'text-right' },
-        cell: ({ getValue }) => {
-          const val = getValue() as number | null;
-          return <span className="tabular-nums">{val ?? '—'}</span>;
-        },
-      },
-      {
-        accessorKey: 'startDate',
-        header: 'Start',
+        accessorKey: 'clientContactEmail',
+        header: 'Contact email',
         cell: ({ getValue }) => {
           const val = getValue() as string | null;
           return val ? (
-            <span className="text-muted-foreground">{formatDate(val)}</span>
+            <a href={`mailto:${val}`} className="text-brand hover:underline">
+              {val}
+            </a>
           ) : (
             <span className="text-muted-foreground">—</span>
           );
         },
       },
       {
-        accessorKey: 'endDate',
-        header: 'End',
+        accessorKey: 'clientContactPhone',
+        header: 'Contact phone',
+        cell: ({ getValue }) => (
+          <span className="text-muted-foreground">{(getValue() as string | null) ?? '—'}</span>
+        ),
+      },
+      {
+        accessorKey: 'candidateName',
+        header: 'Candidate',
+        cell: ({ row }) => (
+          <Link
+            to={`${portalBase}/candidates/${row.original.candidateId}`}
+            className="font-medium text-brand hover:underline"
+          >
+            {row.original.candidateName}
+          </Link>
+        ),
+      },
+      {
+        accessorKey: 'candidateEmail',
+        header: 'Candidate email',
         cell: ({ getValue }) => {
           const val = getValue() as string | null;
           return val ? (
-            <span className="text-muted-foreground">{formatDate(val)}</span>
+            <a href={`mailto:${val}`} className="text-brand hover:underline">
+              {val}
+            </a>
           ) : (
             <span className="text-muted-foreground">—</span>
           );
@@ -375,7 +392,7 @@ export function TrialRequestManagementView({
         ),
       },
     ],
-    [handleAction],
+    [handleAction, portalBase],
   );
 
   const updateFilter = (key: keyof typeof defaultFilters, value: string) => {
@@ -430,24 +447,32 @@ export function TrialRequestManagementView({
                   { value: 'no-dates', label: 'Not scheduled' },
                 ]}
               />
-              <ListingFilterSelect
-                label="CLIENT"
-                value={filters.client}
-                onChange={(v) => updateFilter('client', v)}
-                options={[
-                  { value: 'all', label: 'All clients' },
-                  ...trialRequestClients.map((c) => ({ value: c, label: c })),
-                ]}
-              />
-              <ListingFilterSelect
-                label="CANDIDATE"
-                value={filters.candidate}
-                onChange={(v) => updateFilter('candidate', v)}
-                options={[
-                  { value: 'all', label: 'All candidates' },
-                  ...trialRequestCandidates.map((c) => ({ value: c, label: c })),
-                ]}
-              />
+              <label className="flex min-w-[180px] flex-1 flex-col gap-1">
+                <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                  Client
+                </span>
+                <SearchableSelect
+                  value={filters.client}
+                  onChange={(v) => updateFilter('client', v)}
+                  options={[
+                    { value: 'all', label: 'All clients' },
+                    ...trialRequestClients.map((c) => ({ value: c, label: c })),
+                  ]}
+                />
+              </label>
+              <label className="flex min-w-[180px] flex-1 flex-col gap-1">
+                <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                  Candidate
+                </span>
+                <SearchableSelect
+                  value={filters.candidate}
+                  onChange={(v) => updateFilter('candidate', v)}
+                  options={[
+                    { value: 'all', label: 'All candidates' },
+                    ...trialRequestCandidates.map((c) => ({ value: c, label: c })),
+                  ]}
+                />
+              </label>
             </ListingFiltersRow>
           }
           globalFilterFn={(row, _columnId, filterValue) => {

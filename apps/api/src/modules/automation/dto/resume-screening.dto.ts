@@ -26,6 +26,21 @@ export const resumeScreeningSkillSchema = z.object({
   isPrimary: z.boolean().optional(),
 });
 
+export const resumeScreeningExperienceSchema = z.object({
+  company: z.string().trim().max(255),
+  title: z.string().trim().max(255).optional(),
+  startDate: z.string().trim().max(50).optional().nullable(),
+  endDate: z.string().trim().max(50).optional().nullable(),
+  description: z.string().trim().max(5000).optional().nullable(),
+});
+
+export const resumeScreeningEducationSchema = z.object({
+  institution: z.string().trim().max(255),
+  degree: z.string().trim().max(255).optional().nullable(),
+  fieldOfStudy: z.string().trim().max(255).optional().nullable(),
+  graduationYear: z.coerce.number().int().min(1950).max(2100).optional().nullable(),
+});
+
 /**
  * Validated AI result from n8n. Supports nested `candidate` or flat fields.
  * All persistence goes through application validation — never trust raw output.
@@ -52,6 +67,11 @@ export const resumeScreeningOutputSchema = z
     bestalScore: z.coerce.number().int().min(0).max(100).optional(),
     recommendedClientRate: z.coerce.number().min(0).optional(),
     recommendedCandidateRate: z.coerce.number().min(0).optional(),
+    currentCompany: z.string().trim().max(255).optional(),
+    /** Formatted education text for DB column when arrays are omitted. */
+    education: z.string().trim().max(10000).optional(),
+    experience: z.array(resumeScreeningExperienceSchema).max(50).optional(),
+    educationHistory: z.array(resumeScreeningEducationSchema).max(20).optional(),
     skills: z.array(resumeScreeningSkillSchema).max(100).optional(),
     warnings: z.array(z.string()).optional(),
     candidate: z

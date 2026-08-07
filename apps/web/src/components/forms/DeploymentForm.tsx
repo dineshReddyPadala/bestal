@@ -3,6 +3,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm, type Resolver } from 'react-hook-form';
 import { z } from 'zod';
 import type { DeploymentFormValues } from '../../lib/entity-field-metadata';
+import { TIMEZONE_OPTIONS } from '../../lib/timezones';
 import { Label } from '../ui/label';
 
 const PLACEMENT_TYPES: { value: DeploymentFormValues['placementType']; label: string }[] = [
@@ -184,7 +185,14 @@ export function DeploymentForm({
 
         <div className="space-y-2">
           <Label htmlFor="timezone">Timezone</Label>
-          <Input id="timezone" {...register('timezone')} placeholder="America/New_York" />
+          <Select id="timezone" {...register('timezone')}>
+            <option value="">— Select —</option>
+            {TIMEZONE_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </Select>
         </div>
 
         <div className="space-y-2">

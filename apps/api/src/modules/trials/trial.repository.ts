@@ -10,8 +10,16 @@ import type {
 import { parseSortParam } from './trial.mapper.js';
 
 const trialInclude = {
-  candidate: { select: { id: true, firstName: true, lastName: true } },
-  client: { select: { id: true, name: true } },
+  candidate: { select: { id: true, firstName: true, lastName: true, email: true } },
+  client: {
+    select: {
+      id: true,
+      name: true,
+      contactName: true,
+      contactEmail: true,
+      contactPhone: true,
+    },
+  },
   requestedBy: { select: { id: true, firstName: true, lastName: true } },
   assignedRecruiter: { select: { id: true, firstName: true, lastName: true } },
 } satisfies Prisma.TrialRequestInclude;

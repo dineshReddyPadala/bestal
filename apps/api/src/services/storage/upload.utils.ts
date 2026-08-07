@@ -29,6 +29,11 @@ export function buildStorageKey(params: BuildStorageKeyParams): string {
   ].join('/');
 }
 
+/** Compact durable reference for DB columns with URL length limits (not for direct download). */
+export function buildS3ObjectReference(bucket: string, key: string): string {
+  return `s3://${bucket}/${key}`;
+}
+
 export async function uploadToS3(
   s3Service: S3Service,
   params: {

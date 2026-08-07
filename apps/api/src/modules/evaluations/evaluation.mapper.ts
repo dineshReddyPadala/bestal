@@ -42,6 +42,7 @@ export function mapEvaluationToDto(evaluation: EvaluationRecord): EvaluationDto 
 
 export function mapEvaluationToListItem(
   evaluation: EvaluationRecord,
+  documentId?: number | null,
 ): EvaluationListItemDto {
   return {
     id: bigintToNumber(evaluation.id),
@@ -56,6 +57,7 @@ export function mapEvaluationToListItem(
     evaluationDate: formatDateOnly(evaluation.evaluationDate),
     recommendation: evaluation.recommendation,
     technicalScore: evaluation.technicalScore,
+    documentId: documentId ?? null,
     createdAt: evaluation.createdAt.toISOString(),
     updatedAt: evaluation.updatedAt.toISOString(),
   };

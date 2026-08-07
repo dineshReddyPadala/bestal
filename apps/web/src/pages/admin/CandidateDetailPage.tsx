@@ -7,7 +7,7 @@ export function CandidateDetailPage() {
   const candidateId = Number(id);
   return (
     <div className="space-y-6">
-      <CandidatePipelinePanel candidateId={candidateId} basePath="/admin/candidates" />
+      <CandidatePipelinePanel candidateId={candidateId} />
       <CandidateDetailView candidateId={candidateId} basePath="/admin/candidates" />
     </div>
   );

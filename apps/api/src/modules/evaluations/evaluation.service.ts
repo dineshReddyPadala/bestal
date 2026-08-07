@@ -19,7 +19,10 @@ import {
   type EvaluationExtractionResponse,
 } from '../../services/evaluation-extraction.client.js';
 import { StorageService } from '../../services/storage.service.js';
+import { readStoredDocumentBuffer, type DocumentDownloadPayload } from '../../services/document-buffer.util.js';
 import { UPLOAD_CATEGORIES } from '../../services/storage/storage.constants.js';
+import { buildS3ObjectReference } from '../../services/storage/upload.utils.js';
+import { normalizeUploadToPdf } from '../../services/document-pdf-normalizer.js';
 import { AutomationService } from '../automation/automation.service.js';
 import type { EvaluationAnalysisOutput } from '../automation/dto/evaluation-analysis.dto.js';
 import { N8nClient } from '../automation/n8n.client.js';
@@ -320,6 +323,7 @@ export class EvaluationService {
         candidate.lastName,
         evaluationId,
         requestedBy,
+        output.bestalScore,
       );
     }
   }
@@ -416,10 +420,91 @@ export class EvaluationService {
       evaluationType: query.evaluationType,
     });
 
+    const evaluationIds = items.map((item) => bigintToNumber(item.id));
+    const documentIdByEvaluation = await this.resolveEvaluationDocumentIds(
+      organizationId,
+      evaluationIds,
+    );
+
     return {
-      data: items.map(mapEvaluationToListItem),
+      data: items.map((item) =>
+        mapEvaluationToListItem(
+          item,
+          documentIdByEvaluation.get(bigintToNumber(item.id)) ?? null,
+        ),
+      ),
       meta: buildPaginationMeta(query.page, query.limit, total),
     };
+  }
+
+  async downloadDocument(
+    authUser: AuthenticatedUser,
+    evaluationId: number,
+  ): Promise<DocumentDownloadPayload> {
+    const organizationId = requireOrganization(authUser);
+    await this.getEvaluationOrThrow(organizationId, evaluationId);
+    const documentId =
+      (await this.resolveEvaluationDocumentIds(organizationId, [evaluationId])).get(
+        evaluationId,
+      ) ?? null;
+
+    if (documentId == null) {
+      throw new NotFoundError('Evaluation document not found');
+    }
+
+    const document = await this.prisma.document.findFirst({
+      where: {
+        id: BigInt(documentId),
+        organizationId: BigInt(organizationId),
+        deletedAt: null,
+      },
+    });
+    if (!document) {
+      throw new NotFoundError('Evaluation document not found');
+    }
+
+    return readStoredDocumentBuffer(document, this.config, this.storageService);
+  }
+
+  private async resolveEvaluationDocumentIds(
+    _organizationId: number,
+    evaluationIds: number[],
+  ): Promise<Map<number, number>> {
+    const map = new Map<number, number>();
+    if (evaluationIds.length === 0) return map;
+
+    const jobs = await this.prisma.automationJob.findMany({
+      where: {
+        jobType: 'EVALUATION_ANALYSIS',
+        documentId: { not: null },
+        OR: evaluationIds.map((evaluationId) => ({
+          inputReference: {
+            path: ['evaluationId'],
+            equals: evaluationId,
+          },
+        })),
+      },
+      select: {
+        documentId: true,
+        inputReference: true,
+        createdAt: true,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    for (const job of jobs) {
+      const ref = job.inputReference as { evaluationId?: number } | null;
+      const evaluationId = ref?.evaluationId;
+      if (
+        evaluationId != null &&
+        !map.has(evaluationId) &&
+        job.documentId != null
+      ) {
+        map.set(evaluationId, bigintToNumber(job.documentId));
+      }
+    }
+
+    return map;
   }
 
   async getById(authUser: AuthenticatedUser, id: number): Promise<EvaluationDto> {
@@ -449,6 +534,8 @@ export class EvaluationService {
       originalName: file.originalName,
     });
 
+    const uploadFile = await normalizeUploadToPdf(file);
+
     let evaluationId: number | null = null;
     let documentId: number | null = null;
 
@@ -456,23 +543,23 @@ export class EvaluationService {
       const draft = await this.evaluationRepository.create(organizationId, {
         candidateId,
         evaluatorName: DRAFT_EVALUATOR_NAME,
-        evaluationFileUrl: file.originalName,
+        evaluationFileUrl: uploadFile.originalName,
       });
       evaluationId = bigintToNumber(draft.id);
 
       const storageKey = this.storageService.buildEvaluationAssetKey(
         organizationId,
         evaluationId,
-        file.originalName,
+        uploadFile.originalName,
       );
 
       const uploadResult = await this.storageService.upload(
         storageKey,
         {
-          buffer: file.buffer,
-          originalName: file.originalName,
-          mimeType: file.mimeType,
-          size: file.size,
+          buffer: uploadFile.buffer,
+          originalName: uploadFile.originalName,
+          mimeType: uploadFile.mimeType,
+          size: uploadFile.size,
         },
         {
           category: UPLOAD_CATEGORIES.EVALUATION,
@@ -481,21 +568,14 @@ export class EvaluationService {
         },
       );
 
-      const durableFileUrl =
-        uploadResult.url ??
-        (await this.storageService.resolveFileUrl(
-          uploadResult.key,
-          uploadResult.bucket,
-          file.mimeType,
-        )) ??
-        `s3://${uploadResult.bucket}/${uploadResult.key}`;
+      const storedFileUrl = buildS3ObjectReference(uploadResult.bucket, uploadResult.key);
 
       const signedUrl =
         (await this.storageService.resolveFileUrl(
           uploadResult.key,
           uploadResult.bucket,
-          file.mimeType,
-        )) ?? durableFileUrl;
+          uploadFile.mimeType,
+        )) ?? storedFileUrl;
 
       const document = await this.prisma.document.create({
         data: {
@@ -504,34 +584,46 @@ export class EvaluationService {
           entityType: 'CANDIDATE',
           entityId: BigInt(candidateId),
           kind: 'GENERAL',
-          fileName: uploadResult.key.split('/').pop() ?? file.originalName,
-          originalName: file.originalName,
+          fileName: uploadResult.key.split('/').pop() ?? uploadFile.originalName,
+          originalName: uploadFile.originalName,
           s3Key: uploadResult.key,
           s3Bucket: uploadResult.bucket,
-          fileUrl: durableFileUrl,
-          mimeType: file.mimeType,
-          fileSize: BigInt(file.size),
+          fileUrl: storedFileUrl,
+          mimeType: uploadFile.mimeType,
+          fileSize: BigInt(uploadFile.size),
           status: 'UPLOADED',
         },
       });
       documentId = bigintToNumber(document.id);
 
       await this.evaluationRepository.update(organizationId, evaluationId, {
-        evaluationFileUrl: durableFileUrl,
+        evaluationFileUrl: storedFileUrl,
       });
 
       const automation = new AutomationService(this.fastify);
+      const candidateRow = await this.prisma.candidate.findFirst({
+        where: {
+          id: BigInt(candidateId),
+          organizationId: BigInt(organizationId),
+          deletedAt: null,
+        },
+        select: { bestalScore: true },
+      });
+      const previousBestalScore = candidateRow?.bestalScore ?? null;
+
       const job = await automation.enqueueEvaluationAnalysis({
         candidateId,
         documentId,
         requestedBy: authUser.id,
         documentUrl: signedUrl,
+        previousBestalScore,
         inputReference: {
           candidateId,
           documentId,
           evaluationId,
-          fileName: file.originalName,
-          mimeType: file.mimeType,
+          fileName: uploadFile.originalName,
+          mimeType: uploadFile.mimeType,
+          previousBestalScore,
         },
       });
 
@@ -565,11 +657,13 @@ export class EvaluationService {
     lastName: string,
     evaluationId: number,
     triggeredByUserId: number,
+    bestalScoreOverride?: number | null,
   ): Promise<void> {
     const { bestalScore } = await recalculateCandidateScoresFromEvaluations(
       this.prisma,
       organizationId,
       Number(candidateId),
+      bestalScoreOverride != null ? { bestalScoreOverride } : undefined,
     );
 
     await notifyEvaluationProcessed(this.prisma, this.config, {

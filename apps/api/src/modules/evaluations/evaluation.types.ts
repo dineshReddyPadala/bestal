@@ -31,6 +31,7 @@ export interface EvaluationListItemDto {
   evaluationDate: string | null;
   recommendation: string | null;
   technicalScore: number | null;
+  documentId: number | null;
   createdAt: string;
   updatedAt: string;
 }

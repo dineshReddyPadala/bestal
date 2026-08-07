@@ -7,6 +7,7 @@ export const evaluationAnalysisInputSchema = z.object({
   evaluationId: z.number().int().positive(),
   fileName: z.string().min(1).max(255).optional(),
   mimeType: z.string().min(1).max(127).optional(),
+  previousBestalScore: z.coerce.number().int().min(0).max(100).nullable().optional(),
 });
 
 const scoreSchema = z.coerce.number().int().min(0).max(100).optional();
@@ -32,6 +33,7 @@ export const evaluationAnalysisOutputSchema = z
     evaluatorComments: z.string().trim().max(20000).optional(),
     aiEvaluationSummary: z.string().trim().max(20000).optional(),
     extractedText: z.string().trim().max(100000).optional(),
+    bestalScore: z.coerce.number().int().min(0).max(100).optional(),
     warnings: z.array(z.string()).optional(),
   })
   .superRefine((value, ctx) => {

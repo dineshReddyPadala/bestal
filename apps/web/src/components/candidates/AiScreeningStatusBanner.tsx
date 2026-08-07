@@ -2,8 +2,10 @@ import { cn } from '@bestal/shared-utils';
 import { Button } from '@bestal/ui';
 import { AlertCircle, CheckCircle2, Loader2, RefreshCw } from 'lucide-react';
 import {
+  aiAnalysisActiveHint,
   aiScreeningStatusLabel,
   isAiScreeningActive,
+  type AiAnalysisContext,
   type AiScreeningJobStatus,
 } from '../../lib/ai-screening-status';
 
@@ -13,6 +15,8 @@ type AiScreeningStatusBannerProps = {
   onRetry?: () => void;
   retrying?: boolean;
   className?: string;
+  /** Adjust copy for resume screening vs BGV vs evaluation jobs. */
+  context?: AiAnalysisContext;
 };
 
 export function AiScreeningStatusBanner({
@@ -21,10 +25,11 @@ export function AiScreeningStatusBanner({
   onRetry,
   retrying = false,
   className,
+  context = 'screening',
 }: AiScreeningStatusBannerProps) {
   if (!status) return null;
 
-  const label = aiScreeningStatusLabel(status);
+  const label = aiScreeningStatusLabel(status, context);
   const active = isAiScreeningActive(status);
   const failed = status === 'FAILED';
   const completed = status === 'COMPLETED';
@@ -57,9 +62,7 @@ export function AiScreeningStatusBanner({
             <p className="text-xs opacity-90">{errorMessage}</p>
           ) : null}
           {active ? (
-            <p className="text-xs text-muted-foreground">
-              Checking screening progress…
-            </p>
+            <p className="text-xs text-muted-foreground">{aiAnalysisActiveHint(context)}</p>
           ) : null}
         </div>
         {failed && onRetry ? (

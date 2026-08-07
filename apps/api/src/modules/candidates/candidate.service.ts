@@ -33,6 +33,7 @@ import {
 import { isClearBgvStatus } from './candidate-import-status.js';
 import { notifyCandidatePendingApproval } from '../../services/notification-events.js';
 import { StorageService } from '../../services/storage.service.js';
+import { normalizeUploadToPdf } from '../../services/document-pdf-normalizer.js';
 import {
   bufferToBase64,
   ResumeExtractionClient,
@@ -160,6 +161,9 @@ export class CandidateService {
       originalName: file.originalName,
     });
 
+    const n8nEnabled = await this.isN8nResumeScreeningEnabled();
+    const uploadFile = n8nEnabled ? await normalizeUploadToPdf(file) : file;
+
     if (existingCandidateId != null && existingCandidateId > 0) {
       // --- Re-screen: attach resume to an existing candidate ---
       const existing = await this.getCandidateOrThrow(
@@ -174,11 +178,11 @@ export class CandidateService {
           organizationId,
           candidate,
           candidateId: existingCandidateId,
-          file,
+          file: uploadFile,
           uploadCategory,
         });
 
-        if (await this.isN8nResumeScreeningEnabled()) {
+        if (n8nEnabled) {
           // Return immediately; frontend polls GET /automation/jobs/:id.
           return this.enqueueResumeScreeningJob({
             authUser,
@@ -186,8 +190,8 @@ export class CandidateService {
             candidateId: existingCandidateId,
             documentId: uploaded.documentId,
             documentUrl: uploaded.signedUrl,
-            fileName: file.originalName,
-            mimeType: file.mimeType,
+            fileName: uploadFile.originalName,
+            mimeType: uploadFile.mimeType,
           });
         }
 
@@ -217,14 +221,14 @@ export class CandidateService {
       }
     }
 
-    if (await this.isN8nResumeScreeningEnabled()) {
+    if (n8nEnabled) {
       // --- New upload + async n8n: defer candidate creation until callback ---
       let uploaded: { documentId: number; signedUrl: string } | null = null;
       try {
         uploaded = await this.uploadResumePendingScreening({
           authUser,
           organizationId,
-          file,
+          file: uploadFile,
           uploadCategory,
         });
         return await this.enqueueResumeScreeningJob({
@@ -233,8 +237,8 @@ export class CandidateService {
           candidateId: null, // linked in applyResumeScreeningFromAutomation on COMPLETED
           documentId: uploaded.documentId,
           documentUrl: uploaded.signedUrl,
-          fileName: file.originalName,
-          mimeType: file.mimeType,
+          fileName: uploadFile.originalName,
+          mimeType: uploadFile.mimeType,
         });
       } catch (error) {
         // Orphan document cleanup when enqueue/trigger fails before a candidate exists.
@@ -510,6 +514,36 @@ export class CandidateService {
     const yearsExperience =
       output.yearsExperience ?? output.candidate?.yearsExperience ?? undefined;
 
+    const latestJob = output.experience?.[0];
+    const educationFromHistory = (output.educationHistory ?? [])
+      .map((entry) =>
+        [entry.degree, entry.fieldOfStudy, entry.institution, entry.graduationYear]
+          .filter((part) => part != null && part !== '')
+          .join(', '),
+      )
+      .filter(Boolean)
+      .join('; ');
+    const educationText = output.education?.trim() || educationFromHistory || undefined;
+
+    const experienceJobs = output.experience ?? [];
+    const isCurrentRole = (endDate: string | null | undefined): boolean => {
+      const end = endDate?.trim().toLowerCase() ?? '';
+      return !end || end === 'present' || end === 'current' || end === 'now' || end === 'ongoing';
+    };
+    const currentRole =
+      experienceJobs.find((job) => isCurrentRole(job.endDate)) ?? experienceJobs[0] ?? latestJob;
+    const headlineCompany = (() => {
+      const headline = output.headline?.trim() || output.candidate?.headline?.trim();
+      if (!headline) return undefined;
+      const match = headline.match(/\bat\s+([^|,]+)/i);
+      return match?.[1]?.trim() || undefined;
+    })();
+    const currentCompany =
+      output.currentCompany?.trim() ||
+      currentRole?.company?.trim() ||
+      headlineCompany ||
+      undefined;
+
     await this.prisma.$transaction(async (tx) => {
       // Row lock prevents concurrent callbacks from double-applying results.
       const locked = await tx.$queryRaw<Array<{ id: bigint; status: string }>>`
@@ -593,6 +627,8 @@ export class CandidateService {
             output.primaryRole ??
             undefined,
           primaryRole: output.primaryRole ?? output.headline ?? undefined,
+          currentCompany,
+          education: educationText,
           summary,
           clientProfileSummary: summary,
           yearsExperience:

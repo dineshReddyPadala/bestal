@@ -9,6 +9,8 @@ export const AI_SCREENING_JOB_STATUSES = [
 
 export type AiScreeningJobStatus = (typeof AI_SCREENING_JOB_STATUSES)[number];
 
+export type AiAnalysisContext = 'screening' | 'evaluation' | 'bgv';
+
 const ACTIVE = new Set<AiScreeningJobStatus>(['PENDING', 'PROCESSING', 'RETRYING']);
 const TERMINAL = new Set<AiScreeningJobStatus>(['COMPLETED', 'FAILED', 'CANCELLED']);
 
@@ -24,22 +26,50 @@ export function isAiScreeningTerminal(status: AiScreeningJobStatus | null | unde
   return status != null && TERMINAL.has(status);
 }
 
+function analysisNoun(context: AiAnalysisContext): string {
+  switch (context) {
+    case 'bgv':
+      return 'BGV analysis';
+    case 'evaluation':
+      return 'Evaluation analysis';
+    default:
+      return 'AI screening';
+  }
+}
+
 /** User-facing labels — no n8n / internal execution details. */
-export function aiScreeningStatusLabel(status: AiScreeningJobStatus): string {
+export function aiScreeningStatusLabel(
+  status: AiScreeningJobStatus,
+  context: AiAnalysisContext = 'screening',
+): string {
+  const noun = analysisNoun(context);
+  const titled = noun.replace(/\b\w/g, (c) => c.toUpperCase());
+
   switch (status) {
     case 'PENDING':
-      return 'AI Screening Pending';
+      return `${titled} pending`;
     case 'PROCESSING':
-      return 'AI Screening Processing';
+      return `${titled} in progress`;
     case 'COMPLETED':
-      return 'AI Screening Completed';
+      return `${titled} completed`;
     case 'FAILED':
-      return 'AI Screening Failed';
+      return `${titled} failed`;
     case 'RETRYING':
-      return 'AI Screening Retrying';
+      return `${titled} retrying`;
     case 'CANCELLED':
-      return 'AI Screening Cancelled';
+      return `${titled} cancelled`;
     default:
-      return 'AI Screening';
+      return titled;
+  }
+}
+
+export function aiAnalysisActiveHint(context: AiAnalysisContext = 'screening'): string {
+  switch (context) {
+    case 'bgv':
+      return 'Extracting check statuses from the BGV report…';
+    case 'evaluation':
+      return 'Analyzing evaluation document…';
+    default:
+      return 'Checking screening progress…';
   }
 }

@@ -78,6 +78,8 @@ export type N8nWorkflowTriggerInput = {
   documentUrl: string;
   workflowName: string;
   workflowVersion: string;
+  /** Candidate BesTal score before evaluation (resume screening); used to recalculate. */
+  previousBestalScore?: number | null;
 };
 
 export type N8nTriggerResult = {
@@ -96,4 +98,6 @@ export type StartAutomationWorkflowInput = {
   workflowVersion?: string | null;
   inputReference?: Record<string, unknown> | null;
   maxAttempts?: number;
+  /** Evaluation workflow: existing candidate BesTal score from resume screening. */
+  previousBestalScore?: number | null;
 };

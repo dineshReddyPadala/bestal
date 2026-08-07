@@ -1,8 +1,9 @@
 import { cn, formatDate } from '@bestal/shared-utils';
 import { Button, Dialog, FileUpload, Input, Select, StatusBadge, TanStackDataTable } from '@bestal/ui';
 import { type ColumnDef } from '@tanstack/react-table';
-import { AlertCircle, Check, Eye, Loader2, Plus, Sparkles } from 'lucide-react';
+import { Check, Download, Eye, Loader2, Plus, Sparkles } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useCandidatesList } from '../../hooks/api/useCandidates';
 import {
   useBackgroundCheckMutations,
@@ -11,6 +12,7 @@ import {
 import { useDebouncedSearch } from '../../hooks/useDebouncedSearch';
 import { useBgvAiJob } from '../../hooks/useBgvAiJob';
 import { usePermissions } from '../../hooks/usePermissions';
+import { queryKeys } from '../../hooks/api/query-keys';
 import { AiScreeningStatusBanner } from '../candidates/AiScreeningStatusBanner';
 import { mapBgvExtractionToForm } from '../../lib/api/ai/bgv-extraction.mapper';
 import { getApiErrorMessage } from '../../lib/api/errors';
@@ -87,6 +89,7 @@ export function BackgroundVerificationManagementView({
   title = 'Background Verification Management',
 }: BackgroundVerificationManagementViewProps) {
   const { message, show, showError } = useDemoToast();
+  const queryClient = useQueryClient();
   const { canUploadBgv, canApproveBgv } = usePermissions();
   const { searchInput, setSearchInput, search, searchParam } = useDebouncedSearch();
   const { data, isLoading, isError, error } = useBackgroundChecksList({
@@ -110,11 +113,14 @@ export function BackgroundVerificationManagementView({
     isRunning: extractingPdf,
     backgroundCheckId: draftBackgroundCheckId,
     runAnalysis: runBgvAnalysis,
+    waitForReportAnalysis,
+    runExtractAiForCheck,
     reset: resetBgvAi,
   } = useBgvAiJob();
   const [extractHint, setExtractHint] = useState<string | null>(null);
   const [extractError, setExtractError] = useState<string | null>(null);
   const [pendingReportFile, setPendingReportFile] = useState<File | null>(null);
+  const [pendingDetailReportFile, setPendingDetailReportFile] = useState<File | null>(null);
   const [detail, setDetail] = useState<BackgroundCheckDto | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [vendorName, setVendorName] = useState('');
@@ -279,6 +285,67 @@ export function BackgroundVerificationManagementView({
     [bgvAiError, resetBgvAi, runBgvAnalysis, selectedCandidateId],
   );
 
+  const handleDetailReportUpload = useCallback(
+    async (file: File) => {
+      if (!detail) return;
+
+      setPendingDetailReportFile(file);
+      resetBgvAi();
+      setBusy(true);
+
+      try {
+        const uploaded = await mutations.uploadDocument.mutateAsync({
+          id: detail.id,
+          kind: 'REPORT',
+          file,
+        });
+        applyDetail(uploaded);
+
+        const analyzed = await waitForReportAnalysis(detail.id, detail.candidateId);
+        if (analyzed) {
+          applyDetail(analyzed, { resetLocalFields: true });
+          await queryClient.invalidateQueries({ queryKey: queryKeys.backgroundChecks.all });
+          await queryClient.invalidateQueries({ queryKey: queryKeys.candidates.all });
+          show(
+            'Report uploaded and analyzed — candidate BGV badge updated; admins notified. Review and submit for approval.',
+          );
+        }
+      } catch (err) {
+        showError(getApiErrorMessage(err, 'Report upload or AI analysis failed'));
+      } finally {
+        setBusy(false);
+      }
+    },
+    [
+      applyDetail,
+      detail,
+      mutations.uploadDocument,
+      resetBgvAi,
+      show,
+      showError,
+      queryClient,
+      waitForReportAnalysis,
+    ],
+  );
+
+  const handleRefreshAiSummary = useCallback(async () => {
+    if (!detail) return;
+    setBusy(true);
+    try {
+      const refreshed = await runExtractAiForCheck(detail.id);
+      if (refreshed) {
+        applyDetail(refreshed, { resetLocalFields: true });
+        await queryClient.invalidateQueries({ queryKey: queryKeys.backgroundChecks.all });
+        await queryClient.invalidateQueries({ queryKey: queryKeys.candidates.all });
+        show('AI summary refreshed');
+      }
+    } catch (err) {
+      showError(getApiErrorMessage(err, 'AI extraction failed'));
+    } finally {
+      setBusy(false);
+    }
+  }, [applyDetail, detail, queryClient, runExtractAiForCheck, show, showError]);
+
   const handleRequest = useCallback(async () => {
     const candidateId = Number(selectedCandidateId);
     if (!candidateId) {
@@ -392,6 +459,28 @@ export function BackgroundVerificationManagementView({
         },
       },
       {
+        id: 'download',
+        header: 'Download',
+        cell: ({ row }) =>
+          row.original.documentId ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() =>
+                void backgroundChecksApi
+                  .downloadReport(row.original.id)
+                  .catch((err) => showError(getApiErrorMessage(err, 'Download failed')))
+              }
+            >
+              <Download className="mr-1 h-3.5 w-3.5" />
+              Report
+            </Button>
+          ) : (
+            <span className="text-muted-foreground">—</span>
+          ),
+      },
+      {
         id: 'actions',
         header: '',
         cell: ({ row }) => (
@@ -407,7 +496,7 @@ export function BackgroundVerificationManagementView({
         ),
       },
     ],
-    [openDetail],
+    [openDetail, showError],
   );
 
   const listError = isError
@@ -486,7 +575,7 @@ export function BackgroundVerificationManagementView({
           setRequestOpen(false);
         }}
         title="Request background verification"
-        description="Upload a BGV PDF to auto-fill vendor and summary, or enter details manually."
+        description="Upload a BGV report to auto-fill fields via AI, or enter details manually."
         scrollable
         className="max-w-2xl"
         footer={
@@ -509,12 +598,18 @@ export function BackgroundVerificationManagementView({
           <div className="rounded-xl border border-brand/20 bg-brand/5 px-4 py-3 text-sm text-muted-foreground">
             <div className="flex items-start gap-2">
               <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-brand" />
-              <p>
-                Upload a PDF/Word BGV report. The BesTal API calls Python{' '}
-                <code className="rounded bg-white/80 px-1">ai-service</code> when{' '}
-                <code className="rounded bg-white/80 px-1">AI_BGV_URL</code> is configured;
-                otherwise a demo extraction is returned.
-              </p>
+              <div className="space-y-2">
+                <p>
+                  Upload a PDF/Word BGV report. When n8n is configured, BesTal triggers{' '}
+                  <code className="rounded bg-white/80 px-1">BESTAL_BGV_AI_ANALYSIS</code> to extract
+                  check statuses and summary. Otherwise the API uses the legacy Python extractor or
+                  demo stub.
+                </p>
+                <p className="text-xs">
+                  Flow: report uploaded → n8n extracts text → AI check statuses → BGV record updated →
+                  candidate badge synced → admin notified.
+                </p>
+              </div>
             </div>
           </div>
 
@@ -554,6 +649,7 @@ export function BackgroundVerificationManagementView({
             {extractingPdf && (
               <div className="space-y-2">
                 <AiScreeningStatusBanner
+                  context="bgv"
                   status={bgvAiStatus}
                   errorMessage={bgvAiError}
                   onRetry={
@@ -652,8 +748,10 @@ export function BackgroundVerificationManagementView({
       <Dialog
         open={Boolean(detail) || detailLoading}
         onClose={() => {
-          if (busy) return;
+          if (busy || extractingPdf) return;
           setDetail(null);
+          setPendingDetailReportFile(null);
+          resetBgvAi();
         }}
         title={detail ? `BGV — ${detail.candidateName}` : 'Background verification'}
         className="max-w-2xl"
@@ -815,36 +913,65 @@ export function BackgroundVerificationManagementView({
                     <div>
                       <h3 className="text-sm font-semibold">5. Upload final BGV report</h3>
                       <p className="mt-1 text-sm text-muted-foreground">
-                        Upload the vendor’s final report after verification completes.
+                        Upload the vendor&apos;s final report. AI analysis starts automatically and
+                        updates the candidate BGV badge when complete.
                       </p>
                     </div>
                     <FileUpload
                       key="report-upload"
                       label="Final BGV report"
                       accept=".pdf,.doc,.docx"
-                      hint="PDF or Word"
-                      onFileSelect={(file) =>
-                        void run(async () => {
-                          return mutations.uploadDocument.mutateAsync({
-                            id: detail.id,
-                            kind: 'REPORT',
-                            file,
-                          });
-                        }, 'Report uploaded — AI extraction started')
+                      hint={
+                        extractingPdf || busy
+                          ? 'Uploading and analyzing report…'
+                          : 'PDF or Word — triggers n8n AI when configured'
                       }
+                      onFileSelect={(file) => {
+                        if (!extractingPdf && !busy) void handleDetailReportUpload(file);
+                      }}
                     />
+                    {(extractingPdf || busy) && (
+                      <AiScreeningStatusBanner
+                        context="bgv"
+                        status={bgvAiStatus ?? (busy ? 'PROCESSING' : null)}
+                        errorMessage={bgvAiError}
+                        onRetry={
+                          bgvAiStatus === 'FAILED' && pendingDetailReportFile
+                            ? () => void handleDetailReportUpload(pendingDetailReportFile)
+                            : undefined
+                        }
+                        retrying={busy}
+                      />
+                    )}
                   </>
                 )}
 
                 {currentStep === 'ai' && (
                   <>
                     <div>
-                      <h3 className="text-sm font-semibold">6. AI extraction</h3>
+                      <h3 className="text-sm font-semibold">6. Review AI extraction</h3>
                       <p className="mt-1 text-sm text-muted-foreground">
-                        Review the AI summary from the final BGV report, then submit for admin
-                        review. Use refresh to re-run extraction if needed.
+                        Check statuses were extracted from the report. Submit for admin review when
+                        ready — admins receive a notification after analysis completes.
                       </p>
                     </div>
+                    {extractingPdf && (
+                      <AiScreeningStatusBanner
+                        context="bgv"
+                        status={bgvAiStatus}
+                        errorMessage={bgvAiError}
+                      />
+                    )}
+                    {detail.resultSummary?.trim() ? (
+                      <div className="rounded-lg border border-border/70 bg-muted/20 p-3">
+                        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                          Check statuses
+                        </p>
+                        <pre className="max-h-40 overflow-auto whitespace-pre-wrap text-xs text-foreground">
+                          {detail.resultSummary}
+                        </pre>
+                      </div>
+                    ) : null}
                     <pre className="max-h-64 overflow-auto rounded-lg border border-border/70 bg-background p-3 text-xs text-muted-foreground whitespace-pre-wrap">
                       {detail.aiSummary?.trim() ||
                         'No AI summary yet. Upload a report or click Refresh AI summary.'}
@@ -853,7 +980,7 @@ export function BackgroundVerificationManagementView({
                       <Button
                         type="button"
                         size="sm"
-                        disabled={busy || !detail.aiSummary?.trim()}
+                        disabled={busy || extractingPdf || !detail.aiSummary?.trim()}
                         onClick={() => {
                           void run(
                             () => mutations.submitForReview.mutateAsync(detail.id),
@@ -867,13 +994,8 @@ export function BackgroundVerificationManagementView({
                         type="button"
                         size="sm"
                         variant="outline"
-                        disabled={busy || !detail.hasReportDocument}
-                        onClick={() => {
-                          void run(
-                            () => mutations.extractAi.mutateAsync(detail.id),
-                            'AI summary refreshed',
-                          );
-                        }}
+                        disabled={busy || extractingPdf || !detail.hasReportDocument}
+                        onClick={() => void handleRefreshAiSummary()}
                       >
                         Refresh AI summary
                       </Button>

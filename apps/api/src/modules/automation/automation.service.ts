@@ -103,6 +103,7 @@ export class AutomationService {
       documentUrl: input.documentUrl,
       workflowName: job.workflowName ?? defaults.name,
       workflowVersion: job.workflowVersion ?? defaults.version,
+      previousBestalScore: input.previousBestalScore ?? null,
     };
   }
 

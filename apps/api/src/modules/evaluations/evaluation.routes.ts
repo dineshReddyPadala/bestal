@@ -157,4 +157,25 @@ export async function evaluationRoutes(fastify: FastifyInstance): Promise<void> 
     },
     evaluationController.remove,
   );
+
+  app.get(
+    '/:id/document/download',
+    {
+      preHandler: [
+        authenticate,
+        requirePermission(PERMISSIONS.EVALUATIONS_READ),
+      ],
+      schema: {
+        tags: ['Evaluations'],
+        summary: 'Download evaluation document',
+        security: [{ bearerAuth: [] }],
+        params: evaluationIdParamSchema,
+        response: {
+          401: errorResponses[401],
+          404: errorResponses[404],
+        },
+      },
+    },
+    evaluationController.downloadDocument,
+  );
 }

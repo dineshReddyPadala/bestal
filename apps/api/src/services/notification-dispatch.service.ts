@@ -165,3 +165,37 @@ export async function notifyEvaluationProcessed(
     sendEmail: true,
   });
 }
+
+export interface BgvAnalysisProcessedNotificationInput {
+  organizationId: number;
+  candidateId: number;
+  candidateName: string;
+  backgroundCheckId: number;
+  bgvStatus: string;
+  triggeredByUserId: number;
+  webAppUrl: string;
+}
+
+export async function notifyBgvAnalysisProcessed(
+  prisma: PrismaClient,
+  config: AppConfig,
+  input: BgvAnalysisProcessedNotificationInput,
+): Promise<void> {
+  const body = `BGV report for ${input.candidateName} was analyzed. Status: ${input.bgvStatus.replace(/_/g, ' ')}. Review check results and approve when ready.`;
+
+  await notifyOrgRoles(prisma, config, {
+    organizationId: input.organizationId,
+    roles: ['SUPER_ADMIN', 'ADMIN'],
+    includeUserIds: [input.triggeredByUserId],
+    type: 'BACKGROUND_CHECK',
+    title: 'BGV report analyzed',
+    body,
+    actionUrl: `${input.webAppUrl.replace(/\/$/, '')}/admin/background-checks`,
+    metadata: {
+      backgroundCheckId: input.backgroundCheckId,
+      candidateId: input.candidateId,
+      bgvStatus: input.bgvStatus,
+    },
+    sendEmail: true,
+  });
+}

@@ -52,7 +52,6 @@ export function CandidateSearchPage() {
     () => uniqueSorted(allRecords.map((r) => r.community)),
     [allRecords],
   );
-  const roleOptions = useMemo(() => uniqueSorted(allRecords.map((r) => r.role)), [allRecords]);
   const timezoneOptions = useMemo(
     () => uniqueSorted(allRecords.map((r) => r.timezone).filter((tz) => tz !== 'Flexible')),
     [allRecords],
@@ -95,7 +94,6 @@ export function CandidateSearchPage() {
             onChange={setFilters}
             resultCount={filtered.length}
             communityOptions={communityOptions}
-            roleOptions={roleOptions}
             timezoneOptions={timezoneOptions}
           />
         </aside>

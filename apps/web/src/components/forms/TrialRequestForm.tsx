@@ -1,30 +1,17 @@
-import { Button, Input, Select } from '@bestal/ui';
+import { Button, Input } from '@bestal/ui';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm, type Resolver } from 'react-hook-form';
 import { z } from 'zod';
 import type { TrialRequestFormValues } from '../../lib/entity-field-metadata';
 import { Label } from '../ui/label';
 
-const trialRequestFormSchema = z
-  .object({
-    roleTitle: z.string().min(1, 'Role title is required').max(255),
-    startDate: z.string().min(1, 'Start date is required'),
-    endDate: z.string().min(1, 'End date is required'),
-    trialType: z.string().max(100).optional(),
-    maxTrialHours: z.coerce.number().int().positive().optional(),
-    taskDescription: z.string().max(5000).optional(),
-    successCriteria: z.string().max(5000).optional(),
-    feedback: z.string().max(5000).optional(),
-  })
-  .superRefine((data, ctx) => {
-    if (data.startDate && data.endDate && data.endDate < data.startDate) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: 'End date must be on or after start date',
-        path: ['endDate'],
-      });
-    }
-  });
+const trialRequestFormSchema = z.object({
+  roleTitle: z.string().min(1, 'Role title is required').max(255),
+  startDate: z.string().min(1, 'Start date is required'),
+  taskDescription: z.string().max(5000).optional(),
+  successCriteria: z.string().max(5000).optional(),
+  feedback: z.string().max(5000).optional(),
+});
 
 type TrialRequestFormProps = {
   onSubmit: (values: TrialRequestFormValues) => void;
@@ -57,41 +44,10 @@ export function TrialRequestForm({
         {errors.roleTitle && <p className="text-xs text-red-600">{errors.roleTitle.message}</p>}
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className="space-y-2">
-          <Label htmlFor="startDate">Start date *</Label>
-          <Input id="startDate" type="date" {...register('startDate')} />
-          {errors.startDate && <p className="text-xs text-red-600">{errors.startDate.message}</p>}
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="endDate">End date *</Label>
-          <Input id="endDate" type="date" {...register('endDate')} />
-          {errors.endDate && <p className="text-xs text-red-600">{errors.endDate.message}</p>}
-        </div>
-      </div>
-
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className="space-y-2">
-          <Label htmlFor="trialType">Trial type</Label>
-          <Select id="trialType" {...register('trialType')}>
-            <option value="">— Select —</option>
-            <option value="PAID_PILOT">Paid pilot</option>
-            <option value="UNPAID_PILOT">Unpaid pilot</option>
-            <option value="SKILL_ASSESSMENT">Skill assessment</option>
-            <option value="PROBATION">Probation</option>
-          </Select>
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="maxTrialHours">Max trial hours</Label>
-          <Input
-            id="maxTrialHours"
-            type="number"
-            min={1}
-            {...register('maxTrialHours', { valueAsNumber: true })}
-          />
-        </div>
+      <div className="space-y-2">
+        <Label htmlFor="startDate">Start date *</Label>
+        <Input id="startDate" type="date" {...register('startDate')} />
+        {errors.startDate && <p className="text-xs text-red-600">{errors.startDate.message}</p>}
       </div>
 
       <div className="space-y-2">

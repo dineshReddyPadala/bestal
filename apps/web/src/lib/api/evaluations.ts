@@ -1,4 +1,5 @@
 import { apiAction, apiCreate, apiGet, apiList, apiRequest, apiUpdate, type ListQuery } from './client';
+import { downloadAuthenticatedBlob } from './download-blob';
 import type { EvaluationExtractionResponse } from './ai/evaluation-extraction.types';
 import type { BgvExtractionResponse } from './ai/bgv-extraction.types';
 import type { BackgroundCheckDto, BackgroundCheckListItem, EvaluationListItem } from './types';
@@ -141,6 +142,8 @@ export const evaluationsApi = {
   create: (body: Record<string, unknown>) => apiCreate<EvaluationListItem>('/evaluations', body),
   update: (id: number, body: Record<string, unknown>) =>
     apiUpdate<EvaluationListItem>(`/evaluations/${id}`, body),
+  downloadDocument: (id: number) =>
+    downloadAuthenticatedBlob(`/evaluations/${id}/document/download`, `evaluation-${id}.pdf`),
 
   /** Start extraction — may return sync result or async job acceptance. */
   startEvaluationAnalysis: async (
@@ -236,6 +239,8 @@ export const backgroundChecksApi = {
     apiCreate<BackgroundCheckDto>('/background-checks', body),
   update: (id: number, body: Record<string, unknown>) =>
     apiUpdate<BackgroundCheckDto>(`/background-checks/${id}`, body),
+  downloadReport: (id: number) =>
+    downloadAuthenticatedBlob(`/background-checks/${id}/report/download`, `bgv-report-${id}.pdf`),
 
   startBgvAnalysis: async (
     file: File,

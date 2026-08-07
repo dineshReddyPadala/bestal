@@ -123,6 +123,9 @@ export class N8nClient {
     if (input.candidateId != null) {
       body.candidateId = input.candidateId;
     }
+    if (input.previousBestalScore != null) {
+      body.previousBestalScore = input.previousBestalScore;
+    }
 
     this.logger.info(
       {

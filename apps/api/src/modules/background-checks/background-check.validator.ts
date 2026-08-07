@@ -145,6 +145,7 @@ export const backgroundCheckListItemSchema = z.object({
   consentConfirmedAt: z.string().nullable().optional(),
   aiSummary: z.string().nullable().optional(),
   hasReportDocument: z.boolean().optional(),
+  documentId: z.number().nullable().optional(),
   initiatedAt: z.string().nullable(),
   completedAt: z.string().nullable(),
   createdAt: z.string(),

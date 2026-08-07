@@ -9,7 +9,10 @@ import {
   requireOrganization,
 } from '../../utils/index.js';
 import { StorageService } from '../../services/storage.service.js';
+import { readStoredDocumentBuffer, type DocumentDownloadPayload } from '../../services/document-buffer.util.js';
 import { UPLOAD_CATEGORIES } from '../../services/storage/storage.constants.js';
+import { buildS3ObjectReference } from '../../services/storage/upload.utils.js';
+import { normalizeUploadToPdf } from '../../services/document-pdf-normalizer.js';
 import {
   bufferToBase64,
   BgvExtractionClient,
@@ -19,6 +22,7 @@ import {
   type BgvExtractionResponse,
 } from '../../services/bgv-extraction.client.js';
 import { buildPaginationMeta } from '../../validators/common.validator.js';
+import { notifyBgvAnalysisProcessed } from '../../services/notification-dispatch.service.js';
 import { PERMISSIONS, roleHasPermission } from '../auth/auth.permissions.js';
 import { AutomationService } from '../automation/automation.service.js';
 import type { BgvAnalysisOutput } from '../automation/dto/bgv-analysis.dto.js';
@@ -58,6 +62,53 @@ function deriveCandidateBgvProfileStatus(
   return 'BGV_PENDING';
 }
 
+const BGV_WORKFLOW_STATUSES = new Set([
+  'NOT_STARTED',
+  'PENDING',
+  'CONSENT_PENDING',
+  'INITIATED',
+  'IN_PROGRESS',
+  'CLEAR',
+  'CONSIDER',
+  'COMPLETED_CLEAR',
+  'COMPLETED_WITH_CONCERN',
+  'SUSPENDED',
+  'FAILED',
+  'CANCELLED',
+  'EXPIRED',
+]);
+
+/** Map AI overall status to a BGV workflow status after report analysis. */
+function deriveBgvWorkflowStatusFromAiOutput(output: BgvAnalysisOutput): string {
+  const raw = (output.overallStatus ?? output.status ?? '')
+    .trim()
+    .toUpperCase()
+    .replace(/\s+/g, '_');
+  if (raw && BGV_WORKFLOW_STATUSES.has(raw)) {
+    return raw;
+  }
+
+  const checks = [
+    output.idCheckStatus,
+    output.addressCheckStatus,
+    output.employmentCheckStatus,
+    output.educationCheckStatus,
+    output.criminalCheckStatus,
+    output.referenceCheckStatus,
+  ].filter(Boolean);
+
+  if (checks.some((c) => c === 'CONSIDER' || c === 'FAILED')) {
+    return 'CONSIDER';
+  }
+  if (checks.length > 0 && checks.every((c) => c === 'CLEAR')) {
+    return 'CONSIDER';
+  }
+  if (output.aiBgvSummary?.trim()) {
+    return 'CONSIDER';
+  }
+  return 'IN_PROGRESS';
+}
+
 export type BgvExtractResult = {
   extraction: BgvExtractionResponse;
   liveAi: boolean;
@@ -74,12 +125,16 @@ export class BackgroundCheckService {
   private readonly storageService: StorageService;
   private readonly bgvExtractionClient: BgvExtractionClient;
   private readonly fastify: FastifyInstance;
+  private readonly webAppUrl: string;
+  private readonly config: FastifyInstance['config'];
 
   constructor(
     fastify: FastifyInstance,
     backgroundCheckRepository?: BackgroundCheckRepository,
   ) {
     this.fastify = fastify;
+    this.config = fastify.config;
+    this.webAppUrl = fastify.config.webAppUrl;
     this.backgroundCheckRepository =
       backgroundCheckRepository ?? new BackgroundCheckRepository(fastify.prisma);
     this.prisma = fastify.prisma;
@@ -200,6 +255,19 @@ export class BackgroundCheckService {
     });
     const resultSummary = formatBgvCheckStatusesSummary(extraction);
     const reviewNotes = output.concernNotes?.trim() || existing.reviewNotes;
+    const workflowStatus = deriveBgvWorkflowStatusFromAiOutput(output);
+
+    const candidate = await this.prisma.candidate.findFirst({
+      where: {
+        id: BigInt(candidateId),
+        organizationId: BigInt(organizationId),
+        deletedAt: null,
+      },
+      select: { firstName: true, lastName: true },
+    });
+    if (!candidate) {
+      throw new NotFoundError('Candidate not found');
+    }
 
     await this.prisma.$transaction(async (tx) => {
       const locked = await tx.$queryRaw<Array<{ id: bigint; status: string }>>`
@@ -222,6 +290,7 @@ export class BackgroundCheckService {
           organizationId: BigInt(organizationId),
         },
         data: {
+          status: workflowStatus as typeof existing.status,
           provider: output.vendorName?.trim() || existing.provider,
           type: normalizeBgvCheckType(output.checkType) ?? existing.type,
           idCheckStatus: output.idCheckStatus ?? existing.idCheckStatus,
@@ -250,6 +319,18 @@ export class BackgroundCheckService {
           outputReference: sanitizeBgvOutputForStorage(output) as object,
         },
       });
+    });
+
+    await this.syncCandidateBgv(organizationId, candidateId, workflowStatus);
+
+    await notifyBgvAnalysisProcessed(this.prisma, this.config, {
+      organizationId,
+      candidateId,
+      candidateName: `${candidate.firstName} ${candidate.lastName}`.trim(),
+      backgroundCheckId,
+      bgvStatus: workflowStatus,
+      triggeredByUserId: params.requestedBy,
+      webAppUrl: this.webAppUrl,
     });
   }
 
@@ -458,22 +539,24 @@ export class BackgroundCheckService {
       );
       patch.reportDocumentId = bigintToNumber(document.id);
 
-      // Best-effort live AI extract on report upload (ai-service or static stub).
-      try {
-        const extraction = await this.bgvExtractionClient.extract({
-          fileName: file.originalName,
-          mimeType: file.mimeType,
-          content: bufferToBase64(file.buffer),
-          candidateId: String(bigintToNumber(existing.candidateId)),
-        });
-        patch.aiSummary = formatBgvAiSummaryJson(extraction, {
-          provider: existing.provider,
-          checkType: existing.type,
-          liveAi: this.bgvExtractionClient.isLiveAiConfigured,
-        });
-        patch.resultSummary = formatBgvCheckStatusesSummary(extraction);
-      } catch {
-        // Keep the uploaded report even if AI fails; recruiter can retry via extract-ai.
+      if (!(await this.isN8nBgvAnalysisEnabled())) {
+        // Best-effort sync extract when n8n is not configured.
+        try {
+          const extraction = await this.bgvExtractionClient.extract({
+            fileName: file.originalName,
+            mimeType: file.mimeType,
+            content: bufferToBase64(file.buffer),
+            candidateId: String(bigintToNumber(existing.candidateId)),
+          });
+          patch.aiSummary = formatBgvAiSummaryJson(extraction, {
+            provider: existing.provider,
+            checkType: existing.type,
+            liveAi: this.bgvExtractionClient.isLiveAiConfigured,
+          });
+          patch.resultSummary = formatBgvCheckStatusesSummary(extraction);
+        } catch {
+          // Keep the uploaded report even if AI fails; recruiter can retry via extract-ai.
+        }
       }
     }
 
@@ -482,6 +565,24 @@ export class BackgroundCheckService {
       id,
       patch,
     );
+
+    if (kind === 'REPORT' && (await this.isN8nBgvAnalysisEnabled())) {
+      const updated = await this.getBackgroundCheckOrThrow(organizationId, id);
+      await this.enqueueBgvAnalysisForExistingReport({
+        authUser,
+        organizationId,
+        backgroundCheckId: id,
+        existing: updated,
+      }).catch((error) => {
+        this.fastify.log.error(
+          {
+            backgroundCheckId: id,
+            errorName: error instanceof Error ? error.name : 'UnknownError',
+          },
+          'Failed to enqueue n8n BGV analysis after report upload',
+        );
+      });
+    }
 
     return this.toDetailDto(organizationId, record);
   }
@@ -738,6 +839,30 @@ export class BackgroundCheckService {
     await this.backgroundCheckRepository.softDelete(organizationId, id);
   }
 
+  async downloadReport(
+    authUser: AuthenticatedUser,
+    backgroundCheckId: number,
+  ): Promise<DocumentDownloadPayload> {
+    const organizationId = requireOrganization(authUser);
+    const record = await this.getBackgroundCheckOrThrow(organizationId, backgroundCheckId);
+    if (!record.reportDocumentId) {
+      throw new NotFoundError('Background check report not found');
+    }
+
+    const document = await this.prisma.document.findFirst({
+      where: {
+        id: record.reportDocumentId,
+        organizationId: BigInt(organizationId),
+        deletedAt: null,
+      },
+    });
+    if (!document) {
+      throw new NotFoundError('Background check report not found');
+    }
+
+    return readStoredDocumentBuffer(document, this.fastify.config, this.storageService);
+  }
+
   async list(
     authUser: AuthenticatedUser,
     query: ListBackgroundChecksQuery,
@@ -941,6 +1066,8 @@ export class BackgroundCheckService {
       originalName: file.originalName,
     });
 
+    const uploadFile = await normalizeUploadToPdf(file);
+
     let backgroundCheckId: number | null = null;
     let documentId: number | null = null;
 
@@ -959,16 +1086,16 @@ export class BackgroundCheckService {
       const storageKey = this.storageService.buildBackgroundCheckAssetKey(
         organizationId,
         backgroundCheckId,
-        file.originalName,
+        uploadFile.originalName,
       );
 
       const uploadResult = await this.storageService.upload(
         storageKey,
         {
-          buffer: file.buffer,
-          originalName: file.originalName,
-          mimeType: file.mimeType,
-          size: file.size,
+          buffer: uploadFile.buffer,
+          originalName: uploadFile.originalName,
+          mimeType: uploadFile.mimeType,
+          size: uploadFile.size,
         },
         {
           category: UPLOAD_CATEGORIES.BACKGROUND_CHECK,
@@ -977,33 +1104,26 @@ export class BackgroundCheckService {
         },
       );
 
-      const durableFileUrl =
-        uploadResult.url ??
-        (await this.storageService.resolveFileUrl(
-          uploadResult.key,
-          uploadResult.bucket,
-          file.mimeType,
-        )) ??
-        `s3://${uploadResult.bucket}/${uploadResult.key}`;
+      const storedFileUrl = buildS3ObjectReference(uploadResult.bucket, uploadResult.key);
 
       const signedUrl =
         (await this.storageService.resolveFileUrl(
           uploadResult.key,
           uploadResult.bucket,
-          file.mimeType,
-        )) ?? durableFileUrl;
+          uploadFile.mimeType,
+        )) ?? storedFileUrl;
 
       const document = await this.backgroundCheckRepository.createDocument({
         organizationId,
         uploadedById: authUser.id,
         entityId: backgroundCheckId,
-        fileName: uploadResult.key.split('/').pop() ?? file.originalName,
-        originalName: file.originalName,
+        fileName: uploadResult.key.split('/').pop() ?? uploadFile.originalName,
+        originalName: uploadFile.originalName,
         s3Key: uploadResult.key,
         s3Bucket: uploadResult.bucket,
-        fileUrl: durableFileUrl,
-        mimeType: file.mimeType,
-        fileSize: file.size,
+        fileUrl: storedFileUrl,
+        mimeType: uploadFile.mimeType,
+        fileSize: uploadFile.size,
         description: 'REPORT',
       });
       documentId = bigintToNumber(document.id);
@@ -1022,8 +1142,8 @@ export class BackgroundCheckService {
           candidateId,
           documentId,
           backgroundCheckId,
-          fileName: file.originalName,
-          mimeType: file.mimeType,
+          fileName: uploadFile.originalName,
+          mimeType: uploadFile.mimeType,
         },
       });
 
@@ -1071,17 +1191,80 @@ export class BackgroundCheckService {
       throw new BadRequestError('BGV report document is missing storage metadata');
     }
 
-    const signedUrl = await this.storageService.resolveFileUrl(
-      reportDoc.s3Key,
-      reportDoc.s3Bucket,
-      reportDoc.mimeType ?? undefined,
+    const downloaded = await readStoredDocumentBuffer(
+      reportDoc,
+      this.fastify.config,
+      this.storageService,
     );
+
+    const uploadFile = await normalizeUploadToPdf({
+      buffer: downloaded.buffer,
+      originalName: reportDoc.originalName || reportDoc.fileName || 'bgv-report.pdf',
+      mimeType: reportDoc.mimeType || 'application/pdf',
+      size: downloaded.buffer.length,
+    });
+
+    let documentId = bigintToNumber(existing.reportDocumentId!);
+    let signedUrl: string;
+
+    const alreadyPdf =
+      uploadFile.mimeType === 'application/pdf' &&
+      reportDoc.mimeType === 'application/pdf' &&
+      uploadFile.size === downloaded.buffer.length;
+
+    if (alreadyPdf) {
+      signedUrl =
+        (await this.storageService.resolveFileUrl(
+          reportDoc.s3Key,
+          reportDoc.s3Bucket,
+          uploadFile.mimeType,
+        )) ?? buildS3ObjectReference(reportDoc.s3Bucket, reportDoc.s3Key);
     if (!signedUrl) {
       throw new BadRequestError('Unable to resolve signed URL for BGV report');
     }
+    } else {
+      const storageKey = this.storageService.buildBackgroundCheckAssetKey(
+        organizationId,
+        backgroundCheckId,
+        uploadFile.originalName,
+      );
+      const uploadResult = await this.storageService.upload(
+        storageKey,
+        {
+          buffer: uploadFile.buffer,
+          originalName: uploadFile.originalName,
+          mimeType: uploadFile.mimeType,
+          size: uploadFile.size,
+        },
+        {
+          category: UPLOAD_CATEGORIES.BACKGROUND_CHECK,
+          organizationId,
+          entityId: backgroundCheckId,
+        },
+      );
+      const storedFileUrl = buildS3ObjectReference(uploadResult.bucket, uploadResult.key);
+      signedUrl =
+        (await this.storageService.resolveFileUrl(
+          uploadResult.key,
+          uploadResult.bucket,
+          uploadFile.mimeType,
+        )) ?? storedFileUrl;
+
+      await this.prisma.document.update({
+        where: { id: reportDoc.id },
+        data: {
+          fileName: uploadResult.key.split('/').pop() ?? uploadFile.originalName,
+          originalName: uploadFile.originalName,
+          s3Key: uploadResult.key,
+          s3Bucket: uploadResult.bucket,
+          fileUrl: storedFileUrl,
+          mimeType: uploadFile.mimeType,
+          fileSize: BigInt(uploadFile.size),
+        },
+      });
+    }
 
     const candidateId = bigintToNumber(existing.candidateId);
-    const documentId = bigintToNumber(existing.reportDocumentId!);
 
     const automation = new AutomationService(this.fastify);
     const job = await automation.enqueueBgvAnalysis({
@@ -1093,8 +1276,8 @@ export class BackgroundCheckService {
         candidateId,
         documentId,
         backgroundCheckId,
-        fileName: reportDoc.originalName || reportDoc.fileName,
-        mimeType: reportDoc.mimeType ?? undefined,
+        fileName: uploadFile.originalName,
+        mimeType: uploadFile.mimeType,
       },
     });
 

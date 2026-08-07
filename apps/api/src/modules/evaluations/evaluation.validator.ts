@@ -107,6 +107,7 @@ export const evaluationListItemSchema = z.object({
   evaluationDate: z.string().nullable(),
   recommendation: z.string().nullable(),
   technicalScore: z.number().nullable(),
+  documentId: z.number().nullable(),
   createdAt: z.string(),
   updatedAt: z.string(),
 });

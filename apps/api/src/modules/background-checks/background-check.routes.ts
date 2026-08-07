@@ -358,4 +358,22 @@ export async function backgroundCheckRoutes(
     },
     backgroundCheckController.reopen,
   );
+
+  app.get(
+    '/:id/report/download',
+    {
+      preHandler: readPre,
+      schema: {
+        tags: ['Background Checks'],
+        summary: 'Download BGV report document',
+        security: [{ bearerAuth: [] }],
+        params: backgroundCheckIdParamSchema,
+        response: {
+          401: errorResponses[401],
+          404: errorResponses[404],
+        },
+      },
+    },
+    backgroundCheckController.downloadReport,
+  );
 }

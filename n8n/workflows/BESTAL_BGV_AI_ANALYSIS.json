@@ -32,7 +32,7 @@
       "webhookId": "bestal-bgv-analysis",
       "parameters": {
         "httpMethod": "POST",
-        "path": "bgv-analysis",
+        "path": "bestal-bgv-analysis",
         "responseMode": "responseNode",
         "options": {}
       }

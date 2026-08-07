@@ -110,7 +110,11 @@ export function applyResumeExtractionToWizardForm(
       latestJob?.title?.trim() ||
       c.headline?.trim() ||
       '',
-    currentCompany: latestJob?.company?.trim() ?? '',
+    currentCompany:
+      latestJob?.company?.trim() ||
+      extraction.currentCompany?.trim() ||
+      c.headline?.match(/\bat\s+([^|,]+)/i)?.[1]?.trim() ||
+      '',
     education: formatEducation(extraction),
     summary,
     aiSummary: summary,

@@ -61,6 +61,7 @@ export interface BackgroundCheckListItemDto {
   consentConfirmedAt: string | null;
   aiSummary: string | null;
   hasReportDocument: boolean;
+  documentId: number | null;
   initiatedAt: string | null;
   completedAt: string | null;
   createdAt: string;
