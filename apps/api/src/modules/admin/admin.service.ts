@@ -440,6 +440,12 @@ export class AdminService {
       data: { passwordHash: await argon2.hash(temporaryPassword) },
     });
     const organization = await this.users.findOrganizationById(requireOrganization(authUser));
+    const portalPath =
+      user.role === 'VIEWER' || user.role === 'ADMIN'
+        ? '/admin/login'
+        : user.role === 'SUPER_ADMIN'
+          ? '/admin/login'
+          : `/${String(user.role ?? 'recruiter').toLowerCase()}/login`;
     await this.email.sendInviteCredentials({
       to: user.email,
       firstName: user.firstName,
@@ -447,7 +453,7 @@ export class AdminService {
       role: (user.role ?? 'VIEWER') as Role,
       organizationName: organization?.name ?? 'BesTal',
       temporaryPassword,
-      portalLoginUrl: `${this.fastify.config.webAppUrl}/admin/login`,
+      portalLoginUrl: `${this.fastify.config.webAppUrl}${portalPath}`,
     });
     await this.auditWrite(authUser, 'UPDATE', 'User', id, `Reset password for ${user.email}`, undefined, ctx);
     return { message: 'Password reset and emailed', email: user.email };

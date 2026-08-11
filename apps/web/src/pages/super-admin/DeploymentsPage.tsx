@@ -1,6 +1,7 @@
 import { StatusBadge, TanStackDataTable } from '@bestal/ui';
 import { type ColumnDef } from '@tanstack/react-table';
 import { useMemo, useState } from 'react';
+import { AdminDeploymentDetailDialog } from '../../components/super-admin/AdminOpsDetailDialog';
 import { ExtendDeploymentDialog } from '../../components/deployments/ExtendDeploymentDialog';
 import { ListingPageShell } from '../../components/layout/ListingPageShell';
 import { ActionMenu, type ActionMenuItem } from '../../components/super-admin/ActionMenu';
@@ -30,12 +31,17 @@ function deploymentActions(
     showError: (m: string) => void;
     requestConfirm: ReturnType<typeof useConfirmAction>['requestConfirm'];
     onExtend: (row: Row) => void;
+    onView: (id: number) => void;
   },
 ): ActionMenuItem[] {
-  const { mutations, show, requestConfirm, onExtend } = helpers;
+  const { mutations, show, requestConfirm, onExtend, onView } = helpers;
   const status = r.status.toUpperCase();
   const label = `${r.candidateName} · ${r.clientName}`;
-  const view: ActionMenuItem = { id: 'view', label: 'View Deployment' };
+  const view: ActionMenuItem = {
+    id: 'view',
+    label: 'View Deployment',
+    onSelect: () => onView(r.id),
+  };
 
   if (status === 'ACTIVE') {
     return [
@@ -174,6 +180,7 @@ export function SuperAdminDeploymentsPage() {
   const mutations = useAdminMutations();
   const rows = (data?.data ?? []) as unknown as Row[];
   const [extendTarget, setExtendTarget] = useState<Row | null>(null);
+  const [viewDeploymentId, setViewDeploymentId] = useState<number | null>(null);
 
   const columns = useMemo<ColumnDef<Row>[]>(
     () => [
@@ -235,6 +242,7 @@ export function SuperAdminDeploymentsPage() {
               showError,
               requestConfirm,
               onExtend: setExtendTarget,
+              onView: setViewDeploymentId,
             })}
             label={`Actions for deployment ${row.original.id}`}
           />
@@ -291,6 +299,10 @@ export function SuperAdminDeploymentsPage() {
             throw new Error(getApiErrorMessage(err, 'Extend failed'));
           }
         }}
+      />
+      <AdminDeploymentDetailDialog
+        deploymentId={viewDeploymentId}
+        onClose={() => setViewDeploymentId(null)}
       />
     </>
   );

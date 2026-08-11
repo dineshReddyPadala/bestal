@@ -1,6 +1,7 @@
 import { StatusBadge, TanStackDataTable } from '@bestal/ui';
 import { type ColumnDef } from '@tanstack/react-table';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
+import { AdminTrialDetailDialog } from '../../components/super-admin/AdminOpsDetailDialog';
 import { ListingPageShell } from '../../components/layout/ListingPageShell';
 import { ActionMenu, type ActionMenuItem } from '../../components/super-admin/ActionMenu';
 import { useConfirmAction } from '../../components/super-admin/useConfirmAction';
@@ -26,13 +27,18 @@ function trialActions(
     show: (m: string) => void;
     showError: (m: string) => void;
     requestConfirm: ReturnType<typeof useConfirmAction>['requestConfirm'];
+    onView: (id: number) => void;
   },
 ): ActionMenuItem[] {
-  const { mutations, show, showError, requestConfirm } = helpers;
+  const { mutations, show, showError, requestConfirm, onView } = helpers;
   const status = r.status.toUpperCase();
   const label = `${r.candidateName} · ${r.clientName}`;
 
-  const view: ActionMenuItem = { id: 'view', label: 'View Trial' };
+  const view: ActionMenuItem = {
+    id: 'view',
+    label: 'View Trial',
+    onSelect: () => onView(r.id),
+  };
 
   if (status === 'REQUESTED') {
     return [
@@ -185,6 +191,7 @@ export function SuperAdminTrialsPage() {
   const { data, isLoading, isError, error } = useAdminTrials({ limit: 100, ...searchParam });
   const mutations = useAdminMutations();
   const rows = (data?.data ?? []) as unknown as Row[];
+  const [viewTrialId, setViewTrialId] = useState<number | null>(null);
 
   const columns = useMemo<ColumnDef<Row>[]>(
     () => [
@@ -223,7 +230,13 @@ export function SuperAdminTrialsPage() {
         header: 'Actions',
         cell: ({ row }) => (
           <ActionMenu
-            items={trialActions(row.original, { mutations, show, showError, requestConfirm })}
+            items={trialActions(row.original, {
+              mutations,
+              show,
+              showError,
+              requestConfirm,
+              onView: setViewTrialId,
+            })}
             label={`Actions for trial ${row.original.id}`}
           />
         ),
@@ -256,6 +269,7 @@ export function SuperAdminTrialsPage() {
         />
       </ListingPageShell>
       {confirmDialog}
+      <AdminTrialDetailDialog trialId={viewTrialId} onClose={() => setViewTrialId(null)} />
     </>
   );
 }

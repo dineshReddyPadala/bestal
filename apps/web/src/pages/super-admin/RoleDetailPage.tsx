@@ -1,8 +1,7 @@
-import { Button, Dialog, PageHeader, Select, StatusBadge, TanStackDataTable } from '@bestal/ui';
+import { Button, PageHeader, StatusBadge, TanStackDataTable } from '@bestal/ui';
 import { type ColumnDef } from '@tanstack/react-table';
 import { useEffect, useMemo, useState } from 'react';
 import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { ActionMenu, type ActionMenuItem } from '../../components/super-admin/ActionMenu';
 import { useConfirmAction } from '../../components/super-admin/useConfirmAction';
 import { useDemoToast } from '../../lib/use-demo-toast';
 import { ToastHost } from '../../components/ui/ToastHost';
@@ -11,9 +10,7 @@ import {
   useAdminMutations,
   useAdminRole,
   useAdminRoleUsers,
-  useAdminUsers,
 } from '../../hooks/api/useAdmin';
-import { useClientsList } from '../../hooks/api/useClients';
 import { useDebouncedSearch } from '../../hooks/useDebouncedSearch';
 import {
   PERMISSION_GROUPS,
@@ -48,8 +45,6 @@ export function SuperAdminRoleDetailPage() {
     roleParam,
     tab === 'users' ? usersSearchParam : undefined,
   );
-  const { data: allUsersData } = useAdminUsers({ limit: 200 });
-  const { data: clientsData } = useClientsList({ limit: 100, sort: 'name' });
   const mutations = useAdminMutations();
   const { requestConfirm, confirmDialog } = useConfirmAction();
   const { show, showError, message, variant, dismiss } = useDemoToast();
@@ -57,9 +52,6 @@ export function SuperAdminRoleDetailPage() {
   const [editing, setEditing] = useState(false);
   const [selected, setSelected] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
-  const [addOpen, setAddOpen] = useState(false);
-  const [selectedUserId, setSelectedUserId] = useState('');
-  const [selectedClientId, setSelectedClientId] = useState('');
 
   const code = String(role?.code ?? roleParam ?? '');
   const baseRole = String(role?.baseRole ?? '');
@@ -68,16 +60,6 @@ export function SuperAdminRoleDetailPage() {
   const canAssignUsers = Boolean(role) && !isProtected && baseRole !== 'SUPER_ADMIN';
   const allAssignedUsers = allAssignedData?.data ?? [];
   const assignedUsers = tab === 'users' ? (roleUsersData?.data ?? []) : allAssignedUsers;
-  const assignedIds = useMemo(
-    () => new Set(allAssignedUsers.map((u) => Number(u.id))),
-    [allAssignedUsers],
-  );
-  const availableUsers = useMemo(() => {
-    const list = allUsersData?.data ?? [];
-    return list.filter((u) => !assignedIds.has(Number(u.id)));
-  }, [allUsersData, assignedIds]);
-  const clients = clientsData?.data ?? [];
-  const needsClient = baseRole === 'CLIENT';
 
   useEffect(() => {
     if (!role) return;
@@ -196,49 +178,6 @@ export function SuperAdminRoleDetailPage() {
     return <div className="px-6 py-8 text-sm text-muted-foreground">Loading role…</div>;
   }
 
-  const menuItems: ActionMenuItem[] = [
-    {
-      id: 'users',
-      label: 'View Assigned Users',
-      href: `/super-admin/roles/${code}?tab=users`,
-    },
-    ...(isProtected
-      ? [
-          {
-            id: 'perms',
-            label: 'View Permissions',
-            href: `/super-admin/roles/${code}?tab=permissions`,
-          } satisfies ActionMenuItem,
-        ]
-      : [
-          {
-            id: 'edit',
-            label: editing ? 'Done editing' : 'Edit Permissions',
-            onSelect: () => {
-              if (editing) {
-                setEditing(false);
-                setSelected(permissions);
-                const next = new URLSearchParams(params);
-                next.delete('edit');
-                setSearchParams(next, { replace: true });
-              } else {
-                setEditing(true);
-                const next = new URLSearchParams(params);
-                next.set('tab', 'permissions');
-                next.set('edit', '1');
-                setSearchParams(next, { replace: true });
-              }
-            },
-          } satisfies ActionMenuItem,
-        ]),
-    {
-      id: 'audit',
-      label: 'View Audit History',
-      href: '/super-admin/audit-logs',
-      separatorBefore: true,
-    },
-  ];
-
   function togglePermission(permission: string) {
     if (!editing || isProtected) return;
     if (permission === 'admin:platform') return;
@@ -268,34 +207,6 @@ export function SuperAdminRoleDetailPage() {
     }
   }
 
-  async function handleAssignUser() {
-    const userId = Number(selectedUserId);
-    if (!userId) {
-      showError('Select a user');
-      return;
-    }
-    if (needsClient && !selectedClientId) {
-      showError('Select a client account for CLIENT role');
-      return;
-    }
-    setBusy(true);
-    try {
-      await mutations.assignUserToRole.mutateAsync({
-        code,
-        userId,
-        clientId: needsClient ? Number(selectedClientId) : undefined,
-      });
-      show('User assigned to role');
-      setAddOpen(false);
-      setSelectedUserId('');
-      setSelectedClientId('');
-    } catch (e) {
-      showError(getApiErrorMessage(e, 'Assign failed'));
-    } finally {
-      setBusy(false);
-    }
-  }
-
   function renderAssignedUsers(compact = false) {
     return (
       <section className="rounded-xl border border-border/80 p-4">
@@ -311,9 +222,6 @@ export function SuperAdminRoleDetailPage() {
                 to={`/super-admin/users/new?role=${encodeURIComponent(baseRole)}&assignRole=${encodeURIComponent(code)}`}
               >
                 Create new user
-              </Button>
-              <Button size="sm" onClick={() => setAddOpen(true)}>
-                Add existing user
               </Button>
             </div>
           ) : null}
@@ -367,7 +275,7 @@ export function SuperAdminRoleDetailPage() {
             pageSize={12}
             dense
             emptyTitle="No users assigned"
-            emptyDescription="Add an existing user or create a new one for this role."
+            emptyDescription="Create a new user for this role to get started."
           />
         )}
         {isProtected ? (
@@ -389,7 +297,6 @@ export function SuperAdminRoleDetailPage() {
             Role Management
           </Link>
         }
-        actions={<ActionMenu items={menuItems} label={`Actions for ${String(role.name)}`} />}
       />
 
       <ToastHost message={message} variant={variant} onDismiss={dismiss} />
@@ -585,71 +492,6 @@ export function SuperAdminRoleDetailPage() {
         )}
       </div>
 
-      <Dialog
-        open={addOpen}
-        onClose={() => {
-          if (busy) return;
-          setAddOpen(false);
-          setSelectedUserId('');
-          setSelectedClientId('');
-        }}
-        title={`Add user to ${String(role.name)}`}
-        description="Assign an existing user to this role. Their portal access follows the role’s base role."
-        footer={
-          <>
-            <Button
-              variant="outline"
-              onClick={() => setAddOpen(false)}
-              disabled={busy}
-            >
-              Cancel
-            </Button>
-            <Button onClick={() => void handleAssignUser()} disabled={busy}>
-              {busy ? 'Assigning…' : 'Assign user'}
-            </Button>
-          </>
-        }
-      >
-        <div className="space-y-3">
-          <label className="block space-y-1 text-sm">
-            <span className="font-medium">User</span>
-            <Select
-              value={selectedUserId}
-              onChange={(e) => setSelectedUserId(e.target.value)}
-            >
-              <option value="">Select user…</option>
-              {availableUsers.map((u) => (
-                <option key={Number(u.id)} value={String(u.id)}>
-                  {`${String(u.firstName ?? '')} ${String(u.lastName ?? '')}`.trim() ||
-                    String(u.email)}{' '}
-                  ({String(u.email)}) — {String(u.role ?? '—')}
-                </option>
-              ))}
-            </Select>
-            {availableUsers.length === 0 ? (
-              <p className="text-xs text-muted-foreground">
-                All users already have this role, or create a new user instead.
-              </p>
-            ) : null}
-          </label>
-          {needsClient ? (
-            <label className="block space-y-1 text-sm">
-              <span className="font-medium">Client account</span>
-              <Select
-                value={selectedClientId}
-                onChange={(e) => setSelectedClientId(e.target.value)}
-              >
-                <option value="">Select client…</option>
-                {clients.map((c) => (
-                  <option key={c.id} value={String(c.id)}>
-                    {c.name}
-                  </option>
-                ))}
-              </Select>
-            </label>
-          ) : null}
-        </div>
-      </Dialog>
       {confirmDialog}
     </div>
   );

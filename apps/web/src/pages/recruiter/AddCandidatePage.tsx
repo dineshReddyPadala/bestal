@@ -177,6 +177,7 @@ export function AddCandidatePage() {
                   resumeUploadedViaExtractRef.current = true;
                   setDraftId(id);
                 }}
+                isEditMode={isEdit}
                 onSaveDraft={(values, uploads, options) =>
                   persistCandidate(values, uploads, {
                     submit: false,

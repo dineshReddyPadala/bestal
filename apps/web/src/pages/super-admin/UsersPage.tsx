@@ -174,16 +174,23 @@ export function SuperAdminUsersPage() {
                     await mutations.resetUserPassword.mutateAsync(r.id);
                     show('Password reset emailed');
                   },
+                  onError: showError,
                 }),
             },
             {
               id: 'resend',
               label: 'Resend Invitation',
               onSelect: () =>
-                void mutations.resendInvite
-                  .mutateAsync(r.id)
-                  .then(() => show('Invitation resent'))
-                  .catch((e) => showError(e instanceof Error ? e.message : 'Failed')),
+                requestConfirm({
+                  title: 'Resend Invitation?',
+                  description: `A new invitation email with login credentials will be sent to ${r.email}.`,
+                  confirmLabel: 'Resend Invitation',
+                  onConfirm: async () => {
+                    await mutations.resendInvite.mutateAsync(r.id);
+                    show('Invitation resent');
+                  },
+                  onError: showError,
+                }),
             },
             {
               id: 'audit',

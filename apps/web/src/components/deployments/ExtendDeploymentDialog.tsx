@@ -36,9 +36,15 @@ export function ExtendDeploymentDialog({
     setSubmitting(false);
   }, [open, initialEndDate]);
 
+  const todayMin = new Date().toISOString().slice(0, 10);
+
   async function handleConfirm() {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(endDate.trim())) {
       setError('Enter a valid end date (YYYY-MM-DD)');
+      return;
+    }
+    if (endDate.trim() < todayMin) {
+      setError('End date must be today or a future date');
       return;
     }
     setSubmitting(true);
@@ -79,6 +85,7 @@ export function ExtendDeploymentDialog({
           <span className="text-sm font-medium">New end date</span>
           <Input
             type="date"
+            min={todayMin}
             value={endDate}
             onChange={(e) => setEndDate(e.target.value)}
           />

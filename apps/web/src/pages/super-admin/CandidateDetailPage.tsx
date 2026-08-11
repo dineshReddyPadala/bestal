@@ -4,6 +4,7 @@ import { useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { ActionMenu, type ActionMenuItem } from '../../components/super-admin/ActionMenu';
 import { useConfirmAction } from '../../components/super-admin/useConfirmAction';
+import { useReasonPrompt } from '../../components/super-admin/useReasonPrompt';
 import { useAdminCandidate, useAdminMutations } from '../../hooks/api/useAdmin';
 import { useDemoToast } from '../../lib/use-demo-toast';
 import { ToastHost } from '../../components/ui/ToastHost';
@@ -15,6 +16,7 @@ export function SuperAdminCandidateDetailPage() {
   const mutations = useAdminMutations();
   const { message, variant, show, showError, dismiss } = useDemoToast();
   const { requestConfirm, confirmDialog } = useConfirmAction();
+  const { requestReason, reasonDialog } = useReasonPrompt();
 
   const c = (data?.candidate ?? {}) as Record<string, unknown>;
   const skills = (data?.skills as Array<Record<string, unknown>>) ?? [];
@@ -26,7 +28,11 @@ export function SuperAdminCandidateDetailPage() {
   const name = `${c.firstName ?? ''} ${c.lastName ?? ''}`.trim() || 'Candidate';
   const approval = String(c.approvalStatus ?? '').toUpperCase();
   const visibility = String(c.visibilityStatus ?? '').toUpperCase();
-  const isPending = approval === 'PENDING';
+  const profile = String(c.profileStatus ?? '').toUpperCase();
+  const isPending =
+    profile === 'PENDING_APPROVAL' ||
+    (approval === 'PENDING' && Boolean(c.submittedForApprovalAt)) ||
+    (profile === 'PROFILE_DRAFT' && Boolean(c.submittedForApprovalAt));
   const isPublished = visibility === 'CLIENT_VISIBLE';
 
   async function run(action: () => Promise<unknown>, ok: string) {
@@ -56,13 +62,23 @@ export function SuperAdminCandidateDetailPage() {
         id: 'return',
         label: 'Return to Recruiter',
         hidden: !isPending,
-        onSelect: () => {
-          const reason = window.prompt('Send back reason (optional)') ?? undefined;
-          void run(
-            () => mutations.sendBackCandidate.mutateAsync({ id: candidateId, reason }),
-            'Sent back',
-          );
-        },
+        onSelect: () =>
+          requestReason({
+            title: 'Return to Recruiter?',
+            description: `${name} will be sent back to the recruiter for revision.`,
+            confirmLabel: 'Return to Recruiter',
+            reasonLabel: 'Reason (optional)',
+            reasonPlaceholder: 'What should the recruiter address?',
+            onConfirm: async (reason) => {
+              await mutations.sendBackCandidate.mutateAsync({
+                id: candidateId,
+                reason: reason || undefined,
+              });
+              show('Sent back');
+              await refetch();
+            },
+            onError: showError,
+          }),
       },
       {
         id: 'publish',
@@ -94,21 +110,22 @@ export function SuperAdminCandidateDetailPage() {
         destructive: true,
         separatorBefore: true,
         hidden: !isPending,
-        onSelect: () => {
-          const reason = window.prompt('Rejection reason');
-          if (!reason) return;
-          requestConfirm({
+        onSelect: () =>
+          requestReason({
             title: 'Reject Candidate?',
             description: `${name} will be rejected.`,
             confirmLabel: 'Reject',
+            reasonLabel: 'Rejection reason',
+            reasonRequired: true,
+            reasonPlaceholder: 'Why is this candidate being rejected?',
             destructive: true,
-            onConfirm: async () => {
+            onConfirm: async (reason) => {
               await mutations.rejectCandidate.mutateAsync({ id: candidateId, reason });
               show('Rejected');
               await refetch();
             },
-          });
-        },
+            onError: showError,
+          }),
       },
       {
         id: 'archive',
@@ -144,7 +161,9 @@ export function SuperAdminCandidateDetailPage() {
     name,
     refetch,
     requestConfirm,
+    requestReason,
     show,
+    showError,
   ]);
 
   if (isLoading) {
@@ -290,6 +309,7 @@ export function SuperAdminCandidateDetailPage() {
         </Section>
       </div>
       {confirmDialog}
+      {reasonDialog}
     </div>
   );
 }

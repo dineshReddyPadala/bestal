@@ -78,6 +78,8 @@ type CandidateWizardProps = {
     values: CandidateWizardValues,
     uploads: CandidateWizardUploads,
   ) => void | Promise<void>;
+  /** When true, the last tab shows Update instead of Submit for Approval. */
+  isEditMode?: boolean;
   onCancel: () => void;
   onChangeEntryMethod?: () => void;
   onToast: (message: string) => void;
@@ -1506,6 +1508,7 @@ export function CandidateWizard({
   onDraftCandidateId,
   onSaveDraft,
   onSubmitForApproval,
+  isEditMode = false,
   onCancel,
   onChangeEntryMethod,
   onToast,
@@ -1753,6 +1756,16 @@ export function CandidateWizard({
                       </>
                     )}
                   </Button>
+                ) : isEditMode ? (
+                  <Button
+                    type="button"
+                    variant="primary"
+                    size="sm"
+                    disabled={isSavingDraft || isSubmitting}
+                    onClick={() => void saveDraft()}
+                  >
+                    {isSavingDraft ? 'Updating…' : 'Update'}
+                  </Button>
                 ) : (
                   <Button
                     type="submit"
@@ -1770,7 +1783,7 @@ export function CandidateWizard({
                 )}
               </div>
             </div>
-            {isLastTab && !submitReady ? (
+            {isLastTab && !submitReady && !isEditMode ? (
               <p className="mt-2 text-right text-xs text-muted-foreground">
                 Submit unlocks after Basic Details (with AI screening), Skills, Availability, Pricing,
                 Evaluation, and Background Verification are complete.
