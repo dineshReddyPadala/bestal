@@ -278,6 +278,24 @@ export function CandidateImportScreen({
   const [selectedBatch, setSelectedBatch] = useState<CandidateImportBatch | null>(null);
   const [failedRows, setFailedRows] = useState<CandidateImportErrorItem[]>([]);
   const [detailLoading, setDetailLoading] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const [importProgress, setImportProgress] = useState<{ processed: number; total: number } | null>(
+    null,
+  );
+
+  async function waitForImportCompletion(batchId: number) {
+    const pollIntervalMs = 2000;
+    const maxAttempts = 300;
+    for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+      const batch = await candidatesApi.getImportBatch(batchId);
+      setImportProgress({ processed: batch.processed, total: batch.total });
+      if (!ACTIVE_STATUSES.has(batch.status)) {
+        return batch;
+      }
+      await new Promise((resolve) => window.setTimeout(resolve, pollIntervalMs));
+    }
+    throw new Error('Import timed out while processing. Check Import History for status.');
+  }
 
   const headerLeading = useMemo(
     () =>
@@ -360,19 +378,35 @@ export function CandidateImportScreen({
         return;
       }
       setBusy(true);
+      setImporting(true);
+      setImportProgress(null);
       setFileName(file.name);
       try {
         const data = await candidatesApi.enqueueImport(file);
-        show('Import started. Track progress in Import History.');
-        openBatchDetail(data.batchId);
         setTab('history');
         setHistoryPage(1);
         await loadHistory(1);
+        openBatchDetail(data.batchId);
+        const batch = await waitForImportCompletion(data.batchId);
         await loadBatchDetail(data.batchId);
+        await loadHistory(1);
+        if (batch.status === 'COMPLETED') {
+          show(
+            `Import completed successfully — ${batch.created} created, ${batch.updated} updated, ${batch.failed} failed.`,
+            batch.failed > 0 ? 'error' : 'success',
+          );
+        } else {
+          showError(
+            batch.errorSummary ??
+              `Import finished with status ${batch.status}. Review Import History for details.`,
+          );
+        }
       } catch (err) {
-        showError(getApiErrorMessage(err, 'Failed to start import'));
+        showError(getApiErrorMessage(err, 'Import failed'));
       } finally {
         setBusy(false);
+        setImporting(false);
+        setImportProgress(null);
         if (inputRef.current) inputRef.current.value = '';
       }
     },
@@ -460,7 +494,21 @@ export function CandidateImportScreen({
       </div>
 
       {tab === 'upload' && (
-        <Card>
+        <Card className="relative">
+          {importing ? (
+            <div className="absolute inset-0 z-10 flex flex-col items-center justify-center rounded-xl bg-background/80 backdrop-blur-sm">
+              <Loader2 className="h-10 w-10 animate-spin text-primary" />
+              <p className="mt-3 text-sm font-medium">Import in progress…</p>
+              {importProgress ? (
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Processed {importProgress.processed}
+                  {importProgress.total > 0 ? ` of ${importProgress.total}` : ''} records
+                </p>
+              ) : (
+                <p className="mt-1 text-xs text-muted-foreground">Uploading and validating file…</p>
+              )}
+            </div>
+          ) : null}
           <CardHeader>
             <CardTitle className="text-base">Upload workbook</CardTitle>
           </CardHeader>
@@ -483,7 +531,7 @@ export function CandidateImportScreen({
                 <Upload className="h-8 w-8 text-muted-foreground" />
               )}
               <p className="mt-3 text-sm font-medium text-foreground">
-                {busy ? 'Starting import…' : 'Drop .xlsx here or choose a file'}
+                {busy || importing ? 'Import in progress…' : 'Drop .xlsx here or choose a file'}
               </p>
               <p className="mt-1 text-xs text-muted-foreground">
                 Up to 10,000 candidates. You can leave after upload — results appear in history.
@@ -502,7 +550,7 @@ export function CandidateImportScreen({
                     if (file) void handleFile(file);
                   }}
                 />
-                <Button disabled={busy} onClick={() => inputRef.current?.click()}>
+                <Button disabled={busy || importing} onClick={() => inputRef.current?.click()}>
                   Choose file
                 </Button>
               </div>

@@ -10,6 +10,7 @@ import {
 } from '../../components/layout/ListingPageShell';
 import { ActionMenu, type ActionMenuItem } from '../../components/super-admin/ActionMenu';
 import { useConfirmAction } from '../../components/super-admin/useConfirmAction';
+import { useReasonPrompt } from '../../components/super-admin/useReasonPrompt';
 import {
   useAdminCandidates,
   useAdminMutations,
@@ -50,9 +51,12 @@ function buildCandidateActions(
     show: (m: string) => void;
     showError: (m: string) => void;
     requestConfirm: ReturnType<typeof useConfirmAction>['requestConfirm'];
+    requestReason: ReturnType<
+      typeof import('../../components/super-admin/useReasonPrompt').useReasonPrompt
+    >['requestReason'];
   },
 ): ActionMenuItem[] {
-  const { mutations, show, showError, requestConfirm } = helpers;
+  const { mutations, show, showError, requestConfirm, requestReason } = helpers;
   const profile = (r.profileStatus ?? '').toUpperCase();
   const visibility = (r.visibilityStatus ?? '').toUpperCase();
   const approval = (r.approvalStatus ?? '').toUpperCase();
@@ -135,34 +139,43 @@ function buildCandidateActions(
       {
         id: 'return',
         label: 'Return to Recruiter',
-        onSelect: () => {
-          const reason = window.prompt('Return reason (optional)') ?? undefined;
-          void mutations.sendBackCandidate
-            .mutateAsync({ id: r.id, reason })
-            .then(() => show('Returned to recruiter'))
-            .catch((e) => showError(getApiErrorMessage(e, 'Send back failed')));
-        },
+        onSelect: () =>
+          requestReason({
+            title: 'Return to Recruiter?',
+            description: `${r.name} will be sent back to the recruiter for revision.`,
+            confirmLabel: 'Return to Recruiter',
+            reasonLabel: 'Reason (optional)',
+            reasonPlaceholder: 'What should the recruiter address?',
+            onConfirm: async (reason) => {
+              await mutations.sendBackCandidate.mutateAsync({
+                id: r.id,
+                reason: reason || undefined,
+              });
+              show('Returned to recruiter');
+            },
+            onError: showError,
+          }),
       },
       {
         id: 'reject',
         label: 'Reject',
         destructive: true,
         separatorBefore: true,
-        onSelect: () => {
-          const reason = window.prompt('Rejection reason');
-          if (!reason) return;
-          requestConfirm({
+        onSelect: () =>
+          requestReason({
             title: 'Reject Candidate?',
-            description: `${r.name} will be rejected. Reason: ${reason}`,
+            description: `${r.name} will be rejected.`,
             confirmLabel: 'Reject',
+            reasonLabel: 'Rejection reason',
+            reasonRequired: true,
+            reasonPlaceholder: 'Why is this candidate being rejected?',
             destructive: true,
-            onConfirm: async () => {
+            onConfirm: async (reason) => {
               await mutations.rejectCandidate.mutateAsync({ id: r.id, reason });
               show('Rejected');
             },
             onError: showError,
-          });
-        },
+          }),
       },
     ];
   }
@@ -289,6 +302,7 @@ function buildCandidateActions(
 function CandidatesTable({ pendingOnly }: { pendingOnly: boolean }) {
   const { message, variant, show, showError } = useDemoToast();
   const { requestConfirm, confirmDialog } = useConfirmAction();
+  const { requestReason, reasonDialog } = useReasonPrompt();
   const [filters, setFilters] = useState(defaultFilters);
   const { searchInput, setSearchInput, search, searchParam } = useDebouncedSearch();
   const query = {
@@ -385,13 +399,14 @@ function CandidatesTable({ pendingOnly }: { pendingOnly: boolean }) {
               show,
               showError,
               requestConfirm,
+              requestReason,
             })}
             label={`Actions for ${row.original.name}`}
           />
         ),
       },
     ],
-    [mutations, pendingOnly, requestConfirm, show, showError],
+    [mutations, pendingOnly, requestConfirm, requestReason, show, showError],
   );
 
   return (
@@ -462,6 +477,7 @@ function CandidatesTable({ pendingOnly }: { pendingOnly: boolean }) {
         />
       </ListingPageShell>
       {confirmDialog}
+      {reasonDialog}
     </>
   );
 }
