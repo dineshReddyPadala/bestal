@@ -1,6 +1,8 @@
 import { HOW_IT_WORKS_STEPS } from '@bestal/shared-utils';
 import { Button } from '@bestal/ui';
 import { Container } from '../../components/Container';
+import { PageMeta } from '../../components/PageMeta';
+import { PAGE_SEO } from '../../lib/marketing-seo';
 import { Briefcase, CheckCircle2, Clock, UserCheck } from 'lucide-react';
 
 const stepIcons = [Briefcase, UserCheck, Clock, CheckCircle2] as const;
@@ -8,6 +10,7 @@ const stepIcons = [Briefcase, UserCheck, Clock, CheckCircle2] as const;
 export function HowItWorksPage() {
   return (
     <>
+      <PageMeta title={PAGE_SEO.howItWorks.title} description={PAGE_SEO.howItWorks.description} />
       <section className="border-b border-border bg-background py-16 lg:py-24">
         <Container>
           <div className="mx-auto max-w-3xl text-center">

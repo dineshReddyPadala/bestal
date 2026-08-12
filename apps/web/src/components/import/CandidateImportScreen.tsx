@@ -467,14 +467,14 @@ export function CandidateImportScreen({
 
       <div className="flex flex-wrap items-center gap-2 border-b border-border/60 pb-2">
         <Button
-          variant={tab === 'upload' ? 'default' : 'ghost'}
+          variant={tab === 'upload' ? 'primary' : 'ghost'}
           size="sm"
           onClick={() => setTab('upload')}
         >
           Upload
         </Button>
         <Button
-          variant={tab === 'history' ? 'default' : 'ghost'}
+          variant={tab === 'history' ? 'primary' : 'ghost'}
           size="sm"
           onClick={() => {
             setTab('history');

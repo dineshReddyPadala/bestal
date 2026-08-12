@@ -1,6 +1,7 @@
-import { stats } from '@bestal/mock-data';
 import { Button } from '@bestal/ui';
 import { Container } from '../../components/Container';
+import { PageMeta } from '../../components/PageMeta';
+import { PAGE_SEO } from '../../lib/marketing-seo';
 import { Building2, Globe, Headphones, Lock, Scale, Users } from 'lucide-react';
 
 const features = [
@@ -37,11 +38,9 @@ const features = [
 ];
 
 export function EnterprisePage() {
-  const enterpriseClients = stats.find((s) => s.id === 'enterprise-clients');
-  const activeDeployments = stats.find((s) => s.id === 'active-deployments');
-
   return (
     <>
+      <PageMeta title={PAGE_SEO.enterprise.title} description={PAGE_SEO.enterprise.description} />
       <section className="relative overflow-hidden border-b border-border bg-background py-20 lg:py-32">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,_var(--tw-gradient-stops))] from-brand/10 via-transparent to-transparent" />
         <Container className="relative">
@@ -51,27 +50,10 @@ export function EnterprisePage() {
               Scale your team with confidence
             </h1>
             <p className="mt-6 text-lg leading-relaxed text-muted-foreground">
-              Fortune 500 companies trust BesTal for mission-critical hires. Enterprise-grade processes,
-              dedicated support, and the top 3% of global talent.
+              Enterprise teams trust BesTal for mission-critical hires. See external evaluator
+              scorecards, BGV status, and transparent pricing on every shortlisted profile — with
+              dedicated support at scale.
             </p>
-            <div className="mt-10 flex justify-center gap-12">
-              {enterpriseClients && (
-                <div>
-                  <p className="text-4xl font-bold text-foreground">
-                    {enterpriseClients.value.toLocaleString()}+
-                  </p>
-                  <p className="mt-1 text-sm text-muted-foreground">{enterpriseClients.label}</p>
-                </div>
-              )}
-              {activeDeployments && (
-                <div>
-                  <p className="text-4xl font-bold text-foreground">
-                    {activeDeployments.value.toLocaleString()}+
-                  </p>
-                  <p className="mt-1 text-sm text-muted-foreground">{activeDeployments.label}</p>
-                </div>
-              )}
-            </div>
           </div>
         </Container>
       </section>
@@ -81,7 +63,7 @@ export function EnterprisePage() {
           <div className="mx-auto max-w-2xl text-center">
             <h2 className="text-3xl font-bold tracking-tight text-foreground">Built for enterprise scale</h2>
             <p className="mt-4 text-lg text-muted-foreground">
-              Everything you need to hire, onboard, and manage elite talent at organizational scale.
+              Everything you need to hire, onboard, and manage proven talent at organizational scale.
             </p>
           </div>
           <div className="mt-16 grid gap-8 md:grid-cols-2 lg:grid-cols-3">

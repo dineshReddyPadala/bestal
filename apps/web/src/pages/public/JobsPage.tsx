@@ -1,5 +1,7 @@
 import { publicJobs } from '@bestal/mock-data';
 import { Container } from '../../components/Container';
+import { PageMeta } from '../../components/PageMeta';
+import { PAGE_SEO } from '../../lib/marketing-seo';
 import { formatCurrency, formatDate } from '@bestal/shared-utils';
 import { Briefcase, Clock, MapPin, Users } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -14,6 +16,7 @@ function formatRate(job: (typeof publicJobs)[number]) {
 export function JobsPage() {
   return (
     <>
+      <PageMeta title={PAGE_SEO.jobs.title} description={PAGE_SEO.jobs.description} />
       <section className="border-b border-border bg-background py-16 lg:py-24">
         <Container>
           <div className="mx-auto max-w-3xl text-center">

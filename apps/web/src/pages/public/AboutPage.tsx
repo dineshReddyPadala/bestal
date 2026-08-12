@@ -1,5 +1,6 @@
-import { stats } from '@bestal/mock-data';
 import { Container } from '../../components/Container';
+import { PageMeta } from '../../components/PageMeta';
+import { PAGE_SEO } from '../../lib/marketing-seo';
 import { Award, Heart, Target, TrendingUp } from 'lucide-react';
 
 const values = [
@@ -7,7 +8,7 @@ const values = [
     icon: Target,
     title: 'Quality over quantity',
     description:
-      'We reject 97% of applicants. Every BesTal professional has proven expertise through rigorous technical and soft-skill evaluations.',
+      'Every BesTal professional has proven expertise through rigorous technical evaluations, external scorecards, and background verification.',
   },
   {
     icon: Heart,
@@ -30,11 +31,9 @@ const values = [
 ];
 
 export function AboutPage() {
-  const vettedTalent = stats.find((s) => s.id === 'vetted-talent');
-  const placementRate = stats.find((s) => s.id === 'placement-rate');
-
   return (
     <>
+      <PageMeta title={PAGE_SEO.about.title} description={PAGE_SEO.about.description} />
       <section className="border-b border-border bg-background py-16 lg:py-24">
         <Container>
           <div className="mx-auto max-w-3xl text-center">
@@ -42,7 +41,8 @@ export function AboutPage() {
               About BesTal
             </h1>
             <p className="mt-4 text-lg text-muted-foreground">
-              We&apos;re on a mission to connect the world&apos;s best companies with the world&apos;s best talent.
+              We&apos;re on a mission to connect the world&apos;s best companies with proven
+              technology specialists.
             </p>
           </div>
         </Container>
@@ -55,14 +55,15 @@ export function AboutPage() {
               BesTal was founded on a simple belief: hiring great talent shouldn&apos;t take six months.
             </p>
             <p className="mt-6 leading-relaxed">
-              Our multi-stage vetting process — technical assessments, live coding interviews, communication
-              evaluations, and reference checks — ensures that only the top 3% of applicants join our network.
-              Companies get pre-qualified candidates. Professionals get meaningful opportunities.
+              Our multi-stage vetting process — technical assessments, external evaluator scorecards,
+              communication evaluations, and background verification — means you see the evidence
+              before you interview. Companies get pre-qualified candidates. Professionals get
+              meaningful opportunities.
             </p>
             <p className="mt-6 leading-relaxed">
-              Today, BesTal powers talent acquisition for {vettedTalent?.value.toLocaleString()}+ vetted
-              professionals and hundreds of enterprise clients worldwide, with a{' '}
-              {placementRate?.value}% placement success rate.
+              Today, BesTal connects enterprise clients with vetted specialists across Data &amp; AI,
+              Cloud, SAP, ServiceNow, Salesforce, and security — with full scorecard and BGV
+              transparency in every profile.
             </p>
           </div>
         </Container>

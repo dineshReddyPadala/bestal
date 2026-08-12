@@ -1,6 +1,7 @@
 import { publicJobs } from '@bestal/mock-data';
 import { Button } from '@bestal/ui';
 import { Container } from '../../components/Container';
+import { PageMeta } from '../../components/PageMeta';
 import { formatCurrency, formatDate } from '@bestal/shared-utils';
 import { ArrowLeft, Briefcase, CheckCircle2, Clock, MapPin, Users } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
@@ -18,17 +19,24 @@ export function JobDetailPage() {
 
   if (!job) {
     return (
-      <Container className="py-24 text-center">
+      <>
+        <PageMeta title="Job Not Found | BesTal" description="This role is no longer available." />
+        <Container className="py-24 text-center">
         <h1 className="text-2xl font-bold text-foreground">Job not found</h1>
         <Link to="/jobs" className="mt-4 inline-block text-brand hover:underline">
           Back to open roles
         </Link>
-      </Container>
+        </Container>
+      </>
     );
   }
 
   return (
     <>
+      <PageMeta
+        title={`${job.title} | BesTal`}
+        description={job.description.slice(0, 160)}
+      />
       <section className="border-b border-border bg-muted/30 py-8">
         <Container size="narrow">
           <Link

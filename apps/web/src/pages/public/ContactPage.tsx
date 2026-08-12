@@ -1,5 +1,7 @@
 import { Button } from '@bestal/ui';
 import { Container } from '../../components/Container';
+import { PageMeta } from '../../components/PageMeta';
+import { PAGE_SEO } from '../../lib/marketing-seo';
 import { Building2, Mail, MessageSquare, User } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
 
@@ -13,6 +15,7 @@ export function ContactPage() {
 
   return (
     <>
+      <PageMeta title={PAGE_SEO.contact.title} description={PAGE_SEO.contact.description} />
       <section className="border-b border-border bg-background py-16 lg:py-24">
         <Container>
           <div className="mx-auto max-w-3xl text-center">

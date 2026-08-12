@@ -132,7 +132,11 @@ export function useAiScreeningJob(): UseAiScreeningJobResult {
     }
 
     const resolvedCandidateId = job.candidateId ?? accepted.candidateId;
-    if (!Number.isInteger(resolvedCandidateId) || resolvedCandidateId <= 0) {
+    if (
+      resolvedCandidateId == null ||
+      !Number.isInteger(resolvedCandidateId) ||
+      resolvedCandidateId <= 0
+    ) {
       throw new Error('AI screening completed without a candidate record');
     }
 

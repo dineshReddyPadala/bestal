@@ -97,7 +97,7 @@ export function ClientCandidateCard({
           Previously at
         </p>
         <p className="line-clamp-1 text-sm font-semibold text-foreground">
-          {candidate.currentCompany || community}
+          {community}
         </p>
 
         <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">

@@ -2,6 +2,7 @@ import { Navigate, useLocation } from 'react-router-dom';
 import { AuthContext } from '../../contexts/AuthContext';
 import { isAuthenticated, type Portal } from '../../lib/api';
 import { useContext } from 'react';
+import { PageMeta } from '../PageMeta';
 
 type ProtectedRouteProps = {
   portal: Portal;
@@ -52,5 +53,10 @@ export function ProtectedRoute({ portal, children }: ProtectedRouteProps) {
     return <Navigate to={PORTAL_LOGIN[user.portal]} replace />;
   }
 
-  return children;
+  return (
+    <>
+      <PageMeta title="BesTal Portal" description="BesTal authenticated portal." noIndex />
+      {children}
+    </>
+  );
 }

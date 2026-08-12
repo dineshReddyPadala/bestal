@@ -4,7 +4,6 @@ import {
   apiGet,
   apiList,
   apiRequest,
-  apiUpdate,
   type ListQuery,
 } from './client';
 
