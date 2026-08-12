@@ -1,8 +1,9 @@
 import assert from 'node:assert/strict';
 import {
   CANDIDATE_SHEET_COLUMNS,
-  IMPORT_REQUIRED_SHEETS,
   IMPORT_SKILL_COMMUNITIES,
+  IMPORT_TEMPLATE_SHEETS,
+  IMPORT_UPLOAD_REQUIRED_SHEETS,
   IMPORT_WORKBOOK_SHEETS,
 } from '@bestal/shared-utils';
 import {
@@ -72,13 +73,14 @@ async function main() {
   const parsed = await parseAndValidateCandidateWorkbook(template);
   assert.equal(parsed.candidates.length, 1);
   assert.equal(parsed.candidates[0]?.sourceCandidateId, '1001');
-  assert.equal(parsed.candidates[0]?.skills.length, 2);
+  assert.equal(parsed.candidates[0]?.skills.length, 1);
   assert.equal(parsed.candidates[0]?.evaluations.length, 1);
   assert.ok(parsed.candidates[0]?.bgv);
   assert.equal(parsed.candidates[0]?.scores.length, 1);
   assert.equal(parsed.errors.length, 0, JSON.stringify(parsed.errors, null, 2));
 
-  assert.equal(IMPORT_REQUIRED_SHEETS.length, 14);
+  assert.equal(IMPORT_UPLOAD_REQUIRED_SHEETS.length, 5);
+  assert.equal(IMPORT_TEMPLATE_SHEETS.length, 15);
   assert.equal(CANDIDATE_SHEET_COLUMNS[0], 'candidate_id');
   assert.ok(IMPORT_SKILL_COMMUNITIES.includes('Full Stack'));
   assert.equal(IMPORT_WORKBOOK_SHEETS.CANDIDATE, 'Candidate');

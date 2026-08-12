@@ -60,7 +60,7 @@ function mapBgvStatus(status: string): BackgroundCheckStatus {
     case 'NOT_STARTED':
       return 'NOT_STARTED';
     case 'CONSENT_PENDING':
-      return 'CONSENT_PENDING';
+      return 'PENDING';
     case 'INITIATED':
       return 'INITIATED';
     case 'IN_PROGRESS':
@@ -129,7 +129,8 @@ export class CandidateImportService {
 
   async getTemplateBuffer(): Promise<Buffer> {
     await this.ensureSkillCommunities();
-    return buildCandidateImportTemplate();
+    const skillCommunities = await this.listSkillCommunityNames();
+    return buildCandidateImportTemplate({ skillCommunities });
   }
 
   /**
@@ -1034,7 +1035,8 @@ export class CandidateImportService {
     skipped: number;
     failed: number;
   }> {
-    const parsed = await parseAndValidateCandidateWorkbook(fileBuffer);
+    const skillCommunities = await this.listSkillCommunityNames();
+    const parsed = await parseAndValidateCandidateWorkbook(fileBuffer, { skillCommunities });
     const existing = await this.fastify.prisma.candidate.findMany({
       where: {
         organizationId: BigInt(organizationId),
@@ -1356,6 +1358,16 @@ export class CandidateImportService {
         `Workbook exceeds maximum size of ${Math.floor(IMPORT_LIMITS.maxFileBytes / (1024 * 1024))} MB.`,
       );
     }
+  }
+
+  private async listSkillCommunityNames(): Promise<string[]> {
+    await this.ensureSkillCommunities();
+    const rows = await this.fastify.prisma.skillCommunity.findMany({
+      where: { deletedAt: null, isActive: true },
+      orderBy: { name: 'asc' },
+      select: { name: true },
+    });
+    return rows.map((row) => row.name);
   }
 
   private async ensureSkillCommunities(): Promise<Map<string, bigint>> {

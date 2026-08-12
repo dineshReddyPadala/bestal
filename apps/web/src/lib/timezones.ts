@@ -11,4 +11,7 @@ export const TIMEZONE_OPTIONS = [
   { value: 'UTC', label: 'UTC' },
 ] as const;
 
+/** IANA timezone values used in import template dropdowns. */
+export const IMPORT_TIMEZONE_VALUES = TIMEZONE_OPTIONS.map((option) => option.value);
+
 export type TimezoneOption = (typeof TIMEZONE_OPTIONS)[number];

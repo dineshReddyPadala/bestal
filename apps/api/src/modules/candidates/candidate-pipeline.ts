@@ -13,6 +13,8 @@ export type PipelineCandidateSnapshot = {
   evaluationStatus: string | null;
   bgvStatus: string | null;
   aiSummary?: string | null;
+  aiScreeningStatus?: string | null;
+  sourceCandidateId?: string | null;
   clientBillRate: { toString(): string } | null;
   availabilityStatus: string | null;
   availableFrom: Date | null;
@@ -76,9 +78,56 @@ export function assertCanCompleteRecruiterReview(candidate: PipelineCandidateSna
   }
 }
 
-/** Admin / super-admin add-candidate flows skip the recruiter review gate. */
+/** Only super-admin manual add flows skip the recruiter review gate. */
 export function isRecruiterReviewBypassRole(role: string | null | undefined): boolean {
-  return role === 'SUPER_ADMIN' || role === 'ADMIN';
+  return role === 'SUPER_ADMIN';
+}
+
+export function isImportedCandidate(
+  candidate: Pick<PipelineCandidateSnapshot, 'sourceCandidateId'>,
+): boolean {
+  return Boolean(candidate.sourceCandidateId?.trim());
+}
+
+export function isImportEditRole(role: string | null | undefined): boolean {
+  return role === 'ADMIN' || role === 'RECRUITER';
+}
+
+export function assertCanCreateEvaluationForRole(
+  role: string | null | undefined,
+  candidate: PipelineCandidateSnapshot,
+): void {
+  if (isImportEditRole(role) && isImportedCandidate(candidate)) {
+    throw new BadRequestError(
+      'Imported candidates cannot receive new evaluations — update the existing evaluation record instead',
+    );
+  }
+  assertCanCreateEvaluation(candidate);
+}
+
+export function assertCanCreateBackgroundCheckForRole(
+  role: string | null | undefined,
+  candidate: PipelineCandidateSnapshot,
+): void {
+  if (isImportEditRole(role) && isImportedCandidate(candidate)) {
+    throw new BadRequestError(
+      'Imported candidates cannot receive new background checks — update the existing BGV record instead',
+    );
+  }
+  assertCanCreateBackgroundCheck(candidate);
+}
+
+export function isSuperAdminPipelineComplete(
+  candidate: PipelineCandidateSnapshot,
+): boolean {
+  const aiDone =
+    candidate.aiScreeningStatus === 'COMPLETED' || Boolean(candidate.aiSummary?.trim());
+  return (
+    aiDone &&
+    candidate.evaluationStatus === 'COMPLETED' &&
+    isBgvClear(candidate.bgvStatus) &&
+    isPricingComplete(candidate)
+  );
 }
 
 export function profileStatusAfterAiScreening(

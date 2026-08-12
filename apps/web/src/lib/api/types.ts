@@ -363,6 +363,8 @@ export type CandidateDto = CandidateListItem & {
   naukriUrl?: string | null;
   primarySkillCommunityId: number | null;
   displayName?: string | null;
+  oorwinCandidateId?: string | null;
+  sourceCandidateId?: string | null;
   primaryRole?: string | null;
   currentCompany?: string | null;
   currentTitle?: string | null;

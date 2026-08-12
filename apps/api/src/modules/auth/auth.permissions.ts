@@ -25,6 +25,7 @@ export const PERMISSIONS = {
   CANDIDATES_EDIT_LIMITED: 'candidates:edit_limited',
   CANDIDATES_DELETE: 'candidates:delete',
   CANDIDATES_APPROVE: 'candidates:approve',
+  CANDIDATES_AI_SCREENING: 'candidates:ai_screening',
   CANDIDATES_VIEW_PAY_RATE: 'candidates:view_pay_rate',
   SKILLS_READ: 'skills:read',
   SKILLS_WRITE: 'skills:write',
@@ -59,7 +60,10 @@ export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
 const ALL_PERMISSIONS = Object.values(PERMISSIONS);
 
 const ORG_ADMIN_PERMISSIONS: Permission[] = ALL_PERMISSIONS.filter(
-  (permission) => permission !== PERMISSIONS.ADMIN_PLATFORM,
+  (permission) =>
+    permission !== PERMISSIONS.ADMIN_PLATFORM &&
+    permission !== PERMISSIONS.CANDIDATES_AI_SCREENING &&
+    permission !== PERMISSIONS.BACKGROUND_CHECKS_APPROVE,
 );
 
 const RECRUITER_PERMISSIONS: Permission[] = [

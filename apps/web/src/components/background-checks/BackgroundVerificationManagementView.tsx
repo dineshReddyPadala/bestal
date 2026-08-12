@@ -1,7 +1,7 @@
 import { cn, formatDate } from '@bestal/shared-utils';
 import { Button, Dialog, FileUpload, Input, Select, StatusBadge, TanStackDataTable } from '@bestal/ui';
 import { type ColumnDef } from '@tanstack/react-table';
-import { Check, Download, Eye, Loader2, Plus, Sparkles } from 'lucide-react';
+import { Check, Download, Eye, Loader2, Pencil, Plus, Sparkles } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useCandidatesList } from '../../hooks/api/useCandidates';
@@ -40,6 +40,16 @@ const BGV_TYPES = [
   'IDENTITY',
   'CREDIT',
   'COMPREHENSIVE',
+] as const;
+
+const BGV_RECRUITER_EDIT_STATUSES = [
+  'NOT_STARTED',
+  'PENDING',
+  'CONSENT_PENDING',
+  'INITIATED',
+  'IN_PROGRESS',
+  'SUSPENDED',
+  'EXPIRED',
 ] as const;
 
 type BackgroundVerificationManagementViewProps = {
@@ -90,7 +100,7 @@ export function BackgroundVerificationManagementView({
 }: BackgroundVerificationManagementViewProps) {
   const { message, show, showError } = useDemoToast();
   const queryClient = useQueryClient();
-  const { canUploadBgv, canApproveBgv } = usePermissions();
+  const { canUploadBgv } = usePermissions();
   const { searchInput, setSearchInput, search, searchParam } = useDebouncedSearch();
   const { data, isLoading, isError, error } = useBackgroundChecksList({
     limit: 100,
@@ -101,6 +111,16 @@ export function BackgroundVerificationManagementView({
   const mutations = useBackgroundCheckMutations();
   const [filters, setFilters] = useState(defaultFilters);
   const [requestOpen, setRequestOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [editingBgvId, setEditingBgvId] = useState<number | null>(null);
+  const [editLoading, setEditLoading] = useState(false);
+  const [editType, setEditType] = useState<string>('COMPREHENSIVE');
+  const [editStatus, setEditStatus] = useState('');
+  const [editVendorName, setEditVendorName] = useState('');
+  const [editAiBgvSummary, setEditAiBgvSummary] = useState('');
+  const [editConcernNotes, setEditConcernNotes] = useState('');
+  const [editResultSummary, setEditResultSummary] = useState('');
+  const [editCandidateName, setEditCandidateName] = useState('');
   const [selectedCandidateId, setSelectedCandidateId] = useState('');
   const [selectedType, setSelectedType] = useState<string>('COMPREHENSIVE');
   const [requestVendorName, setRequestVendorName] = useState('');
@@ -124,7 +144,6 @@ export function BackgroundVerificationManagementView({
   const [detail, setDetail] = useState<BackgroundCheckDto | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [vendorName, setVendorName] = useState('');
-  const [reviewNotes, setReviewNotes] = useState('');
   const [busy, setBusy] = useState(false);
 
   const records = useMemo(() => data?.data ?? [], [data]);
@@ -172,7 +191,6 @@ export function BackgroundVerificationManagementView({
       setDetail(next);
       if (options?.resetLocalFields) {
         setVendorName(next.provider ?? '');
-        setReviewNotes(next.reviewNotes ?? '');
       } else if (next.provider) {
         setVendorName((current) => current.trim() || next.provider || '');
       }
@@ -228,6 +246,82 @@ export function BackgroundVerificationManagementView({
     setPendingReportFile(null);
     resetBgvAi();
   }, [resetBgvAi]);
+
+  const resetEditForm = useCallback(() => {
+    setEditingBgvId(null);
+    setEditType('COMPREHENSIVE');
+    setEditStatus('');
+    setEditVendorName('');
+    setEditAiBgvSummary('');
+    setEditConcernNotes('');
+    setEditResultSummary('');
+    setEditCandidateName('');
+  }, []);
+
+  const openEditBgv = useCallback(
+    async (record: BackgroundCheckListItem) => {
+      setEditLoading(true);
+      setEditOpen(true);
+      try {
+        const full = await backgroundChecksApi.get(record.id);
+        setEditingBgvId(full.id);
+        setEditCandidateName(full.candidateName);
+        setEditType(full.type ?? 'COMPREHENSIVE');
+        setEditStatus(full.status);
+        setEditVendorName(full.provider ?? '');
+        setEditAiBgvSummary(full.aiSummary ?? '');
+        setEditConcernNotes(full.reviewNotes ?? '');
+        setEditResultSummary(full.resultSummary ?? '');
+      } catch (err) {
+        showError(getApiErrorMessage(err, 'Failed to load background check'));
+        setEditOpen(false);
+        resetEditForm();
+      } finally {
+        setEditLoading(false);
+      }
+    },
+    [resetEditForm, showError],
+  );
+
+  const handleEditSave = useCallback(async () => {
+    if (editingBgvId == null) return;
+    try {
+      await mutations.update.mutateAsync({
+        id: editingBgvId,
+        body: {
+          type: editType,
+          status: editStatus || undefined,
+          provider: editVendorName.trim() || undefined,
+          aiSummary: editAiBgvSummary.trim() || null,
+          reviewNotes: editConcernNotes.trim() || null,
+          resultSummary: editResultSummary.trim() || null,
+        },
+      });
+      show(`BGV updated — ${editCandidateName || 'candidate'}`);
+      setEditOpen(false);
+      resetEditForm();
+      if (detail?.id === editingBgvId) {
+        applyDetail(await backgroundChecksApi.get(editingBgvId), { resetLocalFields: true });
+      }
+    } catch (err) {
+      showError(getApiErrorMessage(err, 'Save failed'));
+    }
+  }, [
+    applyDetail,
+    detail?.id,
+    editAiBgvSummary,
+    editCandidateName,
+    editConcernNotes,
+    editResultSummary,
+    editStatus,
+    editType,
+    editVendorName,
+    editingBgvId,
+    mutations.update,
+    resetEditForm,
+    show,
+    showError,
+  ]);
 
   const handleBgvPdfUpload = useCallback(
     async (file: File) => {
@@ -484,19 +578,32 @@ export function BackgroundVerificationManagementView({
         id: 'actions',
         header: '',
         cell: ({ row }) => (
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={() => void openDetail(row.original.id)}
-          >
-            <Eye className="mr-1 h-3.5 w-3.5" />
-            Open
-          </Button>
+          <div className="flex items-center justify-end gap-1">
+            {canUploadBgv ? (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => void openEditBgv(row.original)}
+              >
+                <Pencil className="mr-1 h-3.5 w-3.5" />
+                Edit
+              </Button>
+            ) : null}
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => void openDetail(row.original.id)}
+            >
+              <Eye className="mr-1 h-3.5 w-3.5" />
+              Open
+            </Button>
+          </div>
         ),
       },
     ],
-    [openDetail, showError],
+    [canUploadBgv, openDetail, openEditBgv],
   );
 
   const listError = isError
@@ -746,6 +853,137 @@ export function BackgroundVerificationManagementView({
       </Dialog>
 
       <Dialog
+        open={editOpen}
+        onClose={() => {
+          setEditOpen(false);
+          resetEditForm();
+        }}
+        title={editCandidateName ? `Edit BGV — ${editCandidateName}` : 'Edit background verification'}
+        description="Update verification metadata, status, and summaries."
+        scrollable
+        className="max-w-2xl"
+        footer={
+          <>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setEditOpen(false);
+                resetEditForm();
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              onClick={() => void handleEditSave()}
+              disabled={editLoading || editingBgvId == null}
+            >
+              Save changes
+            </Button>
+          </>
+        }
+      >
+        {editLoading ? (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            Loading…
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <label htmlFor="bgv-edit-type" className="text-sm font-medium">
+                  Check type
+                </label>
+                <Select
+                  id="bgv-edit-type"
+                  className="h-10"
+                  value={editType}
+                  onChange={(e) => setEditType(e.target.value)}
+                >
+                  {BGV_TYPES.map((t) => (
+                    <option key={t} value={t}>
+                      {t.replace(/_/g, ' ')}
+                    </option>
+                  ))}
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="bgv-edit-status" className="text-sm font-medium">
+                  Status
+                </label>
+                <Select
+                  id="bgv-edit-status"
+                  className="h-10"
+                  value={editStatus}
+                  onChange={(e) => setEditStatus(e.target.value)}
+                >
+                  {BGV_RECRUITER_EDIT_STATUSES.includes(
+                    editStatus as (typeof BGV_RECRUITER_EDIT_STATUSES)[number],
+                  ) ? null : (
+                    <option value={editStatus}>{editStatus.replace(/_/g, ' ')}</option>
+                  )}
+                  {BGV_RECRUITER_EDIT_STATUSES.map((status) => (
+                    <option key={status} value={status}>
+                      {status.replace(/_/g, ' ')}
+                    </option>
+                  ))}
+                </Select>
+              </div>
+              <div className="space-y-2 sm:col-span-2">
+                <label htmlFor="bgv-edit-vendor" className="text-sm font-medium">
+                  Vendor / provider
+                </label>
+                <Input
+                  id="bgv-edit-vendor"
+                  value={editVendorName}
+                  onChange={(e) => setEditVendorName(e.target.value)}
+                  placeholder="e.g. Checkr, Sterling"
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <label htmlFor="bgv-edit-result-summary" className="text-sm font-medium">
+                Check statuses summary
+              </label>
+              <textarea
+                id="bgv-edit-result-summary"
+                rows={4}
+                className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                value={editResultSummary}
+                onChange={(e) => setEditResultSummary(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <label htmlFor="bgv-edit-ai-summary" className="text-sm font-medium">
+                AI BGV summary
+              </label>
+              <textarea
+                id="bgv-edit-ai-summary"
+                rows={3}
+                className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                value={editAiBgvSummary}
+                onChange={(e) => setEditAiBgvSummary(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <label htmlFor="bgv-edit-concerns" className="text-sm font-medium">
+                Concern notes
+              </label>
+              <textarea
+                id="bgv-edit-concerns"
+                rows={2}
+                className="flex min-h-[60px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                value={editConcernNotes}
+                onChange={(e) => setEditConcernNotes(e.target.value)}
+              />
+            </div>
+          </div>
+        )}
+      </Dialog>
+
+      <Dialog
         open={Boolean(detail) || detailLoading}
         onClose={() => {
           if (busy || extractingPdf) return;
@@ -768,7 +1006,7 @@ export function BackgroundVerificationManagementView({
               {detail.type ? <StatusBadge status={detail.type} /> : null}
             </div>
 
-            {(canUploadBgv || canApproveBgv) && (
+            {canUploadBgv && (
               <StepRail detail={detail} currentStep={currentStep} />
             )}
 
@@ -951,8 +1189,8 @@ export function BackgroundVerificationManagementView({
                     <div>
                       <h3 className="text-sm font-semibold">6. Review AI extraction</h3>
                       <p className="mt-1 text-sm text-muted-foreground">
-                        Check statuses were extracted from the report. Submit for admin review when
-                        ready — admins receive a notification after analysis completes.
+                        Check statuses were extracted from the report. Review the summary and update
+                        fields as needed — candidate approval happens in the Approvals queue.
                       </p>
                     </div>
                     {extractingPdf && (
@@ -980,19 +1218,6 @@ export function BackgroundVerificationManagementView({
                       <Button
                         type="button"
                         size="sm"
-                        disabled={busy || extractingPdf || !detail.aiSummary?.trim()}
-                        onClick={() => {
-                          void run(
-                            () => mutations.submitForReview.mutateAsync(detail.id),
-                            'Submitted for admin review',
-                          );
-                        }}
-                      >
-                        {busy ? 'Working…' : 'Submit for review'}
-                      </Button>
-                      <Button
-                        type="button"
-                        size="sm"
                         variant="outline"
                         disabled={busy || extractingPdf || !detail.hasReportDocument}
                         onClick={() => void handleRefreshAiSummary()}
@@ -1005,129 +1230,14 @@ export function BackgroundVerificationManagementView({
               </section>
             ) : null}
 
-            {awaitingAdmin && detail.status === 'CONSIDER' && canUploadBgv && !canApproveBgv ? (
-              <section className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-                Submitted for admin review. Waiting for approve / reject / clarification.
-                {detail.aiSummary ? <p className="mt-2 text-amber-800">{detail.aiSummary}</p> : null}
-              </section>
-            ) : null}
-
             {detail.reviewNotes ? (
               <section className="space-y-2 rounded-lg border border-amber-200 bg-amber-50 p-3">
-                <h3 className="text-sm font-semibold text-amber-900">Admin notes</h3>
+                <h3 className="text-sm font-semibold text-amber-900">Notes</h3>
                 <p className="text-sm text-amber-900">{detail.reviewNotes}</p>
               </section>
             ) : null}
 
-            {canApproveBgv &&
-            (detail.status === 'CONSIDER' ||
-              detail.status === 'IN_PROGRESS' ||
-              detail.status === 'SUSPENDED' ||
-              detail.status === 'CLEAR' ||
-              detail.status === 'FAILED') ? (
-              <section className="space-y-3 rounded-xl border border-border/80 p-4">
-                <h3 className="text-sm font-semibold">Admin review</h3>
-                {detail.status === 'CLEAR' ? (
-                  <p className="text-sm text-emerald-700">
-                    Approved — Background Verified
-                    {detail.completedAt ? ` on ${formatDate(detail.completedAt)}` : ''}.
-                  </p>
-                ) : null}
-                {detail.status === 'FAILED' ? (
-                  <p className="text-sm text-destructive">Verification rejected.</p>
-                ) : null}
-                {detail.aiSummary ? (
-                  <div className="rounded-lg border border-border/70 bg-muted/20 p-3 text-sm text-muted-foreground">
-                    {detail.aiSummary}
-                  </div>
-                ) : null}
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Notes</label>
-                  <textarea
-                    rows={3}
-                    className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                    value={reviewNotes}
-                    onChange={(e) => setReviewNotes(e.target.value)}
-                    placeholder="Rejection or clarification notes"
-                  />
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {(detail.status === 'CONSIDER' || detail.status === 'IN_PROGRESS') && (
-                    <>
-                      <Button
-                        type="button"
-                        size="sm"
-                        disabled={busy}
-                        onClick={() =>
-                          void run(
-                            () => mutations.approve.mutateAsync(detail.id),
-                            'Verification approved',
-                          )
-                        }
-                      >
-                        Approve
-                      </Button>
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="outline"
-                        disabled={busy}
-                        onClick={() =>
-                          void run(
-                            () =>
-                              mutations.reject.mutateAsync({
-                                id: detail.id,
-                                notes: reviewNotes || undefined,
-                              }),
-                            'Verification rejected',
-                          )
-                        }
-                      >
-                        Reject
-                      </Button>
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="outline"
-                        disabled={busy || !reviewNotes.trim()}
-                        onClick={() =>
-                          void run(
-                            () =>
-                              mutations.requestClarification.mutateAsync({
-                                id: detail.id,
-                                notes: reviewNotes.trim(),
-                              }),
-                            'Clarification requested',
-                          )
-                        }
-                      >
-                        Request clarification
-                      </Button>
-                    </>
-                  )}
-                  {(detail.status === 'FAILED' ||
-                    detail.status === 'SUSPENDED' ||
-                    detail.status === 'CLEAR') && (
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="ghost"
-                      disabled={busy}
-                      onClick={() =>
-                        void run(
-                          () => mutations.reopen.mutateAsync(detail.id),
-                          'Verification reopened',
-                        )
-                      }
-                    >
-                      Reopen
-                    </Button>
-                  )}
-                </div>
-              </section>
-            ) : null}
-
-            {!canUploadBgv && !canApproveBgv ? (
+            {!canUploadBgv ? (
               <div className="space-y-2 text-sm text-muted-foreground">
                 <p>
                   Status: <StatusBadge status={detail.status} />

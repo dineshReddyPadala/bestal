@@ -124,6 +124,7 @@ export const candidateWizardFormSchema = z.object({
   aiBgvSummary: z.string().max(10000).optional().nullable(),
   bgvResultSummary: z.string().max(5000).optional().nullable(),
   bgvConcernNotes: z.string().max(5000).optional().nullable(),
+  evaluationId: z.number().int().positive().optional().nullable(),
   bgvBackgroundCheckId: z.number().int().positive().optional().nullable(),
   profileStatus: z.enum(CANDIDATE_PROFILE_STATUSES).optional().nullable(),
   visibility: z.enum(CANDIDATE_VISIBILITY_STATUSES).optional().nullable(),
@@ -258,6 +259,7 @@ export const candidateWizardDefaults: CandidateWizardFormValues = {
   aiBgvSummary: '',
   bgvResultSummary: '',
   bgvConcernNotes: '',
+  evaluationId: null,
   bgvBackgroundCheckId: null,
   profileStatus: 'SOURCED',
   visibility: 'INTERNAL_ONLY',
@@ -521,6 +523,7 @@ export const USER_FIELD_LABELS: Record<keyof CandidateWizardFormValues, string> 
   aiBgvSummary: 'AI BGV Summary',
   bgvResultSummary: 'BGV Check Statuses',
   bgvConcernNotes: 'BGV Concern Notes',
+  evaluationId: 'Evaluation Record ID',
   bgvBackgroundCheckId: 'BGV Record ID',
   profileStatus: 'Profile Status',
   visibility: 'Visibility',
@@ -695,6 +698,50 @@ export function mapWizardToApiCreateBody(
   };
 }
 
+/** Map wizard evaluation fields to PATCH /evaluations/:id body. */
+export function mapWizardToEvaluationUpdateBody(
+  form: CandidateWizardFormValues,
+): Record<string, unknown> {
+  return {
+    evaluatorName: emptyToUndefined(form.evaluatorName),
+    evaluatorCompany: emptyToUndefined(form.evaluatorCompany) ?? null,
+    evaluationType: emptyToUndefined(form.evaluationType) ?? null,
+    evaluationDate: emptyToUndefined(form.evaluationDate) ?? null,
+    technicalScore: finiteNumberOrUndefined(form.technicalScore) ?? null,
+    communicationScore: finiteNumberOrUndefined(form.communicationScore) ?? null,
+    problemSolvingScore: finiteNumberOrUndefined(form.problemSolvingScore) ?? null,
+    architectureScore: finiteNumberOrUndefined(form.architectureScore) ?? null,
+    clientReadinessScore: finiteNumberOrUndefined(form.clientReadinessScore) ?? null,
+    recommendation: emptyToUndefined(form.evaluationRecommendation) ?? null,
+    evaluatorComments: emptyToUndefined(form.evaluatorComments) ?? null,
+    aiEvaluationSummary: emptyToUndefined(form.aiEvaluationSummary) ?? null,
+  };
+}
+
+/** Map wizard BGV fields to PATCH /background-checks/:id body. */
+export function mapWizardToBgvUpdateBody(
+  form: CandidateWizardFormValues,
+): Record<string, unknown> {
+  const body: Record<string, unknown> = {};
+  const status = emptyToUndefined(form.bgvStatus);
+  if (status) body.status = status;
+  const provider = emptyToUndefined(form.bgvVendor);
+  if (provider) body.provider = provider;
+  const aiSummary = emptyToUndefined(form.aiBgvSummary);
+  if (aiSummary) body.aiSummary = aiSummary;
+  const resultSummary = emptyToUndefined(form.bgvResultSummary);
+  if (resultSummary) body.resultSummary = resultSummary;
+  const reviewNotes = emptyToUndefined(form.bgvConcernNotes);
+  if (reviewNotes) body.reviewNotes = reviewNotes;
+  if (form.bgvCheckType) body.type = form.bgvCheckType;
+  if (form.bgvEmployment) body.employmentCheckStatus = form.bgvEmployment;
+  if (form.bgvEducation) body.educationCheckStatus = form.bgvEducation;
+  if (form.bgvReference) body.referenceCheckStatus = form.bgvReference;
+  if (form.bgvAddress) body.addressCheckStatus = form.bgvAddress;
+  if (form.bgvCriminal) body.criminalCheckStatus = form.bgvCriminal;
+  return body;
+}
+
 function emptyToUndefined(value: string | null | undefined): string | undefined {
   const trimmed = value?.trim();
   return trimmed ? trimmed : undefined;
@@ -762,8 +809,33 @@ export function mapCandidateDtoToWizardForm(
       notes?: string | null;
     }>;
   },
+  linked?: {
+    evaluation?: {
+      id: number;
+      evaluatorName?: string | null;
+      evaluatorCompany?: string | null;
+      evaluationType?: string | null;
+      evaluationDate?: string | null;
+      recommendation?: string | null;
+      technicalScore?: number | null;
+      communicationScore?: number | null;
+      problemSolvingScore?: number | null;
+      architectureScore?: number | null;
+      clientReadinessScore?: number | null;
+      evaluatorComments?: string | null;
+      aiEvaluationSummary?: string | null;
+    } | null;
+    bgv?: {
+      id: number;
+      status: string;
+      provider?: string | null;
+      vendor?: string | null;
+      aiSummary?: string | null;
+      type?: string | null;
+    } | null;
+  },
 ): Partial<CandidateWizardFormValues> {
-  return {
+  const base: Partial<CandidateWizardFormValues> = {
     firstName: candidate.firstName,
     lastName: candidate.lastName,
     email: candidate.email,
@@ -815,4 +887,42 @@ export function mapCandidateDtoToWizardForm(
       (candidate.visibility as CandidateWizardFormValues['visibility']) || 'INTERNAL_ONLY',
     bgvStatus: (candidate.bgvStatus as CandidateWizardFormValues['bgvStatus']) || 'NOT_STARTED',
   };
+
+  if (linked?.evaluation) {
+    const evaluation = linked.evaluation;
+    base.evaluationId = evaluation.id;
+    base.evaluatorName = evaluation.evaluatorName ?? '';
+    base.evaluatorCompany = evaluation.evaluatorCompany ?? '';
+    base.evaluationType = evaluation.evaluationType ?? '';
+    base.evaluationDate = evaluation.evaluationDate ?? '';
+    base.evaluationRecommendation = evaluation.recommendation ?? '';
+    base.evaluatorComments = evaluation.evaluatorComments ?? '';
+    base.aiEvaluationSummary = evaluation.aiEvaluationSummary ?? '';
+    if (evaluation.technicalScore != null) base.technicalScore = evaluation.technicalScore;
+    if (evaluation.communicationScore != null) {
+      base.communicationScore = evaluation.communicationScore;
+    }
+    if (evaluation.problemSolvingScore != null) {
+      base.problemSolvingScore = evaluation.problemSolvingScore;
+    }
+    if (evaluation.architectureScore != null) {
+      base.architectureScore = evaluation.architectureScore;
+    }
+    if (evaluation.clientReadinessScore != null) {
+      base.clientReadinessScore = evaluation.clientReadinessScore;
+    }
+  }
+
+  if (linked?.bgv) {
+    const bgv = linked.bgv;
+    base.bgvBackgroundCheckId = bgv.id;
+    base.bgvStatus = bgv.status;
+    base.bgvVendor = bgv.provider ?? bgv.vendor ?? '';
+    base.aiBgvSummary = bgv.aiSummary ?? '';
+    if (bgv.type) {
+      base.bgvCheckType = bgv.type as CandidateWizardFormValues['bgvCheckType'];
+    }
+  }
+
+  return base;
 }

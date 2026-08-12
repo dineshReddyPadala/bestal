@@ -9,14 +9,15 @@ export const IMPORT_WORKBOOK_SHEETS = {
   EVALUATION: 'Evaluation',
   BGV: 'Background Verification',
   SCORES: 'Scores',
-  SKILL_COMMUNITIES: 'Skill Communities',
-  AVAILABILITY_STATUS: 'Availability Status',
-  EVALUATION_TYPES: 'Evaluation Types',
-  BGV_STATUS: 'BGV Status',
-  CANDIDATE_SOURCES: 'Candidate Sources',
-  PROFICIENCY_LEVELS: 'Proficiency Levels',
-  RECOMMENDATION_VALUES: 'Recommendation Values',
-  CURRENCY: 'Currency',
+  SKILL_COMMUNITIES: 'Skill Communities_values',
+  AVAILABILITY_STATUS: 'Availability Status_values',
+  EVALUATION_TYPES: 'Evaluation Types_values',
+  BGV_STATUS: 'BGV Status_values',
+  CANDIDATE_SOURCES: 'Candidate Sources_values',
+  PROFICIENCY_LEVELS: 'Proficiency Levels_values',
+  RECOMMENDATION_VALUES: 'Recommendation Values_values',
+  CURRENCY: 'Currency_values',
+  TIMEZONES: 'Timezones_values',
   IMPORT_INSTRUCTIONS: 'Import Instructions',
 } as const;
 
@@ -37,13 +38,28 @@ export const IMPORT_METADATA_SHEETS = [
   IMPORT_WORKBOOK_SHEETS.PROFICIENCY_LEVELS,
   IMPORT_WORKBOOK_SHEETS.RECOMMENDATION_VALUES,
   IMPORT_WORKBOOK_SHEETS.CURRENCY,
+  IMPORT_WORKBOOK_SHEETS.TIMEZONES,
   IMPORT_WORKBOOK_SHEETS.IMPORT_INSTRUCTIONS,
 ] as const;
 
-export const IMPORT_REQUIRED_SHEETS = [
+/** Sheets that must be present in an uploaded workbook (metadata tabs are optional). */
+export const IMPORT_UPLOAD_REQUIRED_SHEETS = IMPORT_DATA_SHEETS;
+
+/** All sheets generated in the downloadable template (data + metadata + instructions). */
+export const IMPORT_TEMPLATE_SHEETS = [
   ...IMPORT_DATA_SHEETS,
   ...IMPORT_METADATA_SHEETS,
 ] as const;
+
+/** @deprecated Prefer IMPORT_TEMPLATE_SHEETS or IMPORT_UPLOAD_REQUIRED_SHEETS. */
+export const IMPORT_REQUIRED_SHEETS = IMPORT_TEMPLATE_SHEETS;
+
+/** Common ATS / legacy labels mapped to canonical DB skill community names. */
+export const IMPORT_SKILL_COMMUNITY_ALIASES: Record<string, string> = {
+  'DevOps & Cloud': 'Cloud / DevOps',
+  'Machine Learning': 'AI / GenAI',
+  'Mobile Development': 'Mobile',
+};
 
 export const CANDIDATE_SHEET_COLUMNS = [
   'candidate_id',
@@ -220,6 +236,18 @@ export const IMPORT_RECOMMENDATION_VALUES = [
 
 export const IMPORT_CURRENCIES = ['USD', 'EUR', 'GBP', 'INR', 'CAD', 'AUD'] as const;
 
+export const IMPORT_TIMEZONES = [
+  'UTC',
+  'Europe/London',
+  'Europe/Berlin',
+  'America/New_York',
+  'America/Chicago',
+  'America/Los_Angeles',
+  'Asia/Kolkata',
+  'Asia/Singapore',
+  'Australia/Sydney',
+] as const;
+
 export const IMPORT_SCORE_SOURCES = [
   'ATS_AI',
   'BESTAL_AI',
@@ -231,6 +259,7 @@ export const IMPORT_SCORE_SOURCES = [
 export const IMPORT_INSTRUCTIONS = [
   'Do not rename sheet names.',
   'Do not modify column headers.',
+  'Use dropdowns in highlighted (yellow) columns — do not type free text for master data values.',
   'candidate_id is mandatory on every data sheet row.',
   'candidate_id must be unique within the Candidate sheet.',
   'All related sheets must reference the same candidate_id.',
@@ -238,13 +267,10 @@ export const IMPORT_INSTRUCTIONS = [
   'Scores must be between 0 and 100.',
   'Dates must use YYYY-MM-DD.',
   'Multiple values in a single field use | as the separator.',
-  'AI-generated fields are optional.',
-  'AI fields will be imported exactly as provided.',
-  'Missing AI fields remain blank.',
-  'AI processing is not triggered during import.',
-  'Candidates require Recruiter Review and Admin Approval after import.',
+  'AI-generated fields are optional and imported exactly as provided.',
+  'Missing AI fields remain blank — BesTal does not run AI during import.',
+  'After import, edit candidates to update evaluation/BGV and submit for approval when ready.',
   'The template is generic and supports any ATS.',
-  'Import candidates exactly as provided — BesTal will not recalculate scores or generate summaries.',
 ] as const;
 
 export type ImportSkillCommunity = (typeof IMPORT_SKILL_COMMUNITIES)[number];

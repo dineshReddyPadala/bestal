@@ -1,4 +1,11 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
-  <rect width="32" height="32" rx="6" fill="#2563eb"/>
-  <text x="16" y="22" text-anchor="middle" fill="white" font-family="Inter, sans-serif" font-size="14" font-weight="800">BT</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none" role="img" aria-label="BesTal">
+  <rect width="32" height="32" rx="7" fill="#0D6363"/>
+  <path
+    d="M8.75 17.1c0 0 3.15 4.65 5.55 4.65 2.55 0 5.35-8.55 7.55-11.75"
+    stroke="#ffffff"
+    stroke-width="3.25"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+  <circle cx="22.1" cy="8.35" r="2.75" fill="#E8941A" stroke="#ffffff" stroke-width="0.85"/>
 </svg>

@@ -196,7 +196,7 @@ export async function candidateRoutes(fastify: FastifyInstance): Promise<void> {
   app.post(
     '/extract-resume',
     {
-      preHandler: [authenticate, requirePermission(PERMISSIONS.CANDIDATES_WRITE)],
+      preHandler: [authenticate, requirePermission(PERMISSIONS.CANDIDATES_AI_SCREENING)],
       schema: {
         tags: ['Candidates'],
         summary:
@@ -418,7 +418,7 @@ export async function candidateRoutes(fastify: FastifyInstance): Promise<void> {
   app.post(
     '/:id/pipeline/ai-screening',
     {
-      preHandler: [authenticate, requirePermission(PERMISSIONS.CANDIDATES_WRITE)],
+      preHandler: [authenticate, requirePermission(PERMISSIONS.CANDIDATES_AI_SCREENING)],
       schema: {
         tags: ['Candidates'],
         summary: 'Run AI screening (SOURCED → AI_SCREENED)',

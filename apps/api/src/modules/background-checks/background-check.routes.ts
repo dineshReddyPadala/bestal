@@ -1,7 +1,8 @@
-import type { FastifyInstance } from 'fastify';
+import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { authenticate } from '../../middleware/authenticate.middleware.js';
 import { requirePermission } from '../../middleware/permission.middleware.js';
+import { AuthorizationError } from '../../utils/index.js';
 import { errorResponses } from '../../validators/api-responses.validator.js';
 import { PERMISSIONS } from '../auth/auth.permissions.js';
 import { BackgroundCheckController } from './background-check.controller.js';
@@ -20,6 +21,12 @@ import {
   reviewNotesBodySchema,
   updateBackgroundCheckBodySchema,
 } from './background-check.validator.js';
+
+function deprecatedBgvApprovalRoute(_request: FastifyRequest, _reply: FastifyReply): never {
+  throw new AuthorizationError(
+    'BGV approval flows are deprecated. Approve and publish candidates via the candidate approval queue instead.',
+  );
+}
 
 export async function backgroundCheckRoutes(
   fastify: FastifyInstance,
@@ -264,17 +271,16 @@ export async function backgroundCheckRoutes(
       preHandler: writePre,
       schema: {
         tags: ['Background Checks'],
-        summary: 'Submit BGV package for admin review',
+        summary: 'Deprecated — use candidate approval queue',
         security: [{ bearerAuth: [] }],
         params: backgroundCheckIdParamSchema,
         response: {
-          200: backgroundCheckResponseSchema,
+          403: errorResponses[403],
           401: errorResponses[401],
-          404: errorResponses[404],
         },
       },
     },
-    backgroundCheckController.submitForReview,
+    deprecatedBgvApprovalRoute,
   );
 
   app.post(
@@ -283,18 +289,16 @@ export async function backgroundCheckRoutes(
       preHandler: approvePre,
       schema: {
         tags: ['Background Checks'],
-        summary: 'Admin approve verification (marks candidate BGV_COMPLETE)',
+        summary: 'Deprecated — use candidate approval queue',
         security: [{ bearerAuth: [] }],
         params: backgroundCheckIdParamSchema,
         response: {
-          200: backgroundCheckResponseSchema,
-          401: errorResponses[401],
           403: errorResponses[403],
-          404: errorResponses[404],
+          401: errorResponses[401],
         },
       },
     },
-    backgroundCheckController.approve,
+    deprecatedBgvApprovalRoute,
   );
 
   app.post(
@@ -303,19 +307,17 @@ export async function backgroundCheckRoutes(
       preHandler: approvePre,
       schema: {
         tags: ['Background Checks'],
-        summary: 'Admin reject verification',
+        summary: 'Deprecated — use candidate approval queue',
         security: [{ bearerAuth: [] }],
         params: backgroundCheckIdParamSchema,
         body: reviewNotesBodySchema,
         response: {
-          200: backgroundCheckResponseSchema,
-          401: errorResponses[401],
           403: errorResponses[403],
-          404: errorResponses[404],
+          401: errorResponses[401],
         },
       },
     },
-    backgroundCheckController.reject,
+    deprecatedBgvApprovalRoute,
   );
 
   app.post(
@@ -324,19 +326,17 @@ export async function backgroundCheckRoutes(
       preHandler: approvePre,
       schema: {
         tags: ['Background Checks'],
-        summary: 'Admin request clarification (suspends check)',
+        summary: 'Deprecated — use candidate approval queue',
         security: [{ bearerAuth: [] }],
         params: backgroundCheckIdParamSchema,
         body: clarificationBodySchema,
         response: {
-          200: backgroundCheckResponseSchema,
-          401: errorResponses[401],
           403: errorResponses[403],
-          404: errorResponses[404],
+          401: errorResponses[401],
         },
       },
     },
-    backgroundCheckController.requestClarification,
+    deprecatedBgvApprovalRoute,
   );
 
   app.post(
@@ -345,18 +345,16 @@ export async function backgroundCheckRoutes(
       preHandler: approvePre,
       schema: {
         tags: ['Background Checks'],
-        summary: 'Admin reopen a closed/suspended verification',
+        summary: 'Deprecated — use candidate approval queue',
         security: [{ bearerAuth: [] }],
         params: backgroundCheckIdParamSchema,
         response: {
-          200: backgroundCheckResponseSchema,
-          401: errorResponses[401],
           403: errorResponses[403],
-          404: errorResponses[404],
+          401: errorResponses[401],
         },
       },
     },
-    backgroundCheckController.reopen,
+    deprecatedBgvApprovalRoute,
   );
 
   app.get(
