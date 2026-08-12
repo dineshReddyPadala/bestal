@@ -1,6 +1,7 @@
 import { publicNav } from '@bestal/mock-data';
 import { AuthLayout, MarketingLayout } from '@bestal/ui';
 import { createBrowserRouter, Navigate, Outlet, RouterProvider } from 'react-router-dom';
+import { PageMeta } from '../components/PageMeta';
 import { AdminShell } from '../layouts/AdminShell';
 import { ClientShell } from '../layouts/ClientShell';
 import { RecruiterShell } from '../layouts/RecruiterShell';
@@ -143,30 +144,38 @@ const marketingNav = publicNav.map(({ label, href }) => ({ label, href }));
 
 function MarketingShell() {
   return (
-    <MarketingLayout
-      navItems={[...marketingNav]}
-      ctaLabel="Hire Talent"
-      ctaHref="/contact"
-      brandLogoSrc={BESTAL_LOGO_SRC}
-    >
-      <Outlet />
-    </MarketingLayout>
+    <div data-prerender-ready="">
+      <MarketingLayout
+        navItems={[...marketingNav]}
+        ctaLabel="Hire Talent"
+        ctaHref="/contact"
+        brandLogoSrc={BESTAL_LOGO_SRC}
+      >
+        <Outlet />
+      </MarketingLayout>
+    </div>
   );
 }
 
 function PortalSelectorShell() {
   return (
-    <AuthLayout title="Welcome to BesTal" brandLogoSrc={BESTAL_LOGO_SRC}>
-      <Outlet />
-    </AuthLayout>
+    <>
+      <PageMeta title="Sign In | BesTal" description="Sign in to your BesTal portal." noIndex />
+      <AuthLayout title="Welcome to BesTal" brandLogoSrc={BESTAL_LOGO_SRC}>
+        <Outlet />
+      </AuthLayout>
+    </>
   );
 }
 
 function AdminAuthShell() {
   return (
-    <AuthLayout title="Admin Portal" brandLogoSrc={BESTAL_LOGO_SRC}>
-      <Outlet />
-    </AuthLayout>
+    <>
+      <PageMeta title="Admin Sign In | BesTal" description="Admin portal sign in." noIndex />
+      <AuthLayout title="Admin Portal" brandLogoSrc={BESTAL_LOGO_SRC}>
+        <Outlet />
+      </AuthLayout>
+    </>
   );
 }
 

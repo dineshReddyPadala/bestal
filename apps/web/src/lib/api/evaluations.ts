@@ -371,9 +371,6 @@ export const backgroundChecksApi = {
     const data = json.data;
     if ('jobId' in data && !('candidateName' in data)) {
       const accepted = data as BgvAnalysisJobAccepted;
-      const status = isAiScreeningJobStatus(accepted.status)
-        ? accepted.status
-        : 'PENDING';
       const job = await waitForAutomationJob(accepted.jobId, { intervalMs: 2500 });
       if (job.status !== 'COMPLETED') {
         throw new Error(job.errorMessage || `BGV AI analysis ${job.status}`);

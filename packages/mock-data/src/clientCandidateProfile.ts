@@ -71,7 +71,7 @@ function buildGroupedSkills(candidateId: number): {
 
   const map = cand.skills.map((s) => ({
     skillCommunityName: s.skillCommunityName,
-    skillName: s.skillName ?? null,
+    skillName: null,
     proficiencyLevel: s.proficiencyLevel,
     yearsExperience: s.yearsExperience,
     isPrimary: s.isPrimary,

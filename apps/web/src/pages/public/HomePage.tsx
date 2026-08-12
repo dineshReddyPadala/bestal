@@ -6,6 +6,8 @@ import {
 } from '@bestal/shared-utils';
 import { Button } from '@bestal/ui';
 import { Container } from '../../components/Container';
+import { PageMeta } from '../../components/PageMeta';
+import { PAGE_SEO } from '../../lib/marketing-seo';
 import {
   ArrowRight,
   Briefcase,
@@ -27,15 +29,16 @@ const talentIcons = [Clock, Globe, Sparkles, Users, Briefcase] as const;
 export function HomePage() {
   return (
     <>
+      <PageMeta title={PAGE_SEO.home.title} description={PAGE_SEO.home.description} />
       <section className="relative overflow-hidden border-b border-border bg-background">
         <Container className="relative py-20 lg:py-28">
           <div className="mx-auto max-w-4xl text-center">
             <h1 className="text-balance text-4xl font-extrabold tracking-tight text-foreground sm:text-5xl lg:text-6xl">
-              Vetted global technology talent, ready in 72 hours.
+              Proven Talent. Ready to Perform.
             </h1>
             <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-muted-foreground sm:text-xl">
-              BesTal connects enterprises with rigorously screened engineers, designers, and
-              specialists — evaluated, BGV-cleared, and ready to start a pilot.
+              See the evidence. Then hire. Review external evaluator scorecards, background
+              verification status, hourly rates, and US time-zone overlap before you interview.
             </p>
             <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
               <Button to="/talent" size="lg" className="min-w-[200px]">

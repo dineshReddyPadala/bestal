@@ -40,7 +40,7 @@ export function ListingPageShell({
 
   return (
     <div className="flex h-[calc(100svh-var(--shell-header-h))] min-h-0 flex-col overflow-hidden bg-background">
-      <ToastHost message={message} variant={messageVariant} onDismiss={onMessageDismiss} />
+      <ToastHost message={message ?? null} variant={messageVariant} onDismiss={onMessageDismiss} />
 
       {actions ? (
         <div className="flex shrink-0 items-center justify-end gap-2 px-5 pt-3 sm:px-6">

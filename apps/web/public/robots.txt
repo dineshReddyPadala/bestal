@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /client/
+Disallow: /recruiter/
+Disallow: /sales/
+Disallow: /super-admin/
+Disallow: /login
+
+Sitemap: https://bestal.co/sitemap.xml

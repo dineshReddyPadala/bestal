@@ -1,5 +1,7 @@
 import { PUBLIC_SKILL_COMMUNITIES } from '@bestal/shared-utils';
 import { Container } from '../../components/Container';
+import { PageMeta } from '../../components/PageMeta';
+import { PAGE_SEO } from '../../lib/marketing-seo';
 import { Brain, Cloud, Code, Database, Link as LinkIcon, Server, Shield } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import type { LucideIcon } from 'lucide-react';
@@ -18,6 +20,7 @@ const iconMap: Record<string, LucideIcon> = {
 export function CommunitiesPage() {
   return (
     <>
+      <PageMeta title={PAGE_SEO.communities.title} description={PAGE_SEO.communities.description} />
       <section className="border-b border-border bg-background py-16 lg:py-24">
         <Container>
           <div className="mx-auto max-w-3xl text-center">

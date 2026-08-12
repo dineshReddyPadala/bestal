@@ -45,9 +45,7 @@ export function DashboardPage() {
     const status = (c.profileStatus ?? '').toUpperCase();
     return status.includes('AI') || status === 'DRAFT' || status === 'SCREENING';
   }).length;
-  const pendingEvals = evaluationRows.filter((e) =>
-    ['PENDING', 'IN_REVIEW', 'SUBMITTED', 'DRAFT'].includes(String(e.status ?? '').toUpperCase()),
-  ).length;
+  const pendingEvals = evaluationRows.filter((e) => !e.recommendation).length;
   const pendingBgv = bgvRows.filter((b) =>
     !['APPROVED', 'CLEARED', 'COMPLETED', 'REJECTED'].includes(
       String(b.status ?? '').toUpperCase(),
