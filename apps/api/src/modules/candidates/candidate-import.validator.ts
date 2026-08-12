@@ -12,9 +12,10 @@ import {
   IMPORT_EVALUATION_TYPES,
   IMPORT_PROFICIENCY_LEVELS,
   IMPORT_RECOMMENDATION_VALUES,
-  IMPORT_REQUIRED_SHEETS,
+  IMPORT_SKILL_COMMUNITY_ALIASES,
   IMPORT_SCORE_SOURCES,
   IMPORT_SKILL_COMMUNITIES,
+  IMPORT_UPLOAD_REQUIRED_SHEETS,
   IMPORT_WORKBOOK_SHEETS,
   SCORES_SHEET_COLUMNS,
   SKILLS_SHEET_COLUMNS,
@@ -313,6 +314,77 @@ function assertAllowed(
   return true;
 }
 
+function resolveSkillCommunityName(
+  value: string,
+  allowed: readonly string[],
+): string {
+  const trimmed = value.trim();
+  const alias = IMPORT_SKILL_COMMUNITY_ALIASES[trimmed];
+  if (alias && allowed.includes(alias)) {
+    return alias;
+  }
+  return trimmed;
+}
+
+function assertSkillCommunity(
+  value: string,
+  allowed: readonly string[],
+  sheetName: string,
+  rowNumber: number,
+  columnName: string,
+  errors: ImportValidationError[],
+  sourceCandidateId?: string,
+): string | null {
+  if (!value.trim()) return null;
+  const resolved = resolveSkillCommunityName(value, allowed);
+  assertAllowed(
+    resolved,
+    allowed,
+    sheetName,
+    rowNumber,
+    columnName,
+    errors,
+    sourceCandidateId,
+  );
+  return resolved;
+}
+
+function isValidImportTimezone(value: string): boolean {
+  const trimmed = value.trim();
+  if (trimmed === 'UTC') return true;
+  if (!/^[A-Za-z_]+(?:\/[A-Za-z_]+)+$/.test(trimmed)) {
+    return false;
+  }
+  try {
+    Intl.DateTimeFormat(undefined, { timeZone: trimmed });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function assertTimezone(
+  value: string,
+  sheetName: string,
+  rowNumber: number,
+  columnName: string,
+  errors: ImportValidationError[],
+  sourceCandidateId?: string,
+): boolean {
+  if (!value.trim()) return true;
+  if (isValidImportTimezone(value)) return true;
+  pushError(errors, {
+    sheetName,
+    rowNumber,
+    sourceCandidateId,
+    columnName,
+    suppliedValue: value,
+    errorCode: 'INVALID_METADATA',
+    message: 'Invalid timezone. Use a valid IANA timezone (e.g. America/New_York) or UTC.',
+  });
+  return false;
+}
+
 function pipeField(value: string): string | null {
   if (!value) return null;
   return value
@@ -330,12 +402,15 @@ export type ParsedWorkbook = {
 
 export async function parseAndValidateCandidateWorkbook(
   fileBuffer: Buffer,
+  options?: { skillCommunities?: readonly string[] },
 ): Promise<ParsedWorkbook> {
+  const allowedSkillCommunities =
+    options?.skillCommunities?.length ? options.skillCommunities : IMPORT_SKILL_COMMUNITIES;
   const errors: ImportValidationError[] = [];
   const workbook = new ExcelJS.Workbook();
   await workbook.xlsx.load(fileBuffer as unknown as ExcelJS.Buffer);
 
-  for (const required of IMPORT_REQUIRED_SHEETS) {
+  for (const required of IMPORT_UPLOAD_REQUIRED_SHEETS) {
     if (!workbook.getWorksheet(required)) {
       pushError(errors, {
         sheetName: required,
@@ -474,13 +549,24 @@ export async function parseAndValidateCandidateWorkbook(
       errors,
       sourceCandidateId,
     );
+    let skillCommunity: string | null = null;
     if (raw.skill_community) {
-      assertAllowed(
+      skillCommunity = assertSkillCommunity(
         raw.skill_community,
-        IMPORT_SKILL_COMMUNITIES,
+        allowedSkillCommunities,
         IMPORT_WORKBOOK_SHEETS.CANDIDATE,
         rowNumber,
         'skill_community',
+        errors,
+        sourceCandidateId,
+      );
+    }
+    if (raw.timezone) {
+      assertTimezone(
+        raw.timezone,
+        IMPORT_WORKBOOK_SHEETS.CANDIDATE,
+        rowNumber,
+        'timezone',
         errors,
         sourceCandidateId,
       );
@@ -553,7 +639,7 @@ export async function parseAndValidateCandidateWorkbook(
       headline: raw.headline?.trim() || null,
       yearsExperience: yearsExperience ?? 0,
       primaryRole: raw.primary_role.trim(),
-      skillCommunity: raw.skill_community?.trim() || null,
+      skillCommunity,
       summary: raw.summary?.trim() || null,
       aiSummary,
       strengths,

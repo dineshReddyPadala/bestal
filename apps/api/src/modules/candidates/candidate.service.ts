@@ -29,11 +29,16 @@ import {
   assertCanRunAiScreening,
   assertCanSubmitForApproval,
   isPricingComplete,
+  isImportEditRole,
   isRecruiterReviewBypassRole,
   profileStatusAfterAiScreening,
   type PipelineCandidateSnapshot,
 } from './candidate-pipeline.js';
 import { isClearBgvStatus } from './candidate-import-status.js';
+import {
+  maybeAutoSubmitSuperAdminCandidate,
+  syncImportedCandidateProfileStatus,
+} from './candidate-profile-sync.js';
 import { notifyCandidatePendingApproval } from '../../services/notification-events.js';
 import { StorageService } from '../../services/storage.service.js';
 import { normalizeUploadToPdf } from '../../services/document-pdf-normalizer.js';
@@ -604,6 +609,15 @@ export class CandidateService {
         },
       });
     });
+
+    if (candidateId != null) {
+      await maybeAutoSubmitSuperAdminCandidate(
+        this.prisma,
+        this.fastify.config,
+        organizationId,
+        candidateId,
+      );
+    }
   }
 
   /**
@@ -820,7 +834,17 @@ export class CandidateService {
       skills:
         input.skills !== undefined ? normalizeCandidateSkills(input.skills) : undefined,
     });
-    return this.toDto(candidate, authUser);
+
+    const updated = await this.candidateRepository.findById(organizationId, id);
+    if (
+      updated &&
+      isImportEditRole(authUser.role) &&
+      updated.sourceCandidateId?.trim()
+    ) {
+      await syncImportedCandidateProfileStatus(this.prisma, organizationId, id);
+    }
+
+    return this.toDto(updated ?? candidate, authUser);
   }
 
   async delete(authUser: AuthenticatedUser, id: number): Promise<void> {
@@ -1201,6 +1225,8 @@ export class CandidateService {
       evaluationStatus: candidate.evaluationStatus,
       bgvStatus: candidate.bgvStatus,
       aiSummary: candidate.aiSummary,
+      aiScreeningStatus: candidate.aiScreeningStatus,
+      sourceCandidateId: candidate.sourceCandidateId,
       clientBillRate: candidate.clientBillRate,
       availabilityStatus: candidate.availabilityStatus,
       availableFrom: candidate.availableFrom,

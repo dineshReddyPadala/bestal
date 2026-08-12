@@ -95,6 +95,7 @@ export function CandidateDetailView({ candidateId, basePath }: CandidateDetailVi
   const [uploadingKind, setUploadingKind] = useState<string | null>(null);
   const {
     canWriteCandidates,
+    canRunAiScreening,
     canUploadEvaluation,
     canUploadBgv,
     canDeleteCandidates,
@@ -409,7 +410,7 @@ export function CandidateDetailView({ candidateId, basePath }: CandidateDetailVi
           <ModernSection
             title="AI Summary"
             action={
-              canWriteCandidates ? (
+              canRunAiScreening ? (
                 <Button variant="ghost" size="sm" onClick={() => void handleAction('run-ai')}>
                   <Sparkles className="mr-1.5 h-3.5 w-3.5" />
                   Run AI

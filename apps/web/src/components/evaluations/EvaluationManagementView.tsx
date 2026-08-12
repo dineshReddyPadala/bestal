@@ -1,7 +1,7 @@
 import { formatDate, EVALUATION_RECOMMENDATIONS, EVALUATION_TYPES } from '@bestal/shared-utils';
 import { Button, Dialog, FileUpload, Input, Select, StatusBadge, TanStackDataTable } from '@bestal/ui';
 import { type ColumnDef } from '@tanstack/react-table';
-import { AlertCircle, Download, Loader2, Plus, Sparkles } from 'lucide-react';
+import { AlertCircle, Download, Loader2, Pencil, Plus, Sparkles } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useCandidatesList, useCandidateMutations } from '../../hooks/api/useCandidates';
@@ -18,6 +18,7 @@ import { evaluationsApi } from '../../lib/api/evaluations';
 import { SearchableSelect } from '../ui/SearchableSelect';
 import type { EvaluationListItem } from '../../lib/api/types';
 import { useDemoToast } from '../../lib/use-demo-toast';
+import { usePermissions } from '../../hooks/usePermissions';
 import {
   ListingFilterSelect,
   ListingFiltersRow,
@@ -58,6 +59,7 @@ export function EvaluationManagementView({
   title = 'Evaluation Management',
 }: EvaluationManagementViewProps) {
   const { message, show } = useDemoToast();
+  const { canUploadEvaluation } = usePermissions();
   const [searchParams] = useSearchParams();
   const { searchInput, setSearchInput, search, searchParam } = useDebouncedSearch();
   const { data, isLoading, isError, error } = useEvaluationsList({
@@ -70,6 +72,7 @@ export function EvaluationManagementView({
   const candidateMutations = useCandidateMutations();
   const [filters, setFilters] = useState(defaultFilters);
   const [createOpen, setCreateOpen] = useState(false);
+  const [editingEvaluationId, setEditingEvaluationId] = useState<number | null>(null);
   const [selectedCandidateId, setSelectedCandidateId] = useState('');
   const [evaluatorName, setEvaluatorName] = useState('');
   const [evaluatorCompany, setEvaluatorCompany] = useState('');
@@ -117,6 +120,8 @@ export function EvaluationManagementView({
 
   const canCreateEvaluation = selectedCandidate?.profileStatus === EVALUATION_CREATE_STATUS;
   const needsRecruiterReview = selectedCandidate?.profileStatus === 'AI_SCREENED';
+  const isEditMode = editingEvaluationId != null;
+  const canSaveEvaluation = isEditMode || canCreateEvaluation;
 
   const candidateNames = useMemo(
     () => [...new Set(records.map((r) => r.candidateName))].sort(),
@@ -198,11 +203,52 @@ export function EvaluationManagementView({
     setEvaluationFileUrl('');
     setPendingEvaluationFile(null);
     setDraftEvaluationId(null);
+    setEditingEvaluationId(null);
     setExtractHint(null);
     setExtractError(null);
     setCreateError(null);
     resetEvaluationAi();
   }, [resetEvaluationAi]);
+
+  const populateFormFromEvaluation = useCallback((record: EvaluationListItem) => {
+    setEditingEvaluationId(record.id);
+    setSelectedCandidateId(String(record.candidateId));
+    setEvaluatorName(record.evaluatorName ?? '');
+    setEvaluatorCompany(record.evaluatorCompany ?? '');
+    setEvaluationType(record.evaluationType ?? '');
+    setEvaluationDate(record.evaluationDate?.slice(0, 10) ?? '');
+    setTechnicalScore(record.technicalScore != null ? String(record.technicalScore) : '');
+    setCommunicationScore(
+      record.communicationScore != null ? String(record.communicationScore) : '',
+    );
+    setProblemSolvingScore(
+      record.problemSolvingScore != null ? String(record.problemSolvingScore) : '',
+    );
+    setArchitectureScore(
+      record.architectureScore != null ? String(record.architectureScore) : '',
+    );
+    setClientReadinessScore(
+      record.clientReadinessScore != null ? String(record.clientReadinessScore) : '',
+    );
+    setRecommendation(record.recommendation ?? '');
+    setEvaluatorComments(record.evaluatorComments ?? '');
+    setAiEvaluationSummary(record.aiEvaluationSummary ?? '');
+    setEvaluationFileUrl(record.evaluationFileUrl ?? '');
+    setDraftEvaluationId(null);
+    setExtractHint(null);
+    setExtractError(null);
+    setCreateError(null);
+    resetEvaluationAi();
+  }, [resetEvaluationAi]);
+
+  const openEditEvaluation = useCallback(
+    (record: EvaluationListItem) => {
+      resetCreateForm();
+      populateFormFromEvaluation(record);
+      setCreateOpen(true);
+    },
+    [populateFormFromEvaluation, resetCreateForm],
+  );
 
   const applyExtractedFields = useCallback(
     (patch: ReturnType<typeof mapEvaluationExtractionToForm>, message: string) => {
@@ -306,7 +352,7 @@ export function EvaluationManagementView({
       show('Select a candidate');
       return;
     }
-    if (!canCreateEvaluation) {
+    if (!isEditMode && !canCreateEvaluation) {
       const status = selectedCandidate?.profileStatus ?? 'unset';
       const message = needsRecruiterReview
         ? 'Complete recruiter review first (AI_SCREENED → RECRUITER_SCREENED), then create the evaluation.'
@@ -339,7 +385,13 @@ export function EvaluationManagementView({
         evaluationFileUrl: evaluationFileUrl.trim() || undefined,
       };
 
-      if (draftEvaluationId != null && draftEvaluationId > 0) {
+      if (editingEvaluationId != null && editingEvaluationId > 0) {
+        const { candidateId: _candidateId, ...updateBody } = payload;
+        await mutations.update.mutateAsync({
+          id: editingEvaluationId,
+          body: updateBody,
+        });
+      } else if (draftEvaluationId != null && draftEvaluationId > 0) {
         const { candidateId: _candidateId, ...updateBody } = payload;
         await mutations.update.mutateAsync({
           id: draftEvaluationId,
@@ -354,9 +406,11 @@ export function EvaluationManagementView({
         ? ' BesTal score recalculated and team notified.'
         : '';
       show(
-        draftEvaluationId != null
+        editingEvaluationId != null
           ? `Evaluation updated — ${candidate?.name ?? 'candidate'}.${suffix}`
-          : `Evaluation created — ${candidate?.name ?? 'candidate'}.${suffix}`,
+          : draftEvaluationId != null
+            ? `Evaluation updated — ${candidate?.name ?? 'candidate'}.${suffix}`
+            : `Evaluation created — ${candidate?.name ?? 'candidate'}.${suffix}`,
       );
       setCreateOpen(false);
       resetCreateForm();
@@ -374,11 +428,13 @@ export function EvaluationManagementView({
     clientReadinessScore,
     communicationScore,
     draftEvaluationId,
+    editingEvaluationId,
     evaluationDate,
     evaluationType,
     evaluatorComments,
     evaluatorCompany,
     evaluatorName,
+    isEditMode,
     mutations.create,
     mutations.update,
     needsRecruiterReview,
@@ -477,6 +533,22 @@ export function EvaluationManagementView({
         ),
       },
       {
+        id: 'actions',
+        header: '',
+        cell: ({ row }) =>
+          canUploadEvaluation ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => openEditEvaluation(row.original)}
+            >
+              <Pencil className="mr-1 h-3.5 w-3.5" />
+              Edit
+            </Button>
+          ) : null,
+      },
+      {
         id: 'download',
         header: 'Download',
         cell: ({ row }) =>
@@ -499,7 +571,7 @@ export function EvaluationManagementView({
           ),
       },
     ],
-    [show],
+    [canUploadEvaluation, openEditEvaluation, show],
   );
 
   const updateFilter = (key: keyof typeof defaultFilters, value: string) => {
@@ -535,18 +607,20 @@ export function EvaluationManagementView({
           dense
           filtersInline
           toolbar={
-            <Button
-              size="sm"
-              onClick={() => {
-                resetCreateForm();
-                const candidateIdParam = searchParams.get('candidateId');
-                if (candidateIdParam) setSelectedCandidateId(candidateIdParam);
-                setCreateOpen(true);
-              }}
-            >
-              <Plus className="mr-1.5 h-3.5 w-3.5" />
-              Add evaluation
-            </Button>
+            canUploadEvaluation ? (
+              <Button
+                size="sm"
+                onClick={() => {
+                  resetCreateForm();
+                  const candidateIdParam = searchParams.get('candidateId');
+                  if (candidateIdParam) setSelectedCandidateId(candidateIdParam);
+                  setCreateOpen(true);
+                }}
+              >
+                <Plus className="mr-1.5 h-3.5 w-3.5" />
+                Add evaluation
+              </Button>
+            ) : undefined
           }
           filters={
             <ListingFiltersRow>
@@ -617,7 +691,7 @@ export function EvaluationManagementView({
       <Dialog
         open={createOpen}
         onClose={() => setCreateOpen(false)}
-        title="Add evaluation"
+        title={isEditMode ? 'Edit evaluation' : 'Add evaluation'}
         scrollable
         className="max-w-2xl"
         footer={
@@ -628,14 +702,15 @@ export function EvaluationManagementView({
             <Button
               type="button"
               onClick={() => void handleCreate()}
-              disabled={extractingPdf || advancingPipeline || !canCreateEvaluation}
+              disabled={extractingPdf || advancingPipeline || !canSaveEvaluation}
             >
-              Create evaluation
+              {isEditMode ? 'Save changes' : 'Create evaluation'}
             </Button>
           </>
         }
       >
         <div className="space-y-6">
+          {!isEditMode ? (
           <div className="rounded-xl border border-brand/20 bg-brand/5 px-4 py-3 text-sm text-muted-foreground">
             <div className="flex items-start gap-2">
               <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-brand" />
@@ -645,6 +720,7 @@ export function EvaluationManagementView({
               </p>
             </div>
           </div>
+          ) : null}
 
           <section className="space-y-4">
             <h3 className="text-sm font-semibold text-foreground">Candidate & document</h3>
@@ -656,9 +732,11 @@ export function EvaluationManagementView({
                 id="eval-candidate"
                 value={selectedCandidateId}
                 onChange={(value) => {
+                  if (isEditMode) return;
                   setSelectedCandidateId(value);
                   setCreateError(null);
                 }}
+                disabled={isEditMode}
                 options={[
                   { value: '', label: '— Select —' },
                   ...candidateOptions.map((c) => ({
@@ -669,7 +747,7 @@ export function EvaluationManagementView({
               />
             </div>
 
-            {needsRecruiterReview ? (
+            {!isEditMode && needsRecruiterReview ? (
               <div className="flex flex-col gap-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-3 text-sm text-amber-900 sm:flex-row sm:items-center sm:justify-between">
                 <p>
                   Candidate is <strong>AI_SCREENED</strong>. Complete recruiter review to reach{' '}
@@ -690,7 +768,7 @@ export function EvaluationManagementView({
               </div>
             ) : null}
 
-            {selectedCandidate && !canCreateEvaluation && !needsRecruiterReview ? (
+            {!isEditMode && selectedCandidate && !canCreateEvaluation && !needsRecruiterReview ? (
               <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
                 Technical evaluation requires profile status{' '}
                 <strong>RECRUITER_SCREENED</strong>. Current status:{' '}
@@ -698,40 +776,48 @@ export function EvaluationManagementView({
               </div>
             ) : null}
 
-            <FileUpload
-              label="Upload evaluation PDF"
-              accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-              hint={
-                extractingPdf
-                  ? 'Uploading & processing via BesTal API…'
-                  : 'PDF or Word · select candidate first'
-              }
-              onFileSelect={(file) => {
-                if (!extractingPdf) void handlePdfUpload(file);
-              }}
-            />
-            <AiScreeningStatusBanner
-              context="evaluation"
-              status={evaluationAiStatus}
-              errorMessage={evaluationAiError || extractError}
-              retrying={extractingPdf}
-              onRetry={
-                evaluationAiStatus === 'FAILED' && pendingEvaluationFile
-                  ? () => void handlePdfUpload(pendingEvaluationFile)
-                  : undefined
-              }
-            />
-            {extractHint && (
-              <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
-                {extractHint}
-              </div>
+            {!isEditMode ? (
+              <>
+                <FileUpload
+                  label="Upload evaluation PDF"
+                  accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                  hint={
+                    extractingPdf
+                      ? 'Uploading & processing via BesTal API…'
+                      : 'PDF or Word · select candidate first'
+                  }
+                  onFileSelect={(file) => {
+                    if (!extractingPdf) void handlePdfUpload(file);
+                  }}
+                />
+                <AiScreeningStatusBanner
+                  context="evaluation"
+                  status={evaluationAiStatus}
+                  errorMessage={evaluationAiError || extractError}
+                  retrying={extractingPdf}
+                  onRetry={
+                    evaluationAiStatus === 'FAILED' && pendingEvaluationFile
+                      ? () => void handlePdfUpload(pendingEvaluationFile)
+                      : undefined
+                  }
+                />
+                {extractHint && (
+                  <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+                    {extractHint}
+                  </div>
+                )}
+                {extractError && evaluationAiStatus !== 'FAILED' ? (
+                  <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                    <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                    <span>{extractError}</span>
+                  </div>
+                ) : null}
+              </>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                Update scores, recommendation, and summaries. The linked candidate cannot be changed.
+              </p>
             )}
-            {extractError && evaluationAiStatus !== 'FAILED' ? (
-              <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-                <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
-                <span>{extractError}</span>
-              </div>
-            ) : null}
           </section>
 
           <section className="space-y-4 border-t border-border pt-6">

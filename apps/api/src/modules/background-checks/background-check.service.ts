@@ -1,5 +1,5 @@
 import type { FastifyInstance } from 'fastify';
-import type { PrismaClient } from '@prisma/client';
+import type { BackgroundCheckStatus, PrismaClient } from '@prisma/client';
 import type { AuthenticatedUser } from '../../types/index.js';
 import {
   AuthorizationError,
@@ -27,7 +27,11 @@ import type { BgvAnalysisOutput } from '../automation/dto/bgv-analysis.dto.js';
 import { N8nClient } from '../automation/n8n.client.js';
 import { N8N_AUTOMATION_REQUIRED_MESSAGE } from '../automation/automation.constants.js';
 import { readN8nConfig } from '../../services/system-settings.reader.js';
-import { assertCanCreateBackgroundCheck } from '../candidates/candidate-pipeline.js';
+import { assertCanCreateBackgroundCheckForRole } from '../candidates/candidate-pipeline.js';
+import {
+  maybeAutoSubmitSuperAdminCandidate,
+  syncImportedCandidateProfileStatus,
+} from '../candidates/candidate-profile-sync.js';
 import {
   assertBgvConsentConfirmed,
   assertBgvReportUploaded,
@@ -60,6 +64,26 @@ function deriveCandidateBgvProfileStatus(
   if (status === 'CLEAR' || status === 'COMPLETED_CLEAR') return 'BGV_COMPLETE';
   return 'BGV_PENDING';
 }
+
+const BGV_EARLY_WORKFLOW_STATUSES: BackgroundCheckStatus[] = [
+  'NOT_STARTED',
+  'PENDING',
+  'CONSENT_PENDING',
+  'INITIATED',
+];
+
+const BGV_UPLOAD_DOCUMENT_STATUSES: BackgroundCheckStatus[] = [
+  ...BGV_EARLY_WORKFLOW_STATUSES,
+  'IN_PROGRESS',
+  'SUSPENDED',
+  'CONSIDER',
+];
+
+const BGV_CONSENT_ACTION_STATUSES: BackgroundCheckStatus[] = [
+  ...BGV_EARLY_WORKFLOW_STATUSES,
+  'IN_PROGRESS',
+  'SUSPENDED',
+];
 
 const BGV_WORKFLOW_STATUSES = new Set([
   'NOT_STARTED',
@@ -296,7 +320,7 @@ export class BackgroundCheckService {
   ): Promise<BackgroundCheckDto> {
     const organizationId = requireOrganization(authUser);
 
-    await this.validateCandidate(organizationId, input.candidateId);
+    await this.validateCandidate(authUser, organizationId, input.candidateId);
 
     if (input.status) {
       assertRecruiterCannotSetDisposition(input.status);
@@ -356,7 +380,7 @@ export class BackgroundCheckService {
   ): Promise<BackgroundCheckDto> {
     const organizationId = requireOrganization(authUser);
     const existing = await this.getBackgroundCheckOrThrow(organizationId, id);
-    assertBgvStatusIn(existing.status, ['PENDING', 'IN_PROGRESS', 'SUSPENDED'], 'Confirm consent');
+    assertBgvStatusIn(existing.status, BGV_CONSENT_ACTION_STATUSES, 'Confirm consent');
 
     const record = await this.backgroundCheckRepository.update(organizationId, id, {
       consentConfirmedAt: new Date().toISOString(),
@@ -373,7 +397,7 @@ export class BackgroundCheckService {
   ): Promise<BackgroundCheckDto> {
     const organizationId = requireOrganization(authUser);
     const existing = await this.getBackgroundCheckOrThrow(organizationId, id);
-    assertBgvStatusIn(existing.status, ['PENDING', 'IN_PROGRESS', 'SUSPENDED'], 'Assign vendor');
+    assertBgvStatusIn(existing.status, BGV_CONSENT_ACTION_STATUSES, 'Assign vendor');
     assertBgvConsentConfirmed(existing, 'Assign vendor');
 
     const trimmed = provider.trim();
@@ -395,7 +419,11 @@ export class BackgroundCheckService {
   ): Promise<BackgroundCheckDto> {
     const organizationId = requireOrganization(authUser);
     const existing = await this.getBackgroundCheckOrThrow(organizationId, id);
-    assertBgvStatusIn(existing.status, ['PENDING', 'SUSPENDED'], 'Start verification');
+    assertBgvStatusIn(
+      existing.status,
+      ['PENDING', 'SUSPENDED', 'INITIATED'],
+      'Start verification',
+    );
     assertBgvConsentConfirmed(existing, 'Start verification');
     assertBgvVendorAssigned(existing, 'Start verification');
 
@@ -422,7 +450,7 @@ export class BackgroundCheckService {
     const existing = await this.getBackgroundCheckOrThrow(organizationId, id);
     assertBgvStatusIn(
       existing.status,
-      ['PENDING', 'IN_PROGRESS', 'SUSPENDED', 'CONSIDER'],
+      BGV_UPLOAD_DOCUMENT_STATUSES,
       'Upload document',
     );
 
@@ -828,9 +856,39 @@ export class BackgroundCheckService {
       },
       data: {
         bgvStatus: status,
+      },
+    });
+
+    const candidate = await this.prisma.candidate.findFirst({
+      where: {
+        id: BigInt(candidateId),
+        organizationId: BigInt(organizationId),
+        deletedAt: null,
+      },
+      select: { sourceCandidateId: true },
+    });
+
+    if (candidate?.sourceCandidateId?.trim()) {
+      await syncImportedCandidateProfileStatus(this.prisma, organizationId, candidateId);
+      return;
+    }
+
+    await this.prisma.candidate.update({
+      where: {
+        id: BigInt(candidateId),
+        organizationId: BigInt(organizationId),
+      },
+      data: {
         profileStatus: deriveCandidateBgvProfileStatus(status),
       },
     });
+
+    await maybeAutoSubmitSuperAdminCandidate(
+      this.prisma,
+      this.config,
+      organizationId,
+      candidateId,
+    );
   }
 
   private async toDetailDto(
@@ -885,6 +943,7 @@ export class BackgroundCheckService {
   }
 
   private async validateCandidate(
+    authUser: AuthenticatedUser,
     organizationId: number,
     candidateId: number,
   ): Promise<void> {
@@ -901,6 +960,7 @@ export class BackgroundCheckService {
         resumeDocumentId: true,
         evaluationStatus: true,
         bgvStatus: true,
+        sourceCandidateId: true,
         clientBillRate: true,
         availabilityStatus: true,
         availableFrom: true,
@@ -912,7 +972,7 @@ export class BackgroundCheckService {
       throw new BadRequestError('Candidate not found');
     }
 
-    assertCanCreateBackgroundCheck(candidate);
+    assertCanCreateBackgroundCheckForRole(authUser.role, candidate);
   }
 
   private async enqueueBgvAnalysisJob(params: {
@@ -923,7 +983,7 @@ export class BackgroundCheckService {
   }): Promise<BgvAnalysisJobAccepted> {
     const { authUser, organizationId, candidateId, file } = params;
 
-    await this.validateCandidate(organizationId, candidateId);
+    await this.validateCandidate(authUser, organizationId, candidateId);
 
     this.storageService.validateFile(UPLOAD_CATEGORIES.BACKGROUND_CHECK, {
       mimeType: file.mimeType,

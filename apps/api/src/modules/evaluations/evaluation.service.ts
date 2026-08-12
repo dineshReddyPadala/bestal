@@ -24,7 +24,11 @@ import type { EvaluationAnalysisOutput } from '../automation/dto/evaluation-anal
 import { N8nClient } from '../automation/n8n.client.js';
 import { N8N_AUTOMATION_REQUIRED_MESSAGE } from '../automation/automation.constants.js';
 import { readN8nConfig } from '../../services/system-settings.reader.js';
-import { assertCanCreateEvaluation } from '../candidates/candidate-pipeline.js';
+import { assertCanCreateEvaluationForRole } from '../candidates/candidate-pipeline.js';
+import {
+  maybeAutoSubmitSuperAdminCandidate,
+  syncImportedCandidateProfileStatus,
+} from '../candidates/candidate-profile-sync.js';
 import { recalculateCandidateScoresFromEvaluations } from './candidate-score.service.js';
 import {
   mapEvaluationToDto,
@@ -285,7 +289,7 @@ export class EvaluationService {
     input: CreateEvaluationInput,
   ): Promise<EvaluationDto> {
     const organizationId = requireOrganization(authUser);
-    await this.validateCandidate(organizationId, input.candidateId);
+    await this.validateCandidate(authUser, organizationId, input.candidateId);
 
     const evaluation = await this.evaluationRepository.create(organizationId, input);
 
@@ -336,6 +340,12 @@ export class EvaluationService {
         existing.candidate.lastName,
         id,
         authUser.id,
+      );
+    } else {
+      await syncImportedCandidateProfileStatus(
+        this.prisma,
+        organizationId,
+        Number(existing.candidateId),
       );
     }
 
@@ -478,7 +488,7 @@ export class EvaluationService {
   }): Promise<EvaluationAnalysisJobAccepted> {
     const { authUser, organizationId, candidateId, file } = params;
 
-    await this.validateCandidate(organizationId, candidateId);
+    await this.validateCandidate(authUser, organizationId, candidateId);
 
     this.storageService.validateFile(UPLOAD_CATEGORIES.EVALUATION, {
       mimeType: file.mimeType,
@@ -627,6 +637,18 @@ export class EvaluationService {
       triggeredByUserId,
       webAppUrl: this.webAppUrl,
     });
+
+    await syncImportedCandidateProfileStatus(
+      this.prisma,
+      organizationId,
+      Number(candidateId),
+    );
+    await maybeAutoSubmitSuperAdminCandidate(
+      this.prisma,
+      this.config,
+      organizationId,
+      Number(candidateId),
+    );
   }
 
   private async getEvaluationOrThrow(organizationId: number, id: number) {
@@ -638,6 +660,7 @@ export class EvaluationService {
   }
 
   private async validateCandidate(
+    authUser: AuthenticatedUser,
     organizationId: number,
     candidateId: number,
   ): Promise<void> {
@@ -654,6 +677,7 @@ export class EvaluationService {
         resumeDocumentId: true,
         evaluationStatus: true,
         bgvStatus: true,
+        sourceCandidateId: true,
         clientBillRate: true,
         availabilityStatus: true,
         availableFrom: true,
@@ -665,7 +689,7 @@ export class EvaluationService {
       throw new BadRequestError('Candidate not found');
     }
 
-    assertCanCreateEvaluation(candidate);
+    assertCanCreateEvaluationForRole(authUser.role, candidate);
   }
 }
 

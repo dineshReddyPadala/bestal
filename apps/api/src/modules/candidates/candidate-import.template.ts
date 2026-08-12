@@ -13,10 +13,17 @@ import {
   IMPORT_RECOMMENDATION_VALUES,
   IMPORT_SCORE_SOURCES,
   IMPORT_SKILL_COMMUNITIES,
+  IMPORT_TIMEZONES,
   IMPORT_WORKBOOK_SHEETS,
   SCORES_SHEET_COLUMNS,
   SKILLS_SHEET_COLUMNS,
 } from '@bestal/shared-utils';
+
+const DROPDOWN_HEADER_FILL: ExcelJS.Fill = {
+  type: 'pattern',
+  pattern: 'solid',
+  fgColor: { argb: 'FFFFF9C4' },
+};
 
 function styleHeader(row: ExcelJS.Row): void {
   row.font = { bold: true };
@@ -27,14 +34,31 @@ function styleHeader(row: ExcelJS.Row): void {
   };
 }
 
+function highlightDropdownHeaders(
+  sheet: ExcelJS.Worksheet,
+  headers: readonly string[],
+  columnKeys: readonly string[],
+): void {
+  for (const key of columnKeys) {
+    const index = headers.indexOf(key);
+    if (index >= 0) {
+      sheet.getCell(1, index + 1).fill = DROPDOWN_HEADER_FILL;
+    }
+  }
+}
+
 function addSheetWithHeaders(
   workbook: ExcelJS.Workbook,
   name: string,
   headers: readonly string[],
+  dropdownColumns: readonly string[] = [],
 ): ExcelJS.Worksheet {
   const sheet = workbook.addWorksheet(name);
   sheet.addRow([...headers]);
   styleHeader(sheet.getRow(1));
+  if (dropdownColumns.length) {
+    highlightDropdownHeaders(sheet, headers, dropdownColumns);
+  }
   sheet.views = [{ state: 'frozen', ySplit: 1 }];
   sheet.columns = headers.map((header) => ({
     header,
@@ -48,7 +72,7 @@ function addMetadataSheet(
   workbook: ExcelJS.Workbook,
   name: string,
   values: readonly string[],
-): void {
+): ExcelJS.Worksheet {
   const sheet = workbook.addWorksheet(name);
   sheet.addRow(['value']);
   styleHeader(sheet.getRow(1));
@@ -57,17 +81,62 @@ function addMetadataSheet(
   }
   sheet.getColumn(1).width = 28;
   sheet.views = [{ state: 'frozen', ySplit: 1 }];
+  sheet.state = 'veryHidden';
+  return sheet;
 }
 
-export async function buildCandidateImportTemplate(): Promise<Buffer> {
+function applyListValidation(
+  sheet: ExcelJS.Worksheet,
+  columnKey: string,
+  headers: readonly string[],
+  sourceSheetName: string,
+  sourceRowCount: number,
+  options?: { allowBlank?: boolean; fromRow?: number; toRow?: number },
+): void {
+  const colIndex = headers.indexOf(columnKey) + 1;
+  if (colIndex <= 0) return;
+  const allowBlank = options?.allowBlank ?? true;
+  const fromRow = options?.fromRow ?? 2;
+  const toRow = options?.toRow ?? 1002;
+  const formula = `'${sourceSheetName}'!$A$2:$A$${sourceRowCount}`;
+  for (let row = fromRow; row <= toRow; row += 1) {
+    sheet.getCell(row, colIndex).dataValidation = {
+      type: 'list',
+      allowBlank,
+      formulae: [formula],
+    };
+  }
+}
+
+export type CandidateImportTemplateOptions = {
+  skillCommunities?: readonly string[];
+  timezones?: readonly string[];
+};
+
+export async function buildCandidateImportTemplate(
+  options: CandidateImportTemplateOptions = {},
+): Promise<Buffer> {
+  const skillCommunities =
+    options.skillCommunities?.length ? options.skillCommunities : IMPORT_SKILL_COMMUNITIES;
+  const timezones = options.timezones?.length ? options.timezones : IMPORT_TIMEZONES;
+
   const workbook = new ExcelJS.Workbook();
   workbook.creator = 'BesTal';
   workbook.created = new Date();
+
+  const candidateDropdownColumns = [
+    'source',
+    'availability_status',
+    'currency',
+    'skill_community',
+    'timezone',
+  ] as const;
 
   const candidateSheet = addSheetWithHeaders(
     workbook,
     IMPORT_WORKBOOK_SHEETS.CANDIDATE,
     CANDIDATE_SHEET_COLUMNS,
+    candidateDropdownColumns,
   );
   candidateSheet.addRow({
     candidate_id: '1001',
@@ -81,7 +150,7 @@ export async function buildCandidateImportTemplate(): Promise<Buffer> {
     headline: 'Senior Full Stack Engineer',
     years_experience: 8,
     primary_role: 'Full Stack Engineer',
-    skill_community: 'Full Stack',
+    skill_community: skillCommunities[0] ?? 'Full Stack',
     summary: 'Experienced engineer with strong product sense.',
     ai_summary: '',
     strengths: 'React|System Design|Communication',
@@ -107,6 +176,7 @@ export async function buildCandidateImportTemplate(): Promise<Buffer> {
     workbook,
     IMPORT_WORKBOOK_SHEETS.SKILLS,
     SKILLS_SHEET_COLUMNS,
+    ['proficiency'],
   );
   skillsSheet.addRow({
     candidate_id: '1001',
@@ -116,19 +186,12 @@ export async function buildCandidateImportTemplate(): Promise<Buffer> {
     years_experience: 6,
     is_primary: 'Yes',
   });
-  skillsSheet.addRow({
-    candidate_id: '1001',
-    skill_name: 'Node.js',
-    skill_category: 'Backend',
-    proficiency: 'Advanced',
-    years_experience: 5,
-    is_primary: 'No',
-  });
 
   const evaluationSheet = addSheetWithHeaders(
     workbook,
     IMPORT_WORKBOOK_SHEETS.EVALUATION,
     EVALUATION_SHEET_COLUMNS,
+    ['evaluation_type', 'recommendation'],
   );
   evaluationSheet.addRow({
     candidate_id: '1001',
@@ -147,10 +210,21 @@ export async function buildCandidateImportTemplate(): Promise<Buffer> {
     comments: '',
   });
 
+  const bgvDropdownColumns = [
+    'bgv_status',
+    'id_check_status',
+    'address_check_status',
+    'employment_check_status',
+    'education_check_status',
+    'criminal_check_status',
+    'reference_check_status',
+  ] as const;
+
   const bgvSheet = addSheetWithHeaders(
     workbook,
     IMPORT_WORKBOOK_SHEETS.BGV,
     BGV_SHEET_COLUMNS,
+    bgvDropdownColumns,
   );
   bgvSheet.addRow({
     candidate_id: '1001',
@@ -172,6 +246,7 @@ export async function buildCandidateImportTemplate(): Promise<Buffer> {
     workbook,
     IMPORT_WORKBOOK_SHEETS.SCORES,
     SCORES_SHEET_COLUMNS,
+    ['score_source'],
   );
   scoresSheet.addRow({
     candidate_id: '1001',
@@ -186,38 +261,52 @@ export async function buildCandidateImportTemplate(): Promise<Buffer> {
     score_date: '2026-07-15',
   });
 
-  addMetadataSheet(
+  const communitySheet = addMetadataSheet(
     workbook,
     IMPORT_WORKBOOK_SHEETS.SKILL_COMMUNITIES,
-    IMPORT_SKILL_COMMUNITIES,
+    skillCommunities,
   );
-  addMetadataSheet(
+  const availabilitySheet = addMetadataSheet(
     workbook,
     IMPORT_WORKBOOK_SHEETS.AVAILABILITY_STATUS,
     IMPORT_AVAILABILITY_STATUSES,
   );
-  addMetadataSheet(
+  const evaluationTypesSheet = addMetadataSheet(
     workbook,
     IMPORT_WORKBOOK_SHEETS.EVALUATION_TYPES,
     IMPORT_EVALUATION_TYPES,
   );
-  addMetadataSheet(workbook, IMPORT_WORKBOOK_SHEETS.BGV_STATUS, IMPORT_BGV_STATUSES);
-  addMetadataSheet(
+  const bgvStatusSheet = addMetadataSheet(
+    workbook,
+    IMPORT_WORKBOOK_SHEETS.BGV_STATUS,
+    IMPORT_BGV_STATUSES,
+  );
+  const sourceSheet = addMetadataSheet(
     workbook,
     IMPORT_WORKBOOK_SHEETS.CANDIDATE_SOURCES,
     IMPORT_CANDIDATE_SOURCES,
   );
-  addMetadataSheet(
+  const proficiencySheet = addMetadataSheet(
     workbook,
     IMPORT_WORKBOOK_SHEETS.PROFICIENCY_LEVELS,
     IMPORT_PROFICIENCY_LEVELS,
   );
-  addMetadataSheet(
+  const recommendationSheet = addMetadataSheet(
     workbook,
     IMPORT_WORKBOOK_SHEETS.RECOMMENDATION_VALUES,
     IMPORT_RECOMMENDATION_VALUES,
   );
-  addMetadataSheet(workbook, IMPORT_WORKBOOK_SHEETS.CURRENCY, IMPORT_CURRENCIES);
+  const currencySheet = addMetadataSheet(
+    workbook,
+    IMPORT_WORKBOOK_SHEETS.CURRENCY,
+    IMPORT_CURRENCIES,
+  );
+  const timezoneSheet = addMetadataSheet(
+    workbook,
+    IMPORT_WORKBOOK_SHEETS.TIMEZONES,
+    timezones,
+  );
+  const scoreSourcesSheet = addMetadataSheet(workbook, 'Score Sources_values', IMPORT_SCORE_SOURCES);
 
   const instructions = workbook.addWorksheet(IMPORT_WORKBOOK_SHEETS.IMPORT_INSTRUCTIONS);
   instructions.addRow(['Instruction']);
@@ -229,68 +318,73 @@ export async function buildCandidateImportTemplate(): Promise<Buffer> {
   instructions.getColumn(1).width = 110;
   instructions.views = [{ state: 'frozen', ySplit: 1 }];
 
-  // Data validations / dropdowns for key Candidate columns
-  const sourceSheet = workbook.getWorksheet(IMPORT_WORKBOOK_SHEETS.CANDIDATE_SOURCES)!;
-  const availabilitySheet = workbook.getWorksheet(IMPORT_WORKBOOK_SHEETS.AVAILABILITY_STATUS)!;
-  const currencySheet = workbook.getWorksheet(IMPORT_WORKBOOK_SHEETS.CURRENCY)!;
-  const communitySheet = workbook.getWorksheet(IMPORT_WORKBOOK_SHEETS.SKILL_COMMUNITIES)!;
-
-  candidateSheet.getColumn('source').eachCell({ includeEmpty: true }, (cell, rowNumber) => {
-    if (rowNumber === 1) return;
-    cell.dataValidation = {
-      type: 'list',
-      allowBlank: false,
-      formulae: [`'${IMPORT_WORKBOOK_SHEETS.CANDIDATE_SOURCES}'!$A$2:$A$${sourceSheet.rowCount}`],
-    };
-  });
-  candidateSheet.getColumn('availability_status').eachCell({ includeEmpty: true }, (cell, rowNumber) => {
-    if (rowNumber === 1) return;
-    cell.dataValidation = {
-      type: 'list',
-      allowBlank: true,
-      formulae: [`'${IMPORT_WORKBOOK_SHEETS.AVAILABILITY_STATUS}'!$A$2:$A$${availabilitySheet.rowCount}`],
-    };
-  });
-  candidateSheet.getColumn('currency').eachCell({ includeEmpty: true }, (cell, rowNumber) => {
-    if (rowNumber === 1) return;
-    cell.dataValidation = {
-      type: 'list',
-      allowBlank: true,
-      formulae: [`'${IMPORT_WORKBOOK_SHEETS.CURRENCY}'!$A$2:$A$${currencySheet.rowCount}`],
-    };
-  });
-  candidateSheet.getColumn('skill_community').eachCell({ includeEmpty: true }, (cell, rowNumber) => {
-    if (rowNumber === 1) return;
-    cell.dataValidation = {
-      type: 'list',
-      allowBlank: true,
-      formulae: [`'${IMPORT_WORKBOOK_SHEETS.SKILL_COMMUNITIES}'!$A$2:$A$${communitySheet.rowCount}`],
-    };
-  });
-
-  // Pre-apply dropdowns for a generous preview/edit range
-  for (let row = 2; row <= 1002; row += 1) {
-    candidateSheet.getCell(row, CANDIDATE_SHEET_COLUMNS.indexOf('source') + 1).dataValidation = {
-      type: 'list',
-      allowBlank: false,
-      formulae: [`'${IMPORT_WORKBOOK_SHEETS.CANDIDATE_SOURCES}'!$A$2:$A$${sourceSheet.rowCount}`],
-    };
-    candidateSheet.getCell(row, CANDIDATE_SHEET_COLUMNS.indexOf('availability_status') + 1).dataValidation = {
-      type: 'list',
-      allowBlank: true,
-      formulae: [`'${IMPORT_WORKBOOK_SHEETS.AVAILABILITY_STATUS}'!$A$2:$A$${availabilitySheet.rowCount}`],
-    };
-    candidateSheet.getCell(row, CANDIDATE_SHEET_COLUMNS.indexOf('currency') + 1).dataValidation = {
-      type: 'list',
-      allowBlank: true,
-      formulae: [`'${IMPORT_WORKBOOK_SHEETS.CURRENCY}'!$A$2:$A$${currencySheet.rowCount}`],
-    };
-    candidateSheet.getCell(row, CANDIDATE_SHEET_COLUMNS.indexOf('skill_community') + 1).dataValidation = {
-      type: 'list',
-      allowBlank: true,
-      formulae: [`'${IMPORT_WORKBOOK_SHEETS.SKILL_COMMUNITIES}'!$A$2:$A$${communitySheet.rowCount}`],
-    };
+  for (const column of candidateDropdownColumns) {
+    applyListValidation(
+      candidateSheet,
+      column,
+      CANDIDATE_SHEET_COLUMNS,
+      column === 'source'
+        ? IMPORT_WORKBOOK_SHEETS.CANDIDATE_SOURCES
+        : column === 'availability_status'
+          ? IMPORT_WORKBOOK_SHEETS.AVAILABILITY_STATUS
+          : column === 'currency'
+            ? IMPORT_WORKBOOK_SHEETS.CURRENCY
+            : column === 'skill_community'
+              ? IMPORT_WORKBOOK_SHEETS.SKILL_COMMUNITIES
+              : IMPORT_WORKBOOK_SHEETS.TIMEZONES,
+      column === 'source'
+        ? sourceSheet.rowCount
+        : column === 'availability_status'
+          ? availabilitySheet.rowCount
+          : column === 'currency'
+            ? currencySheet.rowCount
+            : column === 'skill_community'
+              ? communitySheet.rowCount
+              : timezoneSheet.rowCount,
+      { allowBlank: column !== 'source' },
+    );
   }
+
+  applyListValidation(
+    skillsSheet,
+    'proficiency',
+    SKILLS_SHEET_COLUMNS,
+    IMPORT_WORKBOOK_SHEETS.PROFICIENCY_LEVELS,
+    proficiencySheet.rowCount,
+  );
+
+  applyListValidation(
+    evaluationSheet,
+    'evaluation_type',
+    EVALUATION_SHEET_COLUMNS,
+    IMPORT_WORKBOOK_SHEETS.EVALUATION_TYPES,
+    evaluationTypesSheet.rowCount,
+  );
+  applyListValidation(
+    evaluationSheet,
+    'recommendation',
+    EVALUATION_SHEET_COLUMNS,
+    IMPORT_WORKBOOK_SHEETS.RECOMMENDATION_VALUES,
+    recommendationSheet.rowCount,
+  );
+
+  for (const column of bgvDropdownColumns) {
+    applyListValidation(
+      bgvSheet,
+      column,
+      BGV_SHEET_COLUMNS,
+      IMPORT_WORKBOOK_SHEETS.BGV_STATUS,
+      bgvStatusSheet.rowCount,
+    );
+  }
+
+  applyListValidation(
+    scoresSheet,
+    'score_source',
+    SCORES_SHEET_COLUMNS,
+    'Score Sources_values',
+    scoreSourcesSheet.rowCount,
+  );
 
   const buffer = await workbook.xlsx.writeBuffer();
   return Buffer.from(buffer);

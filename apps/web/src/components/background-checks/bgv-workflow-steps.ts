@@ -20,6 +20,7 @@ export function getBgvRecruiterStep(detail: BackgroundCheckDto): BgvRecruiterSte
   if (!detail.consentConfirmedAt) return 'consent';
   if ((detail.supportingDocumentCount ?? 0) < 1) return 'docs';
   if (!detail.provider?.trim()) return 'vendor';
+  // PENDING, CONSENT_PENDING, INITIATED, NOT_STARTED — waiting to start vendor verification.
   if (detail.status !== 'IN_PROGRESS' && detail.status !== 'SUSPENDED') return 'start';
   // After start: report upload (AI runs on upload), then review AI summary.
   if (!detail.hasReportDocument && !detail.aiSummary?.trim()) return 'report';

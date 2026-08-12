@@ -107,6 +107,7 @@ export function buildCandidateCreateData(
 
 export function mapCandidateExtendedDto(candidate: {
   oorwinCandidateId: string | null;
+  sourceCandidateId?: string | null;
   displayName: string | null;
   primaryRole: string | null;
   currentCompany: string | null;
@@ -140,6 +141,7 @@ export function mapCandidateExtendedDto(candidate: {
 }) {
   return {
     oorwinCandidateId: candidate.oorwinCandidateId,
+    sourceCandidateId: candidate.sourceCandidateId ?? null,
     displayName: candidate.displayName,
     primaryRole: candidate.primaryRole,
     currentCompany: candidate.currentCompany,

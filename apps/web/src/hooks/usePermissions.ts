@@ -18,6 +18,7 @@ export function usePermissions() {
     canDeleteCandidates: has('candidates:delete'),
     canApproveCandidates: has('candidates:approve'),
     canWriteCandidates: has('candidates:write'),
+      canRunAiScreening: has('candidates:ai_screening'),
       canEditCandidatesLimited: has('candidates:edit_limited'),
       canViewPayRate: has('candidates:view_pay_rate'),
       canManageClients: has('clients:write'),

@@ -1,4 +1,5 @@
 import type { Evaluation, PrismaClient } from '@prisma/client';
+import { syncImportedCandidateProfileStatus } from '../candidates/candidate-profile-sync.js';
 
 type ScoreFields = Pick<
   Evaluation,
@@ -102,9 +103,29 @@ export async function recalculateCandidateScoresFromEvaluations(
       technicalScore: latest.technicalScore,
       communicationScore: latest.communicationScore,
       evaluationStatus,
-      profileStatus: 'EVALUATION_COMPLETE',
     },
   });
+
+  const imported = await prisma.candidate.findFirst({
+    where: {
+      id: BigInt(candidateId),
+      organizationId: BigInt(organizationId),
+      deletedAt: null,
+    },
+    select: { sourceCandidateId: true },
+  });
+
+  if (imported?.sourceCandidateId?.trim()) {
+    await syncImportedCandidateProfileStatus(prisma, organizationId, candidateId);
+  } else {
+    await prisma.candidate.update({
+      where: {
+        id: BigInt(candidateId),
+        organizationId: BigInt(organizationId),
+      },
+      data: { profileStatus: 'EVALUATION_COMPLETE' },
+    });
+  }
 
   return { bestalScore, evaluationStatus };
 }

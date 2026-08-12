@@ -67,6 +67,7 @@ export interface CandidateDto {
   skills: CandidateSkillDto[];
   createdById: number | null;
   oorwinCandidateId: string | null;
+  sourceCandidateId: string | null;
   displayName: string | null;
   primaryRole: string | null;
   currentCompany: string | null;

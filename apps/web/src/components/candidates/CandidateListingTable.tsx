@@ -35,8 +35,14 @@ type CandidateRowActionsProps = {
 export function CandidateRowActions({ basePath, record, onAction }: CandidateRowActionsProps) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
-  const { canApproveCandidates, canWriteCandidates, canUploadEvaluation, canUploadBgv, canDeleteCandidates } =
-    usePermissions();
+  const {
+    canApproveCandidates,
+    canWriteCandidates,
+    canRunAiScreening,
+    canUploadEvaluation,
+    canUploadBgv,
+    canDeleteCandidates,
+  } = usePermissions();
 
   useEffect(() => {
     if (!open) return;
@@ -52,10 +58,19 @@ export function CandidateRowActions({ basePath, record, onAction }: CandidateRow
   ];
 
   if (canWriteCandidates) {
-    actions.push(
-      { label: 'Edit', icon: <Pencil className="h-3.5 w-3.5" />, onClick: () => onAction('Edit') },
-      { label: 'Run AI', icon: <Sparkles className="h-3.5 w-3.5" />, onClick: () => onAction('Run AI') },
-    );
+    actions.push({
+      label: 'Edit',
+      icon: <Pencil className="h-3.5 w-3.5" />,
+      onClick: () => onAction('Edit'),
+    });
+  }
+
+  if (canRunAiScreening) {
+    actions.push({
+      label: 'Run AI',
+      icon: <Sparkles className="h-3.5 w-3.5" />,
+      onClick: () => onAction('Run AI'),
+    });
   }
 
   if (canUploadEvaluation) {

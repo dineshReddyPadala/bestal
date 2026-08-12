@@ -60,9 +60,13 @@ import {
   type WizardTabId,
 } from './candidate-wizard-schema';
 
+export type CandidateWizardMode = 'superAdminCreate' | 'importedEdit';
+
 type CandidateWizardProps = {
   entryMethod: CandidateEntryMethod;
   initialTab?: WizardTabId;
+  /** Controls super-admin create vs admin/recruiter imported edit restrictions. */
+  wizardMode?: CandidateWizardMode;
   /** When true, do not restore a browser-stored draft (fresh Add Candidate). */
   freshStart?: boolean;
   initialFormValues?: Partial<CandidateWizardFormValues>;
@@ -205,11 +209,13 @@ function BasicDetailsTab({
   draftCandidateId,
   onAiScreeningComplete,
   onToast,
+  allowAiScreening,
 }: {
   pendingUploads: MutableRefObject<CandidateWizardUploads>;
   draftCandidateId?: number | null;
   onAiScreeningComplete: (draftId: number, values: Partial<CandidateWizardFormValues>) => void;
   onToast: (message: string) => void;
+  allowAiScreening: boolean;
 }) {
   const {
     register,
@@ -314,56 +320,68 @@ function BasicDetailsTab({
         </div>
       </SectionCard>
 
-      <SectionCard title="Resume & AI Screening">
-        <div className="space-y-4">
-          <FileUpload
-            label="Drag & Drop Resume"
-            accept=".pdf,.doc,.docx"
-            hint="PDF or DOCX — upload, then run AI to extract and prefill candidate details"
-            onFileSelect={handleResumeSelect}
-          />
+      {allowAiScreening ? (
+        <SectionCard title="Resume & AI Screening">
+          <div className="space-y-4">
+            <FileUpload
+              label="Drag & Drop Resume"
+              accept=".pdf,.doc,.docx"
+              hint="PDF or DOCX — upload, then run AI to extract and prefill candidate details"
+              onFileSelect={handleResumeSelect}
+            />
+            {resumeFileName ? (
+              <div className="flex flex-wrap items-center gap-3 rounded-lg border border-emerald-200 bg-success/10 px-3 py-2 text-sm text-emerald-800">
+                <CheckCircle2 className="h-4 w-4 shrink-0" />
+                <span>Resume Uploaded — {resumeFileName}</span>
+              </div>
+            ) : null}
+            <AiScreeningStatusBanner
+              status={aiScreening.status}
+              errorMessage={aiScreening.errorMessage ?? error}
+              retrying={aiScreening.isRunning}
+              onRetry={
+                aiScreening.status === 'FAILED' && pendingUploads.current.resume
+                  ? () => void runAiScreening()
+                  : undefined
+              }
+            />
+            {error && aiScreening.status !== 'FAILED' ? (
+              <p className="text-sm text-destructive" role="alert">
+                {error}
+              </p>
+            ) : null}
+            <Button
+              type="button"
+              variant="primary"
+              size="sm"
+              disabled={!resumeFileName || aiScreening.isRunning}
+              onClick={() => void runAiScreening()}
+            >
+              {aiScreening.isRunning ? (
+                <>
+                  <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                  Running AI Screening…
+                </>
+              ) : (
+                <>
+                  <Sparkles className="mr-1.5 h-3.5 w-3.5" />
+                  Run AI Screening
+                </>
+              )}
+            </Button>
+          </div>
+        </SectionCard>
+      ) : (
+        <SectionCard title="Resume">
+          <p className="text-sm text-muted-foreground">
+            Resume and AI screening are managed during super-admin onboarding. Update profile fields
+            below for imported candidates.
+          </p>
           {resumeFileName ? (
-            <div className="flex flex-wrap items-center gap-3 rounded-lg border border-emerald-200 bg-success/10 px-3 py-2 text-sm text-emerald-800">
-              <CheckCircle2 className="h-4 w-4 shrink-0" />
-              <span>Resume Uploaded — {resumeFileName}</span>
-            </div>
+            <p className="mt-2 text-sm text-muted-foreground">Resume on file: {resumeFileName}</p>
           ) : null}
-          <AiScreeningStatusBanner
-            status={aiScreening.status}
-            errorMessage={aiScreening.errorMessage ?? error}
-            retrying={aiScreening.isRunning}
-            onRetry={
-              aiScreening.status === 'FAILED' && pendingUploads.current.resume
-                ? () => void runAiScreening()
-                : undefined
-            }
-          />
-          {error && aiScreening.status !== 'FAILED' ? (
-            <p className="text-sm text-destructive" role="alert">
-              {error}
-            </p>
-          ) : null}
-          <Button
-            type="button"
-            variant="primary"
-            size="sm"
-            disabled={!resumeFileName || aiScreening.isRunning}
-            onClick={() => void runAiScreening()}
-          >
-            {aiScreening.isRunning ? (
-              <>
-                <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-                Running AI Screening…
-              </>
-            ) : (
-              <>
-                <Sparkles className="mr-1.5 h-3.5 w-3.5" />
-                Run AI Screening
-              </>
-            )}
-          </Button>
-        </div>
-      </SectionCard>
+        </SectionCard>
+      )}
     </div>
   );
 }
@@ -707,10 +725,12 @@ function EvaluationTab({
   pendingUploads,
   draftCandidateId,
   onToast,
+  allowAiAnalysis,
 }: {
   pendingUploads: MutableRefObject<CandidateWizardUploads>;
   draftCandidateId?: number | null;
   onToast: (message: string) => void;
+  allowAiAnalysis: boolean;
 }) {
   const { register, setValue, watch } = useFormContext<CandidateWizardFormValues>();
   const [error, setError] = useState<string | null>(null);
@@ -805,63 +825,75 @@ function EvaluationTab({
 
   return (
     <div className="space-y-4">
-      <SectionCard title="Evaluation document">
-        <div className="space-y-4">
-          <FileUpload
-            label="Upload evaluation PDF"
-            accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-            hint={
-              extracting
-                ? 'Uploading & processing via BesTal API…'
-                : 'PDF or Word — upload, then run AI to prefill scores and summary'
-            }
-            onFileSelect={(file) => {
-              if (!extracting) handleEvaluationSelect(file);
-            }}
-          />
+      {allowAiAnalysis ? (
+        <SectionCard title="Evaluation document">
+          <div className="space-y-4">
+            <FileUpload
+              label="Upload evaluation PDF"
+              accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+              hint={
+                extracting
+                  ? 'Uploading & processing via BesTal API…'
+                  : 'PDF or Word — upload, then run AI to prefill scores and summary'
+              }
+              onFileSelect={(file) => {
+                if (!extracting) handleEvaluationSelect(file);
+              }}
+            />
+            {evaluationFileName ? (
+              <div className="flex flex-wrap items-center gap-3 rounded-lg border border-emerald-200 bg-success/10 px-3 py-2 text-sm text-emerald-800">
+                <CheckCircle2 className="h-4 w-4 shrink-0" />
+                <span>Evaluation Uploaded — {evaluationFileName}</span>
+              </div>
+            ) : null}
+            <AiScreeningStatusBanner
+              context="evaluation"
+              status={evaluationAi.status}
+              errorMessage={evaluationAi.errorMessage || error}
+              retrying={extracting}
+              onRetry={
+                evaluationAi.status === 'FAILED'
+                  ? () => void runEvaluationAiScreening()
+                  : undefined
+              }
+            />
+            {error && evaluationAi.status !== 'FAILED' ? (
+              <p className="text-sm text-destructive" role="alert">
+                {error}
+              </p>
+            ) : null}
+            <Button
+              type="button"
+              variant="primary"
+              size="sm"
+              disabled={!evaluationFileName || extracting}
+              onClick={() => void runEvaluationAiScreening()}
+            >
+              {extracting ? (
+                <>
+                  <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                  Running AI Screening…
+                </>
+              ) : (
+                <>
+                  <Sparkles className="mr-1.5 h-3.5 w-3.5" />
+                  Run AI Screening
+                </>
+              )}
+            </Button>
+          </div>
+        </SectionCard>
+      ) : (
+        <SectionCard title="Evaluation">
+          <p className="text-sm text-muted-foreground">
+            Update the imported evaluation record below. New evaluations and AI analysis are not
+            available for imported candidates.
+          </p>
           {evaluationFileName ? (
-            <div className="flex flex-wrap items-center gap-3 rounded-lg border border-emerald-200 bg-success/10 px-3 py-2 text-sm text-emerald-800">
-              <CheckCircle2 className="h-4 w-4 shrink-0" />
-              <span>Evaluation Uploaded — {evaluationFileName}</span>
-            </div>
+            <p className="mt-2 text-sm text-muted-foreground">Document on file: {evaluationFileName}</p>
           ) : null}
-          <AiScreeningStatusBanner
-            context="evaluation"
-            status={evaluationAi.status}
-            errorMessage={evaluationAi.errorMessage || error}
-            retrying={extracting}
-            onRetry={
-              evaluationAi.status === 'FAILED'
-                ? () => void runEvaluationAiScreening()
-                : undefined
-            }
-          />
-          {error && evaluationAi.status !== 'FAILED' ? (
-            <p className="text-sm text-destructive" role="alert">
-              {error}
-            </p>
-          ) : null}
-          <Button
-            type="button"
-            variant="primary"
-            size="sm"
-            disabled={!evaluationFileName || extracting}
-            onClick={() => void runEvaluationAiScreening()}
-          >
-            {extracting ? (
-              <>
-                <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-                Running AI Screening…
-              </>
-            ) : (
-              <>
-                <Sparkles className="mr-1.5 h-3.5 w-3.5" />
-                Run AI Screening
-              </>
-            )}
-          </Button>
-        </div>
-      </SectionCard>
+        </SectionCard>
+      )}
 
       <SectionCard title="Evaluator details">
         <div className="grid gap-4 sm:grid-cols-2">
@@ -989,10 +1021,12 @@ function BackgroundCheckTab({
   pendingUploads,
   draftCandidateId,
   onToast,
+  allowAiAnalysis,
 }: {
   pendingUploads: MutableRefObject<CandidateWizardUploads>;
   draftCandidateId?: number | null;
   onToast: (message: string) => void;
+  allowAiAnalysis: boolean;
 }) {
   const { register, setValue, watch } = useFormContext<CandidateWizardFormValues>();
   const [error, setError] = useState<string | null>(null);
@@ -1091,17 +1125,19 @@ function BackgroundCheckTab({
 
   return (
     <div className="space-y-4">
-      <div className="rounded-xl border border-brand/20 bg-brand/5 px-4 py-3 text-sm text-muted-foreground">
-        <div className="flex items-start gap-2">
-          <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-brand" />
-          <p>
-            Upload the vendor BGV report and run AI analysis. When n8n is configured, BesTal extracts
-            check statuses, updates the BGV record, syncs the candidate badge, and notifies admins.
-          </p>
-        </div>
-      </div>
+      {allowAiAnalysis ? (
+        <>
+          <div className="rounded-xl border border-brand/20 bg-brand/5 px-4 py-3 text-sm text-muted-foreground">
+            <div className="flex items-start gap-2">
+              <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-brand" />
+              <p>
+                Upload the vendor BGV report and run AI analysis. When n8n is configured, BesTal extracts
+                check statuses, updates the BGV record, syncs the candidate badge, and notifies admins.
+              </p>
+            </div>
+          </div>
 
-      <SectionCard title="BGV report & AI analysis">
+          <SectionCard title="BGV report & AI analysis">
         <div className="space-y-4">
           <FileUpload
             label="Upload BGV report"
@@ -1154,6 +1190,18 @@ function BackgroundCheckTab({
           </Button>
         </div>
       </SectionCard>
+        </>
+      ) : (
+        <SectionCard title="Background verification">
+          <p className="text-sm text-muted-foreground">
+            Update the imported BGV record below. New background checks and AI analysis are not
+            available for imported candidates.
+          </p>
+          {bgvFileName ? (
+            <p className="mt-2 text-sm text-muted-foreground">Report on file: {bgvFileName}</p>
+          ) : null}
+        </SectionCard>
+      )}
 
       <SectionCard title="Background Verification details">
         <div className="grid gap-4 sm:grid-cols-2">
@@ -1448,12 +1496,14 @@ function TabContent({
   draftCandidateId,
   onAiScreeningComplete,
   onToast,
+  allowAiScreening,
 }: {
   tabId: WizardTabId;
   pendingUploads: MutableRefObject<CandidateWizardUploads>;
   draftCandidateId?: number | null;
   onAiScreeningComplete: (draftId: number, values: Partial<CandidateWizardFormValues>) => void;
   onToast: (message: string) => void;
+  allowAiScreening: boolean;
 }) {
   switch (tabId) {
     case 'basic':
@@ -1463,6 +1513,7 @@ function TabContent({
           draftCandidateId={draftCandidateId}
           onAiScreeningComplete={onAiScreeningComplete}
           onToast={onToast}
+          allowAiScreening={allowAiScreening}
         />
       );
     case 'professional':
@@ -1483,6 +1534,7 @@ function TabContent({
           pendingUploads={pendingUploads}
           draftCandidateId={draftCandidateId}
           onToast={onToast}
+          allowAiAnalysis={allowAiScreening}
         />
       );
     case 'background-check':
@@ -1491,6 +1543,7 @@ function TabContent({
           pendingUploads={pendingUploads}
           draftCandidateId={draftCandidateId}
           onToast={onToast}
+          allowAiAnalysis={allowAiScreening}
         />
       );
     default:
@@ -1502,6 +1555,7 @@ export function CandidateWizard({
   entryMethod,
   initialTab,
   freshStart = false,
+  wizardMode = 'superAdminCreate',
   initialFormValues,
   initialUploads,
   draftCandidateId,
@@ -1516,6 +1570,8 @@ export function CandidateWizard({
   isSavingDraft = false,
   isSubmitting = false,
 }: CandidateWizardProps) {
+  const { canRunAiScreening } = usePermissions();
+  const allowAiScreening = wizardMode === 'superAdminCreate' && canRunAiScreening;
   const [activeTab, setActiveTab] = useState<WizardTabId>(
     initialTab ?? getInitialTabForEntryMethod(entryMethod),
   );
@@ -1698,6 +1754,7 @@ export function CandidateWizard({
               draftCandidateId={draftCandidateId}
               onAiScreeningComplete={handleAiScreeningComplete}
               onToast={onToast}
+              allowAiScreening={allowAiScreening}
             />
             </div>
 
