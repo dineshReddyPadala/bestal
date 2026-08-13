@@ -14,9 +14,7 @@ export function AdminShell() {
       ? '/admin/candidates'
       : pathname.startsWith('/admin/clients')
         ? '/admin/clients'
-        : pathname.startsWith('/admin/job-requests')
-          ? '/admin/job-requests'
-          : pathname;
+        : pathname;
 
   return (
     <DashboardLayout

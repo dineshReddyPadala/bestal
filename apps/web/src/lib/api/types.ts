@@ -148,44 +148,6 @@ export type TrialListItem = {
   updatedAt: string;
 };
 
-export type JobRequestDto = {
-  id: number;
-  organizationId: number;
-  jobTitle: string;
-  jobDescription: string;
-  requiredSkills: string[];
-  experienceRequired: string;
-  numberOfResources: string;
-  companyName: string;
-  website: string;
-  contactName: string;
-  contactEmail: string;
-  contactPhone: string;
-  status: string;
-  source: string;
-  assignedToId: number | null;
-  assignedToName: string | null;
-  internalNotes: string | null;
-  createdAt: string;
-  updatedAt: string;
-};
-
-export type JobRequestListItem = {
-  id: number;
-  jobTitle: string;
-  companyName: string;
-  contactName: string;
-  contactEmail: string;
-  contactPhone: string;
-  experienceRequired: string;
-  numberOfResources: string;
-  status: string;
-  assignedToId: number | null;
-  assignedToName: string | null;
-  createdAt: string;
-  updatedAt: string;
-};
-
 // ─── Interview ────────────────────────────────────────────────────────────────
 
 export type InterviewDto = {

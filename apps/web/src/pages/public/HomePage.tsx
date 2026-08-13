@@ -2,7 +2,6 @@ import { PUBLIC_SKILL_COMMUNITIES } from '@bestal/shared-utils';
 import { Link } from 'react-router-dom';
 import type { ReactNode } from 'react';
 import { DemoEngineerCard } from '../../components/marketing/DemoEngineerCard';
-import { PostJobButton } from '../../components/marketing/PostJobButton';
 import { PageMeta } from '../../components/PageMeta';
 import {
   BUYER_QUESTIONS,
@@ -43,7 +42,6 @@ export function HomePage() {
               <Link to="/sample-talent" className="mkt-btn mkt-btn-primary mkt-btn-lg">
                 Browse Engineers
               </Link>
-              <PostJobButton className="mkt-btn mkt-btn-secondary mkt-btn-lg">Post a job</PostJobButton>
               <Link to="/evaluation-standard" className="mkt-btn mkt-btn-secondary mkt-btn-lg">
                 See how we test
               </Link>
@@ -250,9 +248,9 @@ export function HomePage() {
             <Link to="/sample-talent" className="mkt-btn mkt-btn-primary mkt-btn-lg">
               Browse Engineers
             </Link>
-            <PostJobButton className="mkt-btn mkt-btn-secondary mkt-btn-lg">
+            <Link to="/contact" className="mkt-btn mkt-btn-secondary mkt-btn-lg">
               Tell us what you need
-            </PostJobButton>
+            </Link>
           </div>
         </MktWrap>
       </section>
