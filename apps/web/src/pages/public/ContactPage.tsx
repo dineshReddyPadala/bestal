@@ -1,136 +1,164 @@
-import { Button } from '@bestal/ui';
-import { Container } from '../../components/Container';
+import { Link } from 'react-router-dom';
+import type { FormEvent, ReactNode } from 'react';
+import { useState } from 'react';
 import { PageMeta } from '../../components/PageMeta';
+import { CONTACT_REASONS } from '../../lib/marketing-copy';
 import { PAGE_SEO } from '../../lib/marketing-seo';
-import { Building2, Mail, MessageSquare, User } from 'lucide-react';
-import { useState, type FormEvent } from 'react';
+
+function MktWrap({ children, className = '' }: { children: ReactNode; className?: string }) {
+  return (
+    <div className={`mx-auto max-w-[1150px] px-[22px] sm:px-[34px] ${className}`}>{children}</div>
+  );
+}
 
 export function ContactPage() {
   const [submitted, setSubmitted] = useState(false);
+  const [emailError, setEmailError] = useState(false);
 
   function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    const form = e.currentTarget;
+    const email = (form.elements.namedItem('email') as HTMLInputElement).value;
+    const personalDomains = ['gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com'];
+    const domain = email.split('@')[1]?.toLowerCase();
+    if (domain && personalDomains.includes(domain)) {
+      setEmailError(true);
+      return;
+    }
+    setEmailError(false);
     setSubmitted(true);
   }
 
   return (
     <>
       <PageMeta title={PAGE_SEO.contact.title} description={PAGE_SEO.contact.description} />
-      <section className="border-b border-border bg-background py-16 lg:py-24">
-        <Container>
-          <div className="mx-auto max-w-3xl text-center">
-            <h1 className="text-4xl font-extrabold tracking-tight text-foreground sm:text-5xl">
-              Get in Touch
-            </h1>
-            <p className="mt-4 text-lg text-muted-foreground">
-              Tell us about your hiring needs. A talent strategist will respond within one business day.
-            </p>
-          </div>
-        </Container>
-      </section>
+      <MktWrap className="mkt-page-hd max-w-[660px]">
+        <div className="mkt-eyebrow">Contact</div>
+        <h1 className="mt-4">Talk to us</h1>
+        <p className="mkt-lead mt-[22px]">
+          Want to see the platform, discuss what you need, or run a security review first? This
+          reaches a person, not a queue.
+        </p>
+      </MktWrap>
 
-      <section className="py-16 lg:py-24">
-        <Container size="narrow">
-          {submitted ? (
-            <div className="rounded-2xl border border-border bg-card p-12 text-center shadow-card">
-              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-brand-light">
-                <MessageSquare className="h-8 w-8 text-brand" />
+      <section className="mkt-section">
+        <MktWrap className="mkt-g2t">
+          <div className="mkt-card p-8">
+            {submitted ? (
+              <div>
+                <h3>Message received.</h3>
+                <p className="mt-3 text-base">
+                  We&apos;ll reply within [FACT: SLA] on business days.
+                </p>
               </div>
-              <h2 className="mt-6 text-2xl font-bold text-foreground">Thank you!</h2>
-              <p className="mt-2 text-muted-foreground">
-                We&apos;ve received your message and will be in touch shortly.
-              </p>
-            </div>
-          ) : (
-            <form
-              onSubmit={handleSubmit}
-              className="rounded-2xl border border-border bg-card p-8 shadow-elevated lg:p-10"
-            >
-              <div className="grid gap-6 sm:grid-cols-2">
-                <div>
-                  <label htmlFor="name" className="block text-sm font-medium text-foreground">
-                    Full name
+            ) : (
+              <form onSubmit={handleSubmit}>
+                <div className="mb-[17px]">
+                  <label className="mb-[7px] block text-[13.5px] font-semibold text-[var(--mkt-ink)]">
+                    Name
                   </label>
-                  <div className="relative mt-2">
-                    <User className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                    <input
-                      id="name"
-                      name="name"
-                      type="text"
-                      required
-                      className="h-11 w-full rounded-md border border-input bg-background pl-10 pr-4 text-sm outline-none ring-ring focus:ring-2"
-                      placeholder="Jane Smith"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label htmlFor="email" className="block text-sm font-medium text-foreground">
-                    Work email
-                  </label>
-                  <div className="relative mt-2">
-                    <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                    <input
-                      id="email"
-                      name="email"
-                      type="email"
-                      required
-                      className="h-11 w-full rounded-md border border-input bg-background pl-10 pr-4 text-sm outline-none ring-ring focus:ring-2"
-                      placeholder="jane@company.com"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-6">
-                <label htmlFor="company" className="block text-sm font-medium text-foreground">
-                  Company
-                </label>
-                <div className="relative mt-2">
-                  <Building2 className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                   <input
-                    id="company"
-                    name="company"
-                    type="text"
+                    name="name"
                     required
-                    className="h-11 w-full rounded-md border border-input bg-background pl-10 pr-4 text-sm outline-none ring-ring focus:ring-2"
-                    placeholder="Acme Inc."
+                    className="w-full rounded-[9px] border border-[var(--mkt-line)] bg-[var(--mkt-surface)] px-[14px] py-3 text-[15.5px] text-[var(--mkt-ink)] outline-none focus:border-[var(--mkt-teal)] focus:shadow-[0_0_0_3px_var(--mkt-teal-t)]"
                   />
                 </div>
-              </div>
+                <div className="mb-[17px]">
+                  <label className="mb-[7px] block text-[13.5px] font-semibold text-[var(--mkt-ink)]">
+                    Work email
+                  </label>
+                  <input
+                    name="email"
+                    type="email"
+                    required
+                    className="w-full rounded-[9px] border border-[var(--mkt-line)] bg-[var(--mkt-surface)] px-[14px] py-3 text-[15.5px] text-[var(--mkt-ink)] outline-none focus:border-[var(--mkt-teal)] focus:shadow-[0_0_0_3px_var(--mkt-teal-t)]"
+                  />
+                  {emailError && (
+                    <p className="mt-2 text-sm text-red-600">
+                      Please use your work email — we can&apos;t route personal addresses to the
+                      right team.
+                    </p>
+                  )}
+                </div>
+                <div className="mb-[17px]">
+                  <label className="mb-[7px] block text-[13.5px] font-semibold text-[var(--mkt-ink)]">
+                    Company
+                  </label>
+                  <input
+                    name="company"
+                    required
+                    className="w-full rounded-[9px] border border-[var(--mkt-line)] bg-[var(--mkt-surface)] px-[14px] py-3 text-[15.5px] text-[var(--mkt-ink)] outline-none focus:border-[var(--mkt-teal)] focus:shadow-[0_0_0_3px_var(--mkt-teal-t)]"
+                  />
+                </div>
+                <div className="mb-[17px]">
+                  <label className="mb-[7px] block text-[13.5px] font-semibold text-[var(--mkt-ink)]">
+                    What do you need?
+                  </label>
+                  <select
+                    name="reason"
+                    required
+                    defaultValue=""
+                    className="w-full rounded-[9px] border border-[var(--mkt-line)] bg-[var(--mkt-surface)] px-[14px] py-3 text-[15.5px] text-[var(--mkt-ink)] outline-none focus:border-[var(--mkt-teal)] focus:shadow-[0_0_0_3px_var(--mkt-teal-t)]"
+                  >
+                    <option value="" disabled>
+                      Select a reason
+                    </option>
+                    {CONTACT_REASONS.map((reason) => (
+                      <option key={reason} value={reason}>
+                        {reason}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="mb-[17px]">
+                  <label className="mb-[7px] block text-[13.5px] font-semibold text-[var(--mkt-ink)]">
+                    Message
+                  </label>
+                  <textarea
+                    name="message"
+                    rows={4}
+                    required
+                    className="w-full rounded-[9px] border border-[var(--mkt-line)] bg-[var(--mkt-surface)] px-[14px] py-3 text-[15.5px] text-[var(--mkt-ink)] outline-none focus:border-[var(--mkt-teal)] focus:shadow-[0_0_0_3px_var(--mkt-teal-t)]"
+                  />
+                </div>
+                <button
+                  type="submit"
+                  className="mkt-btn mkt-btn-primary mkt-btn-lg w-full justify-center"
+                >
+                  Send message
+                </button>
+              </form>
+            )}
+          </div>
 
-              <div className="mt-6">
-                <label htmlFor="role" className="block text-sm font-medium text-foreground">
-                  Role needed
-                </label>
-                <input
-                  id="role"
-                  name="role"
-                  type="text"
-                  className="mt-2 h-11 w-full rounded-md border border-input bg-background px-4 text-sm outline-none ring-ring focus:ring-2"
-                  placeholder="Senior React Developer"
-                />
-              </div>
-
-              <div className="mt-6">
-                <label htmlFor="message" className="block text-sm font-medium text-foreground">
-                  Message
-                </label>
-                <textarea
-                  id="message"
-                  name="message"
-                  rows={5}
-                  required
-                  className="mt-2 w-full rounded-md border border-input bg-background px-4 py-3 text-sm outline-none ring-ring focus:ring-2"
-                  placeholder="Tell us about your team, timeline, and requirements..."
-                />
-              </div>
-
-              <Button type="submit" size="lg" className="mt-8 w-full sm:w-auto">
-                Send Message
-              </Button>
-            </form>
-          )}
-        </Container>
+          <div className="mkt-stack">
+            <div className="mkt-card">
+              <h4>Just want to look first?</h4>
+              <p className="mt-[7px] text-[15px]">
+                Browse engineers with full test results and rates. No account needed.
+              </p>
+              <Link to="/sample-talent" className="mkt-btn mkt-btn-ghost mt-[10px] pl-0">
+                Browse Engineers →
+              </Link>
+            </div>
+            <div className="mkt-card">
+              <h4>Running a vendor security review?</h4>
+              <p className="mt-[7px] text-[15px]">
+                Start with what we verify and what we deliberately don&apos;t claim.
+              </p>
+              <Link to="/trust" className="mkt-btn mkt-btn-ghost mt-[10px] pl-0">
+                Trust & Verification →
+              </Link>
+            </div>
+            <div className="mkt-card">
+              <h4>You&apos;re an engineer?</h4>
+              <p className="mt-[7px] text-[15px]">Wrong page, right company.</p>
+              <Link to="/for-engineers" className="mkt-btn mkt-btn-ghost mt-[10px] pl-0">
+                For Engineers →
+              </Link>
+            </div>
+          </div>
+        </MktWrap>
       </section>
     </>
   );

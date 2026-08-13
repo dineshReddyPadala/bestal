@@ -1,93 +1,94 @@
 export const PUBLIC_SKILL_COMMUNITIES = [
   {
-    name: 'Data Engineering',
-    slug: 'data-engineering',
-    description: 'Spark, Kafka, Snowflake, dbt, and real-time pipeline architects.',
+    name: 'Data & AI',
+    slug: 'data-ai',
+    description: 'Data, analytics and ML engineering, GenAI, MLOps, AI architecture',
   },
   {
-    name: 'AI / GenAI',
-    slug: 'ai-genai',
-    description: 'LLM applications, RAG systems, fine-tuning, and production AI platforms.',
+    name: 'Cloud & Platform',
+    slug: 'cloud-platform',
+    description: 'AWS, Azure, GCP, DevOps, SRE, Kubernetes, platform engineering',
   },
   {
-    name: 'Cloud / DevOps',
-    slug: 'cloud-devops',
-    description: 'Kubernetes, Terraform, AWS, GCP, and site reliability engineering.',
-  },
-  {
-    name: 'QA Automation',
-    slug: 'qa-automation',
-    description: 'Cypress, Playwright, Selenium, and quality engineering at scale.',
-  },
-  {
-    name: 'Full Stack',
-    slug: 'full-stack',
-    description: 'React, Node.js, TypeScript, and modern web architecture specialists.',
+    name: 'Full Stack & Engineering',
+    slug: 'full-stack-engineering',
+    description: 'React, Angular, Node, Java, .NET, Python, mobile, QA automation',
   },
   {
     name: 'SAP',
     slug: 'sap',
-    description: 'S/4HANA, Fiori, ABAP, and enterprise SAP implementation experts.',
+    description: 'S/4HANA, FICO, MM, SD, ABAP, Basis, BTP, SuccessFactors, Analytics',
   },
   {
     name: 'ServiceNow',
     slug: 'servicenow',
-    description: 'ITSM, ITOM, HRSD, and custom ServiceNow platform development.',
+    description: 'ITSM, ITOM, CSM, HRSD, SecOps, integration, architecture',
   },
   {
     name: 'Salesforce',
     slug: 'salesforce',
-    description: 'Sales Cloud, Service Cloud, Apex, and Salesforce integrations.',
+    description:
+      'Development, administration, architecture, Marketing/Service/Sales Cloud, CPQ, Data Cloud',
+  },
+  {
+    name: 'Cybersecurity',
+    slug: 'cybersecurity',
+    description: 'SOC, IAM, cloud security, application security, GRC, security architecture',
   },
 ] as const;
 
 export const HOW_IT_WORKS_STEPS = [
   {
     step: 1,
-    title: 'Tell us your role',
+    title: 'Describe the requirement',
     description:
-      'Share the skills, seniority, and timezone overlap you need. We align on success criteria within one business day.',
+      'A sentence is enough: "Three senior Snowflake engineers with dbt and Python, five hours Central overlap, starting within two weeks."',
   },
   {
     step: 2,
-    title: 'Review verified profiles',
+    title: 'Review the evidence',
     description:
-      'Receive pre-vetted candidates with evaluation scores, BGV status, and transparent bill rates.',
+      'Matched profiles arrive with scorecards, verification status, rate, availability and overlap attached.',
   },
   {
     step: 3,
-    title: 'Start a 20-hour pilot',
-    description:
-      'Run a risk-free pilot with your shortlisted talent before making a longer commitment.',
+    title: 'Interview whoever you want',
+    description: 'Book directly against confirmed availability, in your time zone.',
   },
   {
     step: 4,
-    title: 'Continue only if satisfied',
-    description:
-      'Extend to a full engagement or trial another profile — no obligation until you are confident.',
+    title: 'Run a one-week working engagement',
+    description: 'Real work, your team, your systems.',
+  },
+  {
+    step: 5,
+    title: 'Continue, scale, or stop',
+    description: 'No bench to carry either way.',
   },
 ] as const;
 
 export const FOR_CLIENTS_BENEFITS = [
   {
-    title: 'Time-zone aligned',
-    description: 'Talent matched to your working hours across US, EMEA, and APAC overlap.',
+    title: 'Expert Evaluated',
+    description:
+      'A qualified external specialist tested them against role-specific criteria. You read the scorecard.',
   },
   {
-    title: 'Pre-vetted',
-    description: 'Technical evaluation and recruiter screening before any profile reaches you.',
+    title: 'Background Verified',
+    description:
+      'Identity, education and employment checked before the profile goes live. Status shown; documents never shared.',
   },
   {
-    title: 'BGV verified',
-    description: 'Background verification completed and tracked in the platform.',
+    title: 'Your Working Hours',
+    description: 'Overlap hours shown per US zone and committed in writing. Filterable.',
   },
   {
-    title: 'Transparent pricing',
-    description: 'Clear hourly bill rates with no hidden fees or surprise markups.',
+    title: 'Transparent Rate',
+    description: 'The hourly rate is on the profile. Before you shortlist — not after a call.',
   },
   {
-    title: 'Risk-free pilot',
-    description: '20-hour pilot engagements so you validate fit before scaling.',
+    title: 'One-Week Proof',
+    description: 'Engage for a week on real work before committing to anything longer.',
   },
 ] as const;
 

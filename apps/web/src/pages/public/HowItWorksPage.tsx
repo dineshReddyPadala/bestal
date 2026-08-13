@@ -1,81 +1,107 @@
-import { HOW_IT_WORKS_STEPS } from '@bestal/shared-utils';
-import { Button } from '@bestal/ui';
-import { Container } from '../../components/Container';
+import { Link } from 'react-router-dom';
+import type { ReactNode } from 'react';
 import { PageMeta } from '../../components/PageMeta';
+import {
+  CONTROL_TABLE,
+  ENGAGEMENT_STEPS,
+  ONBOARDING_STEPS,
+} from '../../lib/marketing-copy';
 import { PAGE_SEO } from '../../lib/marketing-seo';
-import { Briefcase, CheckCircle2, Clock, UserCheck } from 'lucide-react';
 
-const stepIcons = [Briefcase, UserCheck, Clock, CheckCircle2] as const;
+function MktWrap({ children, className = '' }: { children: ReactNode; className?: string }) {
+  return (
+    <div className={`mx-auto max-w-[1150px] px-[22px] sm:px-[34px] ${className}`}>{children}</div>
+  );
+}
 
 export function HowItWorksPage() {
   return (
     <>
       <PageMeta title={PAGE_SEO.howItWorks.title} description={PAGE_SEO.howItWorks.description} />
-      <section className="border-b border-border bg-background py-16 lg:py-24">
-        <Container>
-          <div className="mx-auto max-w-3xl text-center">
-            <h1 className="text-4xl font-extrabold tracking-tight text-foreground sm:text-5xl">
-              How BesTal works
-            </h1>
-            <p className="mt-4 text-lg text-muted-foreground">
-              From role brief to pilot in four steps — continue only when you are satisfied.
-            </p>
-          </div>
-        </Container>
-      </section>
+      <MktWrap className="mkt-page-hd max-w-[820px]">
+        <div className="mkt-eyebrow">Process</div>
+        <h1 className="mt-4">How BesTal works</h1>
+        <p className="mkt-lead mt-6">
+          Two processes run in parallel. One builds the engineering communities. One serves your
+          requirement. You should be able to audit the first before you trust the second.
+        </p>
+      </MktWrap>
 
-      <section className="bg-card py-20 lg:py-28">
-        <Container>
-          <div className="space-y-20">
-            {HOW_IT_WORKS_STEPS.map((item, index) => {
-              const Icon = stepIcons[index] ?? CheckCircle2;
-              return (
-                <div
-                  key={item.step}
-                  className={`flex flex-col gap-10 lg:flex-row lg:items-center ${
-                    index % 2 === 1 ? 'lg:flex-row-reverse' : ''
-                  }`}
-                >
-                  <div className="flex-1">
-                    <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-brand text-sm font-bold text-white">
-                      {item.step}
-                    </span>
-                    <h2 className="mt-4 text-3xl font-bold tracking-tight text-foreground">
-                      {item.title}
-                    </h2>
-                    <p className="mt-4 text-lg leading-relaxed text-muted-foreground">
-                      {item.description}
-                    </p>
-                  </div>
-                  <div className="flex flex-1 items-center justify-center">
-                    <div className="flex h-48 w-48 items-center justify-center rounded-3xl bg-brand-light lg:h-64 lg:w-64">
-                      <Icon className="h-20 w-20 text-brand" strokeWidth={1.5} />
-                    </div>
-                  </div>
+      <section className="mkt-section">
+        <MktWrap className="max-w-[860px]">
+          <h2>Part 1 — How an engineer gets onto BesTal</h2>
+          <div className="mkt-steps mt-[34px]">
+            {ONBOARDING_STEPS.map((item) => (
+              <div key={item.step} className="mkt-step">
+                <div className="mkt-step-n">{item.step}</div>
+                <div>
+                  <h3>{item.title}</h3>
+                  <p>{item.body}</p>
+                  {'fact' in item && item.fact && (
+                    <div className="mkt-fact mt-3">{item.fact}</div>
+                  )}
                 </div>
-              );
-            })}
+              </div>
+            ))}
           </div>
-        </Container>
+          <div className="mkt-card mkt-card-teal mt-9">
+            <h3>Why the tester is external</h3>
+            <p className="mt-[10px] text-base">
+              A recruiter measured on placements should not be the person grading the engineer.
+              Separating testing from sourcing is the only way a score means anything.
+            </p>
+          </div>
+        </MktWrap>
       </section>
 
-      <section className="border-t border-border bg-background py-16">
-        <Container>
-          <div className="mx-auto max-w-2xl text-center">
-            <h2 className="text-2xl font-bold text-foreground">Ready to get started?</h2>
-            <p className="mt-3 text-muted-foreground">
-              Start with a 20-hour pilot — no long-term commitment required.
-            </p>
-            <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
-              <Button to="/talent" size="lg">
-                View Talent
-              </Button>
-              <Button to="/contact" size="lg" variant="outline">
-                Start a Pilot
-              </Button>
-            </div>
+      <section className="mkt-band mkt-section">
+        <MktWrap className="max-w-[860px]">
+          <h2>Part 2 — How you engage</h2>
+          <div className="mkt-steps mt-[34px]">
+            {ENGAGEMENT_STEPS.map((item) => (
+              <div key={item.step} className="mkt-step">
+                <div className="mkt-step-n">{item.step}</div>
+                <div>
+                  <h3>{item.title}</h3>
+                  <p>{item.body}</p>
+                  {'fact' in item && item.fact && (
+                    <div className="mkt-fact mt-3">{item.fact}</div>
+                  )}
+                </div>
+              </div>
+            ))}
           </div>
-        </Container>
+        </MktWrap>
+      </section>
+
+      <section className="mkt-section">
+        <MktWrap className="max-w-[860px]">
+          <h2>What you control</h2>
+          <table className="mkt-ct mt-[30px]">
+            <thead>
+              <tr>
+                <th>You control</th>
+                <th>We handle</th>
+              </tr>
+            </thead>
+            <tbody>
+              {CONTROL_TABLE.youControl.map((you, index) => (
+                <tr key={you}>
+                  <td>{you}</td>
+                  <td>{CONTROL_TABLE.weHandle[index]}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <div className="mt-9 flex flex-wrap gap-3">
+            <Link to="/sample-talent" className="mkt-btn mkt-btn-primary">
+              Browse Engineers
+            </Link>
+            <Link to="/evaluation-standard" className="mkt-btn mkt-btn-secondary">
+              How we test
+            </Link>
+          </div>
+        </MktWrap>
       </section>
     </>
   );

@@ -13,7 +13,13 @@ const baseUrl = `http://127.0.0.1:${port}`;
 const STATIC_ROUTES = [
   '/',
   '/how-it-works',
+  '/sample-talent',
   '/talent',
+  '/evaluation-standard',
+  '/trust',
+  '/rates',
+  '/try-for-a-week',
+  '/for-engineers',
   '/jobs',
   '/communities',
   '/enterprise',
