@@ -26,6 +26,8 @@ import { SearchInput } from './search-input.js';
 export type TanStackColumnMeta = {
   headerClassName?: string;
   cellClassName?: string;
+  /** When false, cell content may wrap on narrow viewports. Default true. */
+  nowrap?: boolean;
 };
 
 export type TanStackDataTableProps<TData> = {
@@ -257,7 +259,7 @@ export function TanStackDataTable<TData>({
                       <DataTableHead
                         key={header.id}
                         className={cn(
-                          'whitespace-nowrap',
+                          meta?.nowrap !== false && 'whitespace-nowrap',
                           dense && 'h-9 px-3',
                           meta?.headerClassName,
                         )}
@@ -300,7 +302,7 @@ export function TanStackDataTable<TData>({
                       <DataTableCell
                         key={cell.id}
                         className={cn(
-                          'whitespace-nowrap',
+                          meta?.nowrap !== false && 'whitespace-nowrap',
                           dense && 'px-3 py-2',
                           meta?.cellClassName,
                         )}

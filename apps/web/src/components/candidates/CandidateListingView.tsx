@@ -289,6 +289,7 @@ export function CandidateListingView({
       {
         accessorKey: 'fullName',
         header: 'Name',
+        meta: { nowrap: false },
         cell: ({ row }) => (
           <div className="flex min-w-[220px] items-center gap-3">
             <Avatar name={row.original.fullName} size="sm" />
@@ -306,8 +307,13 @@ export function CandidateListingView({
       {
         accessorKey: 'headline',
         header: 'Headline',
+        meta: {
+          headerClassName: 'hidden md:table-cell',
+          cellClassName: 'hidden md:table-cell max-w-[240px]',
+          nowrap: false,
+        },
         cell: ({ getValue }) => (
-          <span className="block max-w-[240px] truncate text-muted-foreground">
+          <span className="block truncate text-muted-foreground">
             {(getValue() as string | null) || '—'}
           </span>
         ),
@@ -315,11 +321,19 @@ export function CandidateListingView({
       {
         accessorKey: 'primarySkillCommunityName',
         header: 'Community',
+        meta: {
+          headerClassName: 'hidden lg:table-cell',
+          cellClassName: 'hidden lg:table-cell',
+        },
         cell: ({ getValue }) => (getValue() as string | null) || '—',
       },
       {
         accessorKey: 'yearsExperience',
         header: 'Experience',
+        meta: {
+          headerClassName: 'hidden md:table-cell',
+          cellClassName: 'hidden md:table-cell',
+        },
         cell: ({ getValue }) => {
           const years = getValue() as number | null;
           return years == null ? '—' : `${years} yrs`;
@@ -328,6 +342,10 @@ export function CandidateListingView({
       {
         accessorKey: 'location',
         header: 'Location',
+        meta: {
+          headerClassName: 'hidden lg:table-cell',
+          cellClassName: 'hidden lg:table-cell',
+        },
         cell: ({ getValue }) => (getValue() as string | null) || '—',
       },
       {
@@ -350,6 +368,10 @@ export function CandidateListingView({
       {
         accessorKey: 'visibility',
         header: 'Visibility',
+        meta: {
+          headerClassName: 'hidden md:table-cell',
+          cellClassName: 'hidden md:table-cell',
+        },
         cell: ({ getValue }) => <VisibilityBadge value={String(getValue())} />,
       },
     );

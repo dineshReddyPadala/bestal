@@ -279,10 +279,10 @@ export function AddCandidatePage() {
       }
 
       if (!options.silent) {
-        show(existingDraftId || isEdit ? 'Candidate updated' : 'Draft saved');
+        show(existingDraftId || isEdit ? 'Candidate updated' : 'Candidate saved');
       }
 
-      if (isEdit && !options.submit) {
+      if (isEdit && !options.submit && !options.silent) {
         navigate(`${basePath}/candidates`);
         return true;
       }

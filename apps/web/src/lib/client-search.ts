@@ -29,6 +29,13 @@ export const CLIENT_SEARCH_SORT_OPTIONS: {
   { value: 'availability', label: 'Availability' },
 ];
 
+export const CLIENT_SEARCH_SCORE_FILTER_OPTIONS: { value: string; label: string }[] = [
+  { value: '0', label: 'Any score' },
+  { value: '70', label: '70+' },
+  { value: '80', label: '80+' },
+  { value: '90', label: '90+' },
+];
+
 export const DEFAULT_CLIENT_SEARCH_FILTERS: ClientSearchFilters = {
   query: '',
   community: 'all',
@@ -38,6 +45,23 @@ export const DEFAULT_CLIENT_SEARCH_FILTERS: ClientSearchFilters = {
   timezone: 'all',
   minScore: 0,
 };
+
+function scoreValue(record: ClientSearchRecord): number | null {
+  return record.bestalScore ?? null;
+}
+
+function rateValue(record: ClientSearchRecord): number | null {
+  const rate = record.hourlyRate;
+  return rate != null && rate > 0 ? rate : null;
+}
+
+function experienceValue(record: ClientSearchRecord): number | null {
+  return record.yearsExperience ?? null;
+}
+
+function timezoneMatches(recordTz: string, filterTz: string): boolean {
+  return recordTz.trim().toLowerCase() === filterTz.trim().toLowerCase();
+}
 
 export function filterClientSearchRecords(
   records: readonly ClientSearchRecord[],
@@ -66,21 +90,31 @@ export function filterClientSearchRecords(
     if (filters.community !== 'all' && r.community !== filters.community) return false;
 
     if (filters.experience !== 'all') {
+      const years = experienceValue(r);
+      if (years == null) return false;
       const [min, max] = filters.experience.split('-').map(Number);
-      if (r.yearsExperience < min || (max && r.yearsExperience > max)) return false;
+      if (years < min || (Number.isFinite(max) && years > max)) return false;
     }
 
     if (filters.rate !== 'all') {
+      const rate = rateValue(r);
+      if (rate == null) return false;
       const [min, max] = filters.rate.split('-').map(Number);
-      if (r.hourlyRate < min || (max && r.hourlyRate > max)) return false;
+      if (rate < min || (Number.isFinite(max) && rate > max)) return false;
     }
 
     if (filters.availability !== 'all' && r.availabilityCategory !== filters.availability) {
       return false;
     }
 
-    if (filters.timezone !== 'all' && r.timezone !== filters.timezone) return false;
-    if (r.bestalScore < filters.minScore) return false;
+    if (filters.timezone !== 'all' && !timezoneMatches(r.timezone, filters.timezone)) {
+      return false;
+    }
+
+    if (filters.minScore > 0) {
+      const score = scoreValue(r);
+      if (score == null || score < filters.minScore) return false;
+    }
 
     return true;
   });
@@ -94,6 +128,20 @@ const AVAILABILITY_ORDER: Record<string, number> = {
   NOT_AVAILABLE: 4,
 };
 
+function compareNullableDesc(a: number | null, b: number | null): number {
+  if (a == null && b == null) return 0;
+  if (a == null) return 1;
+  if (b == null) return -1;
+  return b - a;
+}
+
+function compareNullableAsc(a: number | null, b: number | null): number {
+  if (a == null && b == null) return 0;
+  if (a == null) return 1;
+  if (b == null) return -1;
+  return a - b;
+}
+
 export function sortClientSearchRecords(
   records: ClientSearchRecord[],
   sort: ClientSearchSort,
@@ -101,13 +149,13 @@ export function sortClientSearchRecords(
   const sorted = [...records];
   switch (sort) {
     case 'highest-score':
-      sorted.sort((a, b) => b.bestalScore - a.bestalScore);
+      sorted.sort((a, b) => compareNullableDesc(scoreValue(a), scoreValue(b)));
       break;
     case 'lowest-rate':
-      sorted.sort((a, b) => a.hourlyRate - b.hourlyRate);
+      sorted.sort((a, b) => compareNullableAsc(rateValue(a), rateValue(b)));
       break;
     case 'experience':
-      sorted.sort((a, b) => b.yearsExperience - a.yearsExperience);
+      sorted.sort((a, b) => compareNullableDesc(experienceValue(a), experienceValue(b)));
       break;
     case 'availability':
       sorted.sort(
@@ -118,7 +166,7 @@ export function sortClientSearchRecords(
       break;
     case 'best-match':
     default:
-      sorted.sort((a, b) => b.bestalScore - a.bestalScore);
+      sorted.sort((a, b) => compareNullableDesc(scoreValue(a), scoreValue(b)));
       break;
   }
   return sorted;
@@ -164,6 +212,12 @@ const AVAILABILITY_LABELS: Record<string, string> = {
   NOT_AVAILABLE: 'Not available',
 };
 
+const SCORE_LABELS: Record<number, string> = {
+  70: '70+',
+  80: '80+',
+  90: '90+',
+};
+
 export function getActiveFilterChips(filters: ClientSearchFilters): ClientSearchFilterChip[] {
   const chips: ClientSearchFilterChip[] = [];
   if (filters.community !== 'all') {
@@ -191,7 +245,10 @@ export function getActiveFilterChips(filters: ClientSearchFilters): ClientSearch
     });
   }
   if (filters.minScore > 0) {
-    chips.push({ key: 'minScore', label: `${filters.minScore}+` });
+    chips.push({
+      key: 'minScore',
+      label: SCORE_LABELS[filters.minScore] ?? `${filters.minScore}+`,
+    });
   }
   if (filters.query.trim()) {
     chips.push({ key: 'query', label: `"${filters.query.trim()}"` });

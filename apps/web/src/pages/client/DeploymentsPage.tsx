@@ -102,6 +102,10 @@ export function DeploymentsPage() {
         id: 'deploymentId',
         header: 'Deployment ID',
         accessorFn: (row) => row.id,
+        meta: {
+          headerClassName: 'hidden sm:table-cell',
+          cellClassName: 'hidden sm:table-cell',
+        },
         cell: ({ row }) => (
           <span className="font-medium tabular-nums">{pad2(row.original.id)}</span>
         ),
@@ -119,6 +123,11 @@ export function DeploymentsPage() {
       {
         accessorKey: 'roleTitle',
         header: 'Designation',
+        meta: {
+          headerClassName: 'hidden md:table-cell',
+          cellClassName: 'hidden md:table-cell',
+          nowrap: false,
+        },
         cell: ({ getValue }) => (
           <span className="text-muted-foreground">{(getValue() as string) || '—'}</span>
         ),
@@ -126,6 +135,10 @@ export function DeploymentsPage() {
       {
         accessorKey: 'startDate',
         header: 'Start Date',
+        meta: {
+          headerClassName: 'hidden lg:table-cell',
+          cellClassName: 'hidden lg:table-cell',
+        },
         cell: ({ getValue }) => {
           const value = getValue() as string | null;
           return value ? formatDate(value) : '—';
@@ -134,6 +147,10 @@ export function DeploymentsPage() {
       {
         accessorKey: 'endDate',
         header: 'End Date',
+        meta: {
+          headerClassName: 'hidden lg:table-cell',
+          cellClassName: 'hidden lg:table-cell',
+        },
         cell: ({ getValue }) => {
           const value = getValue() as string | null;
           return value ? formatDate(value) : 'Ongoing';
@@ -147,6 +164,10 @@ export function DeploymentsPage() {
       {
         id: 'rate',
         header: 'Rate',
+        meta: {
+          headerClassName: 'hidden md:table-cell',
+          cellClassName: 'hidden md:table-cell',
+        },
         cell: ({ row }) =>
           row.original.billingRate != null ? (
             <span className="tabular-nums">

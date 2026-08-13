@@ -80,6 +80,13 @@ export function MarketingLayout({
                   {item.label}
                 </Link>
               ))}
+              <Link
+                to="/login"
+                className="mkt-btn mkt-btn-ghost mt-2 w-full justify-center lg:hidden"
+                onClick={() => setNavOpen(false)}
+              >
+                Log in
+              </Link>
             </nav>
 
             <div className="mkt-hdr-cta">

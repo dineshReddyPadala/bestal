@@ -106,6 +106,10 @@ export function TrialRequestsPage() {
         id: 'trialId',
         header: 'Trial ID',
         accessorFn: (row) => row.id,
+        meta: {
+          headerClassName: 'hidden sm:table-cell',
+          cellClassName: 'hidden sm:table-cell',
+        },
         cell: ({ row }) => (
           <span className="font-medium tabular-nums">{pad2(row.original.id)}</span>
         ),
@@ -123,6 +127,11 @@ export function TrialRequestsPage() {
       {
         accessorKey: 'roleTitle',
         header: 'Designation',
+        meta: {
+          headerClassName: 'hidden md:table-cell',
+          cellClassName: 'hidden md:table-cell',
+          nowrap: false,
+        },
         cell: ({ getValue }) => (
           <span className="text-muted-foreground">{(getValue() as string) || '—'}</span>
         ),
@@ -130,6 +139,10 @@ export function TrialRequestsPage() {
       {
         accessorKey: 'startDate',
         header: 'Trial Start Date',
+        meta: {
+          headerClassName: 'hidden lg:table-cell',
+          cellClassName: 'hidden lg:table-cell',
+        },
         cell: ({ getValue }) => {
           const value = getValue() as string | null;
           return value ? formatDate(value) : '—';
@@ -151,6 +164,10 @@ export function TrialRequestsPage() {
       {
         accessorKey: 'clientRating',
         header: 'Rating',
+        meta: {
+          headerClassName: 'hidden md:table-cell',
+          cellClassName: 'hidden md:table-cell',
+        },
         cell: ({ row }) =>
           row.original.clientRating != null ? (
             <span className="tabular-nums">{row.original.clientRating}/5</span>

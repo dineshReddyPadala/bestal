@@ -356,7 +356,7 @@ export function DashboardLayout({
               <Menu className="h-5 w-5" />
             </button>
 
-            <div className="flex min-w-0 flex-1 items-center">{headerLeading}</div>
+            <div className="flex min-w-0 flex-1 items-center overflow-hidden">{headerLeading}</div>
 
             <div className="flex shrink-0 items-center gap-1 sm:gap-2">
               {headerActions}

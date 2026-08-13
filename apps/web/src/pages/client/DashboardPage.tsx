@@ -4,7 +4,6 @@ import {
   ArrowRight,
   Monitor,
   Rocket,
-  Sparkles,
   TrendingUp,
 } from 'lucide-react';
 import { useMemo } from 'react';
@@ -57,7 +56,6 @@ export function DashboardPage() {
     [candidateRows],
   );
 
-  const trialReadyCount = searchRecords.filter((r) => r.trialEligible).length;
   const activeTrials = trialRows.filter((t) =>
     ['REQUESTED', 'APPROVED', 'IN_PROGRESS'].includes(t.status),
   );
@@ -124,13 +122,7 @@ export function DashboardPage() {
         <Button onClick={() => navigate('/client/search')}>Find talent</Button>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <ClientPortalStatCard
-          label="Trial-ready talents"
-          value={pad2(trialReadyCount)}
-          icon={<Sparkles className="h-5 w-5" />}
-          accent="orange"
-        />
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
         <ClientPortalStatCard
           label="Active Trials"
           value={pad2(activeTrials.length)}
