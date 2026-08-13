@@ -65,7 +65,6 @@ export function AddCandidatePage() {
   const [initialFormValues, setInitialFormValues] = useState<
     Partial<CandidateWizardFormValues> | undefined
   >();
-  const [formRevision, setFormRevision] = useState(0);
   const draftCandidateIdRef = useRef<number | null>(isEdit ? editId : null);
   const resumeUploadedViaExtractRef = useRef(false);
 
@@ -293,7 +292,6 @@ export function AddCandidatePage() {
           } else {
             setInitialFormValues(mapCandidateDtoToWizardForm(refreshed.data));
           }
-          setFormRevision((v) => v + 1);
         }
       }
 
@@ -368,7 +366,7 @@ export function AddCandidatePage() {
           <Card className="flex min-h-0 flex-1 flex-col overflow-hidden">
             <CardContent className="flex min-h-0 flex-1 flex-col overflow-hidden p-4 sm:p-5">
               <CandidateWizard
-                key={isEdit ? `edit-${editId}-${formRevision}` : 'new'}
+                key={isEdit ? `edit-${editId}` : 'new'}
                 entryMethod="manual"
                 initialTab="basic"
                 freshStart={!isEdit}
