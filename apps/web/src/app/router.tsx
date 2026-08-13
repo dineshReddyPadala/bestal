@@ -1,6 +1,7 @@
 import { publicNav } from '@bestal/mock-data';
 import { AuthLayout, MarketingLayout } from '@bestal/ui';
 import { createBrowserRouter, Navigate, Outlet, RouterProvider } from 'react-router-dom';
+import { PostJobProvider } from '../components/marketing/PostJobProvider';
 import { PageMeta } from '../components/PageMeta';
 import { AdminShell } from '../layouts/AdminShell';
 import { ClientShell } from '../layouts/ClientShell';
@@ -18,6 +19,7 @@ import { DeploymentsPage as AdminDeploymentsPage } from '../pages/admin/Deployme
 import { EvaluationsPage as AdminEvaluationsPage } from '../pages/admin/EvaluationsPage';
 import { LoginPage as AdminLoginPage } from '../pages/admin/LoginPage';
 import { TrialsPage } from '../pages/admin/TrialsPage';
+import { JobRequestsPage } from '../pages/admin/JobRequestsPage';
 import { CandidateDetailPage as ClientCandidateDetailPage } from '../pages/client/CandidateDetailPage';
 import { CandidateSearchPage } from '../pages/client/CandidateSearchPage';
 import { DashboardPage as ClientDashboardPage } from '../pages/client/DashboardPage';
@@ -60,6 +62,7 @@ import { DeploymentsPage as SalesDeploymentsPage } from '../pages/sales/Deployme
 import { LoginPage as SalesLoginPage } from '../pages/sales/LoginPage';
 import { MarginReportPage as SalesMarginReportPage } from '../pages/sales/MarginReportPage';
 import { TrialsPage as SalesTrialsPage } from '../pages/sales/TrialsPage';
+import { SalesJobRequestsPage } from '../pages/sales/JobRequestsPage';
 import { ProtectedRoute } from '../components/auth/ProtectedRoute';
 import { PortalAuthShell } from '../components/auth/PortalAuthShell';
 import { PORTAL_AUTH_CONFIG } from '../lib/auth-portal-config';
@@ -150,16 +153,18 @@ const marketingNav = publicNav.map(({ label, href }) => ({ label, href }));
 
 function MarketingShell() {
   return (
-    <div data-prerender-ready="">
-      <MarketingLayout
-        navItems={[...marketingNav]}
-        ctaLabel="Browse Engineers"
-        ctaHref="/sample-talent"
-        brandLogoSrc={BESTAL_LOGO_SRC}
-      >
-        <Outlet />
-      </MarketingLayout>
-    </div>
+    <PostJobProvider>
+      <div data-prerender-ready="">
+        <MarketingLayout
+          navItems={[...marketingNav]}
+          ctaLabel="Browse Engineers"
+          ctaHref="/sample-talent"
+          brandLogoSrc={BESTAL_LOGO_SRC}
+        >
+          <Outlet />
+        </MarketingLayout>
+      </div>
+    </PostJobProvider>
   );
 }
 
@@ -241,6 +246,7 @@ const router = createBrowserRouter([
           { path: 'candidate-approvals', element: <CandidateApprovalsPage /> },
           { path: 'clients', element: <AdminClientsPage /> },
           { path: 'clients/:id', element: <AdminClientDetailPage /> },
+          { path: 'job-requests', element: <JobRequestsPage /> },
           { path: 'deployments', element: <AdminDeploymentsPage /> },
           { path: 'trials', element: <TrialsPage /> },
           { path: 'evaluations', element: <AdminEvaluationsPage /> },
@@ -376,6 +382,7 @@ const router = createBrowserRouter([
           { path: 'clients', element: <SalesClientsPage /> },
           { path: 'candidates', element: <SalesCandidatesPage /> },
           { path: 'clients/:id', element: <SalesClientDetailPage /> },
+          { path: 'job-requests', element: <SalesJobRequestsPage /> },
           { path: 'trials', element: <SalesTrialsPage /> },
           { path: 'deployments', element: <SalesDeploymentsPage /> },
           { path: 'margin', element: <SalesMarginReportPage /> },

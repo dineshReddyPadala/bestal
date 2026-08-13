@@ -4,7 +4,7 @@ import { type ColumnDef } from '@tanstack/react-table';
 import { Edit, Eye, MoreHorizontal, Plus, UserX } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { ClientForm } from '../forms/ClientForm';
 import type { ClientFormValues } from '../../lib/entity-field-metadata';
 import { useDemoToast } from '../../lib/use-demo-toast';
@@ -120,10 +120,12 @@ export function ClientManagementView({
   clientDetailBasePath,
 }: ClientManagementViewProps) {
   const navigate = useNavigate();
+  const location = useLocation();
   const { message, show } = useDemoToast();
   const [filters, setFilters] = useState(defaultFilters);
   const [formOpen, setFormOpen] = useState<FormMode | null>(null);
   const [editingRecord, setEditingRecord] = useState<ClientListItem | null>(null);
+  const [prefilledCreate, setPrefilledCreate] = useState<Partial<ClientFormValues> | null>(null);
   const { searchInput, setSearchInput, search } = useDebouncedSearch();
   const mutations = useClientMutations();
 
@@ -152,6 +154,18 @@ export function ClientManagementView({
   );
 
   const { data, isLoading, isError, error } = useClientsList(listParams);
+
+  useEffect(() => {
+    const state = location.state as
+      | { openCreate?: boolean; prefilled?: Partial<ClientFormValues> }
+      | null
+      | undefined;
+    if (state?.openCreate) {
+      setFormOpen('add');
+      setPrefilledCreate(state.prefilled ?? null);
+      navigate(location.pathname, { replace: true, state: null });
+    }
+  }, [location.pathname, location.state, navigate]);
 
   const filteredData = useMemo(() => {
     let rows = [...(data?.data ?? [])];
@@ -422,6 +436,7 @@ export function ClientManagementView({
         onClose={() => {
           setFormOpen(null);
           setEditingRecord(null);
+          setPrefilledCreate(null);
         }}
         title={
           formOpen === 'view'
@@ -439,7 +454,7 @@ export function ClientManagementView({
           <ClientForm
             key={
               formOpen === 'add'
-                ? 'new'
+                ? `new-${JSON.stringify(prefilledCreate ?? {})}`
                 : `${formOpen}-${editingRecord?.id}-${editingClient?.updatedAt ?? ''}`
             }
             formId="client-mgmt-form"
@@ -462,12 +477,13 @@ export function ClientManagementView({
                     website: editingClient.website ?? '',
                     paymentTerms: editingClient.paymentTerms ?? '',
                   }
-                : undefined
+                : prefilledCreate ?? undefined
             }
             onSubmit={handleFormSubmit}
             onCancel={() => {
               setFormOpen(null);
               setEditingRecord(null);
+              setPrefilledCreate(null);
             }}
           />
         )}

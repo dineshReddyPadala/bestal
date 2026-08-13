@@ -10,7 +10,9 @@ export function SalesShell() {
   const { user, handleLogout } = useDashboardUser();
   const currentPath = pathname.startsWith('/sales/clients')
     ? '/sales/clients'
-    : pathname;
+    : pathname.startsWith('/sales/job-requests')
+      ? '/sales/job-requests'
+      : pathname;
 
   return (
     <DashboardLayout

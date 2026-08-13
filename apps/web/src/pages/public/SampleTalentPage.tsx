@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import type { ReactNode } from 'react';
 import { DemoEngineerCard } from '../../components/marketing/DemoEngineerCard';
+import { PostJobButton } from '../../components/marketing/PostJobButton';
 import { PageMeta } from '../../components/PageMeta';
 import { DEMO_ENGINEERS } from '../../lib/demo-engineers';
 import { PAGE_SEO } from '../../lib/marketing-seo';
@@ -27,9 +28,7 @@ export function SampleTalentPage() {
           current capacity.
         </p>
         <div className="mkt-actions mt-[30px]">
-          <Link to="/login" className="mkt-btn mkt-btn-primary mkt-btn-lg">
-            Create a company account
-          </Link>
+          <PostJobButton />
           <Link to="/communities" className="mkt-btn mkt-btn-secondary mkt-btn-lg">
             Browse by discipline
           </Link>

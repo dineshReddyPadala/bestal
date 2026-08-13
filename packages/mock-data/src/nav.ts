@@ -3,6 +3,7 @@ import type { NavItem } from './types.js';
 export const salesNav = [
   { id: 'dashboard', label: 'Dashboard', href: '/sales', icon: 'layout-dashboard' },
   { id: 'clients', label: 'Client Accounts', href: '/sales/clients', icon: 'briefcase' },
+  { id: 'job-requests', label: 'Job Requests', href: '/sales/job-requests', icon: 'file-text' },
   { id: 'candidates', label: 'Candidates', href: '/sales/candidates', icon: 'users' },
   { id: 'trials', label: 'Trial Requests', href: '/sales/trials', icon: 'flask-conical', badge: 3 },
   { id: 'deployments', label: 'Deployments', href: '/sales/deployments', icon: 'rocket' },
@@ -17,6 +18,7 @@ export const adminNav = [
   { id: 'evaluations', label: 'Evaluations', href: '/admin/evaluations', icon: 'clipboard-check', badge: 2 },
   { id: 'background-checks', label: 'Background Checks', href: '/admin/background-checks', icon: 'shield-check', badge: 3 },
   { id: 'clients', label: 'Clients', href: '/admin/clients', icon: 'briefcase' },
+  { id: 'job-requests', label: 'Job Requests', href: '/admin/job-requests', icon: 'file-text' },
   { id: 'trials', label: 'Trial Requests', href: '/admin/trials', icon: 'flask-conical', badge: 4 },
   { id: 'deployments', label: 'Deployments', href: '/admin/deployments', icon: 'rocket' },
 ] as const satisfies readonly NavItem[];
