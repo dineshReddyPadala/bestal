@@ -7,6 +7,7 @@ import {
   EVALUATION_SHEET_COLUMNS,
   IMPORT_AVAILABILITY_STATUSES,
   IMPORT_BGV_PER_CHECK_STATUSES,
+  IMPORT_BGV_PACKAGE_TYPES,
   IMPORT_BGV_STATUSES,
   IMPORT_CANDIDATE_SOURCES,
   IMPORT_CURRENCIES,
@@ -1000,6 +1001,15 @@ export async function parseAndValidateCandidateWorkbook(
       errors,
       sourceCandidateId,
     );
+    assertAllowed(
+      raw.package_type,
+      IMPORT_BGV_PACKAGE_TYPES,
+      IMPORT_WORKBOOK_SHEETS.BGV,
+      rowNumber,
+      'package_type',
+      errors,
+      sourceCandidateId,
+    );
     for (const column of [
       'id_check_status',
       'address_check_status',
@@ -1030,6 +1040,7 @@ export async function parseAndValidateCandidateWorkbook(
     }
     const bgv: NormalizedBgvRow = {
       bgvStatus: raw.bgv_status.trim(),
+      packageType: raw.package_type?.trim() || 'COMPREHENSIVE',
       vendor: raw.vendor?.trim() || null,
       idCheckStatus: raw.id_check_status?.trim() || null,
       addressCheckStatus: raw.address_check_status?.trim() || null,

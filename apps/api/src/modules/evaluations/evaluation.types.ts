@@ -31,6 +31,13 @@ export interface EvaluationListItemDto {
   evaluationDate: string | null;
   recommendation: string | null;
   technicalScore: number | null;
+  communicationScore: number | null;
+  problemSolvingScore: number | null;
+  architectureScore: number | null;
+  clientReadinessScore: number | null;
+  evaluatorComments: string | null;
+  aiEvaluationSummary: string | null;
+  evaluationFileUrl: string | null;
   documentId: number | null;
   createdAt: string;
   updatedAt: string;

@@ -68,6 +68,8 @@ export function AddCandidatePage() {
   const draftCandidateIdRef = useRef<number | null>(isEdit ? editId : null);
   const resumeUploadedViaExtractRef = useRef(false);
 
+  const [isSaving, setIsSaving] = useState(false);
+  const [linkedDataLoading, setLinkedDataLoading] = useState(false);
   const isImportOnlyRole = user?.role === 'ADMIN' || user?.role === 'RECRUITER';
   const importPath = `${basePath}/candidates/import`;
 
@@ -99,20 +101,25 @@ export function AddCandidatePage() {
     }
 
     let cancelled = false;
+    setLinkedDataLoading(true);
     void (async () => {
       try {
         const candidateId = existingQuery.data!.id;
-        const [evalRes, bgvRes] = await Promise.all([
+        const [evalListRes, bgvRes] = await Promise.all([
           evaluationsApi.list({ candidateId, limit: 1, sort: '-createdAt' }),
           backgroundChecksApi.list({ candidateId, limit: 1, sort: '-createdAt' }),
         ]);
+        const evalDetail =
+          evalListRes.data[0] != null
+            ? await evaluationsApi.get(evalListRes.data[0].id)
+            : null;
         const bgvListItem = bgvRes.data[0];
         const bgvDetail =
           bgvListItem != null ? await backgroundChecksApi.get(bgvListItem.id) : null;
         if (cancelled) return;
         setInitialFormValues(
           mapCandidateDtoToWizardForm(existingQuery.data!, {
-            evaluation: evalRes.data[0] ?? null,
+            evaluation: evalDetail,
             bgv: bgvDetail,
           }),
         );
@@ -120,6 +127,8 @@ export function AddCandidatePage() {
         if (!cancelled) {
           setInitialFormValues(mapCandidateDtoToWizardForm(existingQuery.data!));
         }
+      } finally {
+        if (!cancelled) setLinkedDataLoading(false);
       }
     })();
 
@@ -163,6 +172,7 @@ export function AddCandidatePage() {
     options: { submit: boolean; silent?: boolean },
   ): Promise<boolean> {
     setSubmitError(null);
+    setIsSaving(true);
     try {
       const body = mapWizardToApiCreateBody(values);
       if (options.submit) {
@@ -272,27 +282,9 @@ export function AddCandidatePage() {
         show(existingDraftId || isEdit ? 'Candidate updated' : 'Draft saved');
       }
 
-      if (isEdit) {
-        const refreshed = await existingQuery.refetch();
-        if (refreshed.data) {
-          if (wizardMode === 'importedEdit') {
-            const [evalRes, bgvRes] = await Promise.all([
-              evaluationsApi.list({ candidateId: refreshed.data.id, limit: 1, sort: '-createdAt' }),
-              backgroundChecksApi.list({ candidateId: refreshed.data.id, limit: 1, sort: '-createdAt' }),
-            ]);
-            const bgvListItem = bgvRes.data[0];
-            const bgvDetail =
-              bgvListItem != null ? await backgroundChecksApi.get(bgvListItem.id) : null;
-            setInitialFormValues(
-              mapCandidateDtoToWizardForm(refreshed.data, {
-                evaluation: evalRes.data[0] ?? null,
-                bgv: bgvDetail,
-              }),
-            );
-          } else {
-            setInitialFormValues(mapCandidateDtoToWizardForm(refreshed.data));
-          }
-        }
+      if (isEdit && !options.submit) {
+        navigate(`${basePath}/candidates`);
+        return true;
       }
 
       return true;
@@ -304,6 +296,8 @@ export function AddCandidatePage() {
       setSubmitError(errorMessage);
       showError(errorMessage);
       return false;
+    } finally {
+      setIsSaving(false);
     }
   }
 
@@ -313,7 +307,7 @@ export function AddCandidatePage() {
     );
   }
 
-  if (isEdit && existingQuery.isLoading) {
+  if (isEdit && (existingQuery.isLoading || (wizardMode === 'importedEdit' && linkedDataLoading))) {
     return (
       <div className="p-6 text-sm text-muted-foreground">Loading candidate…</div>
     );
@@ -396,7 +390,7 @@ export function AddCandidatePage() {
                 }
                 onToast={show}
                 submitError={submitError}
-                isSavingDraft={create.isPending || update.isPending}
+                isSavingDraft={create.isPending || update.isPending || isSaving}
                 isSubmitting={
                   create.isPending || update.isPending || submitForApproval.isPending
                 }

@@ -18,6 +18,7 @@ import { evaluationsApi } from '../../lib/api/evaluations';
 import { SearchableSelect } from '../ui/SearchableSelect';
 import { ActionMenu } from '../ui/ActionMenu';
 import type { EvaluationListItem } from '../../lib/api/types';
+import { useAuth } from '../../contexts/AuthContext';
 import { useDemoToast } from '../../lib/use-demo-toast';
 import { usePermissions } from '../../hooks/usePermissions';
 import {
@@ -60,7 +61,9 @@ export function EvaluationManagementView({
   title = 'Evaluation Management',
 }: EvaluationManagementViewProps) {
   const { message, show } = useDemoToast();
+  const { user } = useAuth();
   const { canUploadEvaluation } = usePermissions();
+  const isSuperAdmin = user?.role === 'SUPER_ADMIN';
   const [searchParams] = useSearchParams();
   const { searchInput, setSearchInput, search } = useDebouncedSearch();
   const { data, isLoading, isError, error } = useEvaluationsList({
@@ -98,6 +101,8 @@ export function EvaluationManagementView({
   const [draftEvaluationId, setDraftEvaluationId] = useState<number | null>(null);
   const [extractHint, setExtractHint] = useState<string | null>(null);
   const [extractError, setExtractError] = useState<string | null>(null);
+  const isSavingEvaluation =
+    mutations.create.isPending || mutations.update.isPending;
   const [createError, setCreateError] = useState<string | null>(null);
   const [advancingPipeline, setAdvancingPipeline] = useState(false);
 
@@ -248,8 +253,13 @@ export function EvaluationManagementView({
   const openEditEvaluation = useCallback(
     (record: EvaluationListItem) => {
       resetCreateForm();
-      populateFormFromEvaluation(record);
-      setCreateOpen(true);
+      void evaluationsApi.get(record.id).then((detail) => {
+        populateFormFromEvaluation(detail);
+        setCreateOpen(true);
+      }).catch(() => {
+        populateFormFromEvaluation(record);
+        setCreateOpen(true);
+      });
     },
     [populateFormFromEvaluation, resetCreateForm],
   );
@@ -601,7 +611,7 @@ export function EvaluationManagementView({
           dense
           filtersInline
           toolbar={
-            canUploadEvaluation ? (
+            isSuperAdmin ? (
               <Button
                 size="sm"
                 onClick={() => {
@@ -672,8 +682,16 @@ export function EvaluationManagementView({
             <Button
               type="button"
               onClick={() => void handleCreate()}
-              disabled={extractingPdf || advancingPipeline || !canSaveEvaluation}
+              disabled={
+                extractingPdf ||
+                advancingPipeline ||
+                !canSaveEvaluation ||
+                isSavingEvaluation
+              }
             >
+              {isSavingEvaluation ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : null}
               {isEditMode ? 'Save changes' : 'Create evaluation'}
             </Button>
           </>

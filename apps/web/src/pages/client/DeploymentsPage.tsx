@@ -17,6 +17,7 @@ import { ClientSegmentTabs } from '../../components/client/ClientSegmentTabs';
 import { PickCandidateDialog } from '../../components/client/PickCandidateDialog';
 import { RequestDeploymentDialog } from '../../components/client/RequestDeploymentDialog';
 import { ExtendDeploymentDialog } from '../../components/deployments/ExtendDeploymentDialog';
+import { ClientDeploymentDetailDialog } from '../../components/deployments/ClientDeploymentDetailDialog';
 import { useAuth } from '../../contexts/AuthContext';
 import { useDeploymentMutations, useDeploymentsList } from '../../hooks/api/useDeployments';
 import { usePermissions } from '../../hooks/usePermissions';
@@ -69,6 +70,7 @@ export function DeploymentsPage() {
     name: string;
   } | null>(null);
   const [extendTarget, setExtendTarget] = useState<DeploymentListItem | null>(null);
+  const [viewDeploymentId, setViewDeploymentId] = useState<number | null>(null);
 
   const active = useMemo(
     () => rows.filter((d) => ACTIVE_STATUSES.has(d.status)),
@@ -130,6 +132,14 @@ export function DeploymentsPage() {
         },
       },
       {
+        accessorKey: 'endDate',
+        header: 'End Date',
+        cell: ({ getValue }) => {
+          const value = getValue() as string | null;
+          return value ? formatDate(value) : 'Ongoing';
+        },
+      },
+      {
         accessorKey: 'status',
         header: 'Status',
         cell: ({ getValue }) => <StatusBadge status={getValue() as string} />,
@@ -158,9 +168,15 @@ export function DeploymentsPage() {
               label="Deployment actions"
               items={[
                 {
-                  id: 'view',
-                  label: 'View candidate',
+                  id: 'view-deployment',
+                  label: 'View details',
+                  onSelect: () => setViewDeploymentId(row.original.id),
+                },
+                {
+                  id: 'view-candidate',
+                  label: 'View candidate profile',
                   href: `/client/candidates/${row.original.candidateId}`,
+                  separatorBefore: true,
                 },
                 {
                   id: 'extend',
@@ -365,6 +381,11 @@ export function DeploymentsPage() {
             throw new Error(getApiErrorMessage(err, 'Extension request failed'));
           }
         }}
+      />
+
+      <ClientDeploymentDetailDialog
+        deploymentId={viewDeploymentId}
+        onClose={() => setViewDeploymentId(null)}
       />
     </div>
   );

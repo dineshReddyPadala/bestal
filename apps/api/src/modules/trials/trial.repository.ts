@@ -266,6 +266,24 @@ export class TrialRepository extends BaseRepository {
       .then(Boolean);
   }
 
+  findBlockingTrial(
+    organizationId: number,
+    candidateId: number,
+    clientId: number,
+  ): Promise<TrialRecord | null> {
+    return this.prisma.trialRequest.findFirst({
+      where: {
+        organizationId: BigInt(organizationId),
+        candidateId: BigInt(candidateId),
+        clientId: BigInt(clientId),
+        deletedAt: null,
+        status: { in: ['REQUESTED', 'APPROVED', 'IN_PROGRESS', 'COMPLETED'] },
+      },
+      include: trialInclude,
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
   private buildWhereClause(filters: TrialListFilters): Prisma.TrialRequestWhereInput {
     const where: Prisma.TrialRequestWhereInput = {
       organizationId: BigInt(filters.organizationId),

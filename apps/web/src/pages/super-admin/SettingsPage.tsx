@@ -53,7 +53,8 @@ type SettingsKey =
   | 'commercials'
   | 'workflows'
   | 'email'
-  | 'localization';
+  | 'localization'
+  | 'storage';
 
 function asObj(value: unknown): Record<string, unknown> {
   return value && typeof value === 'object' && !Array.isArray(value)
@@ -136,6 +137,16 @@ export function SuperAdminPlatformSettingsPage() {
       bgvWorkflowVersion: '1.0.0',
     }),
   );
+  const [storage, setStorage] = useState({
+    driver: 's3' as 'local' | 's3',
+    region: '',
+    bucket: '',
+    accessKeyId: '',
+    secretAccessKey: '',
+    presignedUrlExpirySeconds: '3600',
+    endpoint: '',
+    forcePathStyle: false,
+  });
 
   useEffect(() => {
     if (!data || settingsHydrated.current) return;
@@ -150,6 +161,7 @@ export function SuperAdminPlatformSettingsPage() {
     const t = asObj(data.trials);
     const n = asObj(data.notifications);
     const w = asObj(data.workflows);
+    const st = asObj(data.storage);
 
     setSecurity({
       sessionTimeoutMinutes: String(s.sessionTimeoutMinutes ?? '480'),
@@ -213,6 +225,16 @@ export function SuperAdminPlatformSettingsPage() {
       deploymentEndingSoonDays: String(n.deploymentEndingSoonDays ?? '7'),
     });
     setWorkflows(workflowsFromApi(w));
+    setStorage({
+      driver: st.driver === 'local' ? 'local' : 's3',
+      region: String(st.region ?? ''),
+      bucket: String(st.bucket ?? ''),
+      accessKeyId: String(st.accessKeyId ?? ''),
+      secretAccessKey: String(st.secretAccessKey ?? ''),
+      presignedUrlExpirySeconds: String(st.presignedUrlExpirySeconds ?? '3600'),
+      endpoint: String(st.endpoint ?? ''),
+      forcePathStyle: Boolean(st.forcePathStyle),
+    });
   }, [data]);
 
   async function save(key: SettingsKey, body: Record<string, unknown>, label: string) {
@@ -224,6 +246,20 @@ export function SuperAdminPlatformSettingsPage() {
       };
       if (key === 'workflows' && result?.value && typeof result.value === 'object') {
         setWorkflows(workflowsFromApi(result.value as Record<string, unknown>));
+      }
+      if (key === 'storage' && result?.value && typeof result.value === 'object') {
+        const st = result.value as Record<string, unknown>;
+        setStorage((prev) => ({
+          ...prev,
+          driver: st.driver === 'local' ? 'local' : 's3',
+          region: String(st.region ?? prev.region),
+          bucket: String(st.bucket ?? prev.bucket),
+          accessKeyId: String(st.accessKeyId ?? prev.accessKeyId),
+          secretAccessKey: String(st.secretAccessKey ?? prev.secretAccessKey),
+          presignedUrlExpirySeconds: String(st.presignedUrlExpirySeconds ?? prev.presignedUrlExpirySeconds),
+          endpoint: String(st.endpoint ?? prev.endpoint),
+          forcePathStyle: st.forcePathStyle === undefined ? prev.forcePathStyle : Boolean(st.forcePathStyle),
+        }));
       }
       show(`${label} saved`);
     } catch (err) {
@@ -760,6 +796,113 @@ export function SuperAdminPlatformSettingsPage() {
                     automation jobs. Inbound callback auth ({'`'}AUTOMATION_CALLBACK_SECRET{'`'})
                     remains in server environment variables. Re-import n8n workflow JSON after
                     changing paths.
+                  </p>
+                </Section>
+              ),
+            },
+            {
+              id: 'storage',
+              label: 'Storage',
+              content: (
+                <Section
+                  title="File storage (S3)"
+                  busy={saving === 'storage'}
+                  onSave={() =>
+                    void save(
+                      'storage',
+                      {
+                        driver: storage.driver,
+                        region: storage.region.trim() || null,
+                        bucket: storage.bucket.trim() || null,
+                        accessKeyId: storage.accessKeyId.trim() || null,
+                        secretAccessKey: storage.secretAccessKey.trim() || null,
+                        presignedUrlExpirySeconds:
+                          Number(storage.presignedUrlExpirySeconds) || 3600,
+                        endpoint: storage.endpoint.trim() || null,
+                        forcePathStyle: storage.forcePathStyle,
+                      },
+                      'Storage settings',
+                    )
+                  }
+                >
+                  <Field label="Storage driver">
+                    <Select
+                      value={storage.driver}
+                      onChange={(e) =>
+                        setStorage((p) => ({
+                          ...p,
+                          driver: e.target.value as 'local' | 's3',
+                        }))
+                      }
+                    >
+                      <option value="s3">Amazon S3</option>
+                      <option value="local">Local filesystem</option>
+                    </Select>
+                  </Field>
+                  <Field label="AWS region">
+                    <Input
+                      value={storage.region}
+                      onChange={(e) => setStorage((p) => ({ ...p, region: e.target.value }))}
+                      placeholder="us-east-2"
+                    />
+                  </Field>
+                  <Field label="S3 bucket">
+                    <Input
+                      value={storage.bucket}
+                      onChange={(e) => setStorage((p) => ({ ...p, bucket: e.target.value }))}
+                    />
+                  </Field>
+                  <Field label="Access key ID">
+                    <Input
+                      value={storage.accessKeyId}
+                      onChange={(e) =>
+                        setStorage((p) => ({ ...p, accessKeyId: e.target.value }))
+                      }
+                    />
+                  </Field>
+                  <Field label="Secret access key">
+                    <Input
+                      type="password"
+                      value={storage.secretAccessKey}
+                      onChange={(e) =>
+                        setStorage((p) => ({ ...p, secretAccessKey: e.target.value }))
+                      }
+                      placeholder="Leave as ******** to keep existing"
+                    />
+                  </Field>
+                  <Field label="Presigned URL expiry (seconds)">
+                    <Input
+                      type="number"
+                      min={60}
+                      value={storage.presignedUrlExpirySeconds}
+                      onChange={(e) =>
+                        setStorage((p) => ({
+                          ...p,
+                          presignedUrlExpirySeconds: e.target.value,
+                        }))
+                      }
+                    />
+                  </Field>
+                  <Field label="Custom endpoint (optional)">
+                    <Input
+                      value={storage.endpoint}
+                      onChange={(e) => setStorage((p) => ({ ...p, endpoint: e.target.value }))}
+                      placeholder="https://s3.amazonaws.com"
+                    />
+                  </Field>
+                  <label className="flex items-center gap-2 text-sm sm:col-span-2">
+                    <input
+                      type="checkbox"
+                      checked={storage.forcePathStyle}
+                      onChange={(e) =>
+                        setStorage((p) => ({ ...p, forcePathStyle: e.target.checked }))
+                      }
+                    />
+                    Force path-style S3 URLs
+                  </label>
+                  <p className="text-sm text-muted-foreground sm:col-span-2">
+                    Values saved here override server environment variables for file uploads.
+                    Restart is not required; new uploads use these credentials immediately.
                   </p>
                 </Section>
               ),

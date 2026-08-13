@@ -1,6 +1,7 @@
 import type { NotificationType, PrismaClient, Role } from '@prisma/client';
 import type { AppConfig } from '../config/index.js';
-import { notifyOrgRoles, notifyUsers } from './notification-dispatch.service.js';
+import { PERMISSIONS } from '../modules/auth/auth.permissions.js';
+import { notifyOrgMembersWithPermission, notifyOrgRoles, notifyUsers } from './notification-dispatch.service.js';
 import { readNotificationsSettings } from './system-settings.reader.js';
 
 function webUrl(config: AppConfig, path: string): string {
@@ -78,12 +79,14 @@ export async function notifyTrialRequested(
     trialId: number;
     candidateName: string;
     clientName: string;
+    requestedById: number;
     count?: number;
   },
 ): Promise<void> {
   const count = input.count ?? 1;
-  await safeNotify('trial-requested', () =>
-    notifyWithEmailFlag(prisma, config, {
+  await safeNotify('trial-requested', async () => {
+    const settings = await readNotificationsSettings(prisma);
+    await notifyWithEmailFlag(prisma, config, {
       organizationId: input.organizationId,
       roles: ['SUPER_ADMIN', 'ADMIN', 'SALES', 'RECRUITER'],
       type: 'TRIAL',
@@ -94,8 +97,18 @@ export async function notifyTrialRequested(
           : `${input.clientName} requested a free trial for ${input.candidateName}.`,
       actionUrl: webUrl(config, '/admin/trials'),
       metadata: { trialId: input.trialId, event: 'trial_requested' },
-    }),
-  );
+    });
+    await notifyUsers(prisma, config, {
+      organizationId: input.organizationId,
+      userIds: [input.requestedById],
+      type: 'TRIAL',
+      title: 'Trial request submitted',
+      body: `Your trial request for ${input.candidateName} was submitted. You'll be notified when it is reviewed.`,
+      actionUrl: webUrl(config, '/client/trials'),
+      sendEmail: settings.emailEnabled,
+      metadata: { trialId: input.trialId, event: 'trial_requested_sender' },
+    });
+  });
 }
 
 export async function notifyJobRequestSubmitted(
@@ -131,19 +144,23 @@ export async function notifyTrialStatusChanged(
     candidateName: string;
     requestedById: number;
     assignedRecruiterId?: number | null;
+    actedById?: number | null;
   },
 ): Promise<void> {
-  const userIds = [input.requestedById];
-  if (input.assignedRecruiterId) userIds.push(input.assignedRecruiterId);
+  const userIds = [
+    input.requestedById,
+    ...(input.assignedRecruiterId ? [input.assignedRecruiterId] : []),
+    ...(input.actedById ? [input.actedById] : []),
+  ];
   await safeNotify('trial-status', () =>
     notifyWithEmailFlag(prisma, config, {
       organizationId: input.organizationId,
       userIds,
-      roles: ['ADMIN', 'SALES'],
+      roles: ['SUPER_ADMIN', 'ADMIN', 'SALES', 'RECRUITER'],
       type: 'TRIAL',
-      title: `Trial ${input.status.toLowerCase()}`,
-      body: `Trial for ${input.candidateName} is now ${input.status}.`,
-      actionUrl: webUrl(config, '/admin/trials'),
+      title: `Trial ${input.status.toLowerCase().replace(/_/g, ' ')}`,
+      body: `Trial for ${input.candidateName} is now ${input.status.replace(/_/g, ' ').toLowerCase()}.`,
+      actionUrl: webUrl(config, '/client/trials'),
       metadata: { trialId: input.trialId, event: 'trial_status', status: input.status },
     }),
   );
@@ -158,10 +175,12 @@ export async function notifyDeploymentRequested(
     candidateName: string;
     clientName: string;
     roleTitle: string;
+    requestedById: number;
   },
 ): Promise<void> {
-  await safeNotify('deployment-requested', () =>
-    notifyWithEmailFlag(prisma, config, {
+  await safeNotify('deployment-requested', async () => {
+    const settings = await readNotificationsSettings(prisma);
+    await notifyWithEmailFlag(prisma, config, {
       organizationId: input.organizationId,
       roles: ['SUPER_ADMIN', 'ADMIN', 'SALES', 'RECRUITER'],
       type: 'DEPLOYMENT',
@@ -169,8 +188,18 @@ export async function notifyDeploymentRequested(
       body: `${input.clientName} requested deployment of ${input.candidateName} as ${input.roleTitle}.`,
       actionUrl: webUrl(config, '/admin/deployments'),
       metadata: { deploymentId: input.deploymentId, event: 'deployment_requested' },
-    }),
-  );
+    });
+    await notifyUsers(prisma, config, {
+      organizationId: input.organizationId,
+      userIds: [input.requestedById],
+      type: 'DEPLOYMENT',
+      title: 'Deployment request submitted',
+      body: `Your deployment request for ${input.candidateName} (${input.roleTitle}) was submitted.`,
+      actionUrl: webUrl(config, '/client/deployments'),
+      sendEmail: settings.emailEnabled,
+      metadata: { deploymentId: input.deploymentId, event: 'deployment_requested_sender' },
+    });
+  });
 }
 
 export async function notifyDeploymentStatusChanged(
@@ -185,6 +214,7 @@ export async function notifyDeploymentStatusChanged(
     createdById: number;
     requestedById?: number | null;
     clientId: number;
+    actedById?: number | null;
   },
 ): Promise<void> {
   const memberships = await prisma.membership.findMany({
@@ -200,6 +230,7 @@ export async function notifyDeploymentStatusChanged(
   const userIds = [
     input.createdById,
     ...(input.requestedById ? [input.requestedById] : []),
+    ...(input.actedById ? [input.actedById] : []),
     ...memberships.map((m) => Number(m.userId)),
   ];
 
@@ -207,11 +238,11 @@ export async function notifyDeploymentStatusChanged(
     notifyWithEmailFlag(prisma, config, {
       organizationId: input.organizationId,
       userIds,
-      roles: ['SUPER_ADMIN', 'ADMIN', 'SALES'],
+      roles: ['SUPER_ADMIN', 'ADMIN', 'SALES', 'RECRUITER'],
       type: 'DEPLOYMENT',
-      title: `Deployment ${input.status.toLowerCase()}`,
-      body: `Deployment for ${input.candidateName} (${input.roleTitle}) is now ${input.status}.`,
-      actionUrl: webUrl(config, '/admin/deployments'),
+      title: `Deployment ${input.status.toLowerCase().replace(/_/g, ' ')}`,
+      body: `Deployment for ${input.candidateName} (${input.roleTitle}) is now ${input.status.replace(/_/g, ' ').toLowerCase()}.`,
+      actionUrl: webUrl(config, '/client/deployments'),
       metadata: {
         deploymentId: input.deploymentId,
         event: 'deployment_status',
@@ -228,19 +259,94 @@ export async function notifyCandidatePendingApproval(
     organizationId: number;
     candidateId: number;
     candidateName: string;
+    submittedById?: number | null;
   },
 ): Promise<void> {
-  await safeNotify('candidate-pending', () =>
-    notifyWithEmailFlag(prisma, config, {
+  await safeNotify('candidate-pending', async () => {
+    const settings = await readNotificationsSettings(prisma);
+    await notifyOrgMembersWithPermission(prisma, config, {
       organizationId: input.organizationId,
-      roles: ['SUPER_ADMIN', 'ADMIN'],
+      permission: PERMISSIONS.CANDIDATES_APPROVE,
       type: 'SYSTEM',
       title: 'Candidate pending approval',
       body: `${input.candidateName} was submitted for approval.`,
-      actionUrl: webUrl(config, '/super-admin/candidates'),
+      actionUrlForRole: (role) =>
+        role === 'SUPER_ADMIN'
+          ? webUrl(config, '/super-admin/candidates')
+          : webUrl(config, '/admin/candidate-approvals'),
       metadata: { candidateId: input.candidateId, event: 'candidate_pending_approval' },
-    }),
-  );
+      sendEmail: settings.emailEnabled,
+    });
+    if (input.submittedById) {
+      await notifyUsers(prisma, config, {
+        organizationId: input.organizationId,
+        userIds: [input.submittedById],
+        type: 'SYSTEM',
+        title: 'Candidate submitted for approval',
+        body: `${input.candidateName} was submitted for approval. You'll be notified when reviewed.`,
+        actionUrl: webUrl(config, `/recruiter/candidates/${input.candidateId}`),
+        sendEmail: settings.emailEnabled,
+        metadata: {
+          candidateId: input.candidateId,
+          event: 'candidate_pending_approval_sender',
+        },
+      });
+    }
+  });
+}
+
+export async function notifyCandidateApproved(
+  prisma: PrismaClient,
+  config: AppConfig,
+  input: {
+    organizationId: number;
+    candidateId: number;
+    candidateName: string;
+    approvedById: number;
+    createdById?: number | null;
+  },
+): Promise<void> {
+  await safeNotify('candidate-approved', async () => {
+    const settings = await readNotificationsSettings(prisma);
+    const receiverIds = [
+      ...(input.createdById ? [input.createdById] : []),
+    ];
+    if (receiverIds.length > 0) {
+      await notifyUsers(prisma, config, {
+        organizationId: input.organizationId,
+        userIds: receiverIds,
+        type: 'SYSTEM',
+        title: 'Candidate approved',
+        body: `${input.candidateName} was approved and is ready for the next step.`,
+        actionUrl: webUrl(config, `/recruiter/candidates/${input.candidateId}`),
+        sendEmail: settings.emailEnabled,
+        metadata: { candidateId: input.candidateId, event: 'candidate_approved' },
+      });
+    }
+    await notifyUsers(prisma, config, {
+      organizationId: input.organizationId,
+      userIds: [input.approvedById],
+      type: 'SYSTEM',
+      title: 'Approval recorded',
+      body: `You approved ${input.candidateName}.`,
+      actionUrl: webUrl(config, `/super-admin/candidates/${input.candidateId}`),
+      sendEmail: settings.emailEnabled,
+      metadata: { candidateId: input.candidateId, event: 'candidate_approved_by' },
+    });
+    await notifyOrgMembersWithPermission(prisma, config, {
+      organizationId: input.organizationId,
+      permission: PERMISSIONS.CANDIDATES_APPROVE,
+      type: 'SYSTEM',
+      title: 'Candidate approved',
+      body: `${input.candidateName} was approved.`,
+      actionUrlForRole: (role) =>
+        role === 'SUPER_ADMIN'
+          ? webUrl(config, `/super-admin/candidates/${input.candidateId}`)
+          : webUrl(config, '/admin/candidate-approvals'),
+      metadata: { candidateId: input.candidateId, event: 'candidate_approved_staff' },
+      sendEmail: settings.emailEnabled,
+    });
+  });
 }
 
 export async function notifyCandidateSentBack(

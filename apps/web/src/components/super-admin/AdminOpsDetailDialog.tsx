@@ -1,7 +1,8 @@
 import { Button, Dialog, StatusBadge } from '@bestal/ui';
 import { Loader2 } from 'lucide-react';
 import { useEffect, useState, type ReactNode } from 'react';
-import { adminApi } from '../../lib/api/admin';
+import { deploymentsApi } from '../../lib/api/deployments';
+import { trialsApi } from '../../lib/api/trials';
 import { getApiErrorMessage } from '../../lib/api/errors';
 import type { DeploymentDto, TrialDto } from '../../lib/api/types';
 
@@ -42,12 +43,12 @@ export function AdminTrialDetailDialog({ trialId, onClose }: AdminTrialDetailDia
     let cancelled = false;
     setLoading(true);
     setError(null);
-    void adminApi
-      .getTrial(trialId)
+    void trialsApi
+      .get(trialId)
       .then((data) => {
-        if (!cancelled) setTrial(data as TrialDto);
+        if (!cancelled) setTrial(data);
       })
-      .catch((err) => {
+      .catch((err: unknown) => {
         if (!cancelled) setError(getApiErrorMessage(err, 'Failed to load trial'));
       })
       .finally(() => {
@@ -141,12 +142,12 @@ export function AdminDeploymentDetailDialog({
     let cancelled = false;
     setLoading(true);
     setError(null);
-    void adminApi
-      .getDeployment(deploymentId)
+    void deploymentsApi
+      .get(deploymentId)
       .then((data) => {
         if (!cancelled) setDeployment(data as DeploymentDto);
       })
-      .catch((err) => {
+      .catch((err: unknown) => {
         if (!cancelled) setError(getApiErrorMessage(err, 'Failed to load deployment'));
       })
       .finally(() => {

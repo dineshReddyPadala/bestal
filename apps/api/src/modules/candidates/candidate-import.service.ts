@@ -1020,7 +1020,7 @@ export class CandidateImportService {
           organizationId: BigInt(organizationId),
           candidateId,
           requestedById: BigInt(actorId),
-          type: 'COMPREHENSIVE',
+          type: bgv.packageType as 'COMPREHENSIVE' | 'CRIMINAL' | 'EMPLOYMENT' | 'EDUCATION' | 'REFERENCE' | 'IDENTITY' | 'CREDIT',
           status: mapBgvStatus(bgv.bgvStatus),
           provider: vendor,
           resultSummary,

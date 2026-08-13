@@ -88,7 +88,7 @@ export class CandidateService {
     this.candidateRepository = candidateRepository ?? new CandidateRepository(
       fastify.prisma,
     );
-    this.storageService = new StorageService(fastify.config);
+    this.storageService = new StorageService(fastify.config, fastify.prisma);
     this.prisma = fastify.prisma;
     this.audit = new AuditService(fastify.prisma);
   }
@@ -1257,6 +1257,7 @@ export class CandidateService {
       organizationId,
       candidateId: id,
       candidateName: `${updated.firstName} ${updated.lastName}`.trim(),
+      submittedById: authUser.id,
     });
 
     await this.writeCandidateAudit(authUser, 'UPDATE', id, 'Submitted candidate for approval');

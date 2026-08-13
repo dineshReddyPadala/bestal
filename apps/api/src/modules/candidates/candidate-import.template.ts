@@ -5,6 +5,7 @@ import {
   EVALUATION_SHEET_COLUMNS,
   IMPORT_AVAILABILITY_STATUSES,
   IMPORT_BGV_PER_CHECK_STATUSES,
+  IMPORT_BGV_PACKAGE_TYPES,
   IMPORT_BGV_STATUSES,
   IMPORT_CANDIDATE_SOURCES,
   IMPORT_CURRENCIES,
@@ -254,7 +255,7 @@ export async function buildCandidateImportTemplate(
     'reference_check_status',
   ] as const;
 
-  const bgvDropdownColumns = ['bgv_status', ...bgvPerCheckDropdownColumns] as const;
+  const bgvDropdownColumns = ['bgv_status', 'package_type', ...bgvPerCheckDropdownColumns] as const;
 
   const bgvSheet = addSheetWithHeaders(
     workbook,
@@ -265,6 +266,7 @@ export async function buildCandidateImportTemplate(
   bgvSheet.addRow({
     candidate_id: '1001',
     bgv_status: 'INITIATED',
+    package_type: 'COMPREHENSIVE',
     vendor: 'Example BGV Vendor',
     id_check_status: 'PENDING',
     address_check_status: 'PENDING',
@@ -352,6 +354,11 @@ export async function buildCandidateImportTemplate(
     IMPORT_WORKBOOK_SHEETS.BGV_PER_CHECK_STATUS,
     IMPORT_BGV_PER_CHECK_STATUSES,
   );
+  const bgvPackageTypesSheet = addMetadataSheet(
+    workbook,
+    IMPORT_WORKBOOK_SHEETS.BGV_PACKAGE_TYPES,
+    IMPORT_BGV_PACKAGE_TYPES,
+  );
   const scoreSourcesSheet = addMetadataSheet(
     workbook,
     IMPORT_WORKBOOK_SHEETS.SCORE_SOURCES,
@@ -437,8 +444,15 @@ export async function buildCandidateImportTemplate(
       BGV_SHEET_COLUMNS,
       column === 'bgv_status'
         ? IMPORT_WORKBOOK_SHEETS.BGV_STATUS
-        : IMPORT_WORKBOOK_SHEETS.BGV_PER_CHECK_STATUS,
-      column === 'bgv_status' ? bgvStatusSheet.rowCount : bgvPerCheckStatusSheet.rowCount,
+        : column === 'package_type'
+          ? IMPORT_WORKBOOK_SHEETS.BGV_PACKAGE_TYPES
+          : IMPORT_WORKBOOK_SHEETS.BGV_PER_CHECK_STATUS,
+      column === 'bgv_status'
+        ? bgvStatusSheet.rowCount
+        : column === 'package_type'
+          ? bgvPackageTypesSheet.rowCount
+          : bgvPerCheckStatusSheet.rowCount,
+      { allowBlank: column !== 'bgv_status' },
     );
   }
 

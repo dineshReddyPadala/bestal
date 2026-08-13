@@ -307,7 +307,8 @@ export function useAdminMutations() {
           | 'integrations'
           | 'commercials'
           | 'workflows'
-          | 'localization';
+          | 'localization'
+          | 'storage';
         body: unknown;
       }) => adminApi.putSetting(key, body),
       onSuccess: invalidate,

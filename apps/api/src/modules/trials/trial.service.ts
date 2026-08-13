@@ -52,6 +52,17 @@ export class TrialService {
       await this.validateDeployment(organizationId, input.deploymentId);
     }
 
+    const existingTrial = await this.trialRepository.findBlockingTrial(
+      organizationId,
+      input.candidateId,
+      clientId,
+    );
+    if (existingTrial) {
+      throw new BadRequestError(
+        'A trial was already requested or completed for this candidate. You cannot request another trial.',
+      );
+    }
+
     const trialsSettings = await readTrialsSettings(this.fastify.prisma);
     const maxTrialHours =
       input.maxTrialHours ?? trialsSettings.freeTrialHours;
@@ -67,6 +78,7 @@ export class TrialService {
       trialId: dto.id,
       candidateName: dto.candidateName,
       clientName: dto.clientName,
+      requestedById: authUser.id,
     });
     return dto;
   }
@@ -127,6 +139,7 @@ export class TrialService {
       candidateName: dto.candidateName,
       requestedById: dto.requestedById,
       assignedRecruiterId: dto.assignedRecruiterId,
+      actedById: authUser.id,
     });
     return dto;
   }
@@ -149,6 +162,7 @@ export class TrialService {
       candidateName: dto.candidateName,
       requestedById: dto.requestedById,
       assignedRecruiterId: dto.assignedRecruiterId,
+      actedById: authUser.id,
     });
     return dto;
   }
@@ -191,6 +205,7 @@ export class TrialService {
       candidateName: dto.candidateName,
       requestedById: dto.requestedById,
       assignedRecruiterId: dto.assignedRecruiterId,
+      actedById: authUser.id,
     });
     return dto;
   }

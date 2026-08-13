@@ -43,6 +43,7 @@ export type NormalizedEvaluationRow = {
 
 export type NormalizedBgvRow = {
   bgvStatus: string;
+  packageType: string;
   vendor: string | null;
   idCheckStatus: string | null;
   addressCheckStatus: string | null;
