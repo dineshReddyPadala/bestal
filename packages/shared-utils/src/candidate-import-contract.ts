@@ -3,6 +3,8 @@
  * One template for every ATS — no vendor-specific parsing branches.
  */
 
+import { EVALUATION_RECOMMENDATIONS, EVALUATION_TYPES } from './evaluation-options.js';
+
 export const IMPORT_WORKBOOK_SHEETS = {
   CANDIDATE: 'Candidate',
   SKILLS: 'Skills',
@@ -89,8 +91,14 @@ export const CANDIDATE_SHEET_COLUMNS = [
   'portfolio_url',
   'current_company',
   'current_title',
+  'education',
   'notice_period',
+  'notice_period_days',
   'preferred_shift',
+  'preferred_engagement',
+  'min_hours_per_week',
+  'max_hours_per_week',
+  'hours_per_week',
   'timezone_overlap',
   'resume_url',
 ] as const;
@@ -98,7 +106,6 @@ export const CANDIDATE_SHEET_COLUMNS = [
 export const SKILLS_SHEET_COLUMNS = [
   'candidate_id',
   'skill_name',
-  'skill_category',
   'proficiency',
   'years_experience',
   'is_primary',
@@ -184,15 +191,8 @@ export const IMPORT_AVAILABILITY_STATUSES = [
   'NOT_AVAILABLE',
 ] as const;
 
-export const IMPORT_EVALUATION_TYPES = [
-  'CODING_TEST',
-  'TECHNICAL_INTERVIEW',
-  'SYSTEM_DESIGN',
-  'PLATFORM_SPECIFIC',
-  'COMMUNICATION',
-  'FUNCTIONAL',
-  'MANUAL_SCORECARD',
-] as const;
+/** @deprecated Use EVALUATION_TYPES — template dropdowns use UI labels. */
+export const IMPORT_EVALUATION_TYPES = EVALUATION_TYPES;
 
 export const IMPORT_BGV_STATUSES = [
   'NOT_STARTED',
@@ -227,11 +227,13 @@ export const IMPORT_PROFICIENCY_LEVELS = [
   'Expert',
 ] as const;
 
-export const IMPORT_RECOMMENDATION_VALUES = [
-  'STRONG_HIRE',
-  'HIRE',
-  'BORDERLINE',
-  'REJECT',
+export const IMPORT_RECOMMENDATION_VALUES = EVALUATION_RECOMMENDATIONS;
+
+export const IMPORT_PREFERRED_ENGAGEMENTS = [
+  'FULL_TIME',
+  'PART_TIME',
+  'CONTRACT',
+  'FREELANCE',
 ] as const;
 
 export const IMPORT_CURRENCIES = ['USD', 'EUR', 'GBP', 'INR', 'CAD', 'AUD'] as const;
@@ -276,11 +278,12 @@ export const IMPORT_INSTRUCTIONS = [
 export type ImportSkillCommunity = (typeof IMPORT_SKILL_COMMUNITIES)[number];
 export type ImportAvailabilityStatus = (typeof IMPORT_AVAILABILITY_STATUSES)[number];
 export type ImportEvaluationType = (typeof IMPORT_EVALUATION_TYPES)[number];
+export type ImportRecommendationValue = (typeof IMPORT_RECOMMENDATION_VALUES)[number];
 export type ImportBgvStatus = (typeof IMPORT_BGV_STATUSES)[number];
 export type ImportCandidateSource = (typeof IMPORT_CANDIDATE_SOURCES)[number];
 export type ImportProficiencyLevel = (typeof IMPORT_PROFICIENCY_LEVELS)[number];
-export type ImportRecommendationValue = (typeof IMPORT_RECOMMENDATION_VALUES)[number];
 export type ImportCurrency = (typeof IMPORT_CURRENCIES)[number];
+export type ImportPreferredEngagement = (typeof IMPORT_PREFERRED_ENGAGEMENTS)[number];
 export type ImportScoreSource = (typeof IMPORT_SCORE_SOURCES)[number];
 
 export function slugifySkillCommunity(name: string): string {

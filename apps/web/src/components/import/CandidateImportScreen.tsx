@@ -279,6 +279,7 @@ export function CandidateImportScreen({
   const [failedRows, setFailedRows] = useState<CandidateImportErrorItem[]>([]);
   const [detailLoading, setDetailLoading] = useState(false);
   const [importing, setImporting] = useState(false);
+  const [importSuccess, setImportSuccess] = useState<string | null>(null);
   const [importProgress, setImportProgress] = useState<{ processed: number; total: number } | null>(
     null,
   );
@@ -380,21 +381,16 @@ export function CandidateImportScreen({
       setBusy(true);
       setImporting(true);
       setImportProgress(null);
+      setImportSuccess(null);
       setFileName(file.name);
       try {
         const data = await candidatesApi.enqueueImport(file);
-        setTab('history');
-        setHistoryPage(1);
-        await loadHistory(1);
-        openBatchDetail(data.batchId);
         const batch = await waitForImportCompletion(data.batchId);
-        await loadBatchDetail(data.batchId);
         await loadHistory(1);
         if (batch.status === 'COMPLETED') {
-          show(
-            `Import completed successfully — ${batch.created} created, ${batch.updated} updated, ${batch.failed} failed.`,
-            batch.failed > 0 ? 'error' : 'success',
-          );
+          const summary = `Import completed — ${batch.created} created, ${batch.updated} updated, ${batch.failed} failed.`;
+          setImportSuccess(summary);
+          show(summary, batch.failed > 0 ? 'error' : 'success');
         } else {
           showError(
             batch.errorSummary ??
@@ -513,6 +509,12 @@ export function CandidateImportScreen({
             <CardTitle className="text-base">Upload workbook</CardTitle>
           </CardHeader>
           <CardContent>
+            {importSuccess ? (
+              <div className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
+                <p className="font-medium">Import successful</p>
+                <p className="mt-1">{importSuccess}</p>
+              </div>
+            ) : null}
             <div
               className={cn(
                 'flex flex-col items-center justify-center rounded-xl border-2 border-dashed px-6 py-12 text-center transition-colors',
@@ -534,7 +536,7 @@ export function CandidateImportScreen({
                 {busy || importing ? 'Import in progress…' : 'Drop .xlsx here or choose a file'}
               </p>
               <p className="mt-1 text-xs text-muted-foreground">
-                Up to 10,000 candidates. You can leave after upload — results appear in history.
+                Up to 10,000 candidates. Stay on this tab until import completes.
               </p>
               {fileName && (
                 <p className="mt-2 text-xs text-muted-foreground">Selected: {fileName}</p>

@@ -1,7 +1,7 @@
-import { cn, formatDate } from '@bestal/shared-utils';
+import { cn, formatBgvCheckStatusesSummary, formatBgvStatusLabel, formatDate, BGV_PER_CHECK_STATUS_OPTIONS } from '@bestal/shared-utils';
 import { Button, Dialog, FileUpload, Input, Select, StatusBadge, TanStackDataTable } from '@bestal/ui';
 import { type ColumnDef } from '@tanstack/react-table';
-import { Check, Download, Eye, Loader2, Pencil, Plus, Sparkles } from 'lucide-react';
+import { Check, Loader2, Plus, Sparkles } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useCandidatesList } from '../../hooks/api/useCandidates';
@@ -18,6 +18,11 @@ import { mapBgvExtractionToForm } from '../../lib/api/ai/bgv-extraction.mapper';
 import { getApiErrorMessage } from '../../lib/api/errors';
 import { backgroundChecksApi } from '../../lib/api/evaluations';
 import type { BackgroundCheckDto, BackgroundCheckListItem } from '../../lib/api/types';
+import {
+  BGV_WIZARD_STATUS_OPTIONS,
+  mapWizardBgvStatusFromApi,
+  mapWizardBgvStatusToApi,
+} from '../forms/candidate-wizard-schema';
 import { useDemoToast } from '../../lib/use-demo-toast';
 import {
   ListingFilterSelect,
@@ -25,12 +30,15 @@ import {
   ListingPageShell,
 } from '../layout/ListingPageShell';
 import {
-  BGV_RECRUITER_STEPS,
   bgvStepIndex,
-  getBgvRecruiterStep,
-  isBgvStepComplete,
-  type BgvRecruiterStepId,
+  getBgvStepsForDetail,
+  getBgvWorkflowStep,
+  isBgvWorkflowStepComplete,
+  isImportedBgv,
+  resolveBgvResultSummaryForDisplay,
+  type BgvWorkflowStepId,
 } from './bgv-workflow-steps';
+import { ActionMenu } from '../ui/ActionMenu';
 
 const BGV_TYPES = [
   'CRIMINAL',
@@ -42,15 +50,41 @@ const BGV_TYPES = [
   'COMPREHENSIVE',
 ] as const;
 
-const BGV_RECRUITER_EDIT_STATUSES = [
-  'NOT_STARTED',
-  'PENDING',
-  'CONSENT_PENDING',
-  'INITIATED',
-  'IN_PROGRESS',
-  'SUSPENDED',
-  'EXPIRED',
+const BGV_EDIT_STATUS_OPTIONS = [
+  ...BGV_WIZARD_STATUS_OPTIONS.filter((status) => status !== 'COMPLETED_CLEAR'),
+  'CONSIDER',
+  'CANCELLED',
 ] as const;
+
+const BGV_CHECK_STATUS_OPTIONS = ['', ...BGV_PER_CHECK_STATUS_OPTIONS] as const;
+
+type EditCheckField =
+  | 'editIdCheckStatus'
+  | 'editAddressCheckStatus'
+  | 'editEmploymentCheckStatus'
+  | 'editEducationCheckStatus'
+  | 'editCriminalCheckStatus'
+  | 'editReferenceCheckStatus';
+
+const EDIT_CHECK_FIELDS: Array<{ key: EditCheckField; label: string }> = [
+  { key: 'editIdCheckStatus', label: 'Identity' },
+  { key: 'editAddressCheckStatus', label: 'Address' },
+  { key: 'editEmploymentCheckStatus', label: 'Employment' },
+  { key: 'editEducationCheckStatus', label: 'Education' },
+  { key: 'editCriminalCheckStatus', label: 'Criminal' },
+  { key: 'editReferenceCheckStatus', label: 'Reference' },
+];
+
+function toDateInputValue(iso: string | null | undefined): string {
+  if (!iso?.trim()) return '';
+  return iso.slice(0, 10);
+}
+
+function dateInputToIso(date: string): string | null {
+  const trimmed = date.trim();
+  if (!trimmed) return null;
+  return `${trimmed}T00:00:00.000Z`;
+}
 
 type BackgroundVerificationManagementViewProps = {
   title?: string;
@@ -67,13 +101,14 @@ function StepRail({
   currentStep,
 }: {
   detail: BackgroundCheckDto;
-  currentStep: BgvRecruiterStepId;
+  currentStep: BgvWorkflowStepId;
 }) {
-  const currentIdx = bgvStepIndex(currentStep);
+  const steps = getBgvStepsForDetail(detail);
+  const currentIdx = bgvStepIndex(currentStep, detail);
   return (
     <ol className="flex flex-wrap gap-1.5">
-      {BGV_RECRUITER_STEPS.map((step, idx) => {
-        const done = isBgvStepComplete(detail, step.id);
+      {steps.map((step, idx) => {
+        const done = isBgvWorkflowStepComplete(detail, step.id);
         const active = step.id === currentStep;
         return (
           <li
@@ -120,6 +155,16 @@ export function BackgroundVerificationManagementView({
   const [editAiBgvSummary, setEditAiBgvSummary] = useState('');
   const [editConcernNotes, setEditConcernNotes] = useState('');
   const [editResultSummary, setEditResultSummary] = useState('');
+  const [editIdCheckStatus, setEditIdCheckStatus] = useState('');
+  const [editAddressCheckStatus, setEditAddressCheckStatus] = useState('');
+  const [editEmploymentCheckStatus, setEditEmploymentCheckStatus] = useState('');
+  const [editEducationCheckStatus, setEditEducationCheckStatus] = useState('');
+  const [editCriminalCheckStatus, setEditCriminalCheckStatus] = useState('');
+  const [editReferenceCheckStatus, setEditReferenceCheckStatus] = useState('');
+  const [editInitiatedDate, setEditInitiatedDate] = useState('');
+  const [editCompletedDate, setEditCompletedDate] = useState('');
+  const [editExternalReferenceId, setEditExternalReferenceId] = useState('');
+  const [editIsImported, setEditIsImported] = useState(false);
   const [editCandidateName, setEditCandidateName] = useState('');
   const [selectedCandidateId, setSelectedCandidateId] = useState('');
   const [selectedType, setSelectedType] = useState<string>('COMPREHENSIVE');
@@ -151,7 +196,11 @@ export function BackgroundVerificationManagementView({
   const candidateOptions = useMemo(
     () =>
       (candidatesData?.data ?? [])
-        .filter((c) => c.profileStatus === 'EVALUATION_COMPLETE')
+        .filter((c) =>
+          ['EVALUATION_COMPLETE', 'BGV_PENDING', 'BGV_COMPLETE', 'PROFILE_DRAFT'].includes(
+            c.profileStatus ?? '',
+          ),
+        )
         .map((c) => ({
           id: c.id,
           name: `${c.firstName} ${c.lastName}`.trim(),
@@ -181,7 +230,8 @@ export function BackgroundVerificationManagementView({
     return rows;
   }, [records, filters]);
 
-  const currentStep = detail ? getBgvRecruiterStep(detail) : 'consent';
+  const currentStep = detail ? getBgvWorkflowStep(detail) : 'consent';
+  const detailIsImported = detail ? isImportedBgv(detail) : false;
   const awaitingAdmin = Boolean(
     detail &&
       (detail.status === 'CONSIDER' || detail.status === 'CLEAR' || detail.status === 'FAILED'),
@@ -255,8 +305,94 @@ export function BackgroundVerificationManagementView({
     setEditAiBgvSummary('');
     setEditConcernNotes('');
     setEditResultSummary('');
+    setEditIdCheckStatus('');
+    setEditAddressCheckStatus('');
+    setEditEmploymentCheckStatus('');
+    setEditEducationCheckStatus('');
+    setEditCriminalCheckStatus('');
+    setEditReferenceCheckStatus('');
+    setEditInitiatedDate('');
+    setEditCompletedDate('');
+    setEditExternalReferenceId('');
+    setEditIsImported(false);
     setEditCandidateName('');
   }, []);
+
+  const syncEditResultSummary = useCallback(
+    (fields: {
+      idCheckStatus: string;
+      addressCheckStatus: string;
+      employmentCheckStatus: string;
+      educationCheckStatus: string;
+      criminalCheckStatus: string;
+      referenceCheckStatus: string;
+    }) => {
+      setEditResultSummary(
+        formatBgvCheckStatusesSummary({
+          idCheckStatus: fields.idCheckStatus || null,
+          addressCheckStatus: fields.addressCheckStatus || null,
+          employmentCheckStatus: fields.employmentCheckStatus || null,
+          educationCheckStatus: fields.educationCheckStatus || null,
+          criminalCheckStatus: fields.criminalCheckStatus || null,
+          referenceCheckStatus: fields.referenceCheckStatus || null,
+        }),
+      );
+    },
+    [],
+  );
+
+  const updateEditCheckStatus = useCallback(
+    (field: EditCheckField, value: string) => {
+      const next = {
+        editIdCheckStatus,
+        editAddressCheckStatus,
+        editEmploymentCheckStatus,
+        editEducationCheckStatus,
+        editCriminalCheckStatus,
+        editReferenceCheckStatus,
+        [field]: value,
+      };
+      switch (field) {
+        case 'editIdCheckStatus':
+          setEditIdCheckStatus(value);
+          break;
+        case 'editAddressCheckStatus':
+          setEditAddressCheckStatus(value);
+          break;
+        case 'editEmploymentCheckStatus':
+          setEditEmploymentCheckStatus(value);
+          break;
+        case 'editEducationCheckStatus':
+          setEditEducationCheckStatus(value);
+          break;
+        case 'editCriminalCheckStatus':
+          setEditCriminalCheckStatus(value);
+          break;
+        case 'editReferenceCheckStatus':
+          setEditReferenceCheckStatus(value);
+          break;
+        default:
+          break;
+      }
+      syncEditResultSummary({
+        idCheckStatus: next.editIdCheckStatus,
+        addressCheckStatus: next.editAddressCheckStatus,
+        employmentCheckStatus: next.editEmploymentCheckStatus,
+        educationCheckStatus: next.editEducationCheckStatus,
+        criminalCheckStatus: next.editCriminalCheckStatus,
+        referenceCheckStatus: next.editReferenceCheckStatus,
+      });
+    },
+    [
+      editAddressCheckStatus,
+      editCriminalCheckStatus,
+      editEducationCheckStatus,
+      editEmploymentCheckStatus,
+      editIdCheckStatus,
+      editReferenceCheckStatus,
+      syncEditResultSummary,
+    ],
+  );
 
   const openEditBgv = useCallback(
     async (record: BackgroundCheckListItem) => {
@@ -266,12 +402,22 @@ export function BackgroundVerificationManagementView({
         const full = await backgroundChecksApi.get(record.id);
         setEditingBgvId(full.id);
         setEditCandidateName(full.candidateName);
+        setEditIsImported(isImportedBgv(full));
         setEditType(full.type ?? 'COMPREHENSIVE');
-        setEditStatus(full.status);
+        setEditStatus(mapWizardBgvStatusFromApi(full.status));
         setEditVendorName(full.provider ?? '');
         setEditAiBgvSummary(full.aiSummary ?? '');
         setEditConcernNotes(full.reviewNotes ?? '');
-        setEditResultSummary(full.resultSummary ?? '');
+        setEditIdCheckStatus(full.idCheckStatus ?? '');
+        setEditAddressCheckStatus(full.addressCheckStatus ?? '');
+        setEditEmploymentCheckStatus(full.employmentCheckStatus ?? '');
+        setEditEducationCheckStatus(full.educationCheckStatus ?? '');
+        setEditCriminalCheckStatus(full.criminalCheckStatus ?? '');
+        setEditReferenceCheckStatus(full.referenceCheckStatus ?? '');
+        setEditInitiatedDate(toDateInputValue(full.initiatedAt));
+        setEditCompletedDate(toDateInputValue(full.completedAt));
+        setEditExternalReferenceId(full.externalReferenceId ?? '');
+        setEditResultSummary(resolveBgvResultSummaryForDisplay(full));
       } catch (err) {
         showError(getApiErrorMessage(err, 'Failed to load background check'));
         setEditOpen(false);
@@ -285,16 +431,34 @@ export function BackgroundVerificationManagementView({
 
   const handleEditSave = useCallback(async () => {
     if (editingBgvId == null) return;
+    const checkFields = {
+      idCheckStatus: editIdCheckStatus.trim() || null,
+      addressCheckStatus: editAddressCheckStatus.trim() || null,
+      employmentCheckStatus: editEmploymentCheckStatus.trim() || null,
+      educationCheckStatus: editEducationCheckStatus.trim() || null,
+      criminalCheckStatus: editCriminalCheckStatus.trim() || null,
+      referenceCheckStatus: editReferenceCheckStatus.trim() || null,
+    };
+    const computedSummary = formatBgvCheckStatusesSummary(checkFields);
     try {
       await mutations.update.mutateAsync({
         id: editingBgvId,
         body: {
           type: editType,
-          status: editStatus || undefined,
+          status: mapWizardBgvStatusToApi(editStatus) || undefined,
           provider: editVendorName.trim() || undefined,
           aiSummary: editAiBgvSummary.trim() || null,
           reviewNotes: editConcernNotes.trim() || null,
-          resultSummary: editResultSummary.trim() || null,
+          resultSummary: computedSummary || editResultSummary.trim() || null,
+          idCheckStatus: checkFields.idCheckStatus,
+          addressCheckStatus: checkFields.addressCheckStatus,
+          employmentCheckStatus: checkFields.employmentCheckStatus,
+          educationCheckStatus: checkFields.educationCheckStatus,
+          criminalCheckStatus: checkFields.criminalCheckStatus,
+          referenceCheckStatus: checkFields.referenceCheckStatus,
+          initiatedAt: dateInputToIso(editInitiatedDate),
+          completedAt: dateInputToIso(editCompletedDate),
+          externalReferenceId: editExternalReferenceId.trim() || null,
         },
       });
       show(`BGV updated — ${editCandidateName || 'candidate'}`);
@@ -312,6 +476,15 @@ export function BackgroundVerificationManagementView({
     editAiBgvSummary,
     editCandidateName,
     editConcernNotes,
+    editCriminalCheckStatus,
+    editEducationCheckStatus,
+    editEmploymentCheckStatus,
+    editAddressCheckStatus,
+    editIdCheckStatus,
+    editReferenceCheckStatus,
+    editInitiatedDate,
+    editCompletedDate,
+    editExternalReferenceId,
     editResultSummary,
     editStatus,
     editType,
@@ -553,57 +726,40 @@ export function BackgroundVerificationManagementView({
         },
       },
       {
-        id: 'download',
-        header: 'Download',
-        cell: ({ row }) =>
-          row.original.documentId ? (
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={() =>
-                void backgroundChecksApi
-                  .downloadReport(row.original.id)
-                  .catch((err) => showError(getApiErrorMessage(err, 'Download failed')))
-              }
-            >
-              <Download className="mr-1 h-3.5 w-3.5" />
-              Report
-            </Button>
-          ) : (
-            <span className="text-muted-foreground">—</span>
-          ),
-      },
-      {
         id: 'actions',
         header: '',
         cell: ({ row }) => (
-          <div className="flex items-center justify-end gap-1">
-            {canUploadBgv ? (
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => void openEditBgv(row.original)}
-              >
-                <Pencil className="mr-1 h-3.5 w-3.5" />
-                Edit
-              </Button>
-            ) : null}
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={() => void openDetail(row.original.id)}
-            >
-              <Eye className="mr-1 h-3.5 w-3.5" />
-              Open
-            </Button>
-          </div>
+          <ActionMenu
+            label="BGV actions"
+            items={[
+              {
+                id: 'open',
+                label: 'Open workflow',
+                onSelect: () => void openDetail(row.original.id),
+              },
+              {
+                id: 'edit',
+                label: 'Edit',
+                hidden: !canUploadBgv,
+                separatorBefore: true,
+                onSelect: () => void openEditBgv(row.original),
+              },
+              {
+                id: 'download',
+                label: 'Download report',
+                hidden: !row.original.documentId,
+                separatorBefore: true,
+                onSelect: () =>
+                  void backgroundChecksApi
+                    .downloadReport(row.original.id)
+                    .catch((err) => showError(getApiErrorMessage(err, 'Download failed'))),
+              },
+            ]}
+          />
         ),
       },
     ],
-    [canUploadBgv, openDetail, openEditBgv],
+    [canUploadBgv, openDetail, openEditBgv, showError],
   );
 
   const listError = isError
@@ -919,14 +1075,14 @@ export function BackgroundVerificationManagementView({
                   value={editStatus}
                   onChange={(e) => setEditStatus(e.target.value)}
                 >
-                  {BGV_RECRUITER_EDIT_STATUSES.includes(
-                    editStatus as (typeof BGV_RECRUITER_EDIT_STATUSES)[number],
+                  {BGV_EDIT_STATUS_OPTIONS.includes(
+                    editStatus as (typeof BGV_EDIT_STATUS_OPTIONS)[number],
                   ) ? null : (
-                    <option value={editStatus}>{editStatus.replace(/_/g, ' ')}</option>
+                    <option value={editStatus}>{formatBgvStatusLabel(editStatus)}</option>
                   )}
-                  {BGV_RECRUITER_EDIT_STATUSES.map((status) => (
+                  {BGV_EDIT_STATUS_OPTIONS.map((status) => (
                     <option key={status} value={status}>
-                      {status.replace(/_/g, ' ')}
+                      {formatBgvStatusLabel(status)}
                     </option>
                   ))}
                 </Select>
@@ -942,6 +1098,82 @@ export function BackgroundVerificationManagementView({
                   placeholder="e.g. Checkr, Sterling"
                 />
               </div>
+              <div className="space-y-2">
+                <label htmlFor="bgv-edit-initiated" className="text-sm font-medium">
+                  Initiated date
+                </label>
+                <Input
+                  id="bgv-edit-initiated"
+                  type="date"
+                  value={editInitiatedDate}
+                  onChange={(e) => setEditInitiatedDate(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="bgv-edit-completed" className="text-sm font-medium">
+                  Completed date
+                </label>
+                <Input
+                  id="bgv-edit-completed"
+                  type="date"
+                  value={editCompletedDate}
+                  onChange={(e) => setEditCompletedDate(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2 sm:col-span-2">
+                <label htmlFor="bgv-edit-external-ref" className="text-sm font-medium">
+                  External reference ID
+                </label>
+                <Input
+                  id="bgv-edit-external-ref"
+                  value={editExternalReferenceId}
+                  onChange={(e) => setEditExternalReferenceId(e.target.value)}
+                  placeholder="Vendor case / reference number"
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <p className="text-sm font-medium">Per-check statuses</p>
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {EDIT_CHECK_FIELDS.map(({ key, label }) => {
+                  const value =
+                    key === 'editIdCheckStatus'
+                      ? editIdCheckStatus
+                      : key === 'editAddressCheckStatus'
+                        ? editAddressCheckStatus
+                        : key === 'editEmploymentCheckStatus'
+                          ? editEmploymentCheckStatus
+                          : key === 'editEducationCheckStatus'
+                            ? editEducationCheckStatus
+                            : key === 'editCriminalCheckStatus'
+                              ? editCriminalCheckStatus
+                              : editReferenceCheckStatus;
+                  return (
+                    <div key={key} className="space-y-2">
+                      <label htmlFor={`bgv-edit-${key}`} className="text-sm font-medium">
+                        {label}
+                      </label>
+                      <Select
+                        id={`bgv-edit-${key}`}
+                        className="h-10"
+                        value={value}
+                        onChange={(e) => updateEditCheckStatus(key, e.target.value)}
+                      >
+                        {!BGV_CHECK_STATUS_OPTIONS.includes(
+                          value as (typeof BGV_CHECK_STATUS_OPTIONS)[number],
+                        ) && value ? (
+                          <option value={value}>{formatBgvStatusLabel(value)}</option>
+                        ) : null}
+                        {BGV_CHECK_STATUS_OPTIONS.map((status) => (
+                          <option key={status || 'empty'} value={status}>
+                            {status ? formatBgvStatusLabel(status) : '—'}
+                          </option>
+                        ))}
+                      </Select>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
             <div className="space-y-2">
               <label htmlFor="bgv-edit-result-summary" className="text-sm font-medium">
@@ -950,23 +1182,28 @@ export function BackgroundVerificationManagementView({
               <textarea
                 id="bgv-edit-result-summary"
                 rows={4}
-                className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                readOnly
+                className="flex min-h-[80px] w-full rounded-md border border-input bg-muted/20 px-3 py-2 text-sm"
                 value={editResultSummary}
-                onChange={(e) => setEditResultSummary(e.target.value)}
               />
+              <p className="text-xs text-muted-foreground">
+                Auto-generated from per-check statuses when you save.
+              </p>
             </div>
-            <div className="space-y-2">
-              <label htmlFor="bgv-edit-ai-summary" className="text-sm font-medium">
-                AI BGV summary
-              </label>
-              <textarea
-                id="bgv-edit-ai-summary"
-                rows={3}
-                className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                value={editAiBgvSummary}
-                onChange={(e) => setEditAiBgvSummary(e.target.value)}
-              />
-            </div>
+            {!editIsImported ? (
+              <div className="space-y-2">
+                <label htmlFor="bgv-edit-ai-summary" className="text-sm font-medium">
+                  AI BGV summary
+                </label>
+                <textarea
+                  id="bgv-edit-ai-summary"
+                  rows={3}
+                  className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  value={editAiBgvSummary}
+                  onChange={(e) => setEditAiBgvSummary(e.target.value)}
+                />
+              </div>
+            ) : null}
             <div className="space-y-2">
               <label htmlFor="bgv-edit-concerns" className="text-sm font-medium">
                 Concern notes
@@ -1012,7 +1249,157 @@ export function BackgroundVerificationManagementView({
 
             {canUploadBgv && !awaitingAdmin ? (
               <section className="space-y-4 rounded-xl border border-border/80 bg-muted/10 p-4">
-                {currentStep === 'consent' && (
+                {detailIsImported && currentStep === 'review' && (
+                  <>
+                    <div>
+                      <h3 className="text-sm font-semibold">Review imported BGV</h3>
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        Imported BGV — update fields manually via Edit BGV. Candidate approval
+                        happens in the Approvals queue.
+                      </p>
+                    </div>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <p className="text-sm">
+                        <span className="text-muted-foreground">Vendor:</span>{' '}
+                        {detail.provider || '—'}
+                      </p>
+                      <p className="text-sm">
+                        <span className="text-muted-foreground">Status:</span>{' '}
+                        <StatusBadge status={detail.status} />
+                      </p>
+                    </div>
+                    {resolveBgvResultSummaryForDisplay(detail) ? (
+                      <div className="rounded-lg border border-border/70 bg-muted/20 p-3">
+                        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                          Check statuses
+                        </p>
+                        <pre className="max-h-48 overflow-auto whitespace-pre-wrap text-xs text-foreground">
+                          {resolveBgvResultSummaryForDisplay(detail)}
+                        </pre>
+                      </div>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">
+                        No check statuses yet. Open Edit BGV to add per-check results.
+                      </p>
+                    )}
+                    {detail.reviewNotes?.trim() ? (
+                      <div className="rounded-lg border border-amber-200 bg-amber-50 p-3">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-amber-900">
+                          Concern notes
+                        </p>
+                        <p className="mt-1 text-sm text-amber-900">{detail.reviewNotes}</p>
+                      </div>
+                    ) : null}
+
+                    <div className="space-y-3 border-t border-border/60 pt-4">
+                      <h4 className="text-sm font-semibold">Documents</h4>
+                      <p className="text-sm text-muted-foreground">
+                        Upload consent, supporting documents, or the final BGV report. Files are
+                        stored without AI analysis for imported candidates.
+                      </p>
+                      {(detail.documents?.length ?? 0) > 0 ? (
+                        <ul className="space-y-1 rounded-lg border border-border/70 bg-background p-3 text-sm">
+                          {detail.documents?.map((doc) => (
+                            <li key={doc.id} className="flex flex-wrap items-center gap-2">
+                              <span className="font-medium">{doc.description ?? 'Document'}:</span>
+                              {doc.url ? (
+                                <a
+                                  href={doc.url}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="text-brand hover:underline"
+                                >
+                                  {doc.originalName}
+                                </a>
+                              ) : (
+                                <span>{doc.originalName}</span>
+                              )}
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className="text-sm text-muted-foreground">No documents uploaded yet.</p>
+                      )}
+                      <div className="grid gap-4 lg:grid-cols-3">
+                        <FileUpload
+                          key="imported-consent-upload"
+                          label="Consent form"
+                          accept=".pdf,.doc,.docx"
+                          hint="PDF or Word"
+                          onFileSelect={(file) =>
+                            void run(
+                              () =>
+                                mutations.uploadDocument.mutateAsync({
+                                  id: detail.id,
+                                  kind: 'CONSENT',
+                                  file,
+                                }),
+                              'Consent document uploaded',
+                            )
+                          }
+                        />
+                        <FileUpload
+                          key="imported-supporting-upload"
+                          label="Supporting document"
+                          accept=".pdf,.doc,.docx,.png,.jpg,.jpeg"
+                          hint="PDF, Word, or image"
+                          onFileSelect={(file) =>
+                            void run(
+                              () =>
+                                mutations.uploadDocument.mutateAsync({
+                                  id: detail.id,
+                                  kind: 'SUPPORTING',
+                                  file,
+                                }),
+                              'Supporting document uploaded',
+                            )
+                          }
+                        />
+                        <FileUpload
+                          key="imported-report-upload"
+                          label="BGV report"
+                          accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                          hint="PDF or Word"
+                          onFileSelect={(file) =>
+                            void run(
+                              () =>
+                                mutations.uploadDocument.mutateAsync({
+                                  id: detail.id,
+                                  kind: 'REPORT',
+                                  file,
+                                }),
+                              'BGV report uploaded',
+                            )
+                          }
+                        />
+                      </div>
+                      <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
+                        <span>
+                          Consent: {detail.hasConsentDocument ? 'On file' : 'Not uploaded'}
+                        </span>
+                        <span>
+                          Supporting: {detail.supportingDocumentCount ?? 0} document
+                          {(detail.supportingDocumentCount ?? 0) === 1 ? '' : 's'}
+                        </span>
+                        <span>Report: {detail.hasReportDocument ? 'On file' : 'Not uploaded'}</span>
+                      </div>
+                    </div>
+
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        const row = records.find((r) => r.id === detail.id);
+                        if (row) void openEditBgv(row);
+                      }}
+                    >
+                      Edit BGV
+                    </Button>
+                  </>
+                )}
+
+                {!detailIsImported && currentStep === 'consent' && (
                   <>
                     <div>
                       <h3 className="text-sm font-semibold">1. Confirm candidate consent</h3>
@@ -1053,7 +1440,7 @@ export function BackgroundVerificationManagementView({
                   </>
                 )}
 
-                {currentStep === 'docs' && (
+                {!detailIsImported && currentStep === 'docs' && (
                   <>
                     <div>
                       <h3 className="text-sm font-semibold">2. Upload supporting documents</h3>
@@ -1082,7 +1469,7 @@ export function BackgroundVerificationManagementView({
                   </>
                 )}
 
-                {currentStep === 'vendor' && (
+                {!detailIsImported && currentStep === 'vendor' && (
                   <>
                     <div>
                       <h3 className="text-sm font-semibold">3. Assign verification vendor</h3>
@@ -1121,7 +1508,7 @@ export function BackgroundVerificationManagementView({
                   </>
                 )}
 
-                {currentStep === 'start' && (
+                {!detailIsImported && currentStep === 'start' && (
                   <>
                     <div>
                       <h3 className="text-sm font-semibold">4. Start verification</h3>
@@ -1146,7 +1533,7 @@ export function BackgroundVerificationManagementView({
                   </>
                 )}
 
-                {currentStep === 'report' && (
+                {!detailIsImported && currentStep === 'report' && (
                   <>
                     <div>
                       <h3 className="text-sm font-semibold">5. Upload final BGV report</h3>
@@ -1184,7 +1571,7 @@ export function BackgroundVerificationManagementView({
                   </>
                 )}
 
-                {currentStep === 'ai' && (
+                {!detailIsImported && currentStep === 'ai' && (
                   <>
                     <div>
                       <h3 className="text-sm font-semibold">6. Review AI extraction</h3>

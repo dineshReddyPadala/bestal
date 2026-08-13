@@ -111,6 +111,7 @@ function applyListValidation(
 export type CandidateImportTemplateOptions = {
   skillCommunities?: readonly string[];
   timezones?: readonly string[];
+  currencies?: readonly string[];
 };
 
 export async function buildCandidateImportTemplate(
@@ -119,6 +120,7 @@ export async function buildCandidateImportTemplate(
   const skillCommunities =
     options.skillCommunities?.length ? options.skillCommunities : IMPORT_SKILL_COMMUNITIES;
   const timezones = options.timezones?.length ? options.timezones : IMPORT_TIMEZONES;
+  const currencies = options.currencies?.length ? options.currencies : IMPORT_CURRENCIES;
 
   const workbook = new ExcelJS.Workbook();
   workbook.creator = 'BesTal';
@@ -166,8 +168,14 @@ export async function buildCandidateImportTemplate(
     portfolio_url: '',
     current_company: 'Example Corp',
     current_title: 'Staff Engineer',
+    education: 'BSc Computer Science',
     notice_period: '2 weeks',
+    notice_period_days: 14,
     preferred_shift: 'Day',
+    preferred_engagement: 'CONTRACT',
+    min_hours_per_week: 32,
+    max_hours_per_week: 40,
+    hours_per_week: 40,
     timezone_overlap: '4 hours EST',
     resume_url: '',
   });
@@ -181,7 +189,6 @@ export async function buildCandidateImportTemplate(
   skillsSheet.addRow({
     candidate_id: '1001',
     skill_name: 'React',
-    skill_category: 'Frontend',
     proficiency: 'Advanced',
     years_experience: 6,
     is_primary: 'Yes',
@@ -195,7 +202,7 @@ export async function buildCandidateImportTemplate(
   );
   evaluationSheet.addRow({
     candidate_id: '1001',
-    evaluation_type: 'TECHNICAL_INTERVIEW',
+    evaluation_type: 'Live Technical Interview',
     evaluation_date: '2026-07-15',
     evaluator_name: 'Jane Recruiter',
     evaluator_company: 'BesTal',
@@ -204,7 +211,7 @@ export async function buildCandidateImportTemplate(
     problem_solving_score: 85,
     architecture_score: 80,
     client_readiness_score: 87,
-    recommendation: 'HIRE',
+    recommendation: 'Hire',
     evaluation_summary: 'Strong technical depth and clear communication.',
     ai_evaluation_summary: '',
     comments: '',
@@ -299,7 +306,7 @@ export async function buildCandidateImportTemplate(
   const currencySheet = addMetadataSheet(
     workbook,
     IMPORT_WORKBOOK_SHEETS.CURRENCY,
-    IMPORT_CURRENCIES,
+    currencies,
   );
   const timezoneSheet = addMetadataSheet(
     workbook,

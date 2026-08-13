@@ -10,6 +10,7 @@ import {
   IMPORT_CURRENCIES,
   IMPORT_DATA_SHEETS,
   IMPORT_EVALUATION_TYPES,
+  IMPORT_PREFERRED_ENGAGEMENTS,
   IMPORT_PROFICIENCY_LEVELS,
   IMPORT_RECOMMENDATION_VALUES,
   IMPORT_SKILL_COMMUNITY_ALIASES,
@@ -19,6 +20,9 @@ import {
   IMPORT_WORKBOOK_SHEETS,
   SCORES_SHEET_COLUMNS,
   SKILLS_SHEET_COLUMNS,
+  normalizeEvaluationRecommendation,
+  normalizeEvaluationType,
+  parseNoticePeriodToDays,
 } from '@bestal/shared-utils';
 import type {
   CandidateAvailabilityStatus,
@@ -607,6 +611,59 @@ export async function parseAndValidateCandidateWorkbook(
       errors,
       sourceCandidateId,
     );
+    const noticePeriodDaysFromColumn = parseNumber(
+      raw.notice_period_days,
+      IMPORT_WORKBOOK_SHEETS.CANDIDATE,
+      rowNumber,
+      'notice_period_days',
+      errors,
+      sourceCandidateId,
+      { min: 0, max: 365, integer: true },
+    );
+    const noticePeriodDays =
+      noticePeriodDaysFromColumn ??
+      parseNoticePeriodToDays(raw.notice_period) ??
+      null;
+    const noticePeriod =
+      noticePeriodDays != null
+        ? `${noticePeriodDays} days`
+        : raw.notice_period?.trim() || null;
+    const minHoursPerWeek = parseNumber(
+      raw.min_hours_per_week,
+      IMPORT_WORKBOOK_SHEETS.CANDIDATE,
+      rowNumber,
+      'min_hours_per_week',
+      errors,
+      sourceCandidateId,
+      { min: 0, max: 168, integer: true },
+    );
+    const maxHoursPerWeek = parseNumber(
+      raw.max_hours_per_week,
+      IMPORT_WORKBOOK_SHEETS.CANDIDATE,
+      rowNumber,
+      'max_hours_per_week',
+      errors,
+      sourceCandidateId,
+      { min: 0, max: 168, integer: true },
+    );
+    const hoursPerWeek = parseNumber(
+      raw.hours_per_week,
+      IMPORT_WORKBOOK_SHEETS.CANDIDATE,
+      rowNumber,
+      'hours_per_week',
+      errors,
+      sourceCandidateId,
+      { min: 0, max: 168, integer: true },
+    );
+    assertAllowed(
+      raw.preferred_engagement,
+      IMPORT_PREFERRED_ENGAGEMENTS,
+      IMPORT_WORKBOOK_SHEETS.CANDIDATE,
+      rowNumber,
+      'preferred_engagement',
+      errors,
+      sourceCandidateId,
+    );
 
     const email = raw.email?.trim().toLowerCase() || null;
     if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
@@ -655,8 +712,14 @@ export async function parseAndValidateCandidateWorkbook(
       portfolioUrl: raw.portfolio_url?.trim() || null,
       currentCompany: raw.current_company?.trim() || null,
       currentTitle: raw.current_title?.trim() || null,
-      noticePeriod: raw.notice_period?.trim() || null,
+      education: raw.education?.trim() || null,
+      noticePeriod,
+      noticePeriodDays,
       preferredShift: raw.preferred_shift?.trim() || null,
+      preferredEngagement: raw.preferred_engagement?.trim() || null,
+      minHoursPerWeek: minHoursPerWeek ?? hoursPerWeek,
+      maxHoursPerWeek: maxHoursPerWeek ?? hoursPerWeek,
+      hoursPerWeek,
       timezoneOverlap: raw.timezone_overlap?.trim() || null,
       resumeUrl: raw.resume_url?.trim() || null,
       skills: [],
@@ -715,7 +778,7 @@ export async function parseAndValidateCandidateWorkbook(
     );
     const skill: NormalizedSkillRow = {
       skillName: raw.skill_name.trim().slice(0, 150),
-      skillCategory: raw.skill_category?.trim() || null,
+      skillCategory: null,
       proficiency,
       yearsExperience,
       isPrimary: parseYesNo(raw.is_primary),
@@ -751,30 +814,42 @@ export async function parseAndValidateCandidateWorkbook(
       });
       continue;
     }
-    if (raw.evaluation_type) {
-      assertAllowed(
-        raw.evaluation_type,
-        IMPORT_EVALUATION_TYPES,
-        IMPORT_WORKBOOK_SHEETS.EVALUATION,
-        rowNumber,
-        'evaluation_type',
-        errors,
-        sourceCandidateId,
-      );
+    let evaluationType: string | null = null;
+    if (raw.evaluation_type?.trim()) {
+      const normalizedType = normalizeEvaluationType(raw.evaluation_type);
+      if (!normalizedType) {
+        pushError(errors, {
+          sheetName: IMPORT_WORKBOOK_SHEETS.EVALUATION,
+          rowNumber,
+          sourceCandidateId,
+          columnName: 'evaluation_type',
+          suppliedValue: raw.evaluation_type,
+          errorCode: 'INVALID_VALUE',
+          message: `evaluation_type must be one of: ${IMPORT_EVALUATION_TYPES.join(', ')}.`,
+        });
+        continue;
+      }
+      evaluationType = normalizedType;
     }
-    if (raw.recommendation) {
-      assertAllowed(
-        raw.recommendation,
-        IMPORT_RECOMMENDATION_VALUES,
-        IMPORT_WORKBOOK_SHEETS.EVALUATION,
-        rowNumber,
-        'recommendation',
-        errors,
-        sourceCandidateId,
-      );
+    let recommendation: string | null = null;
+    if (raw.recommendation?.trim()) {
+      const normalizedRecommendation = normalizeEvaluationRecommendation(raw.recommendation);
+      if (!normalizedRecommendation) {
+        pushError(errors, {
+          sheetName: IMPORT_WORKBOOK_SHEETS.EVALUATION,
+          rowNumber,
+          sourceCandidateId,
+          columnName: 'recommendation',
+          suppliedValue: raw.recommendation,
+          errorCode: 'INVALID_VALUE',
+          message: `recommendation must be one of: ${IMPORT_RECOMMENDATION_VALUES.join(', ')}.`,
+        });
+        continue;
+      }
+      recommendation = normalizedRecommendation;
     }
     const evaluation: NormalizedEvaluationRow = {
-      evaluationType: raw.evaluation_type?.trim() || null,
+      evaluationType,
       evaluationDate: parseDate(
         raw.evaluation_date,
         IMPORT_WORKBOOK_SHEETS.EVALUATION,
@@ -825,7 +900,7 @@ export async function parseAndValidateCandidateWorkbook(
         errors,
         sourceCandidateId,
       ),
-      recommendation: raw.recommendation?.trim() || null,
+      recommendation,
       evaluationSummary: raw.evaluation_summary?.trim() || null,
       aiEvaluationSummary: raw.ai_evaluation_summary?.trim() || null,
       comments: raw.comments?.trim() || null,

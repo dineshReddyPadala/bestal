@@ -1,5 +1,6 @@
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { BadRequestError } from '../../utils/index.js';
+import { EmailService } from '../../services/email.service.js';
 import { requestAuditContext } from './admin.auth.js';
 import { AdminOpsService } from './admin-ops.service.js';
 import { AdminRolesService } from './admin-roles.service.js';
@@ -10,6 +11,7 @@ export class AdminController {
     private readonly admin: AdminService,
     private readonly ops: AdminOpsService,
     private readonly roles: AdminRolesService,
+    private readonly emailFactory?: (request: FastifyRequest) => EmailService,
   ) {}
 
   private ctx(request: FastifyRequest) {
@@ -545,7 +547,8 @@ export class AdminController {
         | 'notifications'
         | 'integrations'
         | 'commercials'
-        | 'workflows',
+        | 'workflows'
+        | 'localization',
     ) =>
     async (request: FastifyRequest, reply: FastifyReply) => {
       const data = await this.ops.putSetting(
@@ -556,6 +559,46 @@ export class AdminController {
       );
       return reply.send({ data });
     };
+
+  listCommunicationTemplates = async (_request: FastifyRequest, reply: FastifyReply) => {
+    const data = await this.ops.listCommunicationTemplates();
+    return reply.send({ data });
+  };
+
+  upsertCommunicationTemplate = async (request: FastifyRequest, reply: FastifyReply) => {
+    const body = request.body as {
+      key: string;
+      channel: 'EMAIL' | 'SMS' | 'IN_APP';
+      subject?: string | null;
+      body: string;
+      variables?: string[];
+    };
+    const data = await this.ops.upsertCommunicationTemplate(
+      request.authUser!,
+      body,
+      this.ctx(request),
+    );
+    return reply.send({ data });
+  };
+
+  deleteCommunicationTemplate = async (request: FastifyRequest, reply: FastifyReply) => {
+    const { key } = request.params as { key: string };
+    const data = await this.ops.deleteCommunicationTemplate(
+      request.authUser!,
+      key,
+      this.ctx(request),
+    );
+    return reply.send({ data });
+  };
+
+  sendTestEmail = async (request: FastifyRequest, reply: FastifyReply) => {
+    const body = request.body as { to?: string };
+    const to = body.to?.trim();
+    if (!to) throw new BadRequestError('Recipient email is required');
+    const email = this.emailFactory?.(request) ?? new EmailService(request.server.config, request.server.prisma);
+    const result = await email.sendTestEmail(to);
+    return reply.send({ data: result });
+  };
 
   listRoles = async (request: FastifyRequest, reply: FastifyReply) => {
     const q = request.query as { search?: string };

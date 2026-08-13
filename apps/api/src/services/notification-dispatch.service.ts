@@ -1,5 +1,6 @@
 import type { NotificationType, Prisma, PrismaClient, Role } from '@prisma/client';
 import type { AppConfig } from '../config/index.js';
+import { renderCommunicationTemplate } from './communication-template.service.js';
 import { EmailService } from './email.service.js';
 
 export type NotifyUsersInput = {
@@ -10,8 +11,10 @@ export type NotifyUsersInput = {
   body: string;
   actionUrl?: string | null;
   metadata?: Record<string, unknown>;
-  /** Also send EMAIL channel notifications via FROM_MAIL SMTP when configured */
+  /** Also send EMAIL channel notifications via SMTP when configured */
   sendEmail?: boolean;
+  templateKey?: string;
+  templateVariables?: Record<string, string | number | null | undefined>;
 };
 
 /**
@@ -43,7 +46,16 @@ export async function notifyUsers(
 
   if (!input.sendEmail) return;
 
-  const email = new EmailService(config);
+  const email = new EmailService(config, prisma);
+  const rendered = input.templateKey
+    ? await renderCommunicationTemplate(prisma, input.templateKey, {
+        title: input.title,
+        body: input.body,
+        actionUrl: input.actionUrl ?? '',
+        ...(input.templateVariables ?? {}),
+      }, { subject: input.title, body: input.body })
+    : { subject: input.title, body: input.body };
+
   const users = await prisma.user.findMany({
     where: {
       id: { in: uniqueIds.map((id) => BigInt(id)) },
@@ -61,7 +73,8 @@ export async function notifyUsers(
         to: user.email,
         firstName: user.firstName,
         title: input.title,
-        body: input.body,
+        body: rendered.body,
+        subject: rendered.subject,
         actionUrl: input.actionUrl,
       });
       sent = result.sent;
@@ -102,6 +115,8 @@ export async function notifyOrgRoles(
     actionUrl?: string | null;
     metadata?: Record<string, unknown>;
     sendEmail?: boolean;
+    templateKey?: string;
+    templateVariables?: Record<string, string | number | null | undefined>;
   },
 ): Promise<void> {
   const memberships = await prisma.membership.findMany({
@@ -128,6 +143,8 @@ export async function notifyOrgRoles(
     actionUrl: input.actionUrl,
     metadata: input.metadata,
     sendEmail: input.sendEmail ?? true,
+    templateKey: input.templateKey,
+    templateVariables: input.templateVariables,
   });
 }
 
@@ -163,6 +180,12 @@ export async function notifyEvaluationProcessed(
       bestalScore: input.bestalScore,
     },
     sendEmail: true,
+    templateKey: 'evaluation.processed',
+    templateVariables: {
+      candidateName: input.candidateName,
+      bestalScore: input.bestalScore != null ? String(input.bestalScore) : 'pending',
+      actionUrl: `${input.webAppUrl.replace(/\/$/, '')}/recruiter/evaluations`,
+    },
   });
 }
 
@@ -197,5 +220,11 @@ export async function notifyBgvAnalysisProcessed(
       bgvStatus: input.bgvStatus,
     },
     sendEmail: true,
+    templateKey: 'bgv.analyzed',
+    templateVariables: {
+      candidateName: input.candidateName,
+      bgvStatus: input.bgvStatus.replace(/_/g, ' '),
+      actionUrl: `${input.webAppUrl.replace(/\/$/, '')}/admin/background-checks`,
+    },
   });
 }

@@ -2,6 +2,13 @@ import {
   CANDIDATE_AVAILABILITY_STATUSES,
   CANDIDATE_PROFILE_STATUSES,
   CANDIDATE_VISIBILITY_STATUSES,
+  displayBgvResultSummary,
+  fileNameFromEvaluationFileUrl,
+  formatBgvCheckStatusesSummary,
+  hasAnyBgvCheckStatus,
+  normalizeEvaluationRecommendation,
+  normalizeEvaluationType,
+  parseNoticePeriodToDays,
   type CandidateProfileStatusValue,
   type CandidateVisibilityStatusValue,
 } from '@bestal/shared-utils';
@@ -25,13 +32,15 @@ const optionalNumber = z.preprocess(
 );
 
 export const skillEntrySchema = z.object({
+  skillName: z.string().max(150),
+  skillCategory: z.string().max(100).optional().nullable(),
   skillCommunityId: z.preprocess(
     (value) => {
       if (value === '' || value === null || value === undefined) return undefined;
       const parsed = Number(value);
       return Number.isNaN(parsed) ? undefined : parsed;
     },
-    z.number().int().positive('Select a skill community'),
+    z.number().int().positive().optional(),
   ),
   proficiencyLevel: z.enum(['BEGINNER', 'INTERMEDIATE', 'ADVANCED', 'EXPERT']),
   yearsExperience: optionalNumber,
@@ -113,13 +122,15 @@ export const candidateWizardFormSchema = z.object({
     ])
     .optional()
     .nullable(),
-  bgvEmployment: z.enum(['NOT_STARTED', 'PENDING']).optional().nullable(),
-  bgvEducation: z.enum(['NOT_STARTED', 'PENDING']).optional().nullable(),
-  bgvReference: z.enum(['NOT_STARTED', 'PENDING']).optional().nullable(),
-  bgvAddress: z.enum(['NOT_STARTED', 'PENDING']).optional().nullable(),
-  bgvCriminal: z.enum(['NOT_STARTED', 'PENDING']).optional().nullable(),
+  bgvEmployment: z.string().max(50).optional().nullable(),
+  bgvEducation: z.string().max(50).optional().nullable(),
+  bgvReference: z.string().max(50).optional().nullable(),
+  bgvAddress: z.string().max(50).optional().nullable(),
+  bgvCriminal: z.string().max(50).optional().nullable(),
+  bgvIdCheck: z.string().max(50).optional().nullable(),
   bgvNotes: z.string().max(2000).optional().nullable(),
   bgvConsentFileName: z.string().optional().nullable(),
+  bgvSupportingFileName: z.string().optional().nullable(),
   bgvFileName: z.string().optional().nullable(),
   aiBgvSummary: z.string().max(10000).optional().nullable(),
   bgvResultSummary: z.string().max(5000).optional().nullable(),
@@ -130,8 +141,10 @@ export const candidateWizardFormSchema = z.object({
   visibility: z.enum(CANDIDATE_VISIBILITY_STATUSES).optional().nullable(),
   publishAfterApproval: z.boolean().optional(),
   recruiterNotes: z.string().max(10000).optional().nullable(),
+  rejectionReason: z.string().max(500).optional().nullable(),
   resumeFileName: z.string().optional().nullable(),
   profileImageFileName: z.string().optional().nullable(),
+  profileImagePreviewUrl: z.string().optional().nullable(),
   introVideoFileName: z.string().optional().nullable(),
 });
 
@@ -155,7 +168,13 @@ export const candidateWizardSubmitSchema = candidateWizardFormSchema
     availableFrom: z.string().min(1, 'Available from date is required'),
     primarySkillCommunityId: z.number().int().positive('Select a skill community'),
     billRate: z.number().positive('Client bill rate is required'),
-    skills: z.array(skillEntrySchema).min(1, 'Add at least one skill'),
+    skills: z
+      .array(
+        skillEntrySchema.extend({
+          skillName: z.string().min(1, 'Skill name is required').max(150),
+        }),
+      )
+      .min(1, 'Add at least one skill'),
   });
 
 export type CandidateWizardUploads = {
@@ -165,6 +184,7 @@ export type CandidateWizardUploads = {
   evaluationFile?: File;
   bgvFile?: File;
   bgvConsentFile?: File;
+  bgvSupportingFile?: File;
 };
 
 export type CandidateWizardValues = CandidateWizardFormValues & {
@@ -253,8 +273,10 @@ export const candidateWizardDefaults: CandidateWizardFormValues = {
   bgvReference: 'PENDING',
   bgvAddress: 'PENDING',
   bgvCriminal: 'PENDING',
+  bgvIdCheck: 'PENDING',
   bgvNotes: '',
   bgvConsentFileName: '',
+  bgvSupportingFileName: '',
   bgvFileName: '',
   aiBgvSummary: '',
   bgvResultSummary: '',
@@ -265,8 +287,10 @@ export const candidateWizardDefaults: CandidateWizardFormValues = {
   visibility: 'INTERNAL_ONLY',
   publishAfterApproval: false,
   recruiterNotes: '',
+  rejectionReason: null,
   resumeFileName: '',
   profileImageFileName: '',
+  profileImagePreviewUrl: '',
   introVideoFileName: '',
 };
 
@@ -319,9 +343,9 @@ export const WIZARD_PROGRESS_STEPS = [
   { id: 'availability', label: 'Availability', tabId: 'availability' },
   { id: 'pricing', label: 'Pricing', tabId: 'pricing' },
   { id: 'documents', label: 'Documents', tabId: 'documents' },
-  { id: 'review', label: 'Review', tabId: 'review' },
   { id: 'evaluation', label: 'Evaluation', tabId: 'evaluation' },
   { id: 'background-check', label: 'Background Check', tabId: 'background-check' },
+  { id: 'review', label: 'Review', tabId: 'review' },
 ] as const;
 
 /** Tabbed sections for create-candidate wizard. */
@@ -354,12 +378,7 @@ export const WIZARD_TABS = [
   {
     id: 'documents',
     label: 'Documents',
-    description: 'Photo, video, and supporting files',
-  },
-  {
-    id: 'review',
-    label: 'Review',
-    description: 'Confirm details, visibility, and recruiter notes',
+    description: 'Photo, video, resume, and supporting files',
   },
   {
     id: 'evaluation',
@@ -370,6 +389,11 @@ export const WIZARD_TABS = [
     id: 'background-check',
     label: 'Background Verification',
     description: 'BGV status and report',
+  },
+  {
+    id: 'review',
+    label: 'Review',
+    description: 'Confirm details, visibility, and recruiter notes',
   },
 ] as const;
 
@@ -409,7 +433,7 @@ export function isProgressStepComplete(
     case 'professional':
       return Boolean(values.primaryRole?.trim() || values.yearsExperience != null);
     case 'skills':
-      return values.skills.some((s) => s.notes?.trim() || s.skillCommunityId);
+      return values.skills.some((s) => s.skillName?.trim());
     case 'availability':
       return Boolean(values.availableFrom?.trim() && values.availabilityStatus);
     case 'pricing':
@@ -517,8 +541,10 @@ export const USER_FIELD_LABELS: Record<keyof CandidateWizardFormValues, string> 
   bgvReference: 'Reference Check',
   bgvAddress: 'Address Check',
   bgvCriminal: 'Criminal Check',
+  bgvIdCheck: 'Identity Check',
   bgvNotes: 'BGV Notes',
   bgvConsentFileName: 'BGV Consent',
+  bgvSupportingFileName: 'BGV Supporting Document',
   bgvFileName: 'BGV Report',
   aiBgvSummary: 'AI BGV Summary',
   bgvResultSummary: 'BGV Check Statuses',
@@ -529,8 +555,10 @@ export const USER_FIELD_LABELS: Record<keyof CandidateWizardFormValues, string> 
   visibility: 'Visibility',
   publishAfterApproval: 'Publish after Approval',
   recruiterNotes: 'Recruiter Notes',
+  rejectionReason: 'Return Reason',
   resumeFileName: 'Resume',
   profileImageFileName: 'Profile Photo',
+  profileImagePreviewUrl: 'Profile Photo Preview',
   introVideoFileName: 'Intro Video',
 };
 
@@ -575,10 +603,12 @@ export function joinFullName(firstName: string, lastName: string): string {
   return [firstName, lastName].filter(Boolean).join(' ').trim();
 }
 
-/** Merge wizard skill rows that share the same skill community (DB allows one row per community). */
+/** Dedupe wizard skill rows that share the same skill name (case-insensitive). */
 export function mergeWizardSkills<
   T extends {
-    skillCommunityId: number;
+    skillName: string;
+    skillCategory?: string | null;
+    skillCommunityId?: number | null;
     proficiencyLevel: 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED' | 'EXPERT';
     yearsExperience?: number | null;
     isPrimary: boolean;
@@ -586,36 +616,34 @@ export function mergeWizardSkills<
   },
 >(skills: T[]): T[] {
   const rank = { BEGINNER: 1, INTERMEDIATE: 2, ADVANCED: 3, EXPERT: 4 } as const;
-  const byCommunity = new Map<number, T>();
+  const byName = new Map<string, T>();
 
   for (const skill of skills) {
-    const existing = byCommunity.get(skill.skillCommunityId);
+    const label = skill.skillName?.trim();
+    if (!label) continue;
+    const key = label.toLowerCase();
+    const existing = byName.get(key);
     if (!existing) {
-      byCommunity.set(skill.skillCommunityId, skill);
+      byName.set(key, { ...skill, skillName: label });
       continue;
     }
 
-    const mergedNotes = [existing.notes, skill.notes]
-      .flatMap((value) => (value ? value.split(/,\s*/) : []))
-      .map((value) => value.trim())
-      .filter(Boolean);
-    // skillName API field is VarChar(150); keep merged labels within that limit
-    const uniqueNotes = [...new Set(mergedNotes)].join(', ').slice(0, 150);
-
-    byCommunity.set(skill.skillCommunityId, {
+    const existingRank = rank[existing.proficiencyLevel];
+    const incomingRank = rank[skill.proficiencyLevel];
+    byName.set(key, {
       ...existing,
-      notes: uniqueNotes || existing.notes,
+      skillCategory: existing.skillCategory ?? skill.skillCategory,
+      skillCommunityId: existing.skillCommunityId ?? skill.skillCommunityId,
+      notes: [existing.notes, skill.notes].filter(Boolean).join('; ').slice(0, 5000) || undefined,
       isPrimary: existing.isPrimary || skill.isPrimary,
       yearsExperience:
         Math.max(existing.yearsExperience ?? 0, skill.yearsExperience ?? 0) || undefined,
       proficiencyLevel:
-        rank[skill.proficiencyLevel] > rank[existing.proficiencyLevel]
-          ? skill.proficiencyLevel
-          : existing.proficiencyLevel,
+        incomingRank > existingRank ? skill.proficiencyLevel : existing.proficiencyLevel,
     });
   }
 
-  return [...byCommunity.values()];
+  return [...byName.values()];
 }
 
 /** Map wizard form values to the API create/update-candidate request body. */
@@ -629,16 +657,18 @@ export function mapWizardToApiCreateBody(
   const primarySkillCommunityId = positiveIdOrUndefined(form.primarySkillCommunityId);
   const skills = mergeWizardSkills(form.skills)
     .map((skill) => {
-      const skillCommunityId = positiveIdOrUndefined(skill.skillCommunityId);
-      if (skillCommunityId == null) return null;
-      const label = skill.notes?.trim() || undefined;
+      const skillName = skill.skillName?.trim();
+      if (!skillName) return null;
+      const skillCommunityId =
+        positiveIdOrUndefined(skill.skillCommunityId) ?? primarySkillCommunityId;
       return {
         skillCommunityId,
-        skillName: label ? label.slice(0, 150) : undefined,
+        skillName: skillName.slice(0, 150),
+        skillCategory: emptyToUndefined(skill.skillCategory ?? undefined),
         proficiencyLevel: skill.proficiencyLevel,
         yearsExperience: finiteNumberOrUndefined(skill.yearsExperience),
         isPrimary: skill.isPrimary,
-        notes: label,
+        notes: emptyToUndefined(skill.notes),
       };
     })
     .filter((skill): skill is NonNullable<typeof skill> => skill !== null);
@@ -684,7 +714,12 @@ export function mapWizardToApiCreateBody(
         : emptyToUndefined(form.evaluationRecommendation) ?? 'NOT_STARTED',
     bgvStatus: emptyToUndefined(form.bgvStatus) ?? 'NOT_STARTED',
     profileStatus: (form.profileStatus ?? undefined) as CandidateProfileStatusValue | undefined,
+    timezone: emptyToUndefined(form.timezone),
     timezoneOverlap: emptyToUndefined(form.timezone),
+    noticePeriod:
+      form.noticePeriodDays != null && !Number.isNaN(form.noticePeriodDays)
+        ? `${form.noticePeriodDays} days`
+        : undefined,
     availabilityStatus: form.availabilityStatus ?? undefined,
     preferredShift: emptyToUndefined(form.preferredShift),
     minHoursPerWeek: finiteNumberOrUndefined(
@@ -702,43 +737,102 @@ export function mapWizardToApiCreateBody(
 export function mapWizardToEvaluationUpdateBody(
   form: CandidateWizardFormValues,
 ): Record<string, unknown> {
-  return {
-    evaluatorName: emptyToUndefined(form.evaluatorName),
-    evaluatorCompany: emptyToUndefined(form.evaluatorCompany) ?? null,
-    evaluationType: emptyToUndefined(form.evaluationType) ?? null,
-    evaluationDate: emptyToUndefined(form.evaluationDate) ?? null,
-    technicalScore: finiteNumberOrUndefined(form.technicalScore) ?? null,
-    communicationScore: finiteNumberOrUndefined(form.communicationScore) ?? null,
-    problemSolvingScore: finiteNumberOrUndefined(form.problemSolvingScore) ?? null,
-    architectureScore: finiteNumberOrUndefined(form.architectureScore) ?? null,
-    clientReadinessScore: finiteNumberOrUndefined(form.clientReadinessScore) ?? null,
-    recommendation: emptyToUndefined(form.evaluationRecommendation) ?? null,
-    evaluatorComments: emptyToUndefined(form.evaluatorComments) ?? null,
-    aiEvaluationSummary: emptyToUndefined(form.aiEvaluationSummary) ?? null,
-  };
+  const body: Record<string, unknown> = {};
+
+  const evaluatorName = emptyToUndefined(form.evaluatorName);
+  if (evaluatorName) body.evaluatorName = evaluatorName;
+
+  const evaluatorCompany = emptyToUndefined(form.evaluatorCompany);
+  if (evaluatorCompany !== undefined) body.evaluatorCompany = evaluatorCompany;
+
+  const evaluationType = normalizeEvaluationType(form.evaluationType);
+  if (evaluationType) body.evaluationType = evaluationType;
+
+  const evaluationDate = emptyToUndefined(form.evaluationDate);
+  if (evaluationDate !== undefined) body.evaluationDate = evaluationDate;
+
+  const technicalScore = finiteNumberOrUndefined(form.technicalScore);
+  if (technicalScore !== undefined) body.technicalScore = technicalScore;
+
+  const communicationScore = finiteNumberOrUndefined(form.communicationScore);
+  if (communicationScore !== undefined) body.communicationScore = communicationScore;
+
+  const problemSolvingScore = finiteNumberOrUndefined(form.problemSolvingScore);
+  if (problemSolvingScore !== undefined) body.problemSolvingScore = problemSolvingScore;
+
+  const architectureScore = finiteNumberOrUndefined(form.architectureScore);
+  if (architectureScore !== undefined) body.architectureScore = architectureScore;
+
+  const clientReadinessScore = finiteNumberOrUndefined(form.clientReadinessScore);
+  if (clientReadinessScore !== undefined) body.clientReadinessScore = clientReadinessScore;
+
+  const recommendation = normalizeEvaluationRecommendation(form.evaluationRecommendation);
+  if (recommendation) body.recommendation = recommendation;
+
+  const evaluatorComments = emptyToUndefined(form.evaluatorComments);
+  if (evaluatorComments !== undefined) body.evaluatorComments = evaluatorComments;
+
+  const aiEvaluationSummary = emptyToUndefined(form.aiEvaluationSummary);
+  if (aiEvaluationSummary !== undefined) body.aiEvaluationSummary = aiEvaluationSummary;
+
+  return body;
+}
+
+export const BGV_WIZARD_STATUS_OPTIONS = [
+  'NOT_STARTED',
+  'PENDING',
+  'CONSENT_PENDING',
+  'INITIATED',
+  'IN_PROGRESS',
+  'SUSPENDED',
+  'CLEAR',
+  'COMPLETED_CLEAR',
+  'COMPLETED_WITH_CONCERN',
+  'FAILED',
+  'EXPIRED',
+] as const;
+
+export function mapWizardBgvStatusFromApi(status: string): string {
+  if (status === 'COMPLETED_CLEAR') return 'CLEAR';
+  return status;
+}
+
+export function mapWizardBgvStatusToApi(status: string | undefined): string | undefined {
+  const trimmed = status?.trim();
+  if (!trimmed) return undefined;
+  if (trimmed === 'CLEAR') return 'COMPLETED_CLEAR';
+  return trimmed;
 }
 
 /** Map wizard BGV fields to PATCH /background-checks/:id body. */
 export function mapWizardToBgvUpdateBody(
   form: CandidateWizardFormValues,
 ): Record<string, unknown> {
+  const checkFields = {
+    idCheckStatus: form.bgvIdCheck ?? null,
+    addressCheckStatus: form.bgvAddress ?? null,
+    employmentCheckStatus: form.bgvEmployment ?? null,
+    educationCheckStatus: form.bgvEducation ?? null,
+    criminalCheckStatus: form.bgvCriminal ?? null,
+    referenceCheckStatus: form.bgvReference ?? null,
+  };
   const body: Record<string, unknown> = {};
-  const status = emptyToUndefined(form.bgvStatus);
+  const status = mapWizardBgvStatusToApi(emptyToUndefined(form.bgvStatus));
   if (status) body.status = status;
   const provider = emptyToUndefined(form.bgvVendor);
   if (provider) body.provider = provider;
-  const aiSummary = emptyToUndefined(form.aiBgvSummary);
-  if (aiSummary) body.aiSummary = aiSummary;
-  const resultSummary = emptyToUndefined(form.bgvResultSummary);
-  if (resultSummary) body.resultSummary = resultSummary;
-  const reviewNotes = emptyToUndefined(form.bgvConcernNotes);
-  if (reviewNotes) body.reviewNotes = reviewNotes;
+  body.aiSummary = emptyToUndefined(form.aiBgvSummary) ?? null;
+  body.reviewNotes = emptyToUndefined(form.bgvConcernNotes) ?? null;
+  body.resultSummary =
+    emptyToUndefined(form.bgvResultSummary) ??
+    (hasAnyBgvCheckStatus(checkFields) ? formatBgvCheckStatusesSummary(checkFields) : null);
   if (form.bgvCheckType) body.type = form.bgvCheckType;
-  if (form.bgvEmployment) body.employmentCheckStatus = form.bgvEmployment;
-  if (form.bgvEducation) body.educationCheckStatus = form.bgvEducation;
-  if (form.bgvReference) body.referenceCheckStatus = form.bgvReference;
-  if (form.bgvAddress) body.addressCheckStatus = form.bgvAddress;
-  if (form.bgvCriminal) body.criminalCheckStatus = form.bgvCriminal;
+  body.idCheckStatus = emptyToUndefined(form.bgvIdCheck) ?? null;
+  body.addressCheckStatus = emptyToUndefined(form.bgvAddress) ?? null;
+  body.employmentCheckStatus = emptyToUndefined(form.bgvEmployment) ?? null;
+  body.educationCheckStatus = emptyToUndefined(form.bgvEducation) ?? null;
+  body.criminalCheckStatus = emptyToUndefined(form.bgvCriminal) ?? null;
+  body.referenceCheckStatus = emptyToUndefined(form.bgvReference) ?? null;
   return body;
 }
 
@@ -784,7 +878,9 @@ export function mapCandidateDtoToWizardForm(
     yearsExperience?: number | null;
     primarySkillCommunityId?: number | null;
     availableFrom?: string | null;
+    timezone?: string | null;
     timezoneOverlap?: string | null;
+    noticePeriod?: string | null;
     availabilityStatus?: string | null;
     preferredShift?: string | null;
     minHoursPerWeek?: number | null;
@@ -793,16 +889,21 @@ export function mapCandidateDtoToWizardForm(
     currency?: string | null;
     clientBillRate?: number | null;
     candidatePayRate?: number | null;
+    grossMargin?: number | null;
     bestalScore?: number | null;
     technicalScore?: number | null;
     communicationScore?: number | null;
     profileStatus?: string | null;
     visibility?: string | null;
+    rejectionReason?: string | null;
     bgvStatus?: string | null;
+    profileImage?: { fileName: string; originalName: string; url: string | null } | null;
+    resume?: { fileName: string; originalName: string; url: string | null } | null;
     skills?: Array<{
       skillCommunityId: number;
       skillCommunityName?: string;
       skillName?: string | null;
+      skillCategory?: string | null;
       proficiencyLevel: string;
       yearsExperience?: number | null;
       isPrimary: boolean;
@@ -831,7 +932,21 @@ export function mapCandidateDtoToWizardForm(
       provider?: string | null;
       vendor?: string | null;
       aiSummary?: string | null;
+      resultSummary?: string | null;
+      reviewNotes?: string | null;
       type?: string | null;
+      idCheckStatus?: string | null;
+      employmentCheckStatus?: string | null;
+      educationCheckStatus?: string | null;
+      referenceCheckStatus?: string | null;
+      addressCheckStatus?: string | null;
+      criminalCheckStatus?: string | null;
+      initiatedAt?: string | null;
+      completedAt?: string | null;
+      documents?: Array<{
+        description: string | null;
+        originalName: string;
+      }>;
     } | null;
   },
 ): Partial<CandidateWizardFormValues> {
@@ -859,18 +974,21 @@ export function mapCandidateDtoToWizardForm(
     yearsExperience: candidate.yearsExperience ?? undefined,
     primarySkillCommunityId: candidate.primarySkillCommunityId ?? undefined,
     skills: (candidate.skills ?? []).map((s) => ({
-      skillCommunityId: s.skillCommunityId,
+      skillName: s.skillName ?? s.notes ?? s.skillCommunityName ?? '',
+      skillCategory: s.skillCategory ?? '',
+      skillCommunityId: s.skillCommunityId ?? candidate.primarySkillCommunityId ?? undefined,
       proficiencyLevel: s.proficiencyLevel as CandidateWizardFormValues['skills'][number]['proficiencyLevel'],
       yearsExperience: s.yearsExperience ?? undefined,
       isPrimary: s.isPrimary,
-      notes: s.notes ?? s.skillName ?? s.skillCommunityName ?? '',
+      notes: s.notes ?? '',
     })),
     availableFrom: candidate.availableFrom ?? '',
-    timezone: candidate.timezoneOverlap ?? 'Asia/Kolkata',
+    timezone: candidate.timezone ?? candidate.timezoneOverlap ?? '',
     availabilityStatus:
       (candidate.availabilityStatus as CandidateWizardFormValues['availabilityStatus']) ||
       'IMMEDIATE',
     preferredShift: candidate.preferredShift ?? '',
+    noticePeriodDays: parseNoticePeriodToDays(candidate.noticePeriod) ?? undefined,
     minHoursPerWeek: candidate.minHoursPerWeek ?? undefined,
     maxHoursPerWeek: candidate.maxHoursPerWeek ?? undefined,
     hoursPerWeek: candidate.maxHoursPerWeek ?? candidate.minHoursPerWeek ?? 40,
@@ -886,6 +1004,12 @@ export function mapCandidateDtoToWizardForm(
     visibility:
       (candidate.visibility as CandidateWizardFormValues['visibility']) || 'INTERNAL_ONLY',
     bgvStatus: (candidate.bgvStatus as CandidateWizardFormValues['bgvStatus']) || 'NOT_STARTED',
+    resumeFileName:
+      candidate.resume?.originalName ?? candidate.resume?.fileName ?? undefined,
+    profileImageFileName:
+      candidate.profileImage?.originalName ?? candidate.profileImage?.fileName ?? undefined,
+    profileImagePreviewUrl: candidate.profileImage?.url ?? undefined,
+    rejectionReason: candidate.rejectionReason ?? null,
   };
 
   if (linked?.evaluation) {
@@ -893,11 +1017,18 @@ export function mapCandidateDtoToWizardForm(
     base.evaluationId = evaluation.id;
     base.evaluatorName = evaluation.evaluatorName ?? '';
     base.evaluatorCompany = evaluation.evaluatorCompany ?? '';
-    base.evaluationType = evaluation.evaluationType ?? '';
+    base.evaluationType = normalizeEvaluationType(evaluation.evaluationType) ?? '';
     base.evaluationDate = evaluation.evaluationDate ?? '';
-    base.evaluationRecommendation = evaluation.recommendation ?? '';
+    base.evaluationRecommendation =
+      normalizeEvaluationRecommendation(evaluation.recommendation) ?? '';
     base.evaluatorComments = evaluation.evaluatorComments ?? '';
     base.aiEvaluationSummary = evaluation.aiEvaluationSummary ?? '';
+    const evalFileName = fileNameFromEvaluationFileUrl(
+      (evaluation as { evaluationFileUrl?: string | null }).evaluationFileUrl,
+    );
+    if (evalFileName) {
+      base.evaluationFileName = evalFileName;
+    }
     if (evaluation.technicalScore != null) base.technicalScore = evaluation.technicalScore;
     if (evaluation.communicationScore != null) {
       base.communicationScore = evaluation.communicationScore;
@@ -915,12 +1046,39 @@ export function mapCandidateDtoToWizardForm(
 
   if (linked?.bgv) {
     const bgv = linked.bgv;
+    const checkFields = {
+      idCheckStatus: bgv.idCheckStatus,
+      addressCheckStatus: bgv.addressCheckStatus,
+      employmentCheckStatus: bgv.employmentCheckStatus,
+      educationCheckStatus: bgv.educationCheckStatus,
+      criminalCheckStatus: bgv.criminalCheckStatus,
+      referenceCheckStatus: bgv.referenceCheckStatus,
+    };
     base.bgvBackgroundCheckId = bgv.id;
-    base.bgvStatus = bgv.status;
+    base.bgvStatus = mapWizardBgvStatusFromApi(bgv.status);
     base.bgvVendor = bgv.provider ?? bgv.vendor ?? '';
     base.aiBgvSummary = bgv.aiSummary ?? '';
+    base.bgvResultSummary = displayBgvResultSummary(bgv.resultSummary, checkFields);
+    base.bgvConcernNotes = bgv.reviewNotes ?? '';
     if (bgv.type) {
       base.bgvCheckType = bgv.type as CandidateWizardFormValues['bgvCheckType'];
+    }
+    if (bgv.employmentCheckStatus) base.bgvEmployment = bgv.employmentCheckStatus;
+    if (bgv.educationCheckStatus) base.bgvEducation = bgv.educationCheckStatus;
+    if (bgv.referenceCheckStatus) base.bgvReference = bgv.referenceCheckStatus;
+    if (bgv.addressCheckStatus) base.bgvAddress = bgv.addressCheckStatus;
+    if (bgv.criminalCheckStatus) base.bgvCriminal = bgv.criminalCheckStatus;
+    if (bgv.idCheckStatus) base.bgvIdCheck = bgv.idCheckStatus;
+    for (const doc of bgv.documents ?? []) {
+      if (doc.description === 'CONSENT' && !base.bgvConsentFileName) {
+        base.bgvConsentFileName = doc.originalName;
+      }
+      if (doc.description === 'REPORT' && !base.bgvFileName) {
+        base.bgvFileName = doc.originalName;
+      }
+      if (doc.description === 'SUPPORTING' && !base.bgvSupportingFileName) {
+        base.bgvSupportingFileName = doc.originalName;
+      }
     }
   }
 

@@ -1,4 +1,4 @@
-import { formatCurrency, formatDate } from '@bestal/shared-utils';
+import { formatCurrency } from '@bestal/shared-utils';
 import {
   Avatar,
   Button,
@@ -9,9 +9,9 @@ import {
   useDashboardHeaderLeading,
 } from '@bestal/ui';
 import { type ColumnDef } from '@tanstack/react-table';
-import { Briefcase, Clock, Eye, Plus, Rocket } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Briefcase, Clock, Plus, Rocket } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { ActionMenu } from '../../components/ui/ActionMenu';
 import { ClientPortalStatCard } from '../../components/client/ClientPortalStatCard';
 import { ClientSegmentTabs } from '../../components/client/ClientSegmentTabs';
 import { PickCandidateDialog } from '../../components/client/PickCandidateDialog';
@@ -23,6 +23,7 @@ import { usePermissions } from '../../hooks/usePermissions';
 import type { DeploymentListItem } from '../../lib/api/types';
 import { getApiErrorMessage } from '../../lib/api/errors';
 import { useDemoToast } from '../../lib/use-demo-toast';
+import { useOrgFormatDate } from '../../contexts/OrgSettingsContext';
 import { ToastHost } from '../../components/ui/ToastHost';
 
 function pad2(value: number): string {
@@ -31,64 +32,6 @@ function pad2(value: number): string {
 
 const ACTIVE_STATUSES = new Set(['ACTIVE', 'PENDING', 'ON_HOLD']);
 const HISTORY_STATUSES = new Set(['COMPLETED', 'CANCELLED', 'TERMINATED']);
-
-function DeploymentActionsMenu({
-  record,
-  canRequest,
-  onRequestExtension,
-}: {
-  record: DeploymentListItem;
-  canRequest: boolean;
-  onRequestExtension: () => void;
-}) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-  const canExtend =
-    canRequest && (record.status === 'ACTIVE' || record.status === 'ON_HOLD');
-
-  useEffect(() => {
-    if (!open) return;
-    const close = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    };
-    document.addEventListener('mousedown', close);
-    return () => document.removeEventListener('mousedown', close);
-  }, [open]);
-
-  if (!canExtend) {
-    return (
-      <Link
-        to={`/client/candidates/${record.candidateId}`}
-        className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
-        aria-label={`View ${record.candidateName}`}
-      >
-        <Eye className="h-4 w-4" />
-      </Link>
-    );
-  }
-
-  return (
-    <div className="relative flex items-center gap-1" ref={ref}>
-      <Link
-        to={`/client/candidates/${record.candidateId}`}
-        className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
-        aria-label={`View ${record.candidateName}`}
-      >
-        <Eye className="h-4 w-4" />
-      </Link>
-      <button
-        type="button"
-        className="inline-flex h-8 rounded-md px-2 text-xs font-medium text-brand hover:bg-muted"
-        onClick={() => {
-          onRequestExtension();
-          setOpen(false);
-        }}
-      >
-        Extend
-      </button>
-    </div>
-  );
-}
 
 export function DeploymentsPage() {
   const { user } = useAuth();
@@ -114,6 +57,7 @@ export function DeploymentsPage() {
     ...(clientId ? { clientId } : {}),
   });
   const mutations = useDeploymentMutations();
+  const formatDate = useOrgFormatDate();
   const rows = data?.data ?? [];
 
   const [segment, setSegment] = useState<'active' | 'history'>('active');
@@ -204,17 +148,34 @@ export function DeploymentsPage() {
       },
       {
         id: 'actions',
-        header: 'Action',
-        cell: ({ row }) => (
-          <DeploymentActionsMenu
-            record={row.original}
-            canRequest={canRequest}
-            onRequestExtension={() => setExtendTarget(row.original)}
-          />
-        ),
+        header: '',
+        cell: ({ row }) => {
+          const canExtend =
+            canRequest &&
+            (row.original.status === 'ACTIVE' || row.original.status === 'ON_HOLD');
+          return (
+            <ActionMenu
+              label="Deployment actions"
+              items={[
+                {
+                  id: 'view',
+                  label: 'View candidate',
+                  href: `/client/candidates/${row.original.candidateId}`,
+                },
+                {
+                  id: 'extend',
+                  label: 'Extend',
+                  hidden: !canExtend,
+                  separatorBefore: true,
+                  onSelect: () => setExtendTarget(row.original),
+                },
+              ]}
+            />
+          );
+        },
       },
     ],
-    [canRequest],
+    [canRequest, formatDate],
   );
 
   return (

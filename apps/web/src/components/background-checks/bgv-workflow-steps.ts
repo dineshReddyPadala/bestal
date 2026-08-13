@@ -1,3 +1,9 @@
+import {
+  displayBgvResultSummary,
+  hasAnyBgvCheckStatus,
+  isPlaceholderBgvSummary,
+  type BgvCheckStatusFields,
+} from '@bestal/shared-utils';
 import type { BackgroundCheckDto } from '../../lib/api/types';
 
 export const BGV_RECRUITER_STEPS = [
@@ -10,7 +16,36 @@ export const BGV_RECRUITER_STEPS = [
   { id: 'submit', label: 'Submit' },
 ] as const;
 
+export const BGV_IMPORTED_STEPS = [{ id: 'review', label: 'Review' }] as const;
+
 export type BgvRecruiterStepId = (typeof BGV_RECRUITER_STEPS)[number]['id'];
+export type BgvImportedStepId = (typeof BGV_IMPORTED_STEPS)[number]['id'];
+export type BgvWorkflowStepId = BgvRecruiterStepId | BgvImportedStepId;
+
+export function isImportedBgv(detail: BackgroundCheckDto): boolean {
+  return Boolean(detail.candidateSourceCandidateId?.trim());
+}
+
+export function getBgvStepsForDetail(
+  detail: BackgroundCheckDto,
+): typeof BGV_IMPORTED_STEPS | typeof BGV_RECRUITER_STEPS {
+  return isImportedBgv(detail) ? BGV_IMPORTED_STEPS : BGV_RECRUITER_STEPS;
+}
+
+export function bgvCheckFieldsFromDetail(detail: BackgroundCheckDto): BgvCheckStatusFields {
+  return {
+    idCheckStatus: detail.idCheckStatus,
+    addressCheckStatus: detail.addressCheckStatus,
+    employmentCheckStatus: detail.employmentCheckStatus,
+    educationCheckStatus: detail.educationCheckStatus,
+    criminalCheckStatus: detail.criminalCheckStatus,
+    referenceCheckStatus: detail.referenceCheckStatus,
+  };
+}
+
+export function resolveBgvResultSummaryForDisplay(detail: BackgroundCheckDto): string {
+  return displayBgvResultSummary(detail.resultSummary, bgvCheckFieldsFromDetail(detail));
+}
 
 /** Derive the single active recruiter step from current BGV state. */
 export function getBgvRecruiterStep(detail: BackgroundCheckDto): BgvRecruiterStepId {
@@ -27,8 +62,16 @@ export function getBgvRecruiterStep(detail: BackgroundCheckDto): BgvRecruiterSte
   return 'ai';
 }
 
-export function bgvStepIndex(stepId: BgvRecruiterStepId): number {
-  return BGV_RECRUITER_STEPS.findIndex((s) => s.id === stepId);
+export function getBgvWorkflowStep(detail: BackgroundCheckDto): BgvWorkflowStepId {
+  if (isImportedBgv(detail)) {
+    return 'review';
+  }
+  return getBgvRecruiterStep(detail);
+}
+
+export function bgvStepIndex(stepId: BgvWorkflowStepId, detail: BackgroundCheckDto): number {
+  const steps = getBgvStepsForDetail(detail);
+  return steps.findIndex((s) => s.id === stepId);
 }
 
 export function isBgvStepComplete(
@@ -62,4 +105,19 @@ export function isBgvStepComplete(
     default:
       return false;
   }
+}
+
+export function isBgvWorkflowStepComplete(
+  detail: BackgroundCheckDto,
+  stepId: BgvWorkflowStepId,
+): boolean {
+  if (stepId === 'review') {
+    const fields = bgvCheckFieldsFromDetail(detail);
+    return (
+      Boolean(detail.provider?.trim()) &&
+      (hasAnyBgvCheckStatus(fields) ||
+        Boolean(detail.resultSummary?.trim() && !isPlaceholderBgvSummary(detail.resultSummary)))
+    );
+  }
+  return isBgvStepComplete(detail, stepId);
 }

@@ -15,6 +15,7 @@ import { shortlistRoutes } from '../modules/shortlists/shortlist.routes.js';
 import { trialRoutes } from '../modules/trials/trial.routes.js';
 import { userRoutes } from '../modules/users/user.routes.js';
 import { skillCommunityRoutes } from '../modules/skill-communities/skill-community.routes.js';
+import { settingsRoutes } from '../modules/settings/settings.routes.js';
 import { healthRoutes } from './health.routes.js';
 
 export async function registerRoutes(fastify: FastifyInstance): Promise<void> {
@@ -41,6 +42,7 @@ export async function registerRoutes(fastify: FastifyInstance): Promise<void> {
       await api.register(shortlistRoutes, { prefix: '/shortlists' });
       await api.register(searchRoutes, { prefix: '/search' });
       await api.register(notificationRoutes, { prefix: '/notifications' });
+      await api.register(settingsRoutes, { prefix: '/settings' });
       await api.register(automationRoutes, { prefix: '/automation' });
     },
     { prefix: API_PREFIX },

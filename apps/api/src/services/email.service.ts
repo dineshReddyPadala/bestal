@@ -1,6 +1,8 @@
 import nodemailer from 'nodemailer';
+import type { PrismaClient } from '@prisma/client';
 import type { AppConfig } from '../config/index.js';
 import type { Role } from '../constants/index.js';
+import { readEmailSettings, type EmailSettings } from './system-settings.reader.js';
 
 export type InviteEmailPayload = {
   to: string;
@@ -20,6 +22,51 @@ export type PasswordResetEmailPayload = {
   expiresIn: string;
 };
 
+export type ResolvedMailConfig = {
+  enabled: boolean;
+  host: string;
+  port: number;
+  user: string | null;
+  password: string | null;
+  fromAddress: string | null;
+  fromName: string;
+  secure: boolean;
+};
+
+export function resolveMailConfig(
+  config: AppConfig,
+  dbSettings?: EmailSettings | null,
+): ResolvedMailConfig {
+  const envEnabled = config.mail.enabled && Boolean(config.mail.from && config.mail.password);
+  const fromAddress = dbSettings?.fromAddress ?? config.mail.from;
+  const password = dbSettings?.password ?? config.mail.password;
+  const user = dbSettings?.user ?? config.mail.from;
+  const host = dbSettings?.host ?? config.mail.host;
+  const port = dbSettings?.port ?? config.mail.port;
+  const enabled =
+    dbSettings?.enabled === true
+      ? Boolean(fromAddress && password)
+      : envEnabled || Boolean(fromAddress && password);
+
+  return {
+    enabled,
+    host,
+    port,
+    user,
+    password,
+    fromAddress,
+    fromName: dbSettings?.fromName ?? config.appName,
+    secure: dbSettings?.secure ?? port === 465,
+  };
+}
+
+export async function readResolvedMailConfig(
+  config: AppConfig,
+  prisma: PrismaClient,
+): Promise<ResolvedMailConfig> {
+  return resolveMailConfig(config, await readEmailSettings(prisma));
+}
+
 function portalLabel(role: Role): string {
   switch (role) {
     case 'RECRUITER':
@@ -38,35 +85,49 @@ function portalLabel(role: Role): string {
 }
 
 export class EmailService {
-  private readonly transporter: nodemailer.Transporter | null;
+  private transporter: nodemailer.Transporter | null = null;
+  private resolved: ResolvedMailConfig | null = null;
 
-  constructor(private readonly config: AppConfig) {
-    if (config.mail.enabled && config.mail.from && config.mail.password) {
+  constructor(
+    private readonly config: AppConfig,
+    private readonly prisma?: PrismaClient,
+  ) {}
+
+  private async ensureReady(): Promise<ResolvedMailConfig> {
+    if (this.resolved) return this.resolved;
+    const resolved = this.prisma
+      ? await readResolvedMailConfig(this.config, this.prisma)
+      : resolveMailConfig(this.config);
+    this.resolved = resolved;
+    if (resolved.enabled && resolved.fromAddress && resolved.password) {
       this.transporter = nodemailer.createTransport({
-        host: config.mail.host,
-        port: config.mail.port,
-        secure: config.mail.port === 465,
-        requireTLS: config.mail.port === 587,
+        host: resolved.host,
+        port: resolved.port,
+        secure: resolved.secure,
+        requireTLS: resolved.port === 587,
         auth: {
-          user: config.mail.from,
-          pass: config.mail.password,
+          user: resolved.user ?? resolved.fromAddress,
+          pass: resolved.password,
         },
       });
     } else {
       this.transporter = null;
-      if (config.isDevelopment) {
+      if (this.config.isDevelopment) {
         console.warn(
-          '[email] SMTP not configured (FROM_MAIL / FROM_MAIL_PASSWORD). Invite emails will be logged only.',
+          '[email] SMTP not configured (Platform Settings or FROM_MAIL). Emails will be logged only.',
         );
       }
     }
+    return resolved;
   }
 
-  get isConfigured(): boolean {
-    return this.transporter !== null;
+  async isConfigured(): Promise<boolean> {
+    const resolved = await this.ensureReady();
+    return resolved.enabled && this.transporter !== null;
   }
 
   async sendInviteCredentials(payload: InviteEmailPayload): Promise<{ sent: boolean }> {
+    const resolved = await this.ensureReady();
     const subject = `Your ${payload.organizationName} BesTal account (${portalLabel(payload.role)})`;
     const text = [
       `Hi ${payload.firstName},`,
@@ -96,7 +157,7 @@ export class EmailService {
       <p>— BesTal / Amnet Digital</p>
     `;
 
-    if (!this.transporter || !this.config.mail.from) {
+    if (!this.transporter || !resolved.fromAddress) {
       // Dev fallback: log credentials so invites still work without SMTP
       console.info('[email] Mail not configured — invite credentials (dev):', {
         to: payload.to,
@@ -109,7 +170,7 @@ export class EmailService {
 
     try {
       await this.transporter.sendMail({
-        from: `"${this.config.appName}" <${this.config.mail.from}>`,
+        from: `"${resolved.fromName}" <${resolved.fromAddress}>`,
         to: payload.to,
         subject,
         text,
@@ -127,6 +188,7 @@ export class EmailService {
   }
 
   async sendPasswordResetEmail(payload: PasswordResetEmailPayload): Promise<{ sent: boolean }> {
+    const resolved = await this.ensureReady();
     const subject = `Reset your ${payload.portalLabel} password`;
     const text = [
       `Hi ${payload.firstName},`,
@@ -152,7 +214,7 @@ export class EmailService {
       <p>— BesTal / Amnet Digital</p>
     `;
 
-    if (!this.transporter || !this.config.mail.from) {
+    if (!this.transporter || !resolved.fromAddress) {
       console.info('[email] Mail not configured — password reset (dev):', {
         to: payload.to,
         resetUrl: payload.resetUrl,
@@ -161,7 +223,7 @@ export class EmailService {
     }
 
     await this.transporter.sendMail({
-      from: `"${this.config.appName}" <${this.config.mail.from}>`,
+      from: `"${resolved.fromName}" <${resolved.fromAddress}>`,
       to: payload.to,
       subject,
       text,
@@ -177,7 +239,9 @@ export class EmailService {
     title: string;
     body: string;
     actionUrl?: string | null;
+    subject?: string | null;
   }): Promise<{ sent: boolean }> {
+    const resolved = await this.ensureReady();
     const greeting = payload.firstName ? `Hi ${payload.firstName},` : 'Hi,';
     const text = [
       greeting,
@@ -202,7 +266,7 @@ export class EmailService {
       <p>— BesTal / Amnet Digital</p>
     `;
 
-    if (!this.transporter || !this.config.mail.from) {
+    if (!this.transporter || !resolved.fromAddress) {
       console.info('[email] Mail not configured — notification (dev):', {
         to: payload.to,
         title: payload.title,
@@ -212,14 +276,22 @@ export class EmailService {
     }
 
     await this.transporter.sendMail({
-      from: `"${this.config.appName}" <${this.config.mail.from}>`,
+      from: `"${resolved.fromName}" <${resolved.fromAddress}>`,
       to: payload.to,
-      subject: payload.title,
+      subject: payload.subject ?? payload.title,
       text,
       html,
     });
 
     return { sent: true };
+  }
+
+  async sendTestEmail(to: string): Promise<{ sent: boolean }> {
+    return this.sendNotificationEmail({
+      to,
+      title: 'BesTal SMTP test',
+      body: 'This is a test email from BesTal platform settings.',
+    });
   }
 }
 

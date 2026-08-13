@@ -65,6 +65,7 @@ export function AddCandidatePage() {
   const [initialFormValues, setInitialFormValues] = useState<
     Partial<CandidateWizardFormValues> | undefined
   >();
+  const [formRevision, setFormRevision] = useState(0);
   const draftCandidateIdRef = useRef<number | null>(isEdit ? editId : null);
   const resumeUploadedViaExtractRef = useRef(false);
 
@@ -106,11 +107,14 @@ export function AddCandidatePage() {
           evaluationsApi.list({ candidateId, limit: 1, sort: '-createdAt' }),
           backgroundChecksApi.list({ candidateId, limit: 1, sort: '-createdAt' }),
         ]);
+        const bgvListItem = bgvRes.data[0];
+        const bgvDetail =
+          bgvListItem != null ? await backgroundChecksApi.get(bgvListItem.id) : null;
         if (cancelled) return;
         setInitialFormValues(
           mapCandidateDtoToWizardForm(existingQuery.data!, {
             evaluation: evalRes.data[0] ?? null,
-            bgv: bgvRes.data[0] ?? null,
+            bgv: bgvDetail,
           }),
         );
       } catch {
@@ -187,6 +191,9 @@ export function AddCandidatePage() {
       }
       if (uploadJobs.length > 0) {
         await Promise.all(uploadJobs);
+        uploads.profileImage = undefined;
+        uploads.resume = undefined;
+        uploads.introVideo = undefined;
       }
 
       if (wizardMode === 'importedEdit') {
@@ -210,6 +217,48 @@ export function AddCandidatePage() {
         if (linkedUpdates.length > 0) {
           await Promise.all(linkedUpdates);
         }
+
+        if (values.bgvBackgroundCheckId) {
+          const bgvUploads: Promise<unknown>[] = [];
+          if (uploads.bgvConsentFile) {
+            bgvUploads.push(
+              backgroundChecksApi.uploadDocument(
+                values.bgvBackgroundCheckId,
+                'CONSENT',
+                uploads.bgvConsentFile,
+              ),
+            );
+          }
+          if (uploads.bgvSupportingFile) {
+            bgvUploads.push(
+              backgroundChecksApi.uploadDocument(
+                values.bgvBackgroundCheckId,
+                'SUPPORTING',
+                uploads.bgvSupportingFile,
+              ),
+            );
+          }
+          if (uploads.bgvFile) {
+            bgvUploads.push(
+              backgroundChecksApi.uploadDocument(
+                values.bgvBackgroundCheckId,
+                'REPORT',
+                uploads.bgvFile,
+              ),
+            );
+          }
+          if (bgvUploads.length > 0) {
+            await Promise.all(bgvUploads);
+            uploads.bgvConsentFile = undefined;
+            uploads.bgvSupportingFile = undefined;
+            uploads.bgvFile = undefined;
+          }
+        }
+
+        if (values.evaluationId && uploads.evaluationFile) {
+          await evaluationsApi.uploadDocument(values.evaluationId, uploads.evaluationFile);
+          uploads.evaluationFile = undefined;
+        }
       }
 
       if (options.submit) {
@@ -223,6 +272,31 @@ export function AddCandidatePage() {
       if (!options.silent) {
         show(existingDraftId || isEdit ? 'Candidate updated' : 'Draft saved');
       }
+
+      if (isEdit) {
+        const refreshed = await existingQuery.refetch();
+        if (refreshed.data) {
+          if (wizardMode === 'importedEdit') {
+            const [evalRes, bgvRes] = await Promise.all([
+              evaluationsApi.list({ candidateId: refreshed.data.id, limit: 1, sort: '-createdAt' }),
+              backgroundChecksApi.list({ candidateId: refreshed.data.id, limit: 1, sort: '-createdAt' }),
+            ]);
+            const bgvListItem = bgvRes.data[0];
+            const bgvDetail =
+              bgvListItem != null ? await backgroundChecksApi.get(bgvListItem.id) : null;
+            setInitialFormValues(
+              mapCandidateDtoToWizardForm(refreshed.data, {
+                evaluation: evalRes.data[0] ?? null,
+                bgv: bgvDetail,
+              }),
+            );
+          } else {
+            setInitialFormValues(mapCandidateDtoToWizardForm(refreshed.data));
+          }
+          setFormRevision((v) => v + 1);
+        }
+      }
+
       return true;
     } catch (err) {
       const errorMessage = getApiErrorMessage(
@@ -294,7 +368,7 @@ export function AddCandidatePage() {
           <Card className="flex min-h-0 flex-1 flex-col overflow-hidden">
             <CardContent className="flex min-h-0 flex-1 flex-col overflow-hidden p-4 sm:p-5">
               <CandidateWizard
-                key={isEdit ? `edit-${editId}-${initialFormValues ? 'ready' : 'loading'}` : 'new'}
+                key={isEdit ? `edit-${editId}-${formRevision}` : 'new'}
                 entryMethod="manual"
                 initialTab="basic"
                 freshStart={!isEdit}

@@ -369,6 +369,8 @@ export type CandidateDto = CandidateListItem & {
   currentCompany?: string | null;
   currentTitle?: string | null;
   education?: string | null;
+  timezone?: string | null;
+  noticePeriod?: string | null;
   clientBillRate?: number | null;
   candidatePayRate?: number | null;
   grossMargin?: number | null;
@@ -473,6 +475,7 @@ export type BackgroundCheckListItem = {
   id: number;
   candidateId: number;
   candidateName: string;
+  candidateSourceCandidateId?: string | null;
   type?: string;
   status: string;
   vendor?: string | null;
@@ -495,6 +498,12 @@ export type BackgroundCheckDto = BackgroundCheckListItem & {
   externalReferenceId?: string | null;
   resultSummary?: string | null;
   reviewNotes?: string | null;
+  idCheckStatus?: string | null;
+  addressCheckStatus?: string | null;
+  employmentCheckStatus?: string | null;
+  educationCheckStatus?: string | null;
+  criminalCheckStatus?: string | null;
+  referenceCheckStatus?: string | null;
   vendorAssignedAt?: string | null;
   reviewedAt?: string | null;
   reviewedByName?: string | null;

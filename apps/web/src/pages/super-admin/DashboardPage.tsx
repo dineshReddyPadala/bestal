@@ -81,11 +81,6 @@ export function SuperAdminDashboardPage() {
                 label: 'Review Candidate',
                 href: `/super-admin/candidates/${r.id}`,
               },
-              {
-                id: 'pending',
-                label: 'Open Approvals Queue',
-                href: '/super-admin/candidates/pending',
-              },
             ],
           }))}
         />

@@ -220,6 +220,38 @@ export async function notifyCandidatePendingApproval(
   );
 }
 
+export async function notifyCandidateSentBack(
+  prisma: PrismaClient,
+  config: AppConfig,
+  input: {
+    organizationId: number;
+    candidateId: number;
+    candidateName: string;
+    createdById?: number | null;
+    reason?: string | null;
+  },
+): Promise<void> {
+  const reasonNote = input.reason?.trim()
+    ? ` Reason: ${input.reason.trim()}`
+    : '';
+  await safeNotify('candidate-sent-back', () =>
+    notifyWithEmailFlag(prisma, config, {
+      organizationId: input.organizationId,
+      roles: ['RECRUITER'],
+      userIds: input.createdById ? [input.createdById] : undefined,
+      type: 'SYSTEM',
+      title: 'Candidate sent back for updates',
+      body: `${input.candidateName} was sent back to you for updates.${reasonNote}`,
+      actionUrl: webUrl(config, `/recruiter/candidates/${input.candidateId}/edit`),
+      metadata: {
+        candidateId: input.candidateId,
+        event: 'candidate_sent_back',
+        reason: input.reason ?? null,
+      },
+    }),
+  );
+}
+
 export async function notifyImportBatchFinished(
   prisma: PrismaClient,
   config: AppConfig,

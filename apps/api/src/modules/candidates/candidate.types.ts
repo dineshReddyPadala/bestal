@@ -73,6 +73,8 @@ export interface CandidateDto {
   currentCompany: string | null;
   currentTitle: string | null;
   education: string | null;
+  timezone: string | null;
+  noticePeriod: string | null;
   githubUrl: string | null;
   naukriUrl: string | null;
   clientBillRate: number | null;
@@ -191,6 +193,8 @@ export interface CreateCandidateInput {
   primaryRole?: string;
   currentCompany?: string;
   education?: string;
+  timezone?: string;
+  noticePeriod?: string;
   githubUrl?: string;
   naukriUrl?: string;
   clientBillRate?: number;

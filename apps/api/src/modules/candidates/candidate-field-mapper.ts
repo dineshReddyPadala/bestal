@@ -40,6 +40,8 @@ export function buildCandidateScalarData(
   if (data.education !== undefined) result.education = data.education;
   if (data.githubUrl !== undefined) result.githubUrl = data.githubUrl;
   if (data.naukriUrl !== undefined) result.naukriUrl = data.naukriUrl;
+  if (data.timezone !== undefined) result.timezone = data.timezone;
+  if (data.noticePeriod !== undefined) result.noticePeriod = data.noticePeriod;
   if (data.clientBillRate !== undefined) result.clientBillRate = data.clientBillRate;
   if (data.candidatePayRate !== undefined) result.candidatePayRate = data.candidatePayRate;
   if (data.grossMargin !== undefined) result.grossMargin = data.grossMargin;
@@ -113,6 +115,8 @@ export function mapCandidateExtendedDto(candidate: {
   currentCompany: string | null;
   currentTitle: string | null;
   education: string | null;
+  timezone: string | null;
+  noticePeriod: string | null;
   githubUrl: string | null;
   naukriUrl: string | null;
   clientBillRate: { toString(): string } | null;
@@ -147,6 +151,8 @@ export function mapCandidateExtendedDto(candidate: {
     currentCompany: candidate.currentCompany,
     currentTitle: candidate.currentTitle,
     education: candidate.education,
+    timezone: candidate.timezone ?? null,
+    noticePeriod: candidate.noticePeriod ?? null,
     githubUrl: candidate.githubUrl,
     naukriUrl: candidate.naukriUrl,
     clientBillRate: candidate.clientBillRate ? Number(candidate.clientBillRate) : null,

@@ -1,4 +1,5 @@
 import type { FastifyInstance } from 'fastify';
+import { formatBgvCheckStatusesSummary as formatBgvCheckFieldsSummary } from '@bestal/shared-utils';
 import type { BackgroundCheckStatus, PrismaClient } from '@prisma/client';
 import type { AuthenticatedUser } from '../../types/index.js';
 import {
@@ -77,6 +78,10 @@ const BGV_UPLOAD_DOCUMENT_STATUSES: BackgroundCheckStatus[] = [
   'IN_PROGRESS',
   'SUSPENDED',
   'CONSIDER',
+  'CLEAR',
+  'COMPLETED_CLEAR',
+  'COMPLETED_WITH_CONCERN',
+  'FAILED',
 ];
 
 const BGV_CONSENT_ACTION_STATUSES: BackgroundCheckStatus[] = [
@@ -357,18 +362,24 @@ export class BackgroundCheckService {
       assertRecruiterCannotSetDisposition(input.status);
     }
 
+    const patch = this.buildBgvUpdatePatch(existing, input);
     const record = await this.backgroundCheckRepository.update(
       organizationId,
       id,
-      input,
+      patch,
     );
 
-    if (input.status) {
-      await this.syncCandidateBgv(
-        organizationId,
-        bigintToNumber(existing.candidateId),
-        input.status,
-      );
+    const candidateId = bigintToNumber(existing.candidateId);
+    if (patch.status) {
+      await this.syncCandidateBgv(organizationId, candidateId, patch.status);
+    } else if (await this.candidateIsImported(organizationId, existing.candidateId)) {
+      if (this.hasBgvEvidenceUpdate(patch)) {
+        await syncImportedCandidateProfileStatus(
+          this.prisma,
+          organizationId,
+          candidateId,
+        );
+      }
     }
 
     return this.toDetailDto(organizationId, record);
@@ -448,13 +459,18 @@ export class BackgroundCheckService {
   ): Promise<BackgroundCheckDto> {
     const organizationId = requireOrganization(authUser);
     const existing = await this.getBackgroundCheckOrThrow(organizationId, id);
+    const isImported = await this.candidateIsImported(
+      organizationId,
+      existing.candidateId,
+    );
+
     assertBgvStatusIn(
       existing.status,
       BGV_UPLOAD_DOCUMENT_STATUSES,
       'Upload document',
     );
 
-    if (kind !== 'CONSENT') {
+    if (kind !== 'CONSENT' && !isImported) {
       assertBgvConsentConfirmed(existing, 'Upload document');
     }
 
@@ -513,14 +529,23 @@ export class BackgroundCheckService {
         patch.consentConfirmedAt = new Date().toISOString();
         patch.consentConfirmedById = authUser.id;
       }
+    } else if (isImported && !existing.consentConfirmedAt) {
+      patch.consentConfirmedAt = new Date().toISOString();
+      patch.consentConfirmedById = authUser.id;
     }
     if (kind === 'REPORT') {
-      assertBgvVendorAssigned(existing, 'Upload final report');
-      assertBgvStatusIn(
-        existing.status,
-        ['IN_PROGRESS', 'SUSPENDED'],
-        'Upload final report',
-      );
+      if (isImported) {
+        if (!existing.provider?.trim()) {
+          throw new BadRequestError('Set a vendor before uploading the BGV report');
+        }
+      } else {
+        assertBgvVendorAssigned(existing, 'Upload final report');
+        assertBgvStatusIn(
+          existing.status,
+          ['IN_PROGRESS', 'SUSPENDED'],
+          'Upload final report',
+        );
+      }
       patch.reportDocumentId = bigintToNumber(document.id);
     }
 
@@ -530,7 +555,7 @@ export class BackgroundCheckService {
       patch,
     );
 
-    if (kind === 'REPORT' && (await this.isN8nBgvAnalysisEnabled())) {
+    if (kind === 'REPORT' && (await this.isN8nBgvAnalysisEnabled()) && !isImported) {
       const updated = await this.getBackgroundCheckOrThrow(organizationId, id);
       await this.enqueueBgvAnalysisForExistingReport({
         authUser,
@@ -842,6 +867,80 @@ export class BackgroundCheckService {
         'Only admins can approve, reject, clarify, or reopen background verifications',
       );
     }
+  }
+
+  private async candidateIsImported(
+    organizationId: number,
+    candidateId: bigint,
+  ): Promise<boolean> {
+    const candidate = await this.prisma.candidate.findFirst({
+      where: {
+        id: candidateId,
+        organizationId: BigInt(organizationId),
+        deletedAt: null,
+      },
+      select: { sourceCandidateId: true },
+    });
+    return Boolean(candidate?.sourceCandidateId?.trim());
+  }
+
+  private hasBgvEvidenceUpdate(patch: UpdateBackgroundCheckInput): boolean {
+    return (
+      patch.status !== undefined ||
+      patch.type !== undefined ||
+      patch.provider !== undefined ||
+      patch.resultSummary !== undefined ||
+      patch.reviewNotes !== undefined ||
+      patch.idCheckStatus !== undefined ||
+      patch.addressCheckStatus !== undefined ||
+      patch.employmentCheckStatus !== undefined ||
+      patch.educationCheckStatus !== undefined ||
+      patch.criminalCheckStatus !== undefined ||
+      patch.referenceCheckStatus !== undefined ||
+      patch.initiatedAt !== undefined ||
+      patch.completedAt !== undefined
+    );
+  }
+
+  private buildBgvUpdatePatch(
+    existing: NonNullable<Awaited<ReturnType<BackgroundCheckRepository['findById']>>>,
+    input: UpdateBackgroundCheckInput,
+  ): UpdateBackgroundCheckInput {
+    const patch: UpdateBackgroundCheckInput = { ...input };
+    const checkFieldsUpdated =
+      patch.idCheckStatus !== undefined ||
+      patch.addressCheckStatus !== undefined ||
+      patch.employmentCheckStatus !== undefined ||
+      patch.educationCheckStatus !== undefined ||
+      patch.criminalCheckStatus !== undefined ||
+      patch.referenceCheckStatus !== undefined;
+
+    if (checkFieldsUpdated && patch.resultSummary === undefined) {
+      patch.resultSummary = formatBgvCheckFieldsSummary({
+        idCheckStatus: patch.idCheckStatus ?? existing.idCheckStatus,
+        addressCheckStatus: patch.addressCheckStatus ?? existing.addressCheckStatus,
+        employmentCheckStatus:
+          patch.employmentCheckStatus ?? existing.employmentCheckStatus,
+        educationCheckStatus: patch.educationCheckStatus ?? existing.educationCheckStatus,
+        criminalCheckStatus: patch.criminalCheckStatus ?? existing.criminalCheckStatus,
+        referenceCheckStatus: patch.referenceCheckStatus ?? existing.referenceCheckStatus,
+      });
+    }
+
+    if (patch.provider?.trim() && !existing.vendorAssignedAt) {
+      patch.vendorAssignedAt = new Date().toISOString();
+    }
+
+    const nextStatus = patch.status ?? existing.status;
+    if (
+      (nextStatus === 'CLEAR' || nextStatus === 'COMPLETED_CLEAR') &&
+      patch.completedAt === undefined &&
+      !existing.completedAt
+    ) {
+      patch.completedAt = new Date().toISOString();
+    }
+
+    return patch;
   }
 
   private async syncCandidateBgv(

@@ -6,7 +6,11 @@ import { Home, Users } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ClientCandidateSearchCard } from '../../components/client/ClientCandidateSearchCard';
-import { ClientSearchToolbar } from '../../components/client/ClientSearchToolbar';
+import { ClientCandidateSearchTable } from '../../components/client/ClientCandidateSearchTable';
+import {
+  ClientSearchToolbar,
+  type ClientSearchViewMode,
+} from '../../components/client/ClientSearchToolbar';
 import { RequestTrialDialog } from '../../components/client/RequestTrialDialog';
 import { useAuth } from '../../contexts/AuthContext';
 import { useClientTrialRequests } from '../../hooks/useClientEngagementRequests';
@@ -23,6 +27,14 @@ import type { TrialRequestFormValues } from '../../lib/entity-field-metadata';
 import { useDemoToast } from '../../lib/use-demo-toast';
 import { ToastHost } from '../../components/ui/ToastHost';
 
+const VIEW_MODE_STORAGE_KEY = 'client-search-view-mode';
+
+function readStoredViewMode(): ClientSearchViewMode {
+  if (typeof window === 'undefined') return 'list';
+  const stored = window.localStorage.getItem(VIEW_MODE_STORAGE_KEY);
+  return stored === 'cards' ? 'cards' : 'list';
+}
+
 export function CandidateSearchPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -38,6 +50,7 @@ export function CandidateSearchPage() {
   const [sort, setSort] = useState<Exclude<ClientSearchSort, 'best-match'>>(
     DEFAULT_CLIENT_SEARCH_SORT,
   );
+  const [viewMode, setViewMode] = useState<ClientSearchViewMode>(() => readStoredViewMode());
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [trialDialog, setTrialDialog] = useState<{
     ids: number[];
@@ -75,6 +88,10 @@ export function CandidateSearchPage() {
       return next.size === prev.size ? prev : next;
     });
   }, [filtered]);
+
+  useEffect(() => {
+    window.localStorage.setItem(VIEW_MODE_STORAGE_KEY, viewMode);
+  }, [viewMode]);
 
   useDashboardHeaderLeading(
     useMemo(
@@ -140,20 +157,38 @@ export function CandidateSearchPage() {
   }
 
   const hasSelection = selectedIds.size > 0;
+  const isListView = viewMode === 'list';
 
   return (
-    <div className={cn('flex min-h-full flex-col', hasSelection && 'pb-2')}>
+    <div
+      className={cn(
+        'flex flex-col',
+        isListView
+          ? 'h-[calc(100svh-var(--shell-header-h))] min-h-0 overflow-hidden'
+          : 'min-h-full',
+        hasSelection && !isListView && 'pb-2',
+      )}
+    >
       <ToastHost message={message} variant={variant} onDismiss={dismiss} />
 
-      <div className="flex-1 space-y-4 p-4 sm:p-6">
+      <div
+        className={cn(
+          isListView
+            ? 'flex min-h-0 flex-1 flex-col gap-4 p-4 sm:p-6'
+            : 'flex-1 space-y-4 p-4 sm:p-6',
+        )}
+      >
         <ClientSearchToolbar
           filters={filters}
           onChange={setFilters}
           sort={sort}
           onSortChange={setSort}
+          viewMode={viewMode}
+          onViewModeChange={setViewMode}
           resultCount={filtered.length}
           communityOptions={communityOptions}
           timezoneOptions={timezoneOptions}
+          className={isListView ? 'shrink-0' : undefined}
         />
 
         {isLoading ? (
@@ -162,6 +197,15 @@ export function CandidateSearchPage() {
           <EmptyState
             icon={<Users className="h-8 w-8" />}
             title="No candidates match your filters"
+          />
+        ) : isListView ? (
+          <ClientCandidateSearchTable
+            records={filtered}
+            selectedIds={selectedIds}
+            onSelectedChange={toggleSelected}
+            onView={(id) => navigate(`/client/candidates/${id}`)}
+            fillHeight
+            className="min-h-0 flex-1"
           />
         ) : (
           <div className="grid auto-rows-[252px] grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">

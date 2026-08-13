@@ -1,4 +1,4 @@
-import { formatDate } from '@bestal/shared-utils';
+import { useOrgFormatDate } from '../../contexts/OrgSettingsContext';
 import {
   Avatar,
   Button,
@@ -12,15 +12,14 @@ import {
 import { type ColumnDef } from '@tanstack/react-table';
 import {
   CheckCircle2,
-  Eye,
   FlaskConical,
   Monitor,
   Plus,
   ThumbsUp,
   XCircle,
 } from 'lucide-react';
+import { ActionMenu } from '../../components/ui/ActionMenu';
 import { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
 import { ClientPortalStatCard } from '../../components/client/ClientPortalStatCard';
 import { ClientSegmentTabs } from '../../components/client/ClientSegmentTabs';
 import { PickCandidateDialog } from '../../components/client/PickCandidateDialog';
@@ -47,7 +46,8 @@ export function TrialRequestsPage() {
   const { data, isLoading } = useTrialsList({ clientId, limit: 100, sort: '-createdAt' });
   const { addRequest } = useClientTrialRequests();
   const { submitFeedback } = useTrialMutations();
-  const [segment, setSegment] = useState<'active' | 'history'>('history');
+  const formatDate = useOrgFormatDate();
+  const [segment, setSegment] = useState<'active' | 'history'>('active');
   const [statusFilter, setStatusFilter] = useState('all');
   const [pickerOpen, setPickerOpen] = useState(false);
   const [selected, setSelected] = useState<{ id: number; name: string } | null>(null);
@@ -160,32 +160,31 @@ export function TrialRequestsPage() {
       },
       {
         id: 'actions',
-        header: 'Action',
+        header: '',
         cell: ({ row }) => (
-          <div className="flex items-center gap-1">
-            <Link
-              to={`/client/candidates/${row.original.candidateId}`}
-              className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
-              aria-label={`View ${row.original.candidateName}`}
-            >
-              <Eye className="h-4 w-4" />
-            </Link>
-            {row.original.status === 'COMPLETED' &&
-            !row.original.feedback?.trim() ? (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-8 px-2 text-xs"
-                onClick={() => setFeedbackTrialId(row.original.id)}
-              >
-                Feedback
-              </Button>
-            ) : null}
-          </div>
+          <ActionMenu
+            label="Trial actions"
+            items={[
+              {
+                id: 'view',
+                label: 'View candidate',
+                href: `/client/candidates/${row.original.candidateId}`,
+              },
+              {
+                id: 'feedback',
+                label: 'Feedback',
+                hidden:
+                  row.original.status !== 'COMPLETED' ||
+                  Boolean(row.original.feedback?.trim()),
+                separatorBefore: true,
+                onSelect: () => setFeedbackTrialId(row.original.id),
+              },
+            ]}
+          />
         ),
       },
     ],
-    [],
+    [formatDate],
   );
 
   async function handleSubmitFeedback() {

@@ -22,7 +22,10 @@ export function DashboardPage() {
 
   const activeCandidates = candidateRows.filter((c) => c.status === 'ACTIVE').length;
   const pendingApprovals = candidateRows.filter(
-    (c) => c.approvalStatus === 'PENDING' && Boolean(c.submittedForApprovalAt),
+    (c) =>
+      c.approvalStatus === 'PENDING' &&
+      Boolean(c.submittedForApprovalAt) &&
+      c.profileStatus === 'PENDING_APPROVAL',
   ).length;
   const openTrials = trialRows.filter((t) =>
     ['REQUESTED', 'APPROVED', 'IN_PROGRESS'].includes(t.status),

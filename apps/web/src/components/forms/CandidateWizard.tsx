@@ -1,4 +1,5 @@
 import {
+  BGV_PER_CHECK_STATUS_OPTIONS,
   CANDIDATE_AVAILABILITY_LABELS,
   CANDIDATE_AVAILABILITY_STATUSES,
   CANDIDATE_PROFILE_STATUS_LABELS,
@@ -7,6 +8,7 @@ import {
   EVALUATION_RECOMMENDATIONS,
   EVALUATION_TYPES,
   cn,
+  formatBgvStatusLabel,
 } from '@bestal/shared-utils';
 import { Button, FileUpload, Input, Select } from '@bestal/ui';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -34,6 +36,8 @@ import { useAiScreeningJob } from '../../hooks/useAiScreeningJob';
 import { useBgvAiJob } from '../../hooks/useBgvAiJob';
 import { useEvaluationAiJob } from '../../hooks/useEvaluationAiJob';
 import { usePermissions } from '../../hooks/usePermissions';
+import { useAuth } from '../../contexts/AuthContext';
+import { useOrgSettings } from '../../contexts/OrgSettingsContext';
 import { applyResumeExtractionToWizardForm } from '../../lib/api/ai/resume-extraction.mapper';
 import { TIMEZONE_OPTIONS } from '../../lib/timezones';
 import { mapEvaluationExtractionToForm } from '../../lib/api/ai/evaluation-extraction.mapper';
@@ -53,6 +57,7 @@ import {
   DRAFT_STORAGE_KEY,
   getInitialTabForEntryMethod,
   WIZARD_TABS,
+  BGV_WIZARD_STATUS_OPTIONS,
   type CandidateEntryMethod,
   type CandidateWizardFormValues,
   type CandidateWizardUploads,
@@ -371,17 +376,11 @@ function BasicDetailsTab({
             </Button>
           </div>
         </SectionCard>
-      ) : (
+      ) : resumeFileName ? (
         <SectionCard title="Resume">
-          <p className="text-sm text-muted-foreground">
-            Resume and AI screening are managed during super-admin onboarding. Update profile fields
-            below for imported candidates.
-          </p>
-          {resumeFileName ? (
-            <p className="mt-2 text-sm text-muted-foreground">Resume on file: {resumeFileName}</p>
-          ) : null}
+          <p className="text-sm text-muted-foreground">Resume on file: {resumeFileName}</p>
         </SectionCard>
-      )}
+      ) : null}
     </div>
   );
 }
@@ -476,16 +475,19 @@ function SkillsTab() {
   const {
     register,
     control,
+    watch,
     formState: { errors },
   } = useFormContext<CandidateWizardFormValues>();
   const { fields, append, remove } = useFieldArray({ control, name: 'skills' });
   const skillCommunities = useSkillCommunityOptions();
-  const defaultSkillCommunityId = skillCommunities[0]?.id;
+  const primarySkillCommunityId = watch('primarySkillCommunityId');
+  const defaultSkillCommunityId = primarySkillCommunityId ?? skillCommunities[0]?.id;
 
   return (
     <SectionCard title="Skills">
       <p className="mb-4 text-sm text-muted-foreground">
-        Add skill communities with proficiency level and years of experience.
+        Add individual skills (e.g. React, Node.js). Each skill can belong to a skill community
+        such as Full Stack — defaults to the candidate&apos;s primary community when left blank.
       </p>
       <div className="space-y-4">
         {fields.map((field, index) => (
@@ -499,8 +501,15 @@ function SkillsTab() {
               )}
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
-              <FormField label="Skill Community" name={`skills.${index}.skillCommunityId`} required>
+              <FormField label="Skill name" name={`skills.${index}.skillName`} required>
+                <Input
+                  {...register(`skills.${index}.skillName`)}
+                  placeholder="e.g. React, Node.js"
+                />
+              </FormField>
+              <FormField label="Skill community" name={`skills.${index}.skillCommunityId`}>
                 <Select {...register(`skills.${index}.skillCommunityId`)}>
+                  <option value="">— Primary community —</option>
                   <SkillCommunitySelectOptions />
                 </Select>
               </FormField>
@@ -530,12 +539,12 @@ function SkillsTab() {
                 </label>
               </FormField>
               <div className="sm:col-span-2">
-                <FormField label="Notes / Skill name" name={`skills.${index}.notes`}>
+                <FormField label="Notes" name={`skills.${index}.notes`}>
                   <textarea
                     rows={2}
                     className={textareaClass}
                     {...register(`skills.${index}.notes`)}
-                    placeholder="e.g. Snowflake, dbt"
+                    placeholder="Optional context about this skill"
                   />
                 </FormField>
               </div>
@@ -546,10 +555,11 @@ function SkillsTab() {
           type="button"
           variant="outline"
           size="sm"
-          disabled={!defaultSkillCommunityId}
           onClick={() =>
             append({
-              skillCommunityId: Number(defaultSkillCommunityId),
+              skillName: '',
+              skillCategory: '',
+              skillCommunityId: defaultSkillCommunityId ?? undefined,
               proficiencyLevel: 'INTERMEDIATE',
               yearsExperience: undefined,
               isPrimary: fields.length === 0,
@@ -884,14 +894,29 @@ function EvaluationTab({
           </div>
         </SectionCard>
       ) : (
-        <SectionCard title="Evaluation">
+        <SectionCard title="Evaluation document">
           <p className="text-sm text-muted-foreground">
-            Update the imported evaluation record below. New evaluations and AI analysis are not
-            available for imported candidates.
+            Upload the evaluation form or report. Files are stored on the evaluation record without
+            AI analysis for imported candidates.
           </p>
-          {evaluationFileName ? (
-            <p className="mt-2 text-sm text-muted-foreground">Document on file: {evaluationFileName}</p>
-          ) : null}
+          <div className="mt-4 space-y-4">
+            <FileUpload
+              label="Evaluation form"
+              accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+              hint="PDF or Word — stored without AI analysis"
+              onFileSelect={(file) => {
+                pendingUploads.current.evaluationFile = file;
+                setValue('evaluationFileName', file.name, { shouldDirty: true });
+              }}
+            />
+            {evaluationFileName ? (
+              <p className="text-sm text-muted-foreground">
+                {evaluationFileName.startsWith('http') || evaluationFileName.includes('/')
+                  ? `Document on file: ${evaluationFileName.split('/').pop()}`
+                  : `Selected: ${evaluationFileName}`}
+              </p>
+            ) : null}
+          </div>
         </SectionCard>
       )}
 
@@ -1192,14 +1217,53 @@ function BackgroundCheckTab({
       </SectionCard>
         </>
       ) : (
-        <SectionCard title="Background verification">
+        <SectionCard title="Background verification documents">
           <p className="text-sm text-muted-foreground">
-            Update the imported BGV record below. New background checks and AI analysis are not
-            available for imported candidates.
+            Upload consent forms, supporting documents, or the final BGV report. Files are stored on
+            the BGV record without AI analysis for imported candidates.
           </p>
-          {bgvFileName ? (
-            <p className="mt-2 text-sm text-muted-foreground">Report on file: {bgvFileName}</p>
-          ) : null}
+          <div className="mt-4 space-y-4">
+            <FileUpload
+              label="Consent form (optional)"
+              accept=".pdf,.doc,.docx"
+              hint="PDF or Word"
+              onFileSelect={(file) => {
+                pendingUploads.current.bgvConsentFile = file;
+                setValue('bgvConsentFileName', file.name, { shouldDirty: true });
+              }}
+            />
+            {watch('bgvConsentFileName') ? (
+              <p className="text-sm text-muted-foreground">
+                Consent selected: {watch('bgvConsentFileName')}
+              </p>
+            ) : null}
+            <FileUpload
+              label="Supporting document"
+              accept=".pdf,.doc,.docx,.png,.jpg,.jpeg"
+              hint="PDF, Word, or image"
+              onFileSelect={(file) => {
+                pendingUploads.current.bgvSupportingFile = file;
+                setValue('bgvSupportingFileName', file.name, { shouldDirty: true });
+              }}
+            />
+            {watch('bgvSupportingFileName') ? (
+              <p className="text-sm text-muted-foreground">
+                Supporting doc selected: {watch('bgvSupportingFileName')}
+              </p>
+            ) : null}
+            <FileUpload
+              label="BGV report"
+              accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+              hint="PDF or Word — stored without AI analysis"
+              onFileSelect={(file) => {
+                pendingUploads.current.bgvFile = file;
+                setValue('bgvFileName', file.name, { shouldDirty: true });
+              }}
+            />
+            {bgvFileName ? (
+              <p className="text-sm text-muted-foreground">Report selected: {bgvFileName}</p>
+            ) : null}
+          </div>
         </SectionCard>
       )}
 
@@ -1207,10 +1271,13 @@ function BackgroundCheckTab({
         <div className="grid gap-4 sm:grid-cols-2">
           <FormField label="Status" name="bgvStatus">
             <Select id="bgvStatus" {...register('bgvStatus')}>
-              <option value="NOT_STARTED">Not Started</option>
-              <option value="IN_PROGRESS">In Progress</option>
-              <option value="CLEAR">Completed ✓</option>
-              <option value="FAILED">Failed</option>
+              {BGV_WIZARD_STATUS_OPTIONS.filter((status) => status !== 'COMPLETED_CLEAR').map(
+                (status) => (
+                  <option key={status} value={status}>
+                    {status === 'CLEAR' ? 'Completed (Clear)' : status.replace(/_/g, ' ')}
+                  </option>
+                ),
+              )}
             </Select>
           </FormField>
           <FormField label="Vendor" name="bgvVendor">
@@ -1241,6 +1308,7 @@ function BackgroundCheckTab({
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
           {(
             [
+              ['bgvIdCheck', 'Identity'],
               ['bgvEmployment', 'Employment'],
               ['bgvEducation', 'Education'],
               ['bgvReference', 'Reference'],
@@ -1250,8 +1318,27 @@ function BackgroundCheckTab({
           ).map(([name, label]) => (
             <FormField key={name} label={label} name={name}>
               <Select id={name} {...register(name)}>
-                <option value="NOT_STARTED">Not requested</option>
-                <option value="PENDING">Requested</option>
+                {allowAiAnalysis ? (
+                  <>
+                    <option value="NOT_STARTED">Not requested</option>
+                    <option value="PENDING">Requested</option>
+                  </>
+                ) : (
+                  <>
+                    {!BGV_PER_CHECK_STATUS_OPTIONS.includes(
+                      watch(name) as (typeof BGV_PER_CHECK_STATUS_OPTIONS)[number],
+                    ) && watch(name) ? (
+                      <option value={watch(name) as string}>
+                        {formatBgvStatusLabel(watch(name) as string)}
+                      </option>
+                    ) : null}
+                    {BGV_PER_CHECK_STATUS_OPTIONS.map((status) => (
+                      <option key={status} value={status}>
+                        {formatBgvStatusLabel(status)}
+                      </option>
+                    ))}
+                  </>
+                )}
               </Select>
             </FormField>
           ))}
@@ -1315,13 +1402,35 @@ function BackgroundCheckTab({
   );
 }
 
-function DocumentsTab({ pendingUploads }: { pendingUploads: MutableRefObject<CandidateWizardUploads> }) {
+function DocumentsTab({
+  pendingUploads,
+  allowResumeUpload,
+}: {
+  pendingUploads: MutableRefObject<CandidateWizardUploads>;
+  allowResumeUpload?: boolean;
+}) {
   const { setValue, watch } = useFormContext<CandidateWizardFormValues>();
+  const profilePreviewUrl = watch('profileImagePreviewUrl');
 
   return (
     <SectionCard title="Documents">
       <div className="space-y-6">
-        {watch('resumeFileName') ? (
+        {allowResumeUpload ? (
+          <div>
+            <FileUpload
+              label="Resume"
+              accept=".pdf,.doc,.docx"
+              hint="PDF or DOCX — stored without AI analysis"
+              onFileSelect={(file) => {
+                pendingUploads.current.resume = file;
+                setValue('resumeFileName', file.name, { shouldDirty: true });
+              }}
+            />
+            {watch('resumeFileName') ? (
+              <p className="mt-2 text-sm text-success">Resume: {watch('resumeFileName')}</p>
+            ) : null}
+          </div>
+        ) : watch('resumeFileName') ? (
           <p className="text-sm text-muted-foreground">Resume on file: {watch('resumeFileName')}</p>
         ) : null}
         <div>
@@ -1332,9 +1441,21 @@ function DocumentsTab({ pendingUploads }: { pendingUploads: MutableRefObject<Can
             onFileSelect={(file) => {
               pendingUploads.current.profileImage = file;
               setValue('profileImageFileName', file.name, { shouldDirty: true });
+              setValue('profileImagePreviewUrl', URL.createObjectURL(file), { shouldDirty: true });
             }}
           />
-          {watch('profileImageFileName') ? (
+          {profilePreviewUrl ? (
+            <div className="mt-3 flex items-center gap-3">
+              <img
+                src={profilePreviewUrl}
+                alt="Profile preview"
+                className="h-16 w-16 rounded-full border border-border object-cover"
+              />
+              <p className="text-sm text-success">
+                {watch('profileImageFileName') ? `Photo: ${watch('profileImageFileName')}` : 'Photo on file'}
+              </p>
+            </div>
+          ) : watch('profileImageFileName') ? (
             <p className="mt-2 text-sm text-success">Selected: {watch('profileImageFileName')}</p>
           ) : null}
         </div>
@@ -1357,89 +1478,77 @@ function DocumentsTab({ pendingUploads }: { pendingUploads: MutableRefObject<Can
   );
 }
 
-function ReviewTab() {
+function ReviewTab({ canEditVisibility }: { canEditVisibility: boolean }) {
   const { register, watch } = useFormContext<CandidateWizardFormValues>();
   const values = watch();
   const profileStatus = values.profileStatus;
+  const visibility = values.visibility;
+  const currency = values.currency ?? 'USD';
+
+  const summaryFields: Array<{ label: string; value: string }> = [
+    { label: 'Name', value: [values.firstName, values.lastName].filter(Boolean).join(' ') || '—' },
+    { label: 'Email', value: values.email || '—' },
+    { label: 'Phone', value: values.phone || '—' },
+    { label: 'Location', value: values.location || '—' },
+    { label: 'Source', value: values.source || '—' },
+    { label: 'Role', value: values.primaryRole || '—' },
+    { label: 'Company', value: values.currentCompany || '—' },
+    { label: 'Education', value: values.education || '—' },
+    { label: 'Timezone', value: values.timezone || '—' },
+    { label: 'Skills', value: values.skills?.length ? `${values.skills.length} skill(s)` : '—' },
+    { label: 'Available From', value: values.availableFrom || '—' },
+    { label: 'Availability', value: values.availabilityStatus || '—' },
+    { label: 'Notice Period', value: values.noticePeriodDays != null ? `${values.noticePeriodDays} days` : '—' },
+    { label: 'Preferred Shift', value: values.preferredShift || '—' },
+    { label: 'Hours / Week', value: values.hoursPerWeek != null ? String(values.hoursPerWeek) : '—' },
+    { label: 'Engagement', value: values.preferredEngagement || '—' },
+    {
+      label: 'Bill Rate',
+      value: values.billRate != null ? `${currency} ${values.billRate}/hr` : '—',
+    },
+    {
+      label: 'Pay Rate',
+      value: values.payRate != null ? `${currency} ${values.payRate}/hr` : '—',
+    },
+    { label: 'BesTal Score', value: values.bestalScore != null ? String(values.bestalScore) : '—' },
+    { label: 'Technical Score', value: values.technicalScore != null ? String(values.technicalScore) : '—' },
+    { label: 'Communication Score', value: values.communicationScore != null ? String(values.communicationScore) : '—' },
+    { label: 'Recommendation', value: values.evaluationRecommendation || '—' },
+    { label: 'Evaluator', value: values.evaluatorName || '—' },
+    { label: 'BGV Status', value: values.bgvStatus || '—' },
+    { label: 'BGV Vendor', value: values.bgvVendor || '—' },
+    { label: 'Resume', value: values.resumeFileName || '—' },
+    { label: 'Profile Photo', value: values.profileImageFileName || '—' },
+  ];
 
   return (
     <div className="space-y-4">
+      {values.rejectionReason ? (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          <p className="font-medium">Returned by admin</p>
+          <p className="mt-1">{values.rejectionReason}</p>
+        </div>
+      ) : null}
       <SectionCard title="Review Summary">
         <dl className="grid gap-3 text-sm sm:grid-cols-2">
-          <div>
-            <dt className="text-muted-foreground">Name</dt>
-            <dd className="font-medium">
-              {[values.firstName, values.lastName].filter(Boolean).join(' ') || '—'}
-            </dd>
-          </div>
-          <div>
-            <dt className="text-muted-foreground">Email</dt>
-            <dd className="font-medium">{values.email || '—'}</dd>
-          </div>
-          <div>
-            <dt className="text-muted-foreground">Phone</dt>
-            <dd className="font-medium">{values.phone || '—'}</dd>
-          </div>
-          <div>
-            <dt className="text-muted-foreground">Location</dt>
-            <dd className="font-medium">{values.location || '—'}</dd>
-          </div>
-          <div>
-            <dt className="text-muted-foreground">Source</dt>
-            <dd className="font-medium">{values.source || '—'}</dd>
-          </div>
-          <div>
-            <dt className="text-muted-foreground">Role</dt>
-            <dd className="font-medium">{values.primaryRole || '—'}</dd>
-          </div>
-          <div>
-            <dt className="text-muted-foreground">Skills</dt>
-            <dd className="font-medium">{values.skills?.length ? `${values.skills.length} skill(s)` : '—'}</dd>
-          </div>
-          <div>
-            <dt className="text-muted-foreground">Available From</dt>
-            <dd className="font-medium">{values.availableFrom || '—'}</dd>
-          </div>
-          <div>
-            <dt className="text-muted-foreground">Bill Rate</dt>
-            <dd className="font-medium">{values.billRate != null ? `$${values.billRate}/hr` : '—'}</dd>
-          </div>
-          <div>
-            <dt className="text-muted-foreground">BesTal Score</dt>
-            <dd className="font-medium">{values.bestalScore ?? '—'}</dd>
-          </div>
-          <div>
-            <dt className="text-muted-foreground">Technical Score</dt>
-            <dd className="font-medium">{values.technicalScore ?? '—'}</dd>
-          </div>
-          <div>
-            <dt className="text-muted-foreground">Recommendation</dt>
-            <dd className="font-medium">{values.evaluationRecommendation || '—'}</dd>
-          </div>
-          <div>
-            <dt className="text-muted-foreground">Evaluator</dt>
-            <dd className="font-medium">{values.evaluatorName || '—'}</dd>
-          </div>
-          <div>
-            <dt className="text-muted-foreground">BGV Status</dt>
-            <dd className="font-medium">{values.bgvStatus || '—'}</dd>
-          </div>
-          <div>
-            <dt className="text-muted-foreground">BGV Vendor</dt>
-            <dd className="font-medium">{values.bgvVendor || '—'}</dd>
-          </div>
-          <div>
-            <dt className="text-muted-foreground">BGV Report</dt>
-            <dd className="font-medium">{values.bgvFileName || '—'}</dd>
-          </div>
-          <div className="sm:col-span-2">
-            <dt className="text-muted-foreground">AI BGV Summary</dt>
-            <dd className="font-medium whitespace-pre-wrap">{values.aiBgvSummary || '—'}</dd>
-          </div>
-          <div>
-            <dt className="text-muted-foreground">Resume</dt>
-            <dd className="font-medium">{values.resumeFileName || '—'}</dd>
-          </div>
+          {summaryFields.map(({ label, value }) => (
+            <div key={label}>
+              <dt className="text-muted-foreground">{label}</dt>
+              <dd className="font-medium">{value}</dd>
+            </div>
+          ))}
+          {values.aiBgvSummary?.trim() ? (
+            <div className="sm:col-span-2">
+              <dt className="text-muted-foreground">BGV Summary</dt>
+              <dd className="font-medium whitespace-pre-wrap">{values.aiBgvSummary}</dd>
+            </div>
+          ) : null}
+          {values.aiSummary?.trim() ? (
+            <div className="sm:col-span-2">
+              <dt className="text-muted-foreground">AI Summary</dt>
+              <dd className="font-medium whitespace-pre-wrap">{values.aiSummary}</dd>
+            </div>
+          ) : null}
         </dl>
       </SectionCard>
 
@@ -1454,19 +1563,29 @@ function ReviewTab() {
             </div>
           </FormField>
           <FormField label="Visibility" name="visibility">
-            <Select id="visibility" {...register('visibility')}>
-              {CANDIDATE_VISIBILITY_STATUSES.map((status) => (
-                <option key={status} value={status}>
-                  {CANDIDATE_VISIBILITY_LABELS[status]}
-                </option>
-              ))}
-            </Select>
+            {canEditVisibility ? (
+              <Select id="visibility" {...register('visibility')}>
+                {CANDIDATE_VISIBILITY_STATUSES.map((status) => (
+                  <option key={status} value={status}>
+                    {CANDIDATE_VISIBILITY_LABELS[status]}
+                  </option>
+                ))}
+              </Select>
+            ) : (
+              <>
+                <input type="hidden" {...register('visibility')} />
+                <div className="flex h-11 items-center rounded-md border border-border bg-muted/30 px-3 text-sm font-medium text-foreground">
+                  {visibility ? CANDIDATE_VISIBILITY_LABELS[visibility] : 'Internal Only'}
+                </div>
+              </>
+            )}
           </FormField>
           <div className="sm:col-span-2">
             <label className="flex items-center gap-2 text-sm">
               <input
                 type="checkbox"
                 className="h-4 w-4 accent-brand"
+                disabled={!canEditVisibility}
                 {...register('publishAfterApproval')}
               />
               Publish to Clients after Approval
@@ -1497,6 +1616,7 @@ function TabContent({
   onAiScreeningComplete,
   onToast,
   allowAiScreening,
+  canEditVisibility,
 }: {
   tabId: WizardTabId;
   pendingUploads: MutableRefObject<CandidateWizardUploads>;
@@ -1504,6 +1624,7 @@ function TabContent({
   onAiScreeningComplete: (draftId: number, values: Partial<CandidateWizardFormValues>) => void;
   onToast: (message: string) => void;
   allowAiScreening: boolean;
+  canEditVisibility: boolean;
 }) {
   switch (tabId) {
     case 'basic':
@@ -1525,9 +1646,14 @@ function TabContent({
     case 'pricing':
       return <PricingTab />;
     case 'documents':
-      return <DocumentsTab pendingUploads={pendingUploads} />;
+      return (
+        <DocumentsTab
+          pendingUploads={pendingUploads}
+          allowResumeUpload={!allowAiScreening}
+        />
+      );
     case 'review':
-      return <ReviewTab />;
+      return <ReviewTab canEditVisibility={canEditVisibility} />;
     case 'evaluation':
       return (
         <EvaluationTab
@@ -1571,7 +1697,9 @@ export function CandidateWizard({
   isSubmitting = false,
 }: CandidateWizardProps) {
   const { canRunAiScreening } = usePermissions();
+  const { user } = useAuth();
   const allowAiScreening = wizardMode === 'superAdminCreate' && canRunAiScreening;
+  const canEditVisibility = user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN';
   const [activeTab, setActiveTab] = useState<WizardTabId>(
     initialTab ?? getInitialTabForEntryMethod(entryMethod),
   );
@@ -1581,11 +1709,13 @@ export function CandidateWizard({
     isLoading: skillCommunitiesLoading,
     isError: skillCommunitiesError,
   } = useSkillCommunitiesList();
+  const { settings: orgSettings } = useOrgSettings();
 
   const methods = useForm<CandidateWizardFormValues>({
     resolver: zodResolver(candidateWizardFormSchema) as Resolver<CandidateWizardFormValues>,
     defaultValues: {
       ...candidateWizardDefaults,
+      currency: orgSettings.currency,
       ...initialFormValues,
     },
     mode: 'onBlur',
@@ -1755,6 +1885,7 @@ export function CandidateWizard({
               onAiScreeningComplete={handleAiScreeningComplete}
               onToast={onToast}
               allowAiScreening={allowAiScreening}
+              canEditVisibility={canEditVisibility}
             />
             </div>
 

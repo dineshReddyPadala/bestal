@@ -1,4 +1,4 @@
-import type { DocumentKind, PrismaClient } from '@prisma/client';
+import type { DocumentKind, Prisma, PrismaClient } from '@prisma/client';
 import type { FastifyInstance } from 'fastify';
 import { randomUUID } from 'node:crypto';
 import { ROLES } from '../../constants/index.js';
@@ -39,7 +39,7 @@ import {
   maybeAutoSubmitSuperAdminCandidate,
   syncImportedCandidateProfileStatus,
 } from './candidate-profile-sync.js';
-import { notifyCandidatePendingApproval } from '../../services/notification-events.js';
+import { notifyCandidatePendingApproval, notifyCandidateSentBack } from '../../services/notification-events.js';
 import { StorageService } from '../../services/storage.service.js';
 import { normalizeUploadToPdf } from '../../services/document-pdf-normalizer.js';
 import type { UploadCategory } from '../../services/storage/storage.constants.js';
@@ -56,6 +56,7 @@ import {
   mapCandidateToListItemAsync,
 } from './candidate.mapper.js';
 import { CandidateRepository } from './candidate.repository.js';
+import { AuditService } from '../admin/audit.service.js';
 import type {
   CandidateAssetKind,
   CandidateDto,
@@ -77,6 +78,7 @@ export class CandidateService {
   private readonly storageService: StorageService;
   private readonly prisma: PrismaClient;
   private readonly fastify: FastifyInstance;
+  private readonly audit: AuditService;
 
   constructor(
     fastify: FastifyInstance,
@@ -88,6 +90,26 @@ export class CandidateService {
     );
     this.storageService = new StorageService(fastify.config);
     this.prisma = fastify.prisma;
+    this.audit = new AuditService(fastify.prisma);
+  }
+
+  private async writeCandidateAudit(
+    authUser: AuthenticatedUser,
+    action: 'CREATE' | 'UPDATE' | 'DELETE' | 'APPROVE' | 'REJECT' | 'ASSIGN' | 'EXPORT',
+    candidateId: number,
+    description: string,
+    metadata?: Prisma.InputJsonValue,
+  ): Promise<void> {
+    if (authUser.organizationId == null) return;
+    await this.audit.write({
+      organizationId: authUser.organizationId,
+      actorId: authUser.id,
+      action,
+      resourceType: 'Candidate',
+      resourceId: candidateId,
+      description,
+      metadata,
+    });
   }
 
   private async isN8nResumeScreeningEnabled(): Promise<boolean> {
@@ -789,7 +811,7 @@ export class CandidateService {
     input: UpdateCandidateInput,
   ): Promise<CandidateDto> {
     const organizationId = this.requireOrganization(authUser);
-    await this.getCandidateOrThrow(organizationId, id);
+    const existingCandidate = await this.getCandidateOrThrow(organizationId, id);
 
     if (input.email) {
       const existing = await this.candidateRepository.findByEmail(
@@ -829,10 +851,21 @@ export class CandidateService {
       }
     }
 
+    let updateInput = input;
+    if (
+      authUser.role === ROLES.RECRUITER &&
+      existingCandidate.sourceCandidateId?.trim()
+    ) {
+      const { visibility: _visibility, profileStatus: _profileStatus, ...rest } = input;
+      updateInput = rest;
+    }
+
     const candidate = await this.candidateRepository.update(organizationId, id, {
-      ...input,
+      ...updateInput,
       skills:
-        input.skills !== undefined ? normalizeCandidateSkills(input.skills) : undefined,
+        updateInput.skills !== undefined
+          ? normalizeCandidateSkills(updateInput.skills)
+          : undefined,
     });
 
     const updated = await this.candidateRepository.findById(organizationId, id);
@@ -1032,6 +1065,7 @@ export class CandidateService {
     assertCanPublish(this.toPipelineSnapshot(candidate));
 
     const updated = await this.candidateRepository.publish(organizationId, id);
+    await this.writeCandidateAudit(authUser, 'UPDATE', id, 'Published candidate to client portal');
     return this.toDto(updated, authUser);
   }
 
@@ -1053,6 +1087,7 @@ export class CandidateService {
       id,
       authUser.id,
     );
+    await this.writeCandidateAudit(authUser, 'APPROVE', id, 'Approved candidate profile');
     return this.toDto(updated, authUser);
   }
 
@@ -1069,6 +1104,9 @@ export class CandidateService {
       authUser.id,
       input.reason,
     );
+    await this.writeCandidateAudit(authUser, 'REJECT', id, 'Rejected candidate profile', {
+      reason: input.reason,
+    });
     return this.toDto(updated, authUser);
   }
 
@@ -1087,17 +1125,38 @@ export class CandidateService {
       throw new BadRequestError('Only pending candidates can be sent back to recruiter');
     }
 
-    const updated = await this.candidateRepository.updatePipelineState(
+    const isImported = Boolean(candidate.sourceCandidateId?.trim());
+    const trimmedReason = reason?.trim() || null;
+
+    await this.candidateRepository.updatePipelineState(organizationId, id, {
+      approvalStatus: 'PENDING',
+      submittedForApprovalAt: null,
+      rejectionReason: trimmedReason,
+      ...(isImported ? {} : { profileStatus: 'RECRUITER_SCREENED' }),
+    });
+
+    if (isImported) {
+      await syncImportedCandidateProfileStatus(this.prisma, organizationId, id);
+    }
+
+    await this.writeCandidateAudit(authUser, 'UPDATE', id, 'Sent candidate back to recruiter', {
+      reason: trimmedReason,
+      imported: isImported,
+    });
+
+    const candidateName = `${candidate.firstName} ${candidate.lastName}`.trim();
+    await notifyCandidateSentBack(this.prisma, this.fastify.config, {
       organizationId,
-      id,
-      {
-        approvalStatus: 'PENDING',
-        submittedForApprovalAt: null,
-        profileStatus: 'RECRUITER_SCREENED',
-        rejectionReason: reason?.trim() || null,
-      },
-    );
-    return this.toDto(updated, authUser);
+      candidateId: id,
+      candidateName: candidateName || `Candidate #${id}`,
+      createdById: candidate.createdById
+        ? bigintToNumber(candidate.createdById)
+        : null,
+      reason: trimmedReason,
+    });
+
+    const refreshed = await this.candidateRepository.findById(organizationId, id);
+    return this.toDto(refreshed ?? candidate, authUser);
   }
 
   async runAiScreening(
@@ -1199,6 +1258,8 @@ export class CandidateService {
       candidateId: id,
       candidateName: `${updated.firstName} ${updated.lastName}`.trim(),
     });
+
+    await this.writeCandidateAudit(authUser, 'UPDATE', id, 'Submitted candidate for approval');
 
     return this.toDto(updated, authUser);
   }

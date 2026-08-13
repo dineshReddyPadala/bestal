@@ -1,6 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { z } from 'zod';
+import { EmailService } from '../../services/email.service.js';
 import { requireSuperAdmin } from './admin.auth.js';
 import { AdminController } from './admin.controller.js';
 import { AdminOpsService } from './admin-ops.service.js';
@@ -12,7 +13,9 @@ export async function adminRoutes(fastify: FastifyInstance): Promise<void> {
   const admin = new AdminService(fastify);
   const ops = new AdminOpsService(fastify);
   const roles = new AdminRolesService(fastify);
-  const controller = new AdminController(admin, ops, roles);
+  const controller = new AdminController(admin, ops, roles, (request) =>
+    new EmailService(fastify.config, request.server.prisma),
+  );
   const app = fastify.withTypeProvider<ZodTypeProvider>();
   const secure = { preHandler: [...requireSuperAdmin] };
 
@@ -109,6 +112,12 @@ export async function adminRoutes(fastify: FastifyInstance): Promise<void> {
   app.put('/settings/integrations', { ...secure, schema: { tags: ['Admin'], security: [{ bearerAuth: [] }] } }, controller.putSetting('integrations'));
   app.put('/settings/commercials', { ...secure, schema: { tags: ['Admin'], security: [{ bearerAuth: [] }] } }, controller.putSetting('commercials'));
   app.put('/settings/workflows', { ...secure, schema: { tags: ['Admin'], security: [{ bearerAuth: [] }] } }, controller.putSetting('workflows'));
+  app.put('/settings/localization', { ...secure, schema: { tags: ['Admin'], security: [{ bearerAuth: [] }] } }, controller.putSetting('localization'));
+
+  app.get('/communication-templates', { ...secure, schema: { tags: ['Admin'], security: [{ bearerAuth: [] }] } }, controller.listCommunicationTemplates);
+  app.put('/communication-templates', { ...secure, schema: { tags: ['Admin'], security: [{ bearerAuth: [] }] } }, controller.upsertCommunicationTemplate);
+  app.delete('/communication-templates/:key', { ...secure, schema: { tags: ['Admin'], params: z.object({ key: z.string().min(1) }), security: [{ bearerAuth: [] }] } }, controller.deleteCommunicationTemplate);
+  app.post('/settings/email/test', { ...secure, schema: { tags: ['Admin'], body: z.object({ to: z.string().email() }), security: [{ bearerAuth: [] }] } }, controller.sendTestEmail);
 
   // Roles & permissions
   app.get('/roles', { ...secure, schema: { tags: ['Admin'], querystring: z.object({ search: z.string().max(200).optional() }), security: [{ bearerAuth: [] }] } }, controller.listRoles);

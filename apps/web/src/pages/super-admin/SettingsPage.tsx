@@ -2,6 +2,7 @@ import { Button, Dialog, Input, PageHeader, Select, Tabs, StatusBadge, TanStackD
 import { type ColumnDef } from '@tanstack/react-table';
 import { Plus } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState, type TextareaHTMLAttributes } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
 import { ActionMenu, type ActionMenuItem } from '../../components/super-admin/ActionMenu';
 import { useConfirmAction } from '../../components/super-admin/useConfirmAction';
@@ -10,6 +11,7 @@ import {
   useAdminSettings,
   useAdminSkillCommunities,
 } from '../../hooks/api/useAdmin';
+import { adminApi } from '../../lib/api/admin';
 import { useDemoToast } from '../../lib/use-demo-toast';
 import { ToastHost } from '../../components/ui/ToastHost';
 import { getApiErrorMessage } from '../../lib/api/errors';
@@ -49,7 +51,9 @@ type SettingsKey =
   | 'notifications'
   | 'integrations'
   | 'commercials'
-  | 'workflows';
+  | 'workflows'
+  | 'email'
+  | 'localization';
 
 function asObj(value: unknown): Record<string, unknown> {
   return value && typeof value === 'object' && !Array.isArray(value)
@@ -82,11 +86,30 @@ export function SuperAdminPlatformSettingsPage() {
     defaultBillRate: '',
     minMarginPercent: '20',
     currency: 'USD',
+    supportedCurrencies: 'USD,EUR,GBP,INR',
+  });
+  const [email, setEmail] = useState({
+    enabled: false,
+    host: 'smtp.gmail.com',
+    port: '587',
+    user: '',
+    password: '',
+    fromAddress: '',
+    fromName: 'BesTal',
+    secure: false,
+  });
+  const [localization, setLocalization] = useState({
+    dateFormat: 'MMM d, yyyy',
+    locale: 'en-US',
   });
   const [integrations, setIntegrations] = useState({
     oorwinEnabled: false,
     oorwinApiUrl: '',
     webhookUrl: '',
+    smsProvider: 'none',
+    smsApiKey: '',
+    smsSenderId: '',
+    whatsAppPhoneNumberId: '',
   });
   const [commercials, setCommercials] = useState({
     viewPayRate: true,
@@ -120,6 +143,8 @@ export function SuperAdminPlatformSettingsPage() {
     const s = asObj(data.security);
     const sc = asObj(data.scoring);
     const pr = asObj(data.pricing);
+    const em = asObj(data.email);
+    const loc = asObj(data.localization);
     const i = asObj(data.integrations);
     const c = asObj(data.commercials);
     const t = asObj(data.trials);
@@ -142,11 +167,32 @@ export function SuperAdminPlatformSettingsPage() {
       defaultBillRate: String(pr.defaultBillRate ?? ''),
       minMarginPercent: String(pr.minMarginPercent ?? '20'),
       currency: String(pr.currency ?? 'USD'),
+      supportedCurrencies: Array.isArray(pr.supportedCurrencies)
+        ? (pr.supportedCurrencies as string[]).join(',')
+        : 'USD,EUR,GBP,INR',
+    });
+    setEmail({
+      enabled: Boolean(em.enabled),
+      host: String(em.host ?? 'smtp.gmail.com'),
+      port: String(em.port ?? '587'),
+      user: String(em.user ?? ''),
+      password: String(em.password ?? ''),
+      fromAddress: String(em.fromAddress ?? ''),
+      fromName: String(em.fromName ?? 'BesTal'),
+      secure: Boolean(em.secure),
+    });
+    setLocalization({
+      dateFormat: String(loc.dateFormat ?? 'MMM d, yyyy'),
+      locale: String(loc.locale ?? 'en-US'),
     });
     setIntegrations({
       oorwinEnabled: Boolean(i.oorwinEnabled),
       oorwinApiUrl: String(i.oorwinApiUrl ?? ''),
       webhookUrl: String(i.webhookUrl ?? ''),
+      smsProvider: String(i.smsProvider ?? 'none'),
+      smsApiKey: String(i.smsApiKey ?? ''),
+      smsSenderId: String(i.smsSenderId ?? ''),
+      whatsAppPhoneNumberId: String(i.whatsAppPhoneNumberId ?? ''),
     });
     setCommercials({
       viewPayRate: c.viewPayRate === undefined ? true : Boolean(c.viewPayRate),
@@ -440,6 +486,10 @@ export function SuperAdminPlatformSettingsPage() {
                         defaultBillRate: Number(pricing.defaultBillRate) || 0,
                         minMarginPercent: Number(pricing.minMarginPercent) || 0,
                         currency: pricing.currency,
+                        supportedCurrencies: pricing.supportedCurrencies
+                          .split(',')
+                          .map((value) => value.trim())
+                          .filter(Boolean),
                       },
                       'Pricing rules',
                     )
@@ -479,11 +529,25 @@ export function SuperAdminPlatformSettingsPage() {
                       value={pricing.currency}
                       onChange={(e) => setPricing((p) => ({ ...p, currency: e.target.value }))}
                     >
-                      <option value="USD">USD</option>
-                      <option value="EUR">EUR</option>
-                      <option value="GBP">GBP</option>
-                      <option value="INR">INR</option>
+                      {(pricing.supportedCurrencies || 'USD,EUR,GBP,INR')
+                        .split(',')
+                        .map((value) => value.trim())
+                        .filter(Boolean)
+                        .map((code) => (
+                          <option key={code} value={code}>
+                            {code}
+                          </option>
+                        ))}
                     </Select>
+                  </Field>
+                  <Field label="Supported currencies (comma-separated)" className="sm:col-span-2">
+                    <Input
+                      value={pricing.supportedCurrencies}
+                      onChange={(e) =>
+                        setPricing((p) => ({ ...p, supportedCurrencies: e.target.value }))
+                      }
+                      placeholder="USD,EUR,GBP,INR"
+                    />
                   </Field>
                 </Section>
               ),
@@ -701,6 +765,204 @@ export function SuperAdminPlatformSettingsPage() {
               ),
             },
             {
+              id: 'localization',
+              label: 'Localization',
+              content: (
+                <Section
+                  title="Date & locale"
+                  busy={saving === 'localization'}
+                  onSave={() =>
+                    void save(
+                      'localization',
+                      {
+                        dateFormat: localization.dateFormat,
+                        locale: localization.locale,
+                      },
+                      'Localization settings',
+                    )
+                  }
+                >
+                  <Field label="Date format">
+                    <Select
+                      value={localization.dateFormat}
+                      onChange={(e) =>
+                        setLocalization((p) => ({ ...p, dateFormat: e.target.value }))
+                      }
+                    >
+                      <option value="MMM d, yyyy">Aug 12, 2026</option>
+                      <option value="dd/MM/yyyy">12/08/2026</option>
+                      <option value="yyyy-MM-dd">2026-08-12</option>
+                    </Select>
+                  </Field>
+                  <Field label="Locale">
+                    <Select
+                      value={localization.locale}
+                      onChange={(e) => setLocalization((p) => ({ ...p, locale: e.target.value }))}
+                    >
+                      <option value="en-US">English (US)</option>
+                      <option value="en-GB">English (UK)</option>
+                      <option value="en-IN">English (India)</option>
+                      <option value="de-DE">German</option>
+                    </Select>
+                  </Field>
+                </Section>
+              ),
+            },
+            {
+              id: 'email',
+              label: 'Email & SMS',
+              content: (
+                <div className="space-y-6">
+                  <Section
+                    title="SMTP configuration"
+                    busy={saving === 'email'}
+                    onSave={() =>
+                      void save(
+                        'email',
+                        {
+                          enabled: email.enabled,
+                          host: email.host.trim(),
+                          port: Number(email.port) || 587,
+                          user: email.user.trim() || null,
+                          password: email.password.trim() || null,
+                          fromAddress: email.fromAddress.trim() || null,
+                          fromName: email.fromName.trim() || null,
+                          secure: email.secure,
+                        },
+                        'Email settings',
+                      )
+                    }
+                  >
+                    <label className="flex items-center gap-2 text-sm sm:col-span-2">
+                      <input
+                        type="checkbox"
+                        checked={email.enabled}
+                        onChange={(e) => setEmail((p) => ({ ...p, enabled: e.target.checked }))}
+                      />
+                      Use platform SMTP settings (falls back to server env when disabled)
+                    </label>
+                    <Field label="SMTP host">
+                      <Input
+                        value={email.host}
+                        onChange={(e) => setEmail((p) => ({ ...p, host: e.target.value }))}
+                      />
+                    </Field>
+                    <Field label="SMTP port">
+                      <Input
+                        type="number"
+                        value={email.port}
+                        onChange={(e) => setEmail((p) => ({ ...p, port: e.target.value }))}
+                      />
+                    </Field>
+                    <Field label="SMTP user">
+                      <Input
+                        value={email.user}
+                        onChange={(e) => setEmail((p) => ({ ...p, user: e.target.value }))}
+                      />
+                    </Field>
+                    <Field label="SMTP password">
+                      <Input
+                        type="password"
+                        value={email.password}
+                        onChange={(e) => setEmail((p) => ({ ...p, password: e.target.value }))}
+                        placeholder="Leave as ******** to keep existing"
+                      />
+                    </Field>
+                    <Field label="From address">
+                      <Input
+                        value={email.fromAddress}
+                        onChange={(e) => setEmail((p) => ({ ...p, fromAddress: e.target.value }))}
+                      />
+                    </Field>
+                    <Field label="From name">
+                      <Input
+                        value={email.fromName}
+                        onChange={(e) => setEmail((p) => ({ ...p, fromName: e.target.value }))}
+                      />
+                    </Field>
+                    <label className="flex items-center gap-2 text-sm sm:col-span-2">
+                      <input
+                        type="checkbox"
+                        checked={email.secure}
+                        onChange={(e) => setEmail((p) => ({ ...p, secure: e.target.checked }))}
+                      />
+                      Use TLS/SSL (port 465)
+                    </label>
+                    <div className="sm:col-span-2">
+                      <EmailTestButton />
+                    </div>
+                  </Section>
+                  <Section
+                    title="SMS / WhatsApp"
+                    busy={saving === 'integrations'}
+                    onSave={() =>
+                      void save(
+                        'integrations',
+                        {
+                          oorwinEnabled: integrations.oorwinEnabled,
+                          oorwinApiUrl: integrations.oorwinApiUrl.trim() || null,
+                          webhookUrl: integrations.webhookUrl.trim() || null,
+                          smsProvider: integrations.smsProvider,
+                          smsApiKey: integrations.smsApiKey.trim() || null,
+                          smsSenderId: integrations.smsSenderId.trim() || null,
+                          whatsAppPhoneNumberId:
+                            integrations.whatsAppPhoneNumberId.trim() || null,
+                        },
+                        'Integration settings',
+                      )
+                    }
+                  >
+                    <Field label="SMS provider">
+                      <Select
+                        value={integrations.smsProvider}
+                        onChange={(e) =>
+                          setIntegrations((p) => ({ ...p, smsProvider: e.target.value }))
+                        }
+                      >
+                        <option value="none">None</option>
+                        <option value="twilio">Twilio</option>
+                        <option value="whatsapp">WhatsApp Business</option>
+                      </Select>
+                    </Field>
+                    <Field label="API key">
+                      <Input
+                        type="password"
+                        value={integrations.smsApiKey}
+                        onChange={(e) =>
+                          setIntegrations((p) => ({ ...p, smsApiKey: e.target.value }))
+                        }
+                        placeholder="Leave as ******** to keep existing"
+                      />
+                    </Field>
+                    <Field label="Sender ID / phone">
+                      <Input
+                        value={integrations.smsSenderId}
+                        onChange={(e) =>
+                          setIntegrations((p) => ({ ...p, smsSenderId: e.target.value }))
+                        }
+                      />
+                    </Field>
+                    <Field label="WhatsApp phone number ID">
+                      <Input
+                        value={integrations.whatsAppPhoneNumberId}
+                        onChange={(e) =>
+                          setIntegrations((p) => ({
+                            ...p,
+                            whatsAppPhoneNumberId: e.target.value,
+                          }))
+                        }
+                      />
+                    </Field>
+                  </Section>
+                </div>
+              ),
+            },
+            {
+              id: 'templates',
+              label: 'Templates',
+              content: <CommunicationTemplatesPanel />,
+            },
+            {
               id: 'integrations',
               label: 'Integrations',
               content: (
@@ -708,7 +970,20 @@ export function SuperAdminPlatformSettingsPage() {
                   title="Configure integrations"
                   busy={saving === 'integrations'}
                   onSave={() =>
-                    void save('integrations', { ...integrations }, 'Integrations')
+                    void save(
+                      'integrations',
+                      {
+                        oorwinEnabled: integrations.oorwinEnabled,
+                        oorwinApiUrl: integrations.oorwinApiUrl.trim() || null,
+                        webhookUrl: integrations.webhookUrl.trim() || null,
+                        smsProvider: integrations.smsProvider,
+                        smsApiKey: integrations.smsApiKey.trim() || null,
+                        smsSenderId: integrations.smsSenderId.trim() || null,
+                        whatsAppPhoneNumberId:
+                          integrations.whatsAppPhoneNumberId.trim() || null,
+                      },
+                      'Integrations',
+                    )
                   }
                 >
                   <label className="flex items-center gap-2 text-sm sm:col-span-2">
@@ -846,6 +1121,117 @@ export function SuperAdminPlatformSettingsPage() {
 
 /** @deprecated Use SuperAdminPlatformSettingsPage */
 export const SuperAdminSettingsPage = SuperAdminPlatformSettingsPage;
+
+function EmailTestButton() {
+  const { show, showError } = useDemoToast();
+  const [to, setTo] = useState('');
+  const [busy, setBusy] = useState(false);
+
+  return (
+    <div className="flex flex-wrap items-end gap-2">
+      <Field label="Send test email to" className="min-w-[16rem] flex-1">
+        <Input
+          type="email"
+          value={to}
+          onChange={(e) => setTo(e.target.value)}
+          placeholder="you@company.com"
+        />
+      </Field>
+      <Button
+        type="button"
+        disabled={busy || !to.trim()}
+        onClick={() => {
+          setBusy(true);
+          void adminApi
+            .sendTestEmail(to.trim())
+            .then((result) => {
+              show(result.sent ? 'Test email sent' : 'SMTP not configured — check settings');
+            })
+            .catch((err) => showError(getApiErrorMessage(err, 'Test email failed')))
+            .finally(() => setBusy(false));
+        }}
+      >
+        {busy ? 'Sending…' : 'Send test'}
+      </Button>
+    </div>
+  );
+}
+
+function CommunicationTemplatesPanel() {
+  const { show, showError } = useDemoToast();
+  const { data, isLoading, refetch } = useQuery({
+    queryKey: ['communication-templates'],
+    queryFn: () => adminApi.listCommunicationTemplates(),
+  });
+  const templates = data ?? [];
+  const [selectedKey, setSelectedKey] = useState<string | null>(null);
+  const [subject, setSubject] = useState('');
+  const [body, setBody] = useState('');
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    const selected = templates.find((template) => template.key === selectedKey);
+    if (!selected) return;
+    setSubject(selected.subject ?? '');
+    setBody(selected.body);
+  }, [selectedKey, templates]);
+
+  useEffect(() => {
+    if (!selectedKey && templates.length > 0) {
+      setSelectedKey(templates[0]!.key);
+    }
+  }, [selectedKey, templates]);
+
+  async function saveTemplate() {
+    if (!selectedKey) return;
+    const selected = templates.find((template) => template.key === selectedKey);
+    if (!selected) return;
+    setBusy(true);
+    try {
+      await adminApi.upsertCommunicationTemplate({
+        key: selectedKey,
+        channel: selected.channel as 'EMAIL' | 'SMS' | 'IN_APP',
+        subject: subject.trim() || null,
+        body,
+        variables: selected.variables,
+      });
+      show('Template saved');
+      await refetch();
+    } catch (err) {
+      showError(getApiErrorMessage(err, 'Save failed'));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  if (isLoading) {
+    return <p className="text-sm text-muted-foreground">Loading templates…</p>;
+  }
+
+  return (
+    <Section title="Notification templates" busy={busy} onSave={() => void saveTemplate()}>
+      <Field label="Template">
+        <Select value={selectedKey ?? ''} onChange={(e) => setSelectedKey(e.target.value)}>
+          {templates.map((template) => (
+            <option key={template.key} value={template.key}>
+              {template.key}
+            </option>
+          ))}
+        </Select>
+      </Field>
+      <Field label="Subject (email)">
+        <Input value={subject} onChange={(e) => setSubject(e.target.value)} />
+      </Field>
+      <Field label="Body" className="sm:col-span-2">
+        <Textarea rows={8} value={body} onChange={(e) => setBody(e.target.value)} />
+      </Field>
+      <p className="text-sm text-muted-foreground sm:col-span-2">
+        Use placeholders like {'{{candidateName}}'} — available variables are listed per template
+        in the database seed.
+      </p>
+    </Section>
+  );
+}
 
 function SkillCommunitiesPanel() {
   const { message, variant, show, showError, dismiss } = useDemoToast();

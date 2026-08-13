@@ -18,6 +18,7 @@ export interface BackgroundCheckDto {
   organizationId: number;
   candidateId: number;
   candidateName: string;
+  candidateSourceCandidateId?: string | null;
   requestedById: number;
   requestedByName: string;
   type: BackgroundCheckType;
@@ -27,6 +28,12 @@ export interface BackgroundCheckDto {
   resultSummary: string | null;
   aiSummary: string | null;
   reviewNotes: string | null;
+  idCheckStatus: string | null;
+  addressCheckStatus: string | null;
+  employmentCheckStatus: string | null;
+  educationCheckStatus: string | null;
+  criminalCheckStatus: string | null;
+  referenceCheckStatus: string | null;
   consentConfirmedAt: string | null;
   vendorAssignedAt: string | null;
   reviewedAt: string | null;
@@ -55,6 +62,7 @@ export interface BackgroundCheckListItemDto {
   id: number;
   candidateId: number;
   candidateName: string;
+  candidateSourceCandidateId?: string | null;
   type: BackgroundCheckType;
   status: BackgroundCheckStatus;
   provider: string | null;
@@ -85,9 +93,9 @@ export interface CreateBackgroundCheckInput {
   status?: BackgroundCheckStatus;
   provider?: string;
   externalReferenceId?: string;
-  resultSummary?: string;
-  aiSummary?: string;
-  reviewNotes?: string;
+  resultSummary?: string | null;
+  aiSummary?: string | null;
+  reviewNotes?: string | null;
   initiatedAt?: string;
   completedAt?: string;
   expiresAt?: string;
@@ -97,8 +105,8 @@ export interface UpdateBackgroundCheckInput {
   type?: BackgroundCheckType;
   status?: BackgroundCheckStatus;
   provider?: string;
-  externalReferenceId?: string;
-  resultSummary?: string;
+  externalReferenceId?: string | null;
+  resultSummary?: string | null;
   aiSummary?: string | null;
   reviewNotes?: string | null;
   consentConfirmedAt?: string | null;

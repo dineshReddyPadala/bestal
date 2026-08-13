@@ -97,8 +97,14 @@ export type NormalizedCandidateImport = {
   currentCompany: string | null;
   currentTitle: string | null;
   noticePeriod: string | null;
+  noticePeriodDays: number | null;
   preferredShift: string | null;
+  preferredEngagement: string | null;
+  minHoursPerWeek: number | null;
+  maxHoursPerWeek: number | null;
+  hoursPerWeek: number | null;
   timezoneOverlap: string | null;
+  education: string | null;
   resumeUrl: string | null;
   skills: NormalizedSkillRow[];
   evaluations: NormalizedEvaluationRow[];

@@ -14,7 +14,16 @@ import { AuditService } from './audit.service.js';
 import {
   maskWorkflowsSettingsForAdmin,
   mergeWorkflowsSettingsUpdate,
+  maskEmailSettingsForAdmin,
+  mergeEmailSettingsUpdate,
+  maskIntegrationsSettingsForAdmin,
+  mergeIntegrationsSettingsUpdate,
 } from '../../services/system-settings.reader.js';
+import {
+  deleteCommunicationTemplate,
+  listCommunicationTemplates,
+  upsertCommunicationTemplate,
+} from '../../services/communication-template.service.js';
 
 const SETTING_KEYS = [
   'oorwin',
@@ -28,6 +37,7 @@ const SETTING_KEYS = [
   'integrations',
   'commercials',
   'workflows',
+  'localization',
 ] as const;
 export type SettingKey = (typeof SETTING_KEYS)[number];
 
@@ -974,10 +984,15 @@ export class AdminOpsService {
       integrations: {},
       commercials: {},
       workflows: {},
+      localization: {},
     };
     for (const row of rows) {
       if (row.key === 'workflows') {
         out.workflows = maskWorkflowsSettingsForAdmin(row.value);
+      } else if (row.key === 'email') {
+        out.email = maskEmailSettingsForAdmin(row.value);
+      } else if (row.key === 'integrations') {
+        out.integrations = maskIntegrationsSettingsForAdmin(row.value);
       } else {
         out[row.key] = row.value;
       }
@@ -1024,6 +1039,14 @@ export class AdminOpsService {
           );
         }
       }
+    } else if (key === 'email') {
+      const existing = await this.prisma.systemSetting.findUnique({ where: { key: 'email' } });
+      payload = mergeEmailSettingsUpdate(value, existing?.value);
+    } else if (key === 'integrations') {
+      const existing = await this.prisma.systemSetting.findUnique({
+        where: { key: 'integrations' },
+      });
+      payload = mergeIntegrationsSettingsUpdate(value, existing?.value);
     }
 
     const row = await this.prisma.systemSetting.upsert({
@@ -1042,7 +1065,59 @@ export class AdminOpsService {
     if (key === 'workflows') {
       return { key, value: maskWorkflowsSettingsForAdmin(row.value) };
     }
+    if (key === 'email') {
+      return { key, value: maskEmailSettingsForAdmin(row.value) };
+    }
+    if (key === 'integrations') {
+      return { key, value: maskIntegrationsSettingsForAdmin(row.value) };
+    }
     return { key, value: row.value };
+  }
+
+  async listCommunicationTemplates() {
+    return listCommunicationTemplates(this.prisma);
+  }
+
+  async upsertCommunicationTemplate(
+    authUser: AuthenticatedUser,
+    input: {
+      key: string;
+      channel: 'EMAIL' | 'SMS' | 'IN_APP';
+      subject?: string | null;
+      body: string;
+      variables?: string[];
+    },
+    ctx?: { ipAddress?: string | null; userAgent?: string | null },
+  ) {
+    const row = await upsertCommunicationTemplate(this.prisma, input);
+    await this.auditWrite(
+      authUser,
+      'UPDATE',
+      'CommunicationTemplate',
+      row.id,
+      `Updated communication template ${input.key}`,
+      input as unknown as Prisma.InputJsonValue,
+      ctx,
+    );
+    return row;
+  }
+
+  async deleteCommunicationTemplate(
+    authUser: AuthenticatedUser,
+    key: string,
+    ctx?: { ipAddress?: string | null; userAgent?: string | null },
+  ) {
+    await deleteCommunicationTemplate(this.prisma, key);
+    await this.auditWrite(
+      authUser,
+      'DELETE',
+      'CommunicationTemplate',
+      null,
+      `Deleted communication template ${key}`,
+      { key },
+      ctx,
+    );
+    return { deleted: true };
   }
 }
 

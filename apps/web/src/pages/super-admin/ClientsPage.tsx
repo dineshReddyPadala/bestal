@@ -33,8 +33,18 @@ export function SuperAdminClientsPage() {
   const rows = (data?.data ?? []) as unknown as Row[];
   const managerUsers = useMemo(
     () =>
-      ((usersData?.data ?? []) as Array<Record<string, unknown>>).filter(
-        (u) => u.role !== 'SUPER_ADMIN' && u.role !== 'CLIENT' && u.isActive !== false,
+      ((usersData?.data ?? []) as Array<{
+        id: number;
+        role: string | null;
+        email?: string | null;
+        isActive?: boolean;
+        firstName?: string;
+        lastName?: string;
+      }>).filter(
+        (u) =>
+          u.isActive !== false &&
+          u.role != null &&
+          ['ADMIN', 'RECRUITER', 'SALES'].includes(String(u.role)),
       ),
     [usersData],
   );

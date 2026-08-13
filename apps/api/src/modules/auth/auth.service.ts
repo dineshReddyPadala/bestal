@@ -66,7 +66,7 @@ export class AuthService {
   ) {
     this.authRepository =
       authRepository ?? new AuthRepository(fastify.prisma);
-    this.emailService = emailService ?? new EmailService(fastify.config);
+    this.emailService = emailService ?? new EmailService(fastify.config, fastify.prisma);
   }
 
   async login(input: LoginBody): Promise<AuthTokenResponse> {
