@@ -28,12 +28,18 @@ import { AboutPage } from '../pages/public/AboutPage';
 import { CommunitiesPage } from '../pages/public/CommunitiesPage';
 import { ContactPage } from '../pages/public/ContactPage';
 import { EnterprisePage } from '../pages/public/EnterprisePage';
+import { EvaluationStandardPage } from '../pages/public/EvaluationStandardPage';
+import { ForEngineersPage } from '../pages/public/ForEngineersPage';
 import { HomePage } from '../pages/public/HomePage';
 import { HowItWorksPage } from '../pages/public/HowItWorksPage';
 import { JobDetailPage } from '../pages/public/JobDetailPage';
 import { JobsPage } from '../pages/public/JobsPage';
 import { PortalLoginPage } from '../pages/public/LoginPage';
+import { RatesPage } from '../pages/public/RatesPage';
+import { SampleTalentPage } from '../pages/public/SampleTalentPage';
 import { TalentPage } from '../pages/public/TalentPage';
+import { TrustPage } from '../pages/public/TrustPage';
+import { TryForAWeekPage } from '../pages/public/TryForAWeekPage';
 import { AddCandidatePage } from '../pages/recruiter/AddCandidatePage';
 import { BackgroundChecksPage } from '../pages/recruiter/BackgroundChecksPage';
 import { CandidateCsvImportPage as RecruiterCandidateCsvImportPage } from '../pages/recruiter/CandidateCsvImportPage';
@@ -147,8 +153,8 @@ function MarketingShell() {
     <div data-prerender-ready="">
       <MarketingLayout
         navItems={[...marketingNav]}
-        ctaLabel="Hire Talent"
-        ctaHref="/contact"
+        ctaLabel="Browse Engineers"
+        ctaHref="/sample-talent"
         brandLogoSrc={BESTAL_LOGO_SRC}
       >
         <Outlet />
@@ -197,12 +203,18 @@ const router = createBrowserRouter([
     children: [
       { index: true, element: <HomePage /> },
       { path: 'how-it-works', element: <HowItWorksPage /> },
+      { path: 'sample-talent', element: <SampleTalentPage /> },
       { path: 'talent', element: <TalentPage /> },
+      { path: 'evaluation-standard', element: <EvaluationStandardPage /> },
+      { path: 'trust', element: <TrustPage /> },
+      { path: 'rates', element: <RatesPage /> },
+      { path: 'try-for-a-week', element: <TryForAWeekPage /> },
       { path: 'jobs', element: <JobsPage /> },
       { path: 'jobs/:slug', element: <JobDetailPage /> },
       { path: 'communities', element: <CommunitiesPage /> },
       { path: 'enterprise', element: <EnterprisePage /> },
       { path: 'about', element: <AboutPage /> },
+      { path: 'for-engineers', element: <ForEngineersPage /> },
       { path: 'contact', element: <ContactPage /> },
     ],
   },

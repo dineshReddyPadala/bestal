@@ -56,13 +56,12 @@ export const superAdminNav = [
 ] as const satisfies readonly NavItem[];
 
 export const publicNav = [
-  { id: 'home', label: 'Home', href: '/' },
-  { id: 'how-it-works', label: 'How It Works', href: '/how-it-works' },
-  { id: 'talent', label: 'Find Talent', href: '/talent' },
-  { id: 'jobs', label: 'Open Roles', href: '/jobs' },
-  { id: 'skill-communities', label: 'Skill Communities', href: '/communities' },
-  { id: 'enterprise', label: 'Enterprise', href: '/enterprise' },
-  { id: 'about', label: 'About', href: '/about' },
+  { id: 'how-it-works', label: 'How it works', href: '/how-it-works' },
+  { id: 'how-we-test', label: 'How we test', href: '/evaluation-standard' },
+  { id: 'engineers', label: 'Engineers', href: '/communities' },
+  { id: 'trial', label: '20-Hour Trial', href: '/try-for-a-week' },
+  { id: 'rates', label: 'Rates', href: '/rates' },
+  { id: 'trust', label: 'Trust', href: '/trust' },
 ] as const satisfies readonly NavItem[];
 
 export type SalesNav = typeof salesNav;

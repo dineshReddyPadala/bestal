@@ -1,7 +1,7 @@
 export const DEFAULT_TITLE = 'BesTal — Proven Talent. Ready to Perform.';
 
 export const DEFAULT_DESCRIPTION =
-  "See the external evaluator's scorecard, background verification status, hourly rate and US time-zone overlap before you interview. Data & AI, Cloud, SAP, ServiceNow, Salesforce and security specialists.";
+  'Pre-vetted engineers who work your hours, not theirs. See their test results, their rate and their start date up front — then try them free for 20 hours before you commit.';
 
 export const PAGE_SEO = {
   home: {
@@ -9,14 +9,39 @@ export const PAGE_SEO = {
     description: DEFAULT_DESCRIPTION,
   },
   howItWorks: {
-    title: 'How It Works | BesTal',
+    title: 'How BesTal Works — Screening, Evaluation, Verification, Engagement',
     description:
-      'From role brief to pilot in four steps. Review evaluation scorecards, BGV status, and bill rates before you interview — then start a 20-hour pilot with no long-term obligation.',
+      'How a technology professional gets onto BesTal, and how you engage one: external evaluation, background verification, published rates, committed US time-zone overlap, and a one-week working engagement.',
+  },
+  sampleTalent: {
+    title: 'Sample Talent Profiles — See a BesTal Evaluation Scorecard',
+    description:
+      'Complete example profiles in the production format: external evaluation scorecards, verification status, hourly rate, availability and US time-zone overlap. Fictional professionals, real structure.',
   },
   talent: {
-    title: 'Find Proven Talent | BesTal',
+    title: 'Sample Talent Profiles — See a BesTal Evaluation Scorecard',
     description:
-      'Browse vetted specialists with external evaluator scorecards, background verification status, hourly rates, and US time-zone overlap — before you interview.',
+      'Complete example profiles in the production format: external evaluation scorecards, verification status, hourly rate, availability and US time-zone overlap. Fictional professionals, real structure.',
+  },
+  evaluationStandard: {
+    title: 'Our Evaluation Standard — How BesTal Assesses Technology Talent',
+    description:
+      'Five assessed dimensions, independent external evaluators, published scorecards including reservations. How BesTal\'s technical evaluation works and what the scores mean.',
+  },
+  trust: {
+    title: 'Trust & Verification — How BesTal Verifies Identity and Competence',
+    description:
+      'Identity bound to assessment, independent education and employment checks, written exclusivity declarations, IP assigned at creation. What BesTal verifies and what it deliberately does not publish.',
+  },
+  rates: {
+    title: 'How BesTal Rates Work — Transparent Hourly Pricing',
+    description:
+      'Every profile shows the hourly client rate before you shortlist. The seven factors that set it, what it includes, and why BesTal doesn\'t compete on being cheapest.',
+  },
+  tryForAWeek: {
+    title: 'Try for a Week — See a Professional Perform Before You Commit',
+    description:
+      'A one-week paid working engagement on real work, with defined success criteria and a named manager. You keep the work product. Then continue, extend, replace or stop.',
   },
   jobs: {
     title: 'Open Roles | BesTal',
@@ -26,7 +51,7 @@ export const PAGE_SEO = {
   communities: {
     title: 'Skill Communities | BesTal',
     description:
-      'Specialist talent pools across Data & AI, Cloud, SAP, ServiceNow, Salesforce, Full Stack, and QA Automation — each profile includes evaluation and BGV evidence.',
+      'Specialist talent pools across Data & AI, Cloud, SAP, ServiceNow, Salesforce, Full Stack, and Cybersecurity — each profile includes evaluation and BGV evidence.',
   },
   enterprise: {
     title: 'Enterprise | BesTal',
@@ -41,14 +66,25 @@ export const PAGE_SEO = {
   contact: {
     title: 'Contact BesTal',
     description:
-      'Tell us about your hiring needs. A BesTal talent strategist responds within one business day with matched profiles and evidence you can review before interviewing.',
+      'Talk to BesTal about a technology talent requirement, a platform walkthrough, or a procurement and security review.',
+  },
+  forEngineers: {
+    title: 'For Engineers | BesTal',
+    description:
+      'Get tested once by an outside specialist. Your results, rate, start date and US hours go on your profile — clients read the evidence before they contact you.',
   },
 } as const;
 
 export const MARKETING_ROUTES = [
   '/',
   '/how-it-works',
+  '/sample-talent',
   '/talent',
+  '/evaluation-standard',
+  '/trust',
+  '/rates',
+  '/try-for-a-week',
+  '/for-engineers',
   '/jobs',
   '/communities',
   '/enterprise',

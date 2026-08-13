@@ -1,4 +1,5 @@
 @import '@bestal/ui/globals.css';
+@import './styles/marketing.css';
 
 @layer utilities {
   .text-balance {
