@@ -98,6 +98,29 @@ export async function notifyTrialRequested(
   );
 }
 
+export async function notifyJobRequestSubmitted(
+  prisma: PrismaClient,
+  config: AppConfig,
+  input: {
+    organizationId: number;
+    jobRequestId: number;
+    companyName: string;
+    jobTitle: string;
+  },
+): Promise<void> {
+  await safeNotify('job-request-submitted', () =>
+    notifyWithEmailFlag(prisma, config, {
+      organizationId: input.organizationId,
+      roles: ['ADMIN', 'SALES'],
+      type: 'GENERAL',
+      title: 'New job request submitted',
+      body: `${input.companyName} submitted a job request for ${input.jobTitle}.`,
+      actionUrl: webUrl(config, `/admin/job-requests/${input.jobRequestId}`),
+      metadata: { jobRequestId: input.jobRequestId, event: 'job_request_submitted' },
+    }),
+  );
+}
+
 export async function notifyTrialStatusChanged(
   prisma: PrismaClient,
   config: AppConfig,

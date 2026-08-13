@@ -10,7 +10,8 @@ import type {
   CandidateImportRowAction,
   Prisma,
 } from '@prisma/client';
-import { BadRequestError, NotFoundError, bigintToNumber } from '../../utils/index.js';
+import { BadRequestError, NotFoundError, AppError, bigintToNumber } from '../../utils/index.js';
+import { HTTP_STATUS } from '../../constants/index.js';
 import { readPricingSettings } from '../../services/system-settings.reader.js';
 import type { AuthenticatedUser } from '../../types/index.js';
 import { buildPaginationMeta } from '../../validators/common.validator.js';
@@ -61,6 +62,7 @@ function mapBgvStatus(status: string): BackgroundCheckStatus {
   switch (status) {
     case 'NOT_STARTED':
       return 'NOT_STARTED';
+    case 'PENDING':
     case 'CONSENT_PENDING':
       return 'PENDING';
     case 'INITIATED':
@@ -70,6 +72,7 @@ function mapBgvStatus(status: string): BackgroundCheckStatus {
     case 'CLEAR':
     case 'COMPLETED_CLEAR':
       return 'COMPLETED_CLEAR';
+    case 'CONSIDER':
     case 'COMPLETED_WITH_CONCERN':
       return 'COMPLETED_WITH_CONCERN';
     case 'FAILED':
@@ -79,6 +82,17 @@ function mapBgvStatus(status: string): BackgroundCheckStatus {
     default:
       return 'NOT_STARTED';
   }
+}
+
+function latestEvaluation(
+  evaluations: NormalizedCandidateImport['evaluations'],
+): NormalizedCandidateImport['evaluations'][number] | null {
+  if (!evaluations.length) return null;
+  return [...evaluations].sort((a, b) => {
+    const left = a.evaluationDate ?? '';
+    const right = b.evaluationDate ?? '';
+    return right.localeCompare(left);
+  })[0]!;
 }
 
 function hasAiScreeningFields(candidate: NormalizedCandidateImport): boolean {
@@ -129,7 +143,18 @@ const runningBatches = new Set<number>();
 export class CandidateImportService {
   constructor(private readonly fastify: FastifyInstance) {}
 
+  private assertPrismaImportReady(): void {
+    const delegate = this.fastify.prisma?.candidateImportBatch?.findUnique;
+    if (typeof delegate !== 'function') {
+      throw new AppError(
+        'Import service unavailable — run DB migrations, prisma generate, and restart the API.',
+        HTTP_STATUS.SERVICE_UNAVAILABLE,
+      );
+    }
+  }
+
   async getTemplateBuffer(): Promise<Buffer> {
+    this.assertPrismaImportReady();
     await this.ensureSkillCommunities();
     const skillCommunities = await this.listSkillCommunityNames();
     const pricing = await readPricingSettings(this.fastify.prisma);
@@ -147,6 +172,7 @@ export class CandidateImportService {
     fileName: string,
     fileBuffer: Buffer,
   ): Promise<CandidateImportBatchStatusDto> {
+    this.assertPrismaImportReady();
     const organizationId = requireOrganization(authUser);
     this.assertWorkbookFile(fileName, fileBuffer);
 
@@ -541,6 +567,7 @@ export class CandidateImportService {
     runningBatches.add(batchId);
 
     try {
+      this.assertPrismaImportReady();
       const batch = await this.fastify.prisma.candidateImportBatch.findUnique({
         where: { id: BigInt(batchId) },
       });
@@ -841,6 +868,9 @@ export class CandidateImportService {
         ? payload.billRate - payload.payRate
         : null;
 
+    const latestEval = latestEvaluation(payload.evaluations);
+    const aggregateScore = payload.scores[0] ?? null;
+
     const importedFields = {
       firstName: payload.firstName,
       lastName: payload.lastName,
@@ -865,7 +895,6 @@ export class CandidateImportService {
         ? new Date(`${payload.availableFrom}T00:00:00.000Z`)
         : null,
       availabilityStatus: payload.availabilityStatus,
-      timezoneOverlap: payload.timezoneOverlap,
       preferredShift: payload.preferredShift,
       minHoursPerWeek: payload.minHoursPerWeek,
       maxHoursPerWeek: payload.maxHoursPerWeek,
@@ -888,14 +917,10 @@ export class CandidateImportService {
         : ('NOT_SCREENED' as const),
       evaluationStatus: payload.evaluations.length ? 'COMPLETED' : null,
       bgvStatus: payload.bgv ? mapBgvStatus(payload.bgv.bgvStatus) : null,
-      bestalScore: payload.scores[0]?.bestalScore ?? null,
-      technicalScore:
-        payload.scores[0]?.technicalScore ?? payload.evaluations[0]?.technicalScore ?? null,
-      communicationScore:
-        payload.scores[0]?.communicationScore ??
-        payload.evaluations[0]?.communicationScore ??
-        null,
-      reliabilityScore: payload.scores[0]?.reliabilityScore ?? null,
+      bestalScore: aggregateScore?.bestalScore ?? null,
+      technicalScore: latestEval?.technicalScore ?? null,
+      communicationScore: latestEval?.communicationScore ?? null,
+      reliabilityScore: aggregateScore?.reliabilityScore ?? null,
     };
 
     let candidateId = row.candidateId;
@@ -1027,12 +1052,12 @@ export class CandidateImportService {
           organizationId: BigInt(organizationId),
           candidateId: candidateId!,
           bestalScore: score.bestalScore,
-          technicalScore: score.technicalScore,
-          communicationScore: score.communicationScore,
-          problemSolvingScore: score.problemSolvingScore,
-          architectureScore: score.architectureScore,
+          technicalScore: null,
+          communicationScore: null,
+          problemSolvingScore: null,
+          architectureScore: null,
           reliabilityScore: score.reliabilityScore,
-          clientReadinessScore: score.clientReadinessScore,
+          clientReadinessScore: null,
           scoreSource: score.scoreSource,
           scoreDate: score.scoreDate
             ? new Date(`${score.scoreDate}T00:00:00.000Z`)
