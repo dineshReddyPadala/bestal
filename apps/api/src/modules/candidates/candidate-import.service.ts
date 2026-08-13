@@ -900,7 +900,6 @@ export class CandidateImportService {
       maxHoursPerWeek: payload.maxHoursPerWeek,
       clientBillRate: payload.billRate,
       candidatePayRate: payload.payRate,
-      expectedRate: payload.payRate,
       grossMargin,
       linkedinUrl: payload.linkedinUrl,
       githubUrl: payload.githubUrl,

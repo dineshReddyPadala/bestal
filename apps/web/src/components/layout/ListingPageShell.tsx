@@ -80,7 +80,7 @@ export function ListingFilterSelect({
   value,
   onChange,
   options,
-  className = 'w-full min-w-0 sm:w-[160px] sm:min-w-[140px]',
+  className = 'w-[160px] min-w-[140px]',
 }: ListingFilterSelectProps) {
   return (
     <label className={`flex flex-col gap-1 ${className}`}>

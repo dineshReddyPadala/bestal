@@ -86,7 +86,6 @@ export function EvaluationManagementView({
   const [problemSolvingScore, setProblemSolvingScore] = useState('');
   const [architectureScore, setArchitectureScore] = useState('');
   const [clientReadinessScore, setClientReadinessScore] = useState('');
-  const [reliabilityScore, setReliabilityScore] = useState('');
   const [recommendation, setRecommendation] = useState('');
   const [evaluatorComments, setEvaluatorComments] = useState('');
   const [aiEvaluationSummary, setAiEvaluationSummary] = useState('');
@@ -115,18 +114,9 @@ export function EvaluationManagementView({
         id: c.id,
         name: `${c.firstName} ${c.lastName}`.trim(),
         profileStatus: c.profileStatus,
-        reliabilityScore: c.reliabilityScore,
       })),
     [candidatesData],
   );
-
-  const candidateById = useMemo(() => {
-    const map = new Map<number, (typeof candidateOptions)[number]>();
-    for (const candidate of candidateOptions) {
-      map.set(candidate.id, candidate);
-    }
-    return map;
-  }, [candidateOptions]);
 
   const selectedCandidate = useMemo(
     () => candidateOptions.find((c) => String(c.id) === selectedCandidateId) ?? null,
@@ -154,17 +144,6 @@ export function EvaluationManagementView({
       [...new Set(records.map((r) => r.recommendation).filter(Boolean) as string[])].sort(),
     [records],
   );
-
-  useEffect(() => {
-    if (!selectedCandidateId) {
-      setReliabilityScore('');
-      return;
-    }
-    const candidate = candidateById.get(Number(selectedCandidateId));
-    setReliabilityScore(
-      candidate?.reliabilityScore != null ? String(candidate.reliabilityScore) : '',
-    );
-  }, [candidateById, selectedCandidateId]);
 
   useEffect(() => {
     const candidateIdParam = searchParams.get('candidateId');
@@ -227,7 +206,6 @@ export function EvaluationManagementView({
     setProblemSolvingScore('');
     setArchitectureScore('');
     setClientReadinessScore('');
-    setReliabilityScore('');
     setRecommendation('');
     setEvaluatorComments('');
     setAiEvaluationSummary('');
@@ -437,14 +415,6 @@ export function EvaluationManagementView({
         await mutations.create.mutateAsync(payload);
       }
 
-      const parsedReliability = parseOptionalScore(reliabilityScore);
-      if (parsedReliability != null) {
-        await candidateMutations.update.mutateAsync({
-          id: candidateId,
-          body: { reliabilityScore: parsedReliability },
-        });
-      }
-
       const candidate = candidateOptions.find((c) => c.id === candidateId);
       const suffix = aiEvaluationSummary.trim()
         ? ' BesTal score recalculated and team notified.'
@@ -484,13 +454,11 @@ export function EvaluationManagementView({
     needsRecruiterReview,
     problemSolvingScore,
     recommendation,
-    reliabilityScore,
     resetCreateForm,
     selectedCandidate?.profileStatus,
     selectedCandidateId,
     show,
     technicalScore,
-    candidateMutations.update,
   ]);
 
   const handleCompleteRecruiterReview = useCallback(async () => {
@@ -526,10 +494,6 @@ export function EvaluationManagementView({
       {
         accessorKey: 'evaluatorName',
         header: 'Evaluator',
-        meta: {
-          headerClassName: 'hidden md:table-cell',
-          cellClassName: 'hidden md:table-cell',
-        },
         cell: ({ getValue }) => (
           <span className="text-muted-foreground">{getValue() as string}</span>
         ),
@@ -537,10 +501,6 @@ export function EvaluationManagementView({
       {
         accessorKey: 'evaluationType',
         header: 'Type',
-        meta: {
-          headerClassName: 'hidden lg:table-cell',
-          cellClassName: 'hidden lg:table-cell',
-        },
         cell: ({ getValue }) => {
           const val = getValue() as string | null | undefined;
           return val ? (
@@ -553,10 +513,6 @@ export function EvaluationManagementView({
       {
         accessorKey: 'evaluationDate',
         header: 'Date',
-        meta: {
-          headerClassName: 'hidden md:table-cell',
-          cellClassName: 'hidden md:table-cell',
-        },
         cell: ({ getValue }) => {
           const val = getValue() as string | null | undefined;
           return val ? (
@@ -581,19 +537,11 @@ export function EvaluationManagementView({
       {
         accessorKey: 'technicalScore',
         header: 'Technical',
-        meta: {
-          headerClassName: 'hidden sm:table-cell',
-          cellClassName: 'hidden sm:table-cell',
-        },
         cell: ({ getValue }) => <ScoreCell value={getValue() as number | null} />,
       },
       {
         accessorKey: 'createdAt',
         header: 'Created',
-        meta: {
-          headerClassName: 'hidden lg:table-cell',
-          cellClassName: 'hidden lg:table-cell',
-        },
         cell: ({ getValue }) => (
           <span className="text-muted-foreground">{formatDate(getValue() as string)}</span>
         ),
@@ -944,7 +892,6 @@ export function EvaluationManagementView({
                   ['eval-problem-solving-score', 'Problem solving score', problemSolvingScore, setProblemSolvingScore],
                   ['eval-architecture-score', 'Architecture score', architectureScore, setArchitectureScore],
                   ['eval-client-readiness-score', 'Client readiness score', clientReadinessScore, setClientReadinessScore],
-                  ['eval-reliability-score', 'Reliability score', reliabilityScore, setReliabilityScore],
                 ] as const
               ).map(([id, label, value, setter]) => (
                 <div key={id} className="space-y-2">

@@ -3,7 +3,6 @@ import { Button, SearchInput, Select } from '@bestal/ui';
 import { ChevronDown, RotateCcw } from 'lucide-react';
 import { useState } from 'react';
 import {
-  CLIENT_SEARCH_SCORE_FILTER_OPTIONS,
   DEFAULT_CLIENT_SEARCH_FILTERS,
   type ClientSearchFilters,
 } from '../../lib/client-search';
@@ -97,7 +96,6 @@ function FilterFields({
         fullWidth={stacked}
         options={[
           { value: 'all', label: 'Any rate' },
-          { value: '0-100', label: 'Under $100/hr' },
           { value: '0-130', label: 'Under $130/hr' },
           { value: '130-160', label: '$130–160/hr' },
           { value: '160-999', label: '$160+/hr' },
@@ -130,16 +128,23 @@ function FilterFields({
           ]}
         />
       ) : null}
-      <FilterSelect
-        label="High score"
-        value={filters.minScore === 0 ? '0' : String(filters.minScore)}
-        onChange={(v) => set({ minScore: Number(v) })}
-        fullWidth={stacked}
-        options={CLIENT_SEARCH_SCORE_FILTER_OPTIONS.map((option) => ({
-          value: option.value,
-          label: option.label,
-        }))}
-      />
+      <label className={cn('flex flex-col gap-1', stacked ? 'w-full' : 'min-w-[140px] flex-1')}>
+        <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+          BesTal Score
+        </span>
+        <div className="flex h-9 items-center gap-2 rounded-md border border-input bg-background px-3">
+          <input
+            type="range"
+            min={0}
+            max={95}
+            step={5}
+            value={filters.minScore}
+            onChange={(e) => set({ minScore: Number(e.target.value) })}
+            className="w-full accent-brand"
+          />
+          <span className="w-8 shrink-0 text-xs font-medium tabular-nums">{filters.minScore}+</span>
+        </div>
+      </label>
     </>
   );
 }

@@ -92,7 +92,6 @@ export type EvaluationFormValues = {
   architectureScore?: number;
   problemSolvingScore?: number;
   clientReadinessScore?: number;
-  reliabilityScore?: number;
   recommendation?: EvaluationRecommendationValue;
   evaluatorComments?: string;
   aiEvaluationSummary?: string;
