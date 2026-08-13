@@ -4,6 +4,7 @@
  */
 export type ResumeExtractionSkill = {
   name: string;
+  category?: string | null;
   proficiencyLevel: 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED' | 'EXPERT';
   yearsExperience: number | null;
   isPrimary: boolean;

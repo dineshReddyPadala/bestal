@@ -144,6 +144,15 @@ export const evaluationsApi = {
     apiUpdate<EvaluationListItem>(`/evaluations/${id}`, body),
   downloadDocument: (id: number) =>
     downloadAuthenticatedBlob(`/evaluations/${id}/document/download`, `evaluation-${id}.pdf`),
+  uploadDocument: async (id: number, file: File): Promise<EvaluationListItem> => {
+    const form = new FormData();
+    form.append('file', file, file.name);
+    const json = await apiRequest<{ data: EvaluationListItem }>(
+      `/evaluations/${id}/document`,
+      { method: 'POST', body: form },
+    );
+    return json.data;
+  },
 
   /** Start extraction — may return sync result or async job acceptance. */
   startEvaluationAnalysis: async (

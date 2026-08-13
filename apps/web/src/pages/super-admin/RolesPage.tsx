@@ -114,12 +114,6 @@ export function SuperAdminRolesPage() {
                   label: 'View Permissions',
                   href: `/super-admin/roles/${r.code}?tab=permissions`,
                 },
-                {
-                  id: 'audit',
-                  label: 'View Audit History',
-                  href: '/super-admin/audit-logs',
-                  separatorBefore: true,
-                },
               ]
             : [
                 { id: 'view', label: 'View Role', href: `/super-admin/roles/${r.code}` },
@@ -132,12 +126,6 @@ export function SuperAdminRolesPage() {
                   id: 'edit',
                   label: 'Edit Role Permissions',
                   href: `/super-admin/roles/${r.code}?tab=permissions&edit=1`,
-                },
-                {
-                  id: 'audit',
-                  label: 'View Audit History',
-                  href: '/super-admin/audit-logs',
-                  separatorBefore: true,
                 },
               ];
 

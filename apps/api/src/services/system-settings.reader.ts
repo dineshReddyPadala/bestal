@@ -59,6 +59,89 @@ const DEFAULT_WORKFLOWS: WorkflowsSettings = {
 
 const MASKED_SECRET = '********';
 
+export type PricingSettings = {
+  currency: string;
+  locale: string;
+  supportedCurrencies: string[];
+  defaultPayRate: number;
+  defaultBillRate: number;
+  minMarginPercent: number;
+};
+
+export type LocalizationSettings = {
+  dateFormat: 'MMM d, yyyy' | 'dd/MM/yyyy' | 'yyyy-MM-dd';
+  locale: string;
+};
+
+export type EmailSettings = {
+  enabled: boolean;
+  host: string;
+  port: number;
+  user: string | null;
+  password: string | null;
+  fromAddress: string | null;
+  fromName: string | null;
+  secure: boolean;
+};
+
+export type IntegrationsSettings = {
+  oorwinEnabled: boolean;
+  oorwinApiUrl: string | null;
+  webhookUrl: string | null;
+  smsProvider: 'none' | 'twilio' | 'whatsapp';
+  smsApiKey: string | null;
+  smsSenderId: string | null;
+  whatsAppPhoneNumberId: string | null;
+};
+
+export type OrgDisplaySettings = {
+  currency: string;
+  locale: string;
+  dateFormat: LocalizationSettings['dateFormat'];
+  supportedCurrencies: string[];
+};
+
+const DEFAULT_PRICING: PricingSettings = {
+  currency: 'USD',
+  locale: 'en-US',
+  supportedCurrencies: ['USD', 'EUR', 'GBP', 'INR'],
+  defaultPayRate: 0,
+  defaultBillRate: 0,
+  minMarginPercent: 20,
+};
+
+const DEFAULT_LOCALIZATION: LocalizationSettings = {
+  dateFormat: 'MMM d, yyyy',
+  locale: 'en-US',
+};
+
+const DEFAULT_EMAIL: EmailSettings = {
+  enabled: false,
+  host: 'smtp.gmail.com',
+  port: 587,
+  user: null,
+  password: null,
+  fromAddress: null,
+  fromName: null,
+  secure: false,
+};
+
+const DEFAULT_INTEGRATIONS: IntegrationsSettings = {
+  oorwinEnabled: false,
+  oorwinApiUrl: null,
+  webhookUrl: null,
+  smsProvider: 'none',
+  smsApiKey: null,
+  smsSenderId: null,
+  whatsAppPhoneNumberId: null,
+};
+
+const DATE_FORMATS = new Set<LocalizationSettings['dateFormat']>([
+  'MMM d, yyyy',
+  'dd/MM/yyyy',
+  'yyyy-MM-dd',
+]);
+
 function asObj(value: unknown): Record<string, unknown> {
   return value && typeof value === 'object' && !Array.isArray(value)
     ? (value as Record<string, unknown>)
@@ -238,6 +321,150 @@ export function mergeWorkflowsSettingsUpdate(
   const secret = trimOrNull(asObj(incoming).webhookSecret);
   if (!secret || secret === MASKED_SECRET) {
     next.webhookSecret = prev.webhookSecret;
+  }
+  return next;
+}
+
+function parseStringArray(value: unknown, fallback: string[]): string[] {
+  if (!Array.isArray(value)) return fallback;
+  const items = value.filter(
+    (item): item is string => typeof item === 'string' && Boolean(item.trim()),
+  );
+  return items.length > 0 ? items : fallback;
+}
+
+export async function readPricingSettings(prisma: PrismaClient): Promise<PricingSettings> {
+  const row = await prisma.systemSetting.findUnique({ where: { key: 'pricing' } });
+  const obj = asObj(row?.value);
+  const currency = trimOrNull(obj.currency) ?? DEFAULT_PRICING.currency;
+  const locale = trimOrNull(obj.locale) ?? DEFAULT_PRICING.locale;
+  return {
+    currency,
+    locale,
+    supportedCurrencies: parseStringArray(obj.supportedCurrencies, DEFAULT_PRICING.supportedCurrencies),
+    defaultPayRate: Number.isFinite(Number(obj.defaultPayRate))
+      ? Number(obj.defaultPayRate)
+      : DEFAULT_PRICING.defaultPayRate,
+    defaultBillRate: Number.isFinite(Number(obj.defaultBillRate))
+      ? Number(obj.defaultBillRate)
+      : DEFAULT_PRICING.defaultBillRate,
+    minMarginPercent: Number.isFinite(Number(obj.minMarginPercent))
+      ? Number(obj.minMarginPercent)
+      : DEFAULT_PRICING.minMarginPercent,
+  };
+}
+
+export async function readLocalizationSettings(
+  prisma: PrismaClient,
+): Promise<LocalizationSettings> {
+  const row = await prisma.systemSetting.findUnique({ where: { key: 'localization' } });
+  const obj = asObj(row?.value);
+  const dateFormatRaw = trimOrNull(obj.dateFormat);
+  const dateFormat = DATE_FORMATS.has(dateFormatRaw as LocalizationSettings['dateFormat'])
+    ? (dateFormatRaw as LocalizationSettings['dateFormat'])
+    : DEFAULT_LOCALIZATION.dateFormat;
+  return {
+    dateFormat,
+    locale: trimOrNull(obj.locale) ?? DEFAULT_LOCALIZATION.locale,
+  };
+}
+
+export async function readOrgDisplaySettings(prisma: PrismaClient): Promise<OrgDisplaySettings> {
+  const [pricing, localization] = await Promise.all([
+    readPricingSettings(prisma),
+    readLocalizationSettings(prisma),
+  ]);
+  return {
+    currency: pricing.currency,
+    locale: localization.locale || pricing.locale,
+    dateFormat: localization.dateFormat,
+    supportedCurrencies: pricing.supportedCurrencies,
+  };
+}
+
+function parseEmailFromStorage(value: unknown): EmailSettings {
+  const obj = asObj(value);
+  const port = Number(obj.port);
+  return {
+    enabled: obj.enabled === undefined ? DEFAULT_EMAIL.enabled : Boolean(obj.enabled),
+    host: trimOrNull(obj.host) ?? DEFAULT_EMAIL.host,
+    port: Number.isFinite(port) && port > 0 ? Math.floor(port) : DEFAULT_EMAIL.port,
+    user: trimOrNull(obj.user),
+    password: trimOrNull(obj.password),
+    fromAddress: trimOrNull(obj.fromAddress),
+    fromName: trimOrNull(obj.fromName),
+    secure: obj.secure === undefined ? DEFAULT_EMAIL.secure : Boolean(obj.secure),
+  };
+}
+
+export async function readEmailSettings(prisma: PrismaClient): Promise<EmailSettings> {
+  const row = await prisma.systemSetting.findUnique({ where: { key: 'email' } });
+  return parseEmailFromStorage(row?.value);
+}
+
+export function maskEmailSettingsForAdmin(value: unknown): Record<string, unknown> {
+  const settings = parseEmailFromStorage(value);
+  return {
+    ...settings,
+    password: settings.password ? MASKED_SECRET : null,
+  };
+}
+
+export function mergeEmailSettingsUpdate(incoming: unknown, existing: unknown): EmailSettings {
+  const next = parseEmailFromStorage(incoming);
+  const prev = parseEmailFromStorage(existing);
+  const password = trimOrNull(asObj(incoming).password);
+  if (!password || password === MASKED_SECRET) {
+    next.password = prev.password;
+  }
+  return next;
+}
+
+function parseIntegrationsFromStorage(value: unknown): IntegrationsSettings {
+  const obj = asObj(value);
+  const smsProviderRaw = trimOrNull(obj.smsProvider);
+  const smsProvider =
+    smsProviderRaw === 'twilio' || smsProviderRaw === 'whatsapp'
+      ? smsProviderRaw
+      : DEFAULT_INTEGRATIONS.smsProvider;
+  return {
+    oorwinEnabled:
+      obj.oorwinEnabled === undefined
+        ? DEFAULT_INTEGRATIONS.oorwinEnabled
+        : Boolean(obj.oorwinEnabled),
+    oorwinApiUrl: trimOrNull(obj.oorwinApiUrl),
+    webhookUrl: trimOrNull(obj.webhookUrl),
+    smsProvider,
+    smsApiKey: trimOrNull(obj.smsApiKey),
+    smsSenderId: trimOrNull(obj.smsSenderId),
+    whatsAppPhoneNumberId: trimOrNull(obj.whatsAppPhoneNumberId),
+  };
+}
+
+export async function readIntegrationsSettings(
+  prisma: PrismaClient,
+): Promise<IntegrationsSettings> {
+  const row = await prisma.systemSetting.findUnique({ where: { key: 'integrations' } });
+  return parseIntegrationsFromStorage(row?.value);
+}
+
+export function maskIntegrationsSettingsForAdmin(value: unknown): Record<string, unknown> {
+  const settings = parseIntegrationsFromStorage(value);
+  return {
+    ...settings,
+    smsApiKey: settings.smsApiKey ? MASKED_SECRET : null,
+  };
+}
+
+export function mergeIntegrationsSettingsUpdate(
+  incoming: unknown,
+  existing: unknown,
+): IntegrationsSettings {
+  const next = parseIntegrationsFromStorage(incoming);
+  const prev = parseIntegrationsFromStorage(existing);
+  const apiKey = trimOrNull(asObj(incoming).smsApiKey);
+  if (!apiKey || apiKey === MASKED_SECRET) {
+    next.smsApiKey = prev.smsApiKey;
   }
   return next;
 }

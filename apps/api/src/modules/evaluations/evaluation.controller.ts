@@ -62,6 +62,29 @@ export class EvaluationController {
     return reply.send(file.buffer);
   };
 
+  uploadDocument = async (request: FastifyRequest, reply: FastifyReply) => {
+    const { id } = request.params as { id: number };
+    const file = await request.file();
+    if (!file) {
+      throw new BadRequestError('Evaluation file is required');
+    }
+
+    const buffer = await file.toBuffer();
+    validateUploadFile(UPLOAD_CATEGORIES.EVALUATION, {
+      mimeType: file.mimetype,
+      size: buffer.length,
+      originalName: file.filename,
+    });
+
+    const data = await this.evaluationService.uploadDocument(request.authUser!, id, {
+      buffer,
+      originalName: file.filename,
+      mimeType: file.mimetype,
+      size: buffer.length,
+    });
+    return reply.status(200).send({ data });
+  };
+
   extractEvaluation = async (request: FastifyRequest, reply: FastifyReply) => {
     const file = await request.file();
     if (!file) {

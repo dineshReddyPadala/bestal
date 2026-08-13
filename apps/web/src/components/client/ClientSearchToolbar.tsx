@@ -1,6 +1,6 @@
 import { cn } from '@bestal/shared-utils';
 import { Button, SearchInput } from '@bestal/ui';
-import { ChevronDown, RotateCcw, X } from 'lucide-react';
+import { ChevronDown, LayoutGrid, List, RotateCcw, X } from 'lucide-react';
 import {
   clearFilterChip,
   CLIENT_SEARCH_SORT_OPTIONS,
@@ -11,11 +11,15 @@ import {
   type ClientSearchSort,
 } from '../../lib/client-search';
 
+export type ClientSearchViewMode = 'cards' | 'list';
+
 type ClientSearchToolbarProps = {
   filters: ClientSearchFilters;
   onChange: (filters: ClientSearchFilters) => void;
   sort: Exclude<ClientSearchSort, 'best-match'>;
   onSortChange: (sort: Exclude<ClientSearchSort, 'best-match'>) => void;
+  viewMode: ClientSearchViewMode;
+  onViewModeChange: (mode: ClientSearchViewMode) => void;
   resultCount: number;
   communityOptions?: readonly string[];
   timezoneOptions?: readonly string[];
@@ -65,6 +69,8 @@ export function ClientSearchToolbar({
   onChange,
   sort,
   onSortChange,
+  viewMode,
+  onViewModeChange,
   resultCount,
   communityOptions = [],
   timezoneOptions = [],
@@ -86,7 +92,7 @@ export function ClientSearchToolbar({
             value={filters.community}
             onChange={(value) => set({ community: value })}
             options={[
-              { value: 'all', label: 'Expertise' },
+              { value: 'all', label: 'All Commun..' },
               ...communityOptions.map((community) => ({ value: community, label: community })),
             ]}
           />
@@ -94,7 +100,7 @@ export function ClientSearchToolbar({
             value={filters.experience}
             onChange={(value) => set({ experience: value })}
             options={[
-              { value: 'all', label: 'Experience' },
+              { value: 'all', label: 'Any Experience' },
               { value: '0-5', label: '0-5 yrs' },
               { value: '6-10', label: '6-10 yrs' },
               { value: '11-99', label: '11+ yrs' },
@@ -104,7 +110,7 @@ export function ClientSearchToolbar({
             value={filters.rate}
             onChange={(value) => set({ rate: value })}
             options={[
-              { value: 'all', label: 'Hourly Rate' },
+              { value: 'all', label: 'Any rate' },
               { value: '0-100', label: '<$100/hr' },
               { value: '0-130', label: 'Under $130/hr' },
               { value: '130-160', label: '$130–160/hr' },
@@ -115,7 +121,7 @@ export function ClientSearchToolbar({
             value={filters.timezone}
             onChange={(value) => set({ timezone: value })}
             options={[
-              { value: 'all', label: 'Timezone' },
+              { value: 'all', label: 'All timezones' },
               ...timezoneSelectOptions.map((timezone) => ({
                 value: timezone,
                 label: timezone.replace(/_/g, ' '),
@@ -157,7 +163,7 @@ export function ClientSearchToolbar({
             onClick={() => onChange(DEFAULT_CLIENT_SEARCH_FILTERS)}
           >
             <RotateCcw className="mr-1 h-3.5 w-3.5" />
-            Reset all
+            Reset Filters
           </Button>
         </div>
       </div>
@@ -197,6 +203,40 @@ export function ClientSearchToolbar({
             label: option.label,
           }))}
         />
+        <div
+          className="flex shrink-0 overflow-hidden rounded-lg border border-border/80"
+          role="group"
+          aria-label="View mode"
+        >
+          <button
+            type="button"
+            className={cn(
+              'inline-flex h-9 w-9 items-center justify-center transition-colors',
+              viewMode === 'cards'
+                ? 'bg-brand text-white'
+                : 'bg-background text-muted-foreground hover:bg-muted',
+            )}
+            aria-pressed={viewMode === 'cards'}
+            title="Card view"
+            onClick={() => onViewModeChange('cards')}
+          >
+            <LayoutGrid className="h-4 w-4" />
+          </button>
+          <button
+            type="button"
+            className={cn(
+              'inline-flex h-9 w-9 items-center justify-center border-l border-border/80 transition-colors',
+              viewMode === 'list'
+                ? 'bg-brand text-white'
+                : 'bg-background text-muted-foreground hover:bg-muted',
+            )}
+            aria-pressed={viewMode === 'list'}
+            title="List view"
+            onClick={() => onViewModeChange('list')}
+          >
+            <List className="h-4 w-4" />
+          </button>
+        </div>
       </div>
     </div>
   );

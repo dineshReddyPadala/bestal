@@ -12,6 +12,7 @@ import {
   requireOrganization,
 } from '../../utils/index.js';
 import { EmailService } from '../../services/email.service.js';
+import { notifyCandidateSentBack } from '../../services/notification-events.js';
 import { buildPaginationMeta } from '../../validators/common.validator.js';
 import { CandidateService } from '../candidates/candidate.service.js';
 import { ClientService } from '../clients/client.service.js';
@@ -44,7 +45,7 @@ export class AdminService {
     this.prisma = fastify.prisma;
     this.audit = new AuditService(fastify.prisma);
     this.users = new UserRepository(fastify.prisma);
-    this.email = new EmailService(fastify.config);
+    this.email = new EmailService(fastify.config, fastify.prisma);
     this.candidates = new CandidateService(fastify);
     this.clients = new ClientService(fastify);
   }
@@ -99,6 +100,8 @@ export class AdminService {
           organizationId: org,
           deletedAt: null,
           approvalStatus: 'PENDING',
+          submittedForApprovalAt: { not: null },
+          profileStatus: 'PENDING_APPROVAL',
         },
       }),
       this.prisma.client.count({
@@ -889,6 +892,18 @@ export class AdminService {
     ctx?: { ipAddress?: string | null; userAgent?: string | null },
   ) {
     const organizationId = requireOrganization(authUser);
+    const existing = await this.prisma.candidate.findFirst({
+      where: { id: BigInt(id), organizationId: BigInt(organizationId), deletedAt: null },
+      select: {
+        firstName: true,
+        lastName: true,
+        createdById: true,
+      },
+    });
+    if (!existing) {
+      throw new NotFoundError('Candidate not found');
+    }
+
     await this.prisma.candidate.updateMany({
       where: { id: BigInt(id), organizationId: BigInt(organizationId), deletedAt: null },
       data: {
@@ -907,6 +922,16 @@ export class AdminService {
       { reason },
       ctx,
     );
+
+    const candidateName = [existing.firstName, existing.lastName].filter(Boolean).join(' ').trim();
+    await notifyCandidateSentBack(this.prisma, this.fastify.config, {
+      organizationId,
+      candidateId: id,
+      candidateName: candidateName || `Candidate #${id}`,
+      createdById: existing.createdById ? bigintToNumber(existing.createdById) : null,
+      reason: reason ?? null,
+    });
+
     return this.getCandidateDetail(authUser, id);
   }
 

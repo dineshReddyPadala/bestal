@@ -1,8 +1,8 @@
 import type { FastifyInstance } from 'fastify';
 import type { PrismaClient } from '@prisma/client';
 import {
-  EVALUATION_RECOMMENDATIONS,
-  EVALUATION_TYPES,
+  normalizeEvaluationRecommendation,
+  normalizeEvaluationType,
 } from '@bestal/shared-utils';
 import type { AuthenticatedUser } from '../../types/index.js';
 import {
@@ -171,7 +171,7 @@ export class EvaluationService {
       (existing.evaluatorName === DRAFT_EVALUATOR_NAME
         ? 'AI Evaluator'
         : existing.evaluatorName);
-    const recommendation = normalizeRecommendation(output.recommendation);
+    const recommendation = normalizeEvaluationRecommendation(output.recommendation);
     const evaluationType = normalizeEvaluationType(output.evaluationType);
     const evaluationDate = normalizeEvaluationDate(output.evaluationDate);
     const aiEvaluationSummary =
@@ -325,14 +325,34 @@ export class EvaluationService {
     const organizationId = requireOrganization(authUser);
     const existing = await this.getEvaluationOrThrow(organizationId, id);
 
+    const normalizedInput: UpdateEvaluationInput = {
+      ...input,
+      ...(input.evaluationType !== undefined
+        ? {
+            evaluationType:
+              input.evaluationType == null
+                ? null
+                : normalizeEvaluationType(input.evaluationType) ?? input.evaluationType,
+          }
+        : {}),
+      ...(input.recommendation !== undefined
+        ? {
+            recommendation:
+              input.recommendation == null
+                ? null
+                : normalizeEvaluationRecommendation(input.recommendation) ?? input.recommendation,
+          }
+        : {}),
+    };
+
     const evaluation = await this.evaluationRepository.update(
       organizationId,
       id,
-      input,
+      normalizedInput,
     );
     const dto = mapEvaluationToDto(evaluation);
 
-    if (wasAiProcessed(input)) {
+    if (wasAiProcessed(normalizedInput)) {
       await this.runPostProcessing(
         organizationId,
         existing.candidateId,
@@ -350,6 +370,78 @@ export class EvaluationService {
     }
 
     return dto;
+  }
+
+  async uploadDocument(
+    authUser: AuthenticatedUser,
+    id: number,
+    file: {
+      buffer: Buffer;
+      originalName: string;
+      mimeType: string;
+      size: number;
+    },
+  ): Promise<EvaluationDto> {
+    const organizationId = requireOrganization(authUser);
+    const existing = await this.getEvaluationOrThrow(organizationId, id);
+    const candidateId = Number(existing.candidateId);
+
+    this.storageService.validateFile(UPLOAD_CATEGORIES.EVALUATION, {
+      mimeType: file.mimeType,
+      size: file.size,
+      originalName: file.originalName,
+    });
+
+    const uploadFile = await normalizeUploadToPdf(file);
+
+    const storageKey = this.storageService.buildEvaluationAssetKey(
+      organizationId,
+      id,
+      uploadFile.originalName,
+    );
+
+    const uploadResult = await this.storageService.upload(
+      storageKey,
+      {
+        buffer: uploadFile.buffer,
+        originalName: uploadFile.originalName,
+        mimeType: uploadFile.mimeType,
+        size: uploadFile.size,
+      },
+      {
+        category: UPLOAD_CATEGORIES.EVALUATION,
+        organizationId,
+        entityId: id,
+      },
+    );
+
+    const storedFileUrl = buildS3ObjectReference(uploadResult.bucket, uploadResult.key);
+
+    await this.prisma.document.create({
+      data: {
+        organizationId: BigInt(organizationId),
+        uploadedById: BigInt(authUser.id),
+        entityType: 'CANDIDATE',
+        entityId: BigInt(candidateId),
+        kind: 'GENERAL',
+        fileName: uploadResult.key.split('/').pop() ?? uploadFile.originalName,
+        originalName: uploadFile.originalName,
+        s3Key: uploadResult.key,
+        s3Bucket: uploadResult.bucket,
+        fileUrl: storedFileUrl,
+        mimeType: uploadFile.mimeType,
+        fileSize: BigInt(uploadFile.size),
+        status: 'UPLOADED',
+      },
+    });
+
+    const evaluation = await this.evaluationRepository.update(organizationId, id, {
+      evaluationFileUrl: storedFileUrl,
+    });
+
+    await syncImportedCandidateProfileStatus(this.prisma, organizationId, candidateId);
+
+    return mapEvaluationToDto(evaluation);
   }
 
   async delete(authUser: AuthenticatedUser, id: number): Promise<void> {
@@ -691,34 +783,6 @@ export class EvaluationService {
 
     assertCanCreateEvaluationForRole(authUser.role, candidate);
   }
-}
-
-function normalizeRecommendation(value: string | undefined): string | undefined {
-  if (!value?.trim()) return undefined;
-  const normalized = value.trim().toLowerCase().replace(/[_-]+/g, ' ');
-  const exact = EVALUATION_RECOMMENDATIONS.find(
-    (item) => item.toLowerCase() === normalized,
-  );
-  if (exact) return exact;
-  const aliases: Record<string, (typeof EVALUATION_RECOMMENDATIONS)[number]> = {
-    rejected: 'Reject',
-    reject: 'Reject',
-    'no hire': 'Reject',
-    'strong no hire': 'Reject',
-    'do not hire': 'Reject',
-    hold: 'Borderline',
-    maybe: 'Borderline',
-    'strong hire': 'Strong Hire',
-    hire: 'Hire',
-  };
-  return aliases[normalized] ?? value.trim().slice(0, 100);
-}
-
-function normalizeEvaluationType(value: string | undefined): string | undefined {
-  if (!value?.trim()) return undefined;
-  const normalized = value.trim().toLowerCase();
-  const exact = EVALUATION_TYPES.find((item) => item.toLowerCase() === normalized);
-  return exact ?? value.trim().slice(0, 100);
 }
 
 function normalizeEvaluationDate(

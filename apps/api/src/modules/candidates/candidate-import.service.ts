@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import type { FastifyInstance } from 'fastify';
 import {
   IMPORT_SKILL_COMMUNITIES,
+  resolveBgvResultSummaryForImport,
   slugifySkillCommunity,
 } from '@bestal/shared-utils';
 import type {
@@ -10,6 +11,7 @@ import type {
   Prisma,
 } from '@prisma/client';
 import { BadRequestError, NotFoundError, bigintToNumber } from '../../utils/index.js';
+import { readPricingSettings } from '../../services/system-settings.reader.js';
 import type { AuthenticatedUser } from '../../types/index.js';
 import { buildPaginationMeta } from '../../validators/common.validator.js';
 import {
@@ -130,7 +132,11 @@ export class CandidateImportService {
   async getTemplateBuffer(): Promise<Buffer> {
     await this.ensureSkillCommunities();
     const skillCommunities = await this.listSkillCommunityNames();
-    return buildCandidateImportTemplate({ skillCommunities });
+    const pricing = await readPricingSettings(this.fastify.prisma);
+    return buildCandidateImportTemplate({
+      skillCommunities,
+      currencies: pricing.supportedCurrencies,
+    });
   }
 
   /**
@@ -830,6 +836,10 @@ export class CandidateImportService {
       ? communities.get(payload.skillCommunity) ?? null
       : null;
     const profileStatus = deriveImportedProfileStatus(payload);
+    const grossMargin =
+      payload.billRate != null && payload.payRate != null
+        ? payload.billRate - payload.payRate
+        : null;
 
     const importedFields = {
       firstName: payload.firstName,
@@ -847,6 +857,7 @@ export class CandidateImportService {
       yearsExperience: payload.yearsExperience,
       currentCompany: payload.currentCompany,
       currentTitle: payload.currentTitle,
+      education: payload.education,
       noticePeriod: payload.noticePeriod,
       portfolioUrl: payload.portfolioUrl,
       resumeUrl: payload.resumeUrl,
@@ -856,8 +867,11 @@ export class CandidateImportService {
       availabilityStatus: payload.availabilityStatus,
       timezoneOverlap: payload.timezoneOverlap,
       preferredShift: payload.preferredShift,
+      minHoursPerWeek: payload.minHoursPerWeek,
+      maxHoursPerWeek: payload.maxHoursPerWeek,
       clientBillRate: payload.billRate,
       candidatePayRate: payload.payRate,
+      grossMargin,
       linkedinUrl: payload.linkedinUrl,
       githubUrl: payload.githubUrl,
       aiSummary: payload.aiSummary,
@@ -963,27 +977,44 @@ export class CandidateImportService {
 
     await tx.backgroundCheck.deleteMany({ where: { candidateId } });
     if (payload.bgv) {
+      const bgv = payload.bgv;
+      const checkFields = {
+        idCheckStatus: bgv.idCheckStatus,
+        addressCheckStatus: bgv.addressCheckStatus,
+        employmentCheckStatus: bgv.employmentCheckStatus,
+        educationCheckStatus: bgv.educationCheckStatus,
+        criminalCheckStatus: bgv.criminalCheckStatus,
+        referenceCheckStatus: bgv.referenceCheckStatus,
+      };
+      const resultSummary = resolveBgvResultSummaryForImport(bgv.bgvSummary, checkFields);
+      const vendor = bgv.vendor?.trim() || null;
+      const now = new Date();
+
       await tx.backgroundCheck.create({
         data: {
           organizationId: BigInt(organizationId),
           candidateId,
           requestedById: BigInt(actorId),
           type: 'COMPREHENSIVE',
-          status: mapBgvStatus(payload.bgv.bgvStatus),
-          provider: payload.bgv.vendor,
-          resultSummary: payload.bgv.bgvSummary,
-          reviewNotes: payload.bgv.concernNotes,
-          idCheckStatus: payload.bgv.idCheckStatus,
-          addressCheckStatus: payload.bgv.addressCheckStatus,
-          employmentCheckStatus: payload.bgv.employmentCheckStatus,
-          educationCheckStatus: payload.bgv.educationCheckStatus,
-          criminalCheckStatus: payload.bgv.criminalCheckStatus,
-          referenceCheckStatus: payload.bgv.referenceCheckStatus,
-          initiatedAt: payload.bgv.initiatedDate
-            ? new Date(`${payload.bgv.initiatedDate}T00:00:00.000Z`)
-            : null,
-          completedAt: payload.bgv.completedDate
-            ? new Date(`${payload.bgv.completedDate}T00:00:00.000Z`)
+          status: mapBgvStatus(bgv.bgvStatus),
+          provider: vendor,
+          resultSummary,
+          reviewNotes: bgv.concernNotes,
+          idCheckStatus: bgv.idCheckStatus,
+          addressCheckStatus: bgv.addressCheckStatus,
+          employmentCheckStatus: bgv.employmentCheckStatus,
+          educationCheckStatus: bgv.educationCheckStatus,
+          criminalCheckStatus: bgv.criminalCheckStatus,
+          referenceCheckStatus: bgv.referenceCheckStatus,
+          consentConfirmedAt: vendor ? now : undefined,
+          vendorAssignedAt: vendor ? now : undefined,
+          initiatedAt: bgv.initiatedDate
+            ? new Date(`${bgv.initiatedDate}T00:00:00.000Z`)
+            : vendor
+              ? now
+              : null,
+          completedAt: bgv.completedDate
+            ? new Date(`${bgv.completedDate}T00:00:00.000Z`)
             : null,
         },
       });

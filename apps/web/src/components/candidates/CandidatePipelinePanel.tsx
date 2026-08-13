@@ -74,7 +74,9 @@ export function CandidatePipelinePanel({ candidateId }: CandidatePipelinePanelPr
         </div>
         {candidate.profileStatus === 'PENDING_APPROVAL' ||
         candidate.approvalStatus === 'REJECTED' ||
-        (candidate.profileStatus === 'RECRUITER_SCREENED' && candidate.rejectionReason) ? (
+        (candidate.rejectionReason &&
+          candidate.approvalStatus !== 'REJECTED' &&
+          !candidate.submittedForApprovalAt) ? (
           <div
             className={`mt-3 rounded-lg border px-3 py-2 text-xs ${
               candidate.approvalStatus === 'REJECTED'
@@ -98,9 +100,9 @@ export function CandidatePipelinePanel({ candidateId }: CandidatePipelinePanelPr
                 {candidate.rejectionReason ? ` Reason: ${candidate.rejectionReason}` : ''}
               </p>
             ) : null}
-            {candidate.profileStatus === 'RECRUITER_SCREENED' &&
-            candidate.rejectionReason &&
-            candidate.approvalStatus !== 'REJECTED' ? (
+            {candidate.rejectionReason &&
+            candidate.approvalStatus !== 'REJECTED' &&
+            !candidate.submittedForApprovalAt ? (
               <p>Sent back to recruiter. Reason: {candidate.rejectionReason}</p>
             ) : null}
           </div>

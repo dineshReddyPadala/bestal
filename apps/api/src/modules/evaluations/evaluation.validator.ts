@@ -4,7 +4,7 @@ import {
 } from '@bestal/shared-utils';
 import { z } from 'zod';
 import { paginationMetaSchema } from '../../validators/api-responses.validator.js';
-import { optionalTextField, optionalUrlField } from '../../validators/optional-fields.js';
+import { optionalNullableTextField, optionalUrlField } from '../../validators/optional-fields.js';
 
 const evaluationTypeEnum = z.enum(EVALUATION_TYPES);
 const recommendationEnum = z.enum(EVALUATION_RECOMMENDATIONS);
@@ -24,8 +24,8 @@ export const createEvaluationBodySchema = z.object({
   architectureScore: scoreField,
   clientReadinessScore: scoreField,
   recommendation: recommendationEnum.optional(),
-  evaluatorComments: optionalTextField(),
-  aiEvaluationSummary: optionalTextField(),
+  evaluatorComments: optionalNullableTextField(),
+  aiEvaluationSummary: optionalNullableTextField(),
   recordingUrl: optionalUrlField,
   evaluationFileUrl: optionalUrlField,
 });
@@ -41,8 +41,8 @@ export const updateEvaluationBodySchema = z.object({
   architectureScore: nullableScoreField,
   clientReadinessScore: nullableScoreField,
   recommendation: recommendationEnum.nullable().optional(),
-  evaluatorComments: optionalTextField(),
-  aiEvaluationSummary: optionalTextField(),
+  evaluatorComments: optionalNullableTextField(),
+  aiEvaluationSummary: optionalNullableTextField(),
   recordingUrl: optionalUrlField,
   evaluationFileUrl: optionalUrlField,
 });

@@ -30,7 +30,7 @@ import {
 import { getApiErrorMessage } from '../../lib/api/errors';
 import { useDemoToast } from '../../lib/use-demo-toast';
 
-type QueueFilter = 'pending' | 'all' | 'approved' | 'published' | 'rejected';
+type QueueFilter = 'pending' | 'approved' | 'published' | 'rejected';
 
 const defaultFilters = {
   queue: 'pending' as QueueFilter,
@@ -221,8 +221,14 @@ export function CandidateApprovalQueueView({
   const filteredData = useMemo(() => {
     let rows = [...records];
 
-    // Server already scopes pending/approved/rejected; client only narrows "published".
-    if (filters.queue === 'approved') {
+    if (filters.queue === 'pending') {
+      rows = rows.filter(
+        (r) =>
+          r.submittedForApprovalAt &&
+          r.approvalStatus === 'PENDING' &&
+          r.profileStatus === 'PENDING_APPROVAL',
+      );
+    } else if (filters.queue === 'approved') {
       rows = rows.filter((r) => r.visibility !== 'CLIENT_VISIBLE');
     } else if (filters.queue === 'published') {
       rows = rows.filter((r) => r.visibility === 'CLIENT_VISIBLE');
@@ -448,7 +454,6 @@ export function CandidateApprovalQueueView({
                 className="w-[200px] min-w-[160px]"
                 options={[
                   { value: 'pending', label: 'Pending approval' },
-                  { value: 'all', label: 'All candidates' },
                   { value: 'approved', label: 'Approved — ready to publish' },
                   { value: 'published', label: 'Published to clients' },
                   { value: 'rejected', label: 'Rejected' },

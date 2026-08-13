@@ -1,7 +1,7 @@
 import { formatDate, EVALUATION_RECOMMENDATIONS, EVALUATION_TYPES } from '@bestal/shared-utils';
 import { Button, Dialog, FileUpload, Input, Select, StatusBadge, TanStackDataTable } from '@bestal/ui';
 import { type ColumnDef } from '@tanstack/react-table';
-import { AlertCircle, Download, Loader2, Pencil, Plus, Sparkles } from 'lucide-react';
+import { AlertCircle, Loader2, Plus, Sparkles } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useCandidatesList, useCandidateMutations } from '../../hooks/api/useCandidates';
@@ -16,6 +16,7 @@ import { mapEvaluationExtractionToForm } from '../../lib/api/ai/evaluation-extra
 import { getApiErrorMessage } from '../../lib/api/errors';
 import { evaluationsApi } from '../../lib/api/evaluations';
 import { SearchableSelect } from '../ui/SearchableSelect';
+import { ActionMenu } from '../ui/ActionMenu';
 import type { EvaluationListItem } from '../../lib/api/types';
 import { useDemoToast } from '../../lib/use-demo-toast';
 import { usePermissions } from '../../hooks/usePermissions';
@@ -536,39 +537,29 @@ export function EvaluationManagementView({
         id: 'actions',
         header: '',
         cell: ({ row }) =>
-          canUploadEvaluation ? (
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={() => openEditEvaluation(row.original)}
-            >
-              <Pencil className="mr-1 h-3.5 w-3.5" />
-              Edit
-            </Button>
+          canUploadEvaluation || row.original.documentId ? (
+            <ActionMenu
+              label="Evaluation actions"
+              items={[
+                {
+                  id: 'edit',
+                  label: 'Edit',
+                  hidden: !canUploadEvaluation,
+                  onSelect: () => openEditEvaluation(row.original),
+                },
+                {
+                  id: 'download',
+                  label: 'Download PDF',
+                  hidden: !row.original.documentId,
+                  separatorBefore: canUploadEvaluation,
+                  onSelect: () =>
+                    void evaluationsApi
+                      .downloadDocument(row.original.id)
+                      .catch((err) => show(getApiErrorMessage(err, 'Download failed'))),
+                },
+              ]}
+            />
           ) : null,
-      },
-      {
-        id: 'download',
-        header: 'Download',
-        cell: ({ row }) =>
-          row.original.documentId ? (
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={() =>
-                void evaluationsApi
-                  .downloadDocument(row.original.id)
-                  .catch((err) => show(getApiErrorMessage(err, 'Download failed')))
-              }
-            >
-              <Download className="mr-1 h-3.5 w-3.5" />
-              PDF
-            </Button>
-          ) : (
-            <span className="text-muted-foreground">—</span>
-          ),
       },
     ],
     [canUploadEvaluation, openEditEvaluation, show],

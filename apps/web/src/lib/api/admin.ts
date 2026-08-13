@@ -245,6 +245,7 @@ export const adminApi = {
   putSetting: async (
     key:
       | 'oorwin'
+      | 'email'
       | 'security'
       | 'scoring'
       | 'pricing'
@@ -252,12 +253,51 @@ export const adminApi = {
       | 'notifications'
       | 'integrations'
       | 'commercials'
-      | 'workflows',
+      | 'workflows'
+      | 'localization',
     body: unknown,
   ) => {
     const json = await apiRequest<{ data: Record<string, unknown> }>(`/admin/settings/${key}`, {
       method: 'PUT',
       body,
+    });
+    return json.data;
+  },
+
+  listCommunicationTemplates: () =>
+    apiGet<
+      Array<{
+        id: number;
+        key: string;
+        channel: string;
+        subject: string | null;
+        body: string;
+        variables: string[];
+        updatedAt: string;
+      }>
+    >('/admin/communication-templates'),
+  upsertCommunicationTemplate: async (body: {
+    key: string;
+    channel: 'EMAIL' | 'SMS' | 'IN_APP';
+    subject?: string | null;
+    body: string;
+    variables?: string[];
+  }) => {
+    const json = await apiRequest<{ data: Record<string, unknown> }>(
+      '/admin/communication-templates',
+      { method: 'PUT', body },
+    );
+    return json.data;
+  },
+  deleteCommunicationTemplate: (key: string) =>
+    apiRequest<{ data: { deleted: boolean } }>(
+      `/admin/communication-templates/${encodeURIComponent(key)}`,
+      { method: 'DELETE' },
+    ),
+  sendTestEmail: async (to: string) => {
+    const json = await apiRequest<{ data: { sent: boolean } }>('/admin/settings/email/test', {
+      method: 'POST',
+      body: { to },
     });
     return json.data;
   },

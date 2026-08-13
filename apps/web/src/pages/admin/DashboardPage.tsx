@@ -39,7 +39,12 @@ export function DashboardPage() {
   const evaluationRows = evaluations.data?.data ?? [];
   const bgvRows = bgv.data?.data ?? [];
 
-  const pendingApprovals = candidateRows.filter((c) => c.approvalStatus === 'PENDING').length;
+  const pendingApprovals = candidateRows.filter(
+    (c) =>
+      c.approvalStatus === 'PENDING' &&
+      Boolean(c.submittedForApprovalAt) &&
+      c.profileStatus === 'PENDING_APPROVAL',
+  ).length;
   const published = candidateRows.filter((c) => c.visibility === 'CLIENT_VISIBLE').length;
   const aiScreeningPending = candidateRows.filter((c) => {
     const status = (c.profileStatus ?? '').toUpperCase();
@@ -68,17 +73,7 @@ export function DashboardPage() {
 
   return (
     <div className="min-h-full bg-muted/10">
-      <PageHeader
-        title="Admin Dashboard"
-        actions={
-          <Link
-            to="/admin/candidate-approvals"
-            className="inline-flex h-9 items-center rounded-md border border-border bg-background px-4 text-sm font-medium hover:bg-muted"
-          >
-            Review approvals
-          </Link>
-        }
-      />
+      <PageHeader title="Admin Dashboard" />
 
       <div className="space-y-8 p-4 sm:p-6">
         {isLoading ? (

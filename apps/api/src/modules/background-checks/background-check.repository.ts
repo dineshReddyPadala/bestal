@@ -8,7 +8,9 @@ import type {
 import { parseSortParam } from './background-check.mapper.js';
 
 const backgroundCheckInclude = {
-  candidate: { select: { id: true, firstName: true, lastName: true } },
+  candidate: {
+    select: { id: true, firstName: true, lastName: true, sourceCandidateId: true },
+  },
   requestedBy: { select: { id: true, firstName: true, lastName: true } },
   reviewedBy: { select: { id: true, firstName: true, lastName: true } },
 } satisfies Prisma.BackgroundCheckInclude;

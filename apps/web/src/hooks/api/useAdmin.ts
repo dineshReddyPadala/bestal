@@ -298,6 +298,7 @@ export function useAdminMutations() {
       }: {
         key:
           | 'oorwin'
+          | 'email'
           | 'security'
           | 'scoring'
           | 'pricing'
@@ -305,7 +306,8 @@ export function useAdminMutations() {
           | 'notifications'
           | 'integrations'
           | 'commercials'
-          | 'workflows';
+          | 'workflows'
+          | 'localization';
         body: unknown;
       }) => adminApi.putSetting(key, body),
       onSuccess: invalidate,

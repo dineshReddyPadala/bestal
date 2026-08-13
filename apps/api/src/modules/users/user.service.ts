@@ -44,7 +44,7 @@ export class UserService {
 
   constructor(private readonly fastify: FastifyInstance, userRepository?: UserRepository) {
     this.userRepository = userRepository ?? new UserRepository(fastify.prisma);
-    this.emailService = new EmailService(fastify.config);
+    this.emailService = new EmailService(fastify.config, fastify.prisma);
   }
 
   private async assertClientLink(

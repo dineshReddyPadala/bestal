@@ -68,11 +68,13 @@ export function applyResumeExtractionToWizardForm(
         fallbackCommunityId;
       if (!skillCommunityId) return null;
       return {
+        skillName: skill.name.slice(0, 150),
+        skillCategory: skill.category?.slice(0, 100) ?? '',
         skillCommunityId,
         proficiencyLevel: skill.proficiencyLevel,
         yearsExperience: skill.yearsExperience ?? undefined,
         isPrimary: skill.isPrimary || index === 0,
-        notes: skill.name.slice(0, 150),
+        notes: '',
       };
     })
     .filter((skill): skill is NonNullable<typeof skill> => skill !== null);
@@ -134,6 +136,8 @@ export function applyResumeExtractionToWizardForm(
         : fallbackCommunityId
           ? [
               {
+                skillName: extraction.primaryRole?.trim() || 'General',
+                skillCategory: '',
                 skillCommunityId: fallbackCommunityId,
                 proficiencyLevel: 'INTERMEDIATE' as const,
                 yearsExperience: c.yearsExperience ?? undefined,

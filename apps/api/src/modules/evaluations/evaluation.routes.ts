@@ -158,6 +158,29 @@ export async function evaluationRoutes(fastify: FastifyInstance): Promise<void> 
     evaluationController.remove,
   );
 
+  app.post(
+    '/:id/document',
+    {
+      preHandler: [
+        authenticate,
+        requirePermission(PERMISSIONS.EVALUATIONS_WRITE),
+      ],
+      schema: {
+        tags: ['Evaluations'],
+        summary: 'Upload evaluation document (no AI analysis)',
+        security: [{ bearerAuth: [] }],
+        params: evaluationIdParamSchema,
+        consumes: ['multipart/form-data'],
+        response: {
+          200: evaluationResponseSchema,
+          401: errorResponses[401],
+          404: errorResponses[404],
+        },
+      },
+    },
+    evaluationController.uploadDocument,
+  );
+
   app.get(
     '/:id/document/download',
     {
