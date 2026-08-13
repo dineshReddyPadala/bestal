@@ -148,6 +148,72 @@ export async function notifyOrgRoles(
   });
 }
 
+export async function notifyOrgMembersWithPermission(
+  prisma: PrismaClient,
+  config: AppConfig,
+  input: {
+    organizationId: number;
+    permission: string;
+    type: NotificationType;
+    title: string;
+    body: string;
+    actionUrlForRole?: (role: Role) => string | null;
+    defaultActionUrl?: string | null;
+    metadata?: Record<string, unknown>;
+    sendEmail?: boolean;
+    templateKey?: string;
+    templateVariables?: Record<string, string | number | null | undefined>;
+  },
+): Promise<void> {
+  const { resolvePermissionsForMembership } = await import(
+    '../modules/admin/admin-roles.service.js'
+  );
+
+  const memberships = await prisma.membership.findMany({
+    where: {
+      organizationId: BigInt(input.organizationId),
+      isActive: true,
+      user: { deletedAt: null, isActive: true },
+    },
+    select: { userId: true, role: true, platformRoleId: true },
+  });
+
+  const usersByActionUrl = new Map<string, number[]>();
+
+  for (const membership of memberships) {
+    const permissions = await resolvePermissionsForMembership(
+      prisma,
+      membership.role,
+      membership.platformRoleId ? Number(membership.platformRoleId) : null,
+    );
+    if (!permissions.includes(input.permission)) continue;
+
+    const actionUrl =
+      input.actionUrlForRole?.(membership.role) ??
+      input.defaultActionUrl ??
+      null;
+    const key = actionUrl ?? '';
+    const existing = usersByActionUrl.get(key) ?? [];
+    existing.push(Number(membership.userId));
+    usersByActionUrl.set(key, existing);
+  }
+
+  for (const [actionUrl, userIds] of usersByActionUrl) {
+    await notifyUsers(prisma, config, {
+      organizationId: input.organizationId,
+      userIds,
+      type: input.type,
+      title: input.title,
+      body: input.body,
+      actionUrl: actionUrl || null,
+      metadata: input.metadata,
+      sendEmail: input.sendEmail ?? true,
+      templateKey: input.templateKey,
+      templateVariables: input.templateVariables,
+    });
+  }
+}
+
 export interface EvaluationProcessedNotificationInput {
   organizationId: number;
   candidateId: number;

@@ -254,7 +254,8 @@ export const adminApi = {
       | 'integrations'
       | 'commercials'
       | 'workflows'
-      | 'localization',
+      | 'localization'
+      | 'storage',
     body: unknown,
   ) => {
     const json = await apiRequest<{ data: Record<string, unknown> }>(`/admin/settings/${key}`, {

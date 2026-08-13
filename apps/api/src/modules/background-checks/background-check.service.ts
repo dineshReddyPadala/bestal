@@ -165,7 +165,7 @@ export class BackgroundCheckService {
     this.backgroundCheckRepository =
       backgroundCheckRepository ?? new BackgroundCheckRepository(fastify.prisma);
     this.prisma = fastify.prisma;
-    this.storageService = new StorageService(fastify.config);
+    this.storageService = new StorageService(fastify.config, fastify.prisma);
   }
 
   private async isN8nBgvAnalysisEnabled(): Promise<boolean> {

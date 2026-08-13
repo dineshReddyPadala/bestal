@@ -113,6 +113,7 @@ export async function adminRoutes(fastify: FastifyInstance): Promise<void> {
   app.put('/settings/commercials', { ...secure, schema: { tags: ['Admin'], security: [{ bearerAuth: [] }] } }, controller.putSetting('commercials'));
   app.put('/settings/workflows', { ...secure, schema: { tags: ['Admin'], security: [{ bearerAuth: [] }] } }, controller.putSetting('workflows'));
   app.put('/settings/localization', { ...secure, schema: { tags: ['Admin'], security: [{ bearerAuth: [] }] } }, controller.putSetting('localization'));
+  app.put('/settings/storage', { ...secure, schema: { tags: ['Admin'], security: [{ bearerAuth: [] }] } }, controller.putSetting('storage'));
 
   app.get('/communication-templates', { ...secure, schema: { tags: ['Admin'], security: [{ bearerAuth: [] }] } }, controller.listCommunicationTemplates);
   app.put('/communication-templates', { ...secure, schema: { tags: ['Admin'], security: [{ bearerAuth: [] }] } }, controller.upsertCommunicationTemplate);

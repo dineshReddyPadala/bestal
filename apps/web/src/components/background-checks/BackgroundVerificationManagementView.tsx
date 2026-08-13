@@ -23,6 +23,7 @@ import {
   mapWizardBgvStatusFromApi,
   mapWizardBgvStatusToApi,
 } from '../forms/candidate-wizard-schema';
+import { useAuth } from '../../contexts/AuthContext';
 import { useDemoToast } from '../../lib/use-demo-toast';
 import {
   ListingFilterSelect,
@@ -134,6 +135,8 @@ export function BackgroundVerificationManagementView({
   title = 'Background Verification Management',
 }: BackgroundVerificationManagementViewProps) {
   const { message, show, showError } = useDemoToast();
+  const { user } = useAuth();
+  const isSuperAdmin = user?.role === 'SUPER_ADMIN';
   const queryClient = useQueryClient();
   const { canUploadBgv } = usePermissions();
   const { searchInput, setSearchInput, search } = useDebouncedSearch();
@@ -143,6 +146,7 @@ export function BackgroundVerificationManagementView({
   });
   const { data: candidatesData } = useCandidatesList({ limit: 100 });
   const mutations = useBackgroundCheckMutations();
+  const isSavingBgv = mutations.create.isPending || mutations.update.isPending;
   const [filters, setFilters] = useState(defaultFilters);
   const [requestOpen, setRequestOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
@@ -800,7 +804,7 @@ export function BackgroundVerificationManagementView({
           dense
           filtersInline
           toolbar={
-            canUploadBgv ? (
+            isSuperAdmin ? (
               <Button size="sm" onClick={() => setRequestOpen(true)}>
                 <Plus className="mr-1.5 h-3.5 w-3.5" />
                 Request BGV
@@ -852,7 +856,12 @@ export function BackgroundVerificationManagementView({
             >
               Cancel
             </Button>
-            <Button type="button" onClick={() => void handleRequest()} disabled={extractingPdf}>
+            <Button
+              type="button"
+              onClick={() => void handleRequest()}
+              disabled={extractingPdf || isSavingBgv}
+            >
+              {isSavingBgv ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
               Request BGV
             </Button>
           </>
@@ -1034,8 +1043,9 @@ export function BackgroundVerificationManagementView({
             <Button
               type="button"
               onClick={() => void handleEditSave()}
-              disabled={editLoading || editingBgvId == null}
+              disabled={editLoading || editingBgvId == null || isSavingBgv}
             >
+              {isSavingBgv ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
               Save changes
             </Button>
           </>

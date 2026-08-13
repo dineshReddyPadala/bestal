@@ -18,8 +18,10 @@ import {
   ListingPageShell,
 } from '../layout/ListingPageShell';
 import { ExtendDeploymentDialog } from './ExtendDeploymentDialog';
+import { AdminDeploymentDetailDialog } from '../super-admin/AdminOpsDetailDialog';
 
 type DeploymentAction =
+  | 'View'
   | 'Approve'
   | 'Activate'
   | 'Pause'
@@ -96,7 +98,9 @@ function DeploymentRowActions({
     return () => document.removeEventListener('mousedown', close);
   }, [open]);
 
-  const actions: { label: DeploymentAction; disabled?: boolean; variant?: 'danger' }[] = [];
+  const actions: { label: DeploymentAction; disabled?: boolean; variant?: 'danger' }[] = [
+    { label: 'View' },
+  ];
   if (record.status === 'PENDING') {
     actions.push({ label: 'Approve' });
     if (record.billingRate != null) {
@@ -173,6 +177,7 @@ export function DeploymentManagementView({
   const [approveCurrency, setApproveCurrency] = useState('USD');
   const [approveMargin, setApproveMargin] = useState('');
   const [extendTarget, setExtendTarget] = useState<DeploymentListItem | null>(null);
+  const [viewDeploymentId, setViewDeploymentId] = useState<number | null>(null);
 
   const records = useMemo(() => data?.data ?? [], [data]);
 
@@ -235,6 +240,10 @@ export function DeploymentManagementView({
   const handleAction = useCallback(
     async (record: DeploymentListItem, action: DeploymentAction) => {
       try {
+        if (action === 'View') {
+          setViewDeploymentId(record.id);
+          return;
+        }
         if (action === 'Approve') {
           setApproveTarget(record);
           setApproveBillingRate(record.billingRate != null ? String(record.billingRate) : '');
@@ -242,7 +251,13 @@ export function DeploymentManagementView({
             record.candidatePayRate != null ? String(record.candidatePayRate) : '',
           );
           setApproveCurrency(record.currency ?? 'USD');
-          setApproveMargin('');
+          const bill = record.billingRate ?? 0;
+          const pay = record.candidatePayRate ?? 0;
+          if (bill > 0 && pay >= 0) {
+            setApproveMargin(String(Math.round((bill - pay) * 100) / 100));
+          } else {
+            setApproveMargin('');
+          }
           return;
         }
         if (action === 'Activate') {
@@ -256,7 +271,7 @@ export function DeploymentManagementView({
         } else if (action === 'Extend') {
           setExtendTarget(record);
           return;
-        } else {
+        } else if (action === 'Terminate') {
           await mutations.terminate.mutateAsync({ id: record.id });
         }
         show(`${action} — ${record.candidateName} @ ${record.clientName}`);
@@ -266,6 +281,13 @@ export function DeploymentManagementView({
     },
     [mutations, show],
   );
+
+  useEffect(() => {
+    const bill = Number(approveBillingRate);
+    const pay = Number(approvePayRate);
+    if (!Number.isFinite(bill) || !Number.isFinite(pay)) return;
+    setApproveMargin(String(Math.round((bill - pay) * 100) / 100));
+  }, [approveBillingRate, approvePayRate]);
 
   const handleCreateSubmit = useCallback(
     async (values: DeploymentFormValues) => {
@@ -560,6 +582,7 @@ export function DeploymentManagementView({
             </Button>
             <Button
               type="button"
+              disabled={mutations.approve.isPending}
               onClick={() => {
                 if (!approveTarget) return;
                 const billingRate = Number(approveBillingRate);
@@ -597,7 +620,7 @@ export function DeploymentManagementView({
                 })();
               }}
             >
-              Approve & activate
+              {mutations.approve.isPending ? 'Approving…' : 'Approve & activate'}
             </Button>
           </>
         }
@@ -608,6 +631,24 @@ export function DeploymentManagementView({
               Client request for <strong>{approveTarget.roleTitle}</strong> (
               {approveTarget.placementType}). Enter commercial details to activate.
             </p>
+            <div className="grid gap-3 rounded-lg border border-border/70 bg-muted/20 p-3 text-sm sm:grid-cols-2">
+              <div>
+                <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  Contract start
+                </span>
+                <p className="mt-1 font-medium text-foreground">
+                  {approveTarget.startDate ? formatDate(approveTarget.startDate) : '—'}
+                </p>
+              </div>
+              <div>
+                <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  Contract end
+                </span>
+                <p className="mt-1 font-medium text-foreground">
+                  {approveTarget.endDate ? formatDate(approveTarget.endDate) : 'Ongoing'}
+                </p>
+              </div>
+            </div>
             <div className="grid gap-3 sm:grid-cols-2">
               <label className="space-y-1 text-sm sm:col-span-2">
                 <span className="font-medium">Billing rate ($/hr) *</span>
@@ -658,6 +699,11 @@ export function DeploymentManagementView({
           </div>
         ) : null}
       </Dialog>
+
+      <AdminDeploymentDetailDialog
+        deploymentId={viewDeploymentId}
+        onClose={() => setViewDeploymentId(null)}
+      />
     </>
   );
 }

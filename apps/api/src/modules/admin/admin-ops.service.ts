@@ -18,6 +18,8 @@ import {
   mergeEmailSettingsUpdate,
   maskIntegrationsSettingsForAdmin,
   mergeIntegrationsSettingsUpdate,
+  maskStorageSettingsForAdmin,
+  mergeStorageSettingsUpdate,
 } from '../../services/system-settings.reader.js';
 import {
   deleteCommunicationTemplate,
@@ -38,6 +40,7 @@ const SETTING_KEYS = [
   'commercials',
   'workflows',
   'localization',
+  'storage',
 ] as const;
 export type SettingKey = (typeof SETTING_KEYS)[number];
 
@@ -985,6 +988,7 @@ export class AdminOpsService {
       commercials: {},
       workflows: {},
       localization: {},
+      storage: {},
     };
     for (const row of rows) {
       if (row.key === 'workflows') {
@@ -993,6 +997,8 @@ export class AdminOpsService {
         out.email = maskEmailSettingsForAdmin(row.value);
       } else if (row.key === 'integrations') {
         out.integrations = maskIntegrationsSettingsForAdmin(row.value);
+      } else if (row.key === 'storage') {
+        out.storage = maskStorageSettingsForAdmin(row.value);
       } else {
         out[row.key] = row.value;
       }
@@ -1047,6 +1053,19 @@ export class AdminOpsService {
         where: { key: 'integrations' },
       });
       payload = mergeIntegrationsSettingsUpdate(value, existing?.value);
+    } else if (key === 'storage') {
+      const existing = await this.prisma.systemSetting.findUnique({
+        where: { key: 'storage' },
+      });
+      payload = mergeStorageSettingsUpdate(value, existing?.value);
+      const merged = payload as {
+        driver: 'local' | 's3' | null;
+        region: string | null;
+        bucket: string | null;
+      };
+      if (merged.driver === 's3' && (!merged.region?.trim() || !merged.bucket?.trim())) {
+        throw new BadRequestError('S3 region and bucket are required when storage driver is s3');
+      }
     }
 
     const row = await this.prisma.systemSetting.upsert({
@@ -1070,6 +1089,9 @@ export class AdminOpsService {
     }
     if (key === 'integrations') {
       return { key, value: maskIntegrationsSettingsForAdmin(row.value) };
+    }
+    if (key === 'storage') {
+      return { key, value: maskStorageSettingsForAdmin(row.value) };
     }
     return { key, value: row.value };
   }

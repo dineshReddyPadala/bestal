@@ -548,7 +548,8 @@ export class AdminController {
         | 'integrations'
         | 'commercials'
         | 'workflows'
-        | 'localization',
+        | 'localization'
+        | 'storage',
     ) =>
     async (request: FastifyRequest, reply: FastifyReply) => {
       const data = await this.ops.putSetting(

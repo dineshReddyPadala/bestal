@@ -7,9 +7,15 @@ import { RequestDeploymentDialog } from '../../components/client/RequestDeployme
 import { RequestTrialDialog } from '../../components/client/RequestTrialDialog';
 import { useAuth } from '../../contexts/AuthContext';
 import { useCandidate } from '../../hooks/api/useCandidates';
-import { useDeploymentMutations } from '../../hooks/api/useDeployments';
+import { useDeploymentMutations, useDeploymentsList } from '../../hooks/api/useDeployments';
 import { usePermissions } from '../../hooks/usePermissions';
 import { useClientTrialRequests } from '../../hooks/useClientEngagementRequests';
+import {
+  deploymentRequestBlockMessage,
+  getDeploymentRequestBlockReason,
+  hasBlockingTrialForCandidate,
+  trialRequestBlockMessage,
+} from '../../lib/client-engagement-gates';
 import { getApiErrorMessage } from '../../lib/api/errors';
 import { mapCandidateDtoToClientProfile } from '../../lib/client-candidate-profile';
 import { useDemoToast } from '../../lib/use-demo-toast';
@@ -20,8 +26,12 @@ export function CandidateDetailPage() {
   const { user } = useAuth();
   const { has } = usePermissions();
   const { data: candidate, isLoading, isError } = useCandidate(candidateId);
-  const { addRequest: addTrialRequest } = useClientTrialRequests();
+  const { addRequest: addTrialRequest, trials } = useClientTrialRequests();
   const deploymentMutations = useDeploymentMutations();
+  const { data: deploymentsData } = useDeploymentsList({
+    limit: 100,
+    ...(user?.clientId ? { clientId: user.clientId } : {}),
+  });
   const { show, showError } = useDemoToast();
   const [trialOpen, setTrialOpen] = useState(false);
   const [deployOpen, setDeployOpen] = useState(false);
@@ -70,6 +80,11 @@ export function CandidateDetailPage() {
   }
 
   const profile = mapCandidateDtoToClientProfile(candidate);
+  const trialBlocked = hasBlockingTrialForCandidate(candidateId, trials);
+  const deploymentBlock = getDeploymentRequestBlockReason(
+    candidateId,
+    deploymentsData?.data ?? [],
+  );
 
   return (
     <>
@@ -77,6 +92,8 @@ export function CandidateDetailPage() {
         profile={profile}
         canRequestTrial={canRequestTrial}
         canRequestDeployment={canRequestDeployment}
+        trialBlockReason={trialRequestBlockMessage(trialBlocked)}
+        deploymentBlockReason={deploymentRequestBlockMessage(deploymentBlock)}
         onTrial={() => setTrialOpen(true)}
         onRequestDeployment={() => setDeployOpen(true)}
       />

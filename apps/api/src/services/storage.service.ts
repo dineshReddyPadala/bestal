@@ -1,4 +1,9 @@
-import type { AppConfig } from '../config/index.js';
+import type { PrismaClient } from '@prisma/client';
+import type { AppConfig, StorageConfig } from '../config/index.js';
+import {
+  readStorageSettings,
+  resolveStorageConfig,
+} from './system-settings.reader.js';
 import { createStorageAdapter } from './storage/storage.factory.js';
 import {
   buildBackgroundCheckAssetKey,
@@ -21,6 +26,7 @@ import {
 } from './storage/storage.constants.js';
 import type {
   SignedUrlOptions,
+  StorageAdapter,
   StorageUploadMetadata,
   UploadInput,
   UploadResult,
@@ -28,29 +34,46 @@ import type {
 import type { DocumentKind } from '@prisma/client';
 
 export class StorageService {
-  private readonly adapter;
-  private readonly config: AppConfig;
-  private readonly isS3: boolean;
+  private adapter: StorageAdapter | null = null;
+  private resolvedStorage: StorageConfig | null = null;
 
-  constructor(config: AppConfig) {
-    this.config = config;
-    this.adapter = createStorageAdapter(config);
-    this.isS3 = config.storage.driver === 's3';
+  constructor(
+    private readonly config: AppConfig,
+    private readonly prisma?: PrismaClient,
+  ) {}
+
+  private async ensureAdapter(): Promise<StorageAdapter> {
+    const dbSettings = this.prisma ? await readStorageSettings(this.prisma) : null;
+    const storage = resolveStorageConfig(this.config, dbSettings);
+    const storageKey = JSON.stringify(storage);
+    const cachedKey = this.resolvedStorage ? JSON.stringify(this.resolvedStorage) : null;
+    if (!this.adapter || storageKey !== cachedKey) {
+      this.resolvedStorage = storage;
+      this.adapter = createStorageAdapter({ ...this.config, storage });
+    }
+    return this.adapter;
   }
 
-  get driver(): 'local' | 's3' {
-    return this.config.storage.driver;
+  private async isS3Driver(): Promise<boolean> {
+    const dbSettings = this.prisma ? await readStorageSettings(this.prisma) : null;
+    return resolveStorageConfig(this.config, dbSettings).driver === 's3';
   }
 
-  get bucket(): string {
-    return this.adapter.getBucket();
+  async getDriver(): Promise<'local' | 's3'> {
+    const dbSettings = this.prisma ? await readStorageSettings(this.prisma) : null;
+    return resolveStorageConfig(this.config, dbSettings).driver;
+  }
+
+  async getBucket(): Promise<string> {
+    const adapter = await this.ensureAdapter();
+    return adapter.getBucket();
   }
 
   validateFile(category: UploadCategory, file: FileValidationInput): void {
     validateUploadFile(category, file);
   }
 
-  upload(
+  async upload(
     key: string,
     input: UploadInput,
     metadata?: StorageUploadMetadata,
@@ -62,15 +85,18 @@ export class StorageService {
         originalName: input.originalName,
       });
     }
-    return this.adapter.upload(key, input, metadata);
+    const adapter = await this.ensureAdapter();
+    return adapter.upload(key, input, metadata);
   }
 
-  delete(key: string, bucket: string): Promise<void> {
-    return this.adapter.delete(key, bucket);
+  async delete(key: string, bucket: string): Promise<void> {
+    const adapter = await this.ensureAdapter();
+    return adapter.delete(key, bucket);
   }
 
-  exists(key: string, bucket: string): Promise<boolean> {
-    return this.adapter.exists(key, bucket);
+  async exists(key: string, bucket: string): Promise<boolean> {
+    const adapter = await this.ensureAdapter();
+    return adapter.exists(key, bucket);
   }
 
   async getSignedDownloadUrl(
@@ -78,11 +104,13 @@ export class StorageService {
     bucket: string,
     options?: SignedUrlOptions,
   ): Promise<string | null> {
-    return this.adapter.getSignedDownloadUrl(key, bucket, options);
+    const adapter = await this.ensureAdapter();
+    return adapter.getSignedDownloadUrl(key, bucket, options);
   }
 
-  getPublicUrl(key: string, bucket: string): string | null {
-    return this.adapter.getPublicUrl(key, bucket);
+  async getPublicUrl(key: string, bucket: string): Promise<string | null> {
+    const adapter = await this.ensureAdapter();
+    return adapter.getPublicUrl(key, bucket);
   }
 
   /** Resolve the best available URL for a stored file (signed URL for S3). */
@@ -91,7 +119,7 @@ export class StorageService {
     bucket: string,
     contentType?: string,
   ): Promise<string | null> {
-    if (this.isS3) {
+    if (await this.isS3Driver()) {
       return this.getSignedDownloadUrl(key, bucket, { contentType });
     }
     return this.getPublicUrl(key, bucket);
@@ -147,11 +175,12 @@ export class StorageService {
     return getUploadCategoryConfig(category);
   }
 
-  getS3Adapter(): S3StorageAdapter | null {
-    if (!this.isS3 || !(this.adapter instanceof S3StorageAdapter)) {
+  async getS3Adapter(): Promise<S3StorageAdapter | null> {
+    const adapter = await this.ensureAdapter();
+    if (!(await this.isS3Driver()) || !(adapter instanceof S3StorageAdapter)) {
       return null;
     }
-    return this.adapter;
+    return adapter;
   }
 
   async generatePresignedDownload(
@@ -160,7 +189,7 @@ export class StorageService {
     contentType?: string,
     expiresInSeconds?: number,
   ): Promise<string> {
-    const s3 = this.getS3Adapter();
+    const s3 = await this.getS3Adapter();
     if (!s3) {
       const url = await this.getSignedDownloadUrl(key, bucket, { contentType });
       if (!url) {
@@ -177,7 +206,7 @@ export class StorageService {
   }
 
   async safeDelete(key: string, bucket: string): Promise<boolean> {
-    const s3 = this.getS3Adapter();
+    const s3 = await this.getS3Adapter();
     if (s3) {
       return safeDeleteFromS3(s3.getS3Service(), key, bucket);
     }

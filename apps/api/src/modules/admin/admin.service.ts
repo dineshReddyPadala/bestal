@@ -12,7 +12,7 @@ import {
   requireOrganization,
 } from '../../utils/index.js';
 import { EmailService } from '../../services/email.service.js';
-import { notifyCandidateSentBack } from '../../services/notification-events.js';
+import { notifyCandidateApproved, notifyCandidateSentBack } from '../../services/notification-events.js';
 import { buildPaginationMeta } from '../../validators/common.validator.js';
 import { CandidateService } from '../candidates/candidate.service.js';
 import { ClientService } from '../clients/client.service.js';
@@ -811,13 +811,13 @@ export class AdminService {
       }
     }
     await this.auditWrite(authUser, 'APPROVE', 'Candidate', id, `Approved candidate ${id} (${mode})`, { mode }, ctx);
-    await this.notifyStaff(
+    void notifyCandidateApproved(this.prisma, this.fastify.config, {
       organizationId,
-      authUser.id,
-      'Candidate approved',
-      `Candidate #${id} was approved (${mode}).`,
-      `/super-admin/candidates/${id}`,
-    );
+      candidateId: id,
+      candidateName: `${approved.firstName} ${approved.lastName}`.trim(),
+      approvedById: authUser.id,
+      createdById: approved.createdById,
+    });
     return approved;
   }
 
