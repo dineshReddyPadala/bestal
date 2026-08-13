@@ -71,7 +71,7 @@ export function ClientCandidateListRow({
 
       <div className="flex shrink-0 items-center gap-1 text-sm">
         <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
-        <span className="font-medium tabular-nums">{record.bestalScore}</span>
+        <span className="font-medium tabular-nums">{record.bestalScore ?? '—'}</span>
       </div>
 
       <div className="hidden shrink-0 text-xs text-muted-foreground lg:block">
@@ -92,7 +92,9 @@ export function ClientCandidateListRow({
       </div>
 
       <div className="shrink-0 text-sm font-semibold tabular-nums">
-        {formatCurrency(record.hourlyRate, record.currency)}
+        {record.hourlyRate != null
+          ? formatCurrency(record.hourlyRate, record.currency)
+          : '—'}
         <span className="text-xs font-normal text-muted-foreground">/hr</span>
       </div>
 

@@ -181,25 +181,44 @@ function TabBar({
   onChange: (tab: WizardTabId) => void;
 }) {
   return (
-    <div className="mb-3 overflow-x-auto">
-      <div className="inline-flex min-w-full flex-wrap gap-1 rounded-lg bg-muted p-1 text-muted-foreground sm:min-w-0">
-        {WIZARD_TABS.map((tab) => (
-          <button
-            key={tab.id}
-            type="button"
-            onClick={() => onChange(tab.id)}
-            className={cn(
-              'inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium transition-all',
-              activeTab === tab.id
-                ? 'bg-background text-foreground shadow-sm'
-                : 'hover:text-foreground',
-            )}
-          >
-            {tab.label}
-          </button>
-        ))}
+    <>
+      <div className="mb-3 sm:hidden">
+        <label htmlFor="wizard-tab-select" className="sr-only">
+          Wizard section
+        </label>
+        <select
+          id="wizard-tab-select"
+          value={activeTab}
+          onChange={(event) => onChange(event.target.value as WizardTabId)}
+          className="h-10 w-full rounded-lg border border-border bg-background px-3 text-sm font-medium"
+        >
+          {WIZARD_TABS.map((tab) => (
+            <option key={tab.id} value={tab.id}>
+              {tab.label}
+            </option>
+          ))}
+        </select>
       </div>
-    </div>
+      <div className="mb-3 hidden overflow-x-auto sm:block">
+        <div className="inline-flex min-w-full flex-wrap gap-1 rounded-lg bg-muted p-1 text-muted-foreground sm:min-w-0">
+          {WIZARD_TABS.map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => onChange(tab.id)}
+              className={cn(
+                'inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium transition-all',
+                activeTab === tab.id
+                  ? 'bg-background text-foreground shadow-sm'
+                  : 'hover:text-foreground',
+              )}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+      </div>
+    </>
   );
 }
 
@@ -667,15 +686,41 @@ function AvailabilityTab() {
 function PricingTab() {
   const { register, watch } = useFormContext<CandidateWizardFormValues>();
   const { canViewPayRate } = usePermissions();
-  const payRate = watch('payRate');
+  const expectedRate = watch('expectedRate');
   const billRate = watch('billRate');
-  const pay = typeof payRate === 'number' && Number.isFinite(payRate) ? payRate : null;
+  const expected =
+    typeof expectedRate === 'number' && Number.isFinite(expectedRate) ? expectedRate : null;
   const bill = typeof billRate === 'number' && Number.isFinite(billRate) ? billRate : null;
-  const margin = pay != null && bill != null ? bill - pay : null;
+  const margin = expected != null && bill != null ? bill - expected : null;
 
   return (
     <SectionCard title="Pricing (Internal Only)">
       <div className="grid gap-4 sm:grid-cols-3">
+        <FormField label="Expected Rate ($/hr)" name="expectedRate">
+          <Input
+            id="expectedRate"
+            type="number"
+            min={0}
+            step={0.01}
+            {...register('expectedRate', { valueAsNumber: true })}
+          />
+        </FormField>
+        <FormField label="Client Bill Rate ($/hr)" name="billRate">
+          <Input
+            id="billRate"
+            type="number"
+            min={0}
+            step={0.01}
+            {...register('billRate', { valueAsNumber: true })}
+          />
+        </FormField>
+        <div className="flex flex-col gap-1">
+          <span className="text-sm font-medium text-foreground">Gross Margin ($/hr)</span>
+          <p className="flex h-10 items-center rounded-md border border-border/60 bg-muted/40 px-3 text-sm font-semibold tabular-nums text-foreground">
+            {margin == null ? '—' : `$${margin.toFixed(2)}`}
+          </p>
+          <span className="text-xs text-muted-foreground">Bill rate minus expected rate</span>
+        </div>
         {canViewPayRate && (
           <FormField label="Candidate Pay Rate ($/hr)" name="payRate">
             <Input
@@ -687,32 +732,6 @@ function PricingTab() {
             />
           </FormField>
         )}
-        <FormField label="Client Bill Rate ($/hr)" name="billRate">
-          <Input
-            id="billRate"
-            type="number"
-            min={0}
-            step={0.01}
-            {...register('billRate', { valueAsNumber: true })}
-          />
-        </FormField>
-        <FormField label="Gross Margin ($/hr)" name="margin" hint="Auto calculated">
-          <Input
-            id="margin"
-            readOnly
-            value={margin == null ? '' : String(margin)}
-            placeholder="—"
-          />
-        </FormField>
-        <FormField label="Expected Rate ($/hr)" name="expectedRate">
-          <Input
-            id="expectedRate"
-            type="number"
-            min={0}
-            step={0.01}
-            {...register('expectedRate', { valueAsNumber: true })}
-          />
-        </FormField>
         <FormField label="Currency" name="currency">
           <Input id="currency" maxLength={3} {...register('currency')} />
         </FormField>
@@ -817,7 +836,7 @@ function EvaluationTab({
       return;
     }
     if (draftCandidateId == null || draftCandidateId <= 0) {
-      setError('Save or create the candidate draft before running evaluation AI.');
+      setError('Complete Basic Details and click Next to create the candidate before running evaluation AI.');
       return;
     }
 
@@ -1008,6 +1027,15 @@ function EvaluationTab({
               {...register('clientReadinessScore', { valueAsNumber: true })}
             />
           </FormField>
+          <FormField label="Reliability score" name="reliabilityScore">
+            <Input
+              id="reliabilityScore"
+              type="number"
+              min={0}
+              max={100}
+              {...register('reliabilityScore', { valueAsNumber: true })}
+            />
+          </FormField>
         </div>
       </SectionCard>
 
@@ -1130,7 +1158,7 @@ function BackgroundCheckTab({
       return;
     }
     if (draftCandidateId == null || draftCandidateId <= 0) {
-      setError('Save the candidate draft first (Next on any prior tab), then run BGV AI analysis.');
+      setError('Complete Basic Details and click Next to create the candidate before running BGV AI analysis.');
       return;
     }
 
@@ -1171,7 +1199,7 @@ function BackgroundCheckTab({
             hint={
               extracting
                 ? 'Analyzing BGV report via BesTal API…'
-                : 'PDF or Word — save draft first, then run AI analysis'
+                : 'PDF or Word — upload, then run AI analysis'
             }
             onFileSelect={(file) => {
               if (!extracting) handleBgvReportSelect(file);
@@ -1802,8 +1830,12 @@ export function CandidateWizard({
 
   async function goNext() {
     if (isLastTab) return;
-    const saved = await saveDraft(true);
-    if (!saved) return;
+    const needsPersist =
+      !isEditMode && (draftCandidateId == null || draftCandidateId <= 0);
+    if (needsPersist) {
+      const saved = await saveDraft(true);
+      if (!saved) return;
+    }
     const next = WIZARD_TABS[currentTabIndex + 1];
     if (next) setActiveTab(next.id);
   }

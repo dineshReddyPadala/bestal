@@ -10,15 +10,15 @@ export type ClientSearchRecord = {
   readonly displayName: string;
   readonly fullName: string;
   readonly role: string;
-  readonly yearsExperience: number;
+  readonly yearsExperience: number | null;
   readonly community: string;
   readonly primarySkillCommunityName: string;
   readonly topSkills: readonly string[];
-  readonly bestalScore: number;
+  readonly bestalScore: number | null;
   readonly availability: string;
   readonly availabilityCategory: AvailabilityCategory;
   readonly timezone: string;
-  readonly hourlyRate: number;
+  readonly hourlyRate: number | null;
   readonly currency: string;
   readonly evaluationStatus: string;
   readonly bgvStatus: string;

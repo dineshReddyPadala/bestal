@@ -26,9 +26,7 @@ export function mapApiCandidateToClientSearchRecord(
   const role =
     candidate.primaryRole ?? candidate.headline ?? 'Technology Consultant';
   const skill = candidate.primarySkillCommunityName;
-  const rate = candidate.clientBillRate ?? 0;
-  const bgv = candidate.bgvStatus ?? 'NOT_STARTED';
-  const evaluation = candidate.evaluationStatus ?? 'NOT_STARTED';
+  const rate = candidate.clientBillRate;
 
   return {
     id: candidate.id,
@@ -36,21 +34,21 @@ export function mapApiCandidateToClientSearchRecord(
     displayName: candidate.firstName,
     fullName,
     role,
-    yearsExperience: candidate.yearsExperience ?? 0,
+    yearsExperience: candidate.yearsExperience ?? null,
     community: skill ?? 'General',
     primarySkillCommunityName: skill ?? '',
     topSkills: skill ? [skill] : [],
-    bestalScore: candidate.bestalScore ?? 0,
+    bestalScore: candidate.bestalScore ?? null,
     availability: candidate.availabilityStatus ?? 'Available',
     availabilityCategory: availabilityCategory(candidate.availabilityStatus),
     timezone: candidate.timezoneOverlap ?? 'Flexible',
-    hourlyRate: rate,
+    hourlyRate: rate != null && rate > 0 ? rate : null,
     currency: candidate.currency ?? 'USD',
-    evaluationStatus: evaluation,
-    bgvStatus: bgv,
+    evaluationStatus: candidate.evaluationStatus ?? 'NOT_STARTED',
+    bgvStatus: candidate.bgvStatus ?? 'NOT_STARTED',
     trialEligible: isTrialEligible({
-      evaluationStatus: evaluation,
-      bgvStatus: bgv,
+      evaluationStatus: candidate.evaluationStatus ?? 'NOT_STARTED',
+      bgvStatus: candidate.bgvStatus ?? 'NOT_STARTED',
       visibility: candidate.visibility,
       approvalStatus: candidate.approvalStatus,
     }),

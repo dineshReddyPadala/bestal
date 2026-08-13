@@ -46,6 +46,7 @@ export function RequestTrialDialog({
       }}
       title={`Request free trial — ${candidateName}`}
       className="max-w-2xl"
+      scrollable
       footer={
         !submitted && (
           <>

@@ -8,7 +8,7 @@ export function scoreToStarCount(score: number): number {
 }
 
 export type BesTalScoreStarsProps = {
-  score: number;
+  score: number | null;
   showNumeric?: boolean;
   className?: string;
   size?: 'sm' | 'md';
@@ -20,6 +20,10 @@ export function BesTalScoreStars({
   className,
   size = 'sm',
 }: BesTalScoreStarsProps) {
+  if (score == null) {
+    return <span className={cn('text-sm text-muted-foreground', className)}>—</span>;
+  }
+
   const filled = scoreToStarCount(score);
   const iconClass = size === 'sm' ? 'h-3 w-3' : 'h-3.5 w-3.5';
 
