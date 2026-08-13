@@ -87,7 +87,8 @@ export function MarketingLayout({
                 Log in
               </Link>
               <Link to={ctaHref} className="mkt-btn mkt-btn-primary mkt-btn-sm">
-                {ctaLabel}
+                <span className="hidden min-[480px]:inline">{ctaLabel}</span>
+                <span className="min-[480px]:hidden">Browse</span>
               </Link>
               <button
                 type="button"
@@ -102,7 +103,7 @@ export function MarketingLayout({
         </div>
       </header>
 
-      <main className="flex-1">{children}</main>
+      <main className="flex-1 overflow-x-clip">{children}</main>
 
       <footer className="mkt-footer">
         <div className="mx-auto max-w-[1150px] px-[22px] sm:px-[34px]">

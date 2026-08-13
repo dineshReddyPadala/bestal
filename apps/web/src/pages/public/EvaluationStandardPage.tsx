@@ -120,7 +120,7 @@ export function EvaluationStandardPage() {
             We&apos;re deliberate about this boundary. A platform claiming its score removes all
             your risk is selling you something other than evidence.
           </p>
-          <div className="mt-[34px] flex flex-wrap gap-3">
+          <div className="mkt-actions mt-[34px]">
             <Link to="/sample-talent" className="mkt-btn mkt-btn-amber mkt-btn-lg">
               See real test results
             </Link>

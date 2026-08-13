@@ -118,7 +118,7 @@ export function TrustPage() {
             vendor&apos;s unaudited security claim — including ours — as a description, not a
             guarantee.
           </p>
-          <div className="mt-[34px] flex flex-wrap gap-3">
+          <div className="mkt-actions mt-[34px]">
             <Link to="/contact" className="mkt-btn mkt-btn-white mkt-btn-lg">
               Download the security pack
             </Link>

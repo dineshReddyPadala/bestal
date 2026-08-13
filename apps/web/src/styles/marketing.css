@@ -26,6 +26,7 @@
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overflow-x: clip;
 }
 
 .marketing-site h1,
@@ -771,6 +772,26 @@
   flex-wrap: wrap;
 }
 
+.marketing-site .mkt-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.marketing-site .mkt-actions-center {
+  justify-content: center;
+}
+
+.marketing-site .mkt-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.marketing-site .mkt-table-wrap .mkt-ct {
+  min-width: 32rem;
+}
+
 /* Header */
 .marketing-site .mkt-header {
   position: sticky;
@@ -871,24 +892,7 @@
   flex-wrap: wrap;
 }
 
-@media (max-width: 900px) {
-  .marketing-site .mkt-g2,
-  .marketing-site .mkt-g2t,
-  .marketing-site .mkt-g3,
-  .marketing-site .mkt-g6 {
-    grid-template-columns: 1fr;
-    gap: 1.875rem;
-  }
-
-  .marketing-site .mkt-stats {
-    grid-template-columns: 1fr 1fr;
-    gap: 2.125rem;
-  }
-
-  .marketing-site .mkt-ftg {
-    grid-template-columns: 1fr 1fr;
-  }
-
+@media (max-width: 1024px) {
   .marketing-site .mkt-nav {
     display: none;
   }
@@ -899,11 +903,13 @@
     top: 4.75rem;
     left: 0;
     right: 0;
+    z-index: 50;
     background: var(--mkt-surface);
     flex-direction: column;
     padding: 1.375rem 2.125rem;
     gap: 1.1875rem;
     border-bottom: 1px solid var(--mkt-line);
+    box-shadow: 0 12px 24px rgba(18, 22, 28, 0.08);
   }
 
   .marketing-site .mkt-menu-btn {
@@ -913,13 +919,182 @@
   .marketing-site .mkt-hdr-cta .mkt-btn-ghost {
     display: none;
   }
+}
+
+@media (max-width: 900px) {
+  .marketing-site .mkt-g2,
+  .marketing-site .mkt-g2t {
+    grid-template-columns: 1fr;
+    gap: 1.875rem;
+  }
+
+  .marketing-site .mkt-g3,
+  .marketing-site .mkt-g6 {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.25rem;
+  }
+
+  .marketing-site .mkt-stats {
+    grid-template-columns: 1fr 1fr;
+    gap: 2.125rem;
+  }
+
+  .marketing-site .mkt-ftg {
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+  }
 
   .marketing-site .mkt-section {
     padding: 3.875rem 0;
   }
 
+  .marketing-site .mkt-section-tight {
+    padding: 2.75rem 0;
+  }
+
+  .marketing-site .mkt-hero {
+    padding: 3.5rem 0 3rem;
+  }
+
+  .marketing-site .mkt-page-hd {
+    padding-top: 3rem;
+  }
+
   .marketing-site .mkt-step {
     grid-template-columns: 2.75rem 1fr;
     gap: 1rem;
+  }
+
+  .marketing-site .mkt-card-dark.p-11,
+  .marketing-site .mkt-card-amber.p-11 {
+    padding: 2rem !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .marketing-site .mkt-g3,
+  .marketing-site .mkt-g6 {
+    grid-template-columns: 1fr;
+  }
+
+  .marketing-site .mkt-stats {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+
+  .marketing-site .mkt-ftg {
+    grid-template-columns: 1fr;
+    gap: 1.75rem;
+  }
+
+  .marketing-site .mkt-footer {
+    padding-top: 2.5rem;
+  }
+
+  .marketing-site .mkt-section {
+    padding: 2.75rem 0;
+  }
+
+  .marketing-site .mkt-hero {
+    padding: 2.5rem 0 2rem;
+  }
+
+  .marketing-site h1 {
+    font-size: clamp(1.875rem, 8vw, 2.375rem);
+  }
+
+  .marketing-site h2 {
+    font-size: clamp(1.5rem, 6vw, 1.875rem);
+  }
+
+  .marketing-site .mkt-lead {
+    font-size: 1.0625rem;
+  }
+
+  .marketing-site .mkt-actions .mkt-btn-lg,
+  .marketing-site .mkt-hero .mkt-btn-lg,
+  .marketing-site .mkt-actions-center .mkt-btn-lg {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .marketing-site .mkt-ptop {
+    flex-wrap: wrap;
+  }
+
+  .marketing-site .mkt-ptop > div:nth-child(2) {
+    flex: 1 1 calc(100% - 4.5rem);
+    min-width: 0;
+  }
+
+  .marketing-site .mkt-rt {
+    margin-left: 0;
+    width: 100%;
+    display: flex;
+    align-items: baseline;
+    gap: 0.25rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid var(--mkt-line);
+    margin-top: 0.25rem;
+    text-align: left;
+  }
+
+  .marketing-site .mkt-scr-n {
+    width: 5.5rem;
+    font-size: 0.75rem;
+  }
+
+  .marketing-site .mkt-avl {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
+  }
+
+  .marketing-site .mkt-pacts .mkt-btn {
+    flex: 1 1 100%;
+    justify-content: center;
+  }
+
+  .marketing-site .mkt-pb {
+    padding: 1.125rem;
+  }
+
+  .marketing-site .mkt-dtag {
+    padding: 0.625rem 1rem;
+    font-size: 0.625rem;
+    line-height: 1.4;
+  }
+
+  .marketing-site .mkt-tk li {
+    font-size: 0.96875rem;
+  }
+
+  .marketing-site .mkt-pull {
+    padding-left: 1rem;
+    font-size: 1.125rem;
+  }
+
+  .marketing-site .mkt-hdr {
+    height: 4rem;
+  }
+
+  .marketing-site .mkt-nav.open {
+    top: 4rem;
+  }
+
+  .marketing-site .mkt-stat-v {
+    font-size: 2rem;
+  }
+
+  .marketing-site .mkt-ev {
+    gap: 0.75rem;
+  }
+}
+
+@media (max-width: 380px) {
+  .marketing-site .mkt-hdr-cta .mkt-btn-primary.mkt-btn-sm {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+    font-size: 0.8125rem;
   }
 }

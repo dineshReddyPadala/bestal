@@ -85,7 +85,7 @@ export function RatesPage() {
               </span>
             ))}
           </div>
-          <div className="mt-9 flex flex-wrap gap-3">
+          <div className="mkt-actions mt-9">
             <Link to="/sample-talent" className="mkt-btn mkt-btn-primary">
               Browse talent by rate
             </Link>

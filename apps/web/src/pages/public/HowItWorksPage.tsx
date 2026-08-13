@@ -77,23 +77,25 @@ export function HowItWorksPage() {
       <section className="mkt-section">
         <MktWrap className="max-w-[860px]">
           <h2>What you control</h2>
-          <table className="mkt-ct mt-[30px]">
-            <thead>
-              <tr>
-                <th>You control</th>
-                <th>We handle</th>
-              </tr>
-            </thead>
-            <tbody>
-              {CONTROL_TABLE.youControl.map((you, index) => (
-                <tr key={you}>
-                  <td>{you}</td>
-                  <td>{CONTROL_TABLE.weHandle[index]}</td>
+          <div className="mkt-table-wrap mt-[30px]">
+            <table className="mkt-ct">
+              <thead>
+                <tr>
+                  <th>You control</th>
+                  <th>We handle</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-          <div className="mt-9 flex flex-wrap gap-3">
+              </thead>
+              <tbody>
+                {CONTROL_TABLE.youControl.map((you, index) => (
+                  <tr key={you}>
+                    <td>{you}</td>
+                    <td>{CONTROL_TABLE.weHandle[index]}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className="mkt-actions mt-9">
             <Link to="/sample-talent" className="mkt-btn mkt-btn-primary">
               Browse Engineers
             </Link>

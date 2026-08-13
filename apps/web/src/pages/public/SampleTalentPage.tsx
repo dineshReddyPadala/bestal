@@ -26,7 +26,7 @@ export function SampleTalentPage() {
           The engineers below are fictional. They show the structure and depth of the evidence, not
           current capacity.
         </p>
-        <div className="mt-[30px] flex flex-wrap gap-3">
+        <div className="mkt-actions mt-[30px]">
           <Link to="/login" className="mkt-btn mkt-btn-primary mkt-btn-lg">
             Create a company account
           </Link>

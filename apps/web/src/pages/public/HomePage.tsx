@@ -38,7 +38,7 @@ export function HomePage() {
               their test results, their rate and their start date up front — then try them{' '}
               <em className="mkt-hl">free for 20 hours</em> before you commit.
             </p>
-            <div className="mt-9 flex flex-wrap gap-3">
+            <div className="mkt-actions mt-9">
               <Link to="/sample-talent" className="mkt-btn mkt-btn-primary mkt-btn-lg">
                 Browse Engineers
               </Link>
@@ -244,7 +244,7 @@ export function HomePage() {
             Browse engineers by discipline and time zone, or tell us what you need and we&apos;ll
             match against it.
           </p>
-          <div className="mt-[34px] flex flex-wrap justify-center gap-3">
+          <div className="mkt-actions mkt-actions-center mt-[34px]">
             <Link to="/sample-talent" className="mkt-btn mkt-btn-primary mkt-btn-lg">
               Browse Engineers
             </Link>

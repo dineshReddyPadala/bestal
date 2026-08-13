@@ -103,7 +103,7 @@ export function TryForAWeekPage() {
           <p className="mkt-big mt-5">
             No renegotiation. No retention conversation. A trial that ends did its job.
           </p>
-          <div className="mt-9 flex flex-wrap gap-3">
+          <div className="mkt-actions mt-9">
             <Link to="/sample-talent" className="mkt-btn mkt-btn-amber mkt-btn-lg">
               Browse trial-ready engineers
             </Link>
