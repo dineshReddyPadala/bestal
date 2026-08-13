@@ -79,7 +79,6 @@ export function RequestDeploymentDialog({
       }}
       title={`Request deployment — ${candidateName}`}
       className="max-w-2xl"
-      scrollable
       footer={
         <>
           <Button variant="outline" onClick={onClose} disabled={submitting}>

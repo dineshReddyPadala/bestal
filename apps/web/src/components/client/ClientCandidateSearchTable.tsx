@@ -109,13 +109,8 @@ function ClientCandidateSearchTableRow({
           )}
         </div>
       </td>
-      <td className="whitespace-nowrap px-3 py-3 text-sm text-muted-foreground">
-        {record.yearsExperience != null ? `${record.yearsExperience} yrs` : '—'}
-      </td>
       <td className="whitespace-nowrap px-3 py-3 text-sm font-semibold tabular-nums">
-        {record.hourlyRate != null
-          ? formatCurrency(record.hourlyRate, record.currency)
-          : '—'}
+        {formatCurrency(record.hourlyRate, record.currency)}
         <span className="text-xs font-normal text-muted-foreground">/hr</span>
       </td>
       <td className="hidden max-w-[9rem] truncate px-3 py-3 text-sm text-muted-foreground xl:table-cell">
@@ -203,9 +198,6 @@ export function ClientCandidateSearchTable({
                 scope="col"
               >
                 Top Skills
-              </th>
-              <th className="px-3 py-2.5 text-xs font-semibold text-muted-foreground" scope="col">
-                Experience
               </th>
               <th className="px-3 py-2.5 text-xs font-semibold text-muted-foreground" scope="col">
                 Rate

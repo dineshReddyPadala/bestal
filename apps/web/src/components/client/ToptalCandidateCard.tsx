@@ -192,14 +192,12 @@ export function ToptalCandidateCard({
 
           <div className="flex shrink-0 flex-wrap items-center gap-2 text-sm sm:flex-col sm:items-end sm:gap-0.5 sm:text-right">
             <span className="font-semibold tabular-nums text-foreground">
-              {record.bestalScore ?? '—'}
+              {record.bestalScore}
               <span className="ml-1 text-[10px] font-normal text-muted-foreground">score</span>
             </span>
             <span className="text-xs">{record.availability}</span>
             <span className="text-xs font-medium">
-              {record.hourlyRate != null
-                ? `${formatCurrency(record.hourlyRate, record.currency)}/hr`
-                : '—'}
+              {formatCurrency(record.hourlyRate, record.currency)}/hr
             </span>
           </div>
 
@@ -301,7 +299,7 @@ export function ToptalCandidateCard({
               Score
             </p>
             <p className="mt-0.5 text-xl font-bold tabular-nums tracking-tight text-foreground">
-              {record.bestalScore ?? '—'}
+              {record.bestalScore}
             </p>
           </div>
           <div className="text-right">
@@ -309,9 +307,7 @@ export function ToptalCandidateCard({
               Rate
             </p>
             <p className="mt-0.5 text-sm font-semibold tabular-nums text-foreground">
-              {record.hourlyRate != null
-                ? formatCurrency(record.hourlyRate, record.currency)
-                : '—'}
+              {formatCurrency(record.hourlyRate, record.currency)}
               <span className="text-xs font-normal text-muted-foreground">/hr</span>
             </p>
             <p className="mt-0.5 text-[10px] text-muted-foreground">{record.availability}</p>

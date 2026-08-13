@@ -330,7 +330,6 @@ export type CandidateListItem = {
   currentCompany?: string | null;
   currentTitle?: string | null;
   bestalScore?: number | null;
-  reliabilityScore?: number | null;
   clientBillRate?: number | null;
   currency?: string | null;
   availabilityStatus?: string | null;

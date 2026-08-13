@@ -98,7 +98,6 @@ export const candidateWizardFormSchema = z.object({
   pricingNotes: z.string().max(2000).optional().nullable(),
   trialEligible: z.boolean().optional(),
   bestalScore: optionalNumber,
-  reliabilityScore: optionalNumber,
   technicalScore: optionalNumber,
   communicationScore: optionalNumber,
   problemSolvingScore: optionalNumber,
@@ -258,7 +257,6 @@ export const candidateWizardDefaults: CandidateWizardFormValues = {
   pricingNotes: '',
   trialEligible: false,
   bestalScore: undefined,
-  reliabilityScore: undefined,
   technicalScore: undefined,
   communicationScore: undefined,
   problemSolvingScore: undefined,
@@ -590,7 +588,6 @@ export const USER_FIELD_LABELS: Record<keyof CandidateWizardFormValues, string> 
   pricingNotes: 'Pricing Notes',
   trialEligible: 'Trial Eligible',
   bestalScore: 'BesTal Score',
-  reliabilityScore: 'Reliability Score',
   technicalScore: 'Technical Score',
   communicationScore: 'Communication',
   problemSolvingScore: 'Problem Solving',
@@ -727,8 +724,7 @@ export function mapWizardToApiCreateBody(
   const expectedRate = finiteNumberOrUndefined(form.expectedRate);
   const payRate = finiteNumberOrUndefined(form.payRate) ?? expectedRate;
   const bill = finiteNumberOrUndefined(form.billRate);
-  const marginSource = expectedRate ?? payRate;
-  const grossMargin = marginSource != null && bill != null ? bill - marginSource : undefined;
+  const grossMargin = payRate != null && bill != null ? bill - payRate : undefined;
   const aiSummary = form.aiSummary?.trim() || form.summary?.trim() || undefined;
   const primarySkillCommunityId = positiveIdOrUndefined(form.primarySkillCommunityId);
   const skills = mergeWizardSkills(form.skills)
@@ -779,7 +775,6 @@ export function mapWizardToApiCreateBody(
     candidatePayRate: payRate,
     grossMargin: finiteNumberOrUndefined(grossMargin),
     bestalScore: finiteNumberOrUndefined(form.bestalScore),
-    reliabilityScore: finiteNumberOrUndefined(form.reliabilityScore),
     technicalScore: finiteNumberOrUndefined(form.technicalScore),
     communicationScore: finiteNumberOrUndefined(form.communicationScore),
     evaluationStatus:
@@ -972,7 +967,6 @@ export function mapCandidateDtoToWizardForm(
     candidatePayRate?: number | null;
     grossMargin?: number | null;
     bestalScore?: number | null;
-    reliabilityScore?: number | null;
     technicalScore?: number | null;
     communicationScore?: number | null;
     profileStatus?: string | null;
@@ -1079,7 +1073,6 @@ export function mapCandidateDtoToWizardForm(
     billRate: candidate.clientBillRate ?? undefined,
     payRate: candidate.candidatePayRate ?? undefined,
     bestalScore: candidate.bestalScore ?? undefined,
-    reliabilityScore: candidate.reliabilityScore ?? undefined,
     technicalScore: candidate.technicalScore ?? undefined,
     communicationScore: candidate.communicationScore ?? undefined,
     profileStatus:

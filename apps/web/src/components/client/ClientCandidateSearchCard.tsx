@@ -138,7 +138,7 @@ export function ClientCandidateSearchCard({
           <div className="w-full space-y-1.5 text-center">
             <p className="flex items-center justify-center gap-0.5 text-[11px] font-medium text-foreground">
               <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
-              <span className="tabular-nums">{record.bestalScore ?? '—'}</span>
+              <span className="tabular-nums">{record.bestalScore}</span>
             </p>
             <p className="text-[10px] leading-tight text-muted-foreground">BesTal Score</p>
             <p className="flex items-center justify-center gap-1 text-[10px] text-emerald-700">
@@ -151,9 +151,7 @@ export function ClientCandidateSearchCard({
               {availableNow ? 'Available Now' : record.availability}
             </p>
             <p className="text-xs font-bold tabular-nums text-foreground">
-              {record.hourlyRate != null
-                ? formatCurrency(record.hourlyRate, record.currency)
-                : '—'}
+              {formatCurrency(record.hourlyRate, record.currency)}
               <span className="text-[10px] font-normal text-muted-foreground">/hr</span>
             </p>
           </div>
@@ -161,10 +159,6 @@ export function ClientCandidateSearchCard({
 
         <div className="min-w-0 flex-1 space-y-1.5">
           <h3 className="truncate text-sm font-semibold text-brand">{record.fullName}</h3>
-
-          {record.yearsExperience != null ? (
-            <p className="text-xs text-muted-foreground">{record.yearsExperience} yrs experience</p>
-          ) : null}
 
           {record.headline ? (
             <p className="line-clamp-2 text-xs text-muted-foreground">{record.headline}</p>

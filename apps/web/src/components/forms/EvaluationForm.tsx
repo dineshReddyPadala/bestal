@@ -27,7 +27,6 @@ const evaluationFormSchema = z.object({
   architectureScore: optionalScore,
   problemSolvingScore: optionalScore,
   clientReadinessScore: optionalScore,
-  reliabilityScore: optionalScore,
   recommendation: z.enum(EVALUATION_RECOMMENDATIONS).optional(),
   evaluatorComments: z.string().max(5000).optional(),
   aiEvaluationSummary: z.string().max(5000).optional(),
@@ -199,17 +198,6 @@ export function EvaluationForm({
                 max={100}
                 placeholder="0–100"
                 {...register('clientReadinessScore', { valueAsNumber: true })}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="reliabilityScore">Reliability</Label>
-              <Input
-                id="reliabilityScore"
-                type="number"
-                min={0}
-                max={100}
-                placeholder="0–100"
-                {...register('reliabilityScore', { valueAsNumber: true })}
               />
             </div>
           </div>

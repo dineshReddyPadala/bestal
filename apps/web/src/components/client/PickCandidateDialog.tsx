@@ -49,9 +49,7 @@ export function PickCandidateDialog({
       );
     }
 
-    return [...rows].sort(
-      (a, b) => (b.bestalScore ?? -1) - (a.bestalScore ?? -1),
-    );
+    return [...rows].sort((a, b) => b.bestalScore - a.bestalScore);
   }, [apiCandidates, query, trialEligibleOnly, excludeIds]);
 
   return (
@@ -93,7 +91,7 @@ export function PickCandidateDialog({
                     </span>
                     <p className="truncate text-sm text-muted-foreground">{candidate.role}</p>
                     <p className="text-xs text-muted-foreground">
-                      Score {candidate.bestalScore ?? '—'} · {candidate.community}
+                      Score {candidate.bestalScore} · {candidate.community}
                     </p>
                   </div>
                 </button>

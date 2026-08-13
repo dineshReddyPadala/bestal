@@ -33,10 +33,9 @@ import { ToastHost } from '../../components/ui/ToastHost';
 const VIEW_MODE_STORAGE_KEY = 'client-search-view-mode';
 
 function readStoredViewMode(): ClientSearchViewMode {
-  if (typeof window === 'undefined') return 'cards';
+  if (typeof window === 'undefined') return 'list';
   const stored = window.localStorage.getItem(VIEW_MODE_STORAGE_KEY);
-  if (stored === 'cards' || stored === 'list') return stored;
-  return window.matchMedia('(min-width: 768px)').matches ? 'list' : 'cards';
+  return stored === 'cards' ? 'cards' : 'list';
 }
 
 export function CandidateSearchPage() {

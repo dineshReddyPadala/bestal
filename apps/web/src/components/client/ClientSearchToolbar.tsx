@@ -3,7 +3,6 @@ import { Button, SearchInput } from '@bestal/ui';
 import { ChevronDown, LayoutGrid, List, RotateCcw, X } from 'lucide-react';
 import {
   clearFilterChip,
-  CLIENT_SEARCH_SCORE_FILTER_OPTIONS,
   CLIENT_SEARCH_SORT_OPTIONS,
   countActiveFilters,
   DEFAULT_CLIENT_SEARCH_FILTERS,
@@ -88,32 +87,13 @@ export function ClientSearchToolbar({
   return (
     <div className={cn('space-y-3', className)}>
       <div className="flex flex-wrap items-center gap-2 lg:flex-nowrap">
-        <div className="grid min-w-0 flex-1 grid-cols-2 items-center gap-2 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-6">
+        <div className="grid min-w-0 flex-1 grid-cols-2 items-center gap-2 sm:grid-cols-3 lg:grid-cols-[repeat(4,minmax(0,1fr))_minmax(10rem,1fr)]">
           <FilterSelect
             value={filters.community}
             onChange={(value) => set({ community: value })}
             options={[
               { value: 'all', label: 'All Commun..' },
               ...communityOptions.map((community) => ({ value: community, label: community })),
-            ]}
-          />
-          <FilterSelect
-            value={String(filters.minScore)}
-            onChange={(value) => set({ minScore: Number(value) })}
-            options={CLIENT_SEARCH_SCORE_FILTER_OPTIONS.map((option) => ({
-              value: option.value,
-              label: option.label,
-            }))}
-          />
-          <FilterSelect
-            value={filters.rate}
-            onChange={(value) => set({ rate: value })}
-            options={[
-              { value: 'all', label: 'Any rate' },
-              { value: '0-100', label: '<$100/hr' },
-              { value: '0-130', label: 'Under $130/hr' },
-              { value: '130-160', label: '$130–160/hr' },
-              { value: '160-999', label: '$160+/hr' },
             ]}
           />
           <FilterSelect
@@ -127,13 +107,14 @@ export function ClientSearchToolbar({
             ]}
           />
           <FilterSelect
-            value={filters.availability}
-            onChange={(value) => set({ availability: value })}
+            value={filters.rate}
+            onChange={(value) => set({ rate: value })}
             options={[
-              { value: 'all', label: 'Any availability' },
-              { value: 'IMMEDIATE', label: 'Immediate' },
-              { value: 'WITHIN_2_WEEKS', label: 'Within 2 weeks' },
-              { value: 'NOT_AVAILABLE', label: 'Not available' },
+              { value: 'all', label: 'Any rate' },
+              { value: '0-100', label: '<$100/hr' },
+              { value: '0-130', label: 'Under $130/hr' },
+              { value: '130-160', label: '$130–160/hr' },
+              { value: '160-999', label: '$160+/hr' },
             ]}
           />
           <FilterSelect
@@ -147,6 +128,21 @@ export function ClientSearchToolbar({
               })),
             ]}
           />
+          <label className="col-span-2 flex h-9 items-center gap-2 rounded-lg border border-border/80 bg-background px-3 text-sm shadow-sm sm:col-span-1 lg:col-span-1">
+            <span className="shrink-0 text-muted-foreground">Score</span>
+            <input
+              type="range"
+              min={0}
+              max={95}
+              step={5}
+              value={filters.minScore}
+              onChange={(event) => set({ minScore: Number(event.target.value) })}
+              className="min-w-0 flex-1 accent-brand"
+            />
+            <span className="w-8 shrink-0 text-right text-xs font-semibold tabular-nums">
+              {filters.minScore}+
+            </span>
+          </label>
         </div>
 
         <div className="flex shrink-0 items-center gap-3">
@@ -188,7 +184,7 @@ export function ClientSearchToolbar({
         </div>
       ) : null}
 
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-nowrap items-center gap-2">
         <SearchInput
           placeholder="Name, role, skill or any other"
           value={filters.query}
