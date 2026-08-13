@@ -198,11 +198,6 @@ export function SuperAdminRolesPage() {
       error={isError ? (error instanceof Error ? error.message : 'Failed') : null}
       loading={isLoading}
       loadingLabel="Loading roles…"
-      actions={
-        <Button size="sm" onClick={() => setCreateOpen(true)}>
-          Create role
-        </Button>
-      }
     >
       <TanStackDataTable
         key={search}
@@ -216,6 +211,11 @@ export function SuperAdminRolesPage() {
         stickyHeader
         fillHeight
         dense
+        toolbar={
+          <Button size="sm" onClick={() => setCreateOpen(true)}>
+            Create role
+          </Button>
+        }
       />
       {confirmDialog}
       <Dialog

@@ -31,6 +31,7 @@ type ClientManagementViewProps = {
 const defaultFilters = {
   industry: 'all',
   status: 'all',
+  accountManager: 'all',
 };
 
 function slugify(value: string): string {
@@ -123,8 +124,13 @@ export function ClientManagementView({
   const [filters, setFilters] = useState(defaultFilters);
   const [formOpen, setFormOpen] = useState<FormMode | null>(null);
   const [editingRecord, setEditingRecord] = useState<ClientListItem | null>(null);
-  const { searchInput, setSearchInput, search, searchParam } = useDebouncedSearch();
+  const { searchInput, setSearchInput, search } = useDebouncedSearch();
   const mutations = useClientMutations();
+
+  const { data: accountManagersData } = useQuery({
+    queryKey: [...queryKeys.clients.all, 'account-managers'] as const,
+    queryFn: async () => (await clientsApi.listAccountManagers()).data,
+  });
 
   const { data: editingClient } = useQuery({
     queryKey: queryKeys.clients.detail(editingRecord?.id ?? 0),
@@ -136,10 +142,13 @@ export function ClientManagementView({
     () => ({
       limit: 100,
       sort: '-createdAt',
-      ...searchParam,
       status: filters.status === 'all' ? undefined : filters.status,
+      accountManagerId:
+        filters.accountManager !== 'all' && filters.accountManager !== 'none'
+          ? Number(filters.accountManager)
+          : undefined,
     }),
-    [filters.status, searchParam],
+    [filters.status, filters.accountManager],
   );
 
   const { data, isLoading, isError, error } = useClientsList(listParams);
@@ -149,8 +158,22 @@ export function ClientManagementView({
     if (filters.industry !== 'all') {
       rows = rows.filter((r) => (r.industry ?? '') === filters.industry);
     }
+    if (filters.accountManager === 'none') {
+      rows = rows.filter((r) => !r.accountManagerName?.trim());
+    }
+
+    const q = search.trim().toLowerCase();
+    if (q) {
+      rows = rows.filter((r) =>
+        [r.name, r.industry ?? '', r.contactEmail ?? '', r.accountManagerName ?? '']
+          .join(' ')
+          .toLowerCase()
+          .includes(q),
+      );
+    }
+
     return rows;
-  }, [data, filters.industry]);
+  }, [data, filters.industry, filters.accountManager, search]);
 
   const industries = useMemo(() => {
     const set = new Set<string>();
@@ -159,6 +182,11 @@ export function ClientManagementView({
     }
     return [...set].sort();
   }, [data]);
+
+  const accountManagerOptions = useMemo(
+    () => accountManagersData ?? [],
+    [accountManagersData],
+  );
 
   const handleAction = useCallback(
     (record: ClientListItem, action: ClientAction) => {
@@ -328,7 +356,6 @@ export function ClientManagementView({
           stickyHeader
           fillHeight
           dense
-          filtersInline
           emptyTitle="No clients yet"
           emptyDescription="Create a client to start engagement workflows."
           onRowClick={
@@ -371,17 +398,22 @@ export function ClientManagementView({
                   { value: 'SUSPENDED', label: 'Suspended' },
                 ]}
               />
+              <ListingFilterSelect
+                label="ACCOUNT MANAGER"
+                value={filters.accountManager}
+                onChange={(v) => setFilters((prev) => ({ ...prev, accountManager: v }))}
+                className="w-[200px] min-w-[160px]"
+                options={[
+                  { value: 'all', label: 'All managers' },
+                  { value: 'none', label: 'Unassigned' },
+                  ...accountManagerOptions.map((manager) => ({
+                    value: String(manager.id),
+                    label: manager.label,
+                  })),
+                ]}
+              />
             </ListingFiltersRow>
           }
-          globalFilterFn={(row, _columnId, filterValue) => {
-            const q = String(filterValue).toLowerCase().trim();
-            if (!q) return true;
-            const r = row.original;
-            return [r.name, r.industry ?? '', r.contactEmail ?? '', r.accountManagerName ?? '']
-              .join(' ')
-              .toLowerCase()
-              .includes(q);
-          }}
         />
       </ListingPageShell>
 

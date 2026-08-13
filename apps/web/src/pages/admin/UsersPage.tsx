@@ -151,18 +151,6 @@ export function UsersPage() {
         loading={isLoading}
         loadingLabel="Loading users…"
         error={isError ? (error instanceof Error ? error.message : 'Failed to load users') : null}
-        actions={
-          <>
-            <Button variant="outline" size="sm" onClick={() => setBulkOpen(true)}>
-              <Upload className="mr-1.5 h-3.5 w-3.5" />
-              Bulk upload
-            </Button>
-            <Button size="sm" onClick={() => setInviteOpen(true)}>
-              <UserPlus className="mr-1.5 h-3.5 w-3.5" />
-              Invite user
-            </Button>
-          </>
-        }
       >
         <TanStackDataTable
           key={search}
@@ -177,6 +165,18 @@ export function UsersPage() {
           fillHeight
           dense
           filtersInline
+          toolbar={
+            <>
+              <Button variant="outline" size="sm" onClick={() => setBulkOpen(true)}>
+                <Upload className="mr-1.5 h-3.5 w-3.5" />
+                Bulk upload
+              </Button>
+              <Button size="sm" onClick={() => setInviteOpen(true)}>
+                <UserPlus className="mr-1.5 h-3.5 w-3.5" />
+                Invite user
+              </Button>
+            </>
+          }
         />
       </ListingPageShell>
 

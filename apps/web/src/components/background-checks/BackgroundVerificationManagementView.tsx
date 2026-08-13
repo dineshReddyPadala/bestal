@@ -136,11 +136,10 @@ export function BackgroundVerificationManagementView({
   const { message, show, showError } = useDemoToast();
   const queryClient = useQueryClient();
   const { canUploadBgv } = usePermissions();
-  const { searchInput, setSearchInput, search, searchParam } = useDebouncedSearch();
+  const { searchInput, setSearchInput, search } = useDebouncedSearch();
   const { data, isLoading, isError, error } = useBackgroundChecksList({
     limit: 100,
     sort: '-createdAt',
-    ...searchParam,
   });
   const { data: candidatesData } = useCandidatesList({ limit: 100 });
   const mutations = useBackgroundCheckMutations();
@@ -222,13 +221,23 @@ export function BackgroundVerificationManagementView({
     let rows = [...records];
     if (filters.status !== 'all') rows = rows.filter((r) => r.status === filters.status);
     if (filters.type !== 'all') rows = rows.filter((r) => r.type === filters.type);
+
+    const q = search.trim().toLowerCase();
+    if (q) {
+      rows = rows.filter((r) =>
+        [r.candidateName, r.provider, r.vendor].some((field) =>
+          String(field ?? '').toLowerCase().includes(q),
+        ),
+      );
+    }
+
     rows.sort((a, b) => {
       const aTime = new Date(a.initiatedAt ?? a.requestedAt ?? a.createdAt).getTime() || 0;
       const bTime = new Date(b.initiatedAt ?? b.requestedAt ?? b.createdAt).getTime() || 0;
       return bTime - aTime;
     });
     return rows;
-  }, [records, filters]);
+  }, [records, filters, search]);
 
   const currentStep = detail ? getBgvWorkflowStep(detail) : 'consent';
   const detailIsImported = detail ? isImportedBgv(detail) : false;
@@ -820,14 +829,6 @@ export function BackgroundVerificationManagementView({
               />
             </ListingFiltersRow>
           }
-          globalFilterFn={(row, _columnId, filterValue) => {
-            const q = String(filterValue).toLowerCase().trim();
-            if (!q) return true;
-            const r = row.original;
-            return [r.candidateName, r.provider ?? r.vendor, r.status, r.type].some((field) =>
-              String(field ?? '').toLowerCase().includes(q),
-            );
-          }}
         />
       </ListingPageShell>
 
