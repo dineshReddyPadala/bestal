@@ -223,12 +223,6 @@ export function SuperAdminUsersPage() {
         error={isError ? (error instanceof Error ? error.message : 'Failed to load') : null}
         loading={isLoading}
         loadingLabel="Loading users…"
-        actions={
-          <Button size="sm" onClick={() => navigate('/super-admin/users/new')}>
-            <UserPlus className="mr-1.5 h-3.5 w-3.5" />
-            Create user
-          </Button>
-        }
       >
         <div className="mb-4">
           {roleFilter ? (
@@ -252,6 +246,12 @@ export function SuperAdminUsersPage() {
           stickyHeader
           fillHeight
           dense
+          toolbar={
+            <Button size="sm" onClick={() => navigate('/super-admin/users/new')}>
+              <UserPlus className="mr-1.5 h-3.5 w-3.5" />
+              Create user
+            </Button>
+          }
         />
       </ListingPageShell>
       {confirmDialog}

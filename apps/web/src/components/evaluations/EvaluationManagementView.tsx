@@ -62,11 +62,10 @@ export function EvaluationManagementView({
   const { message, show } = useDemoToast();
   const { canUploadEvaluation } = usePermissions();
   const [searchParams] = useSearchParams();
-  const { searchInput, setSearchInput, search, searchParam } = useDebouncedSearch();
+  const { searchInput, setSearchInput, search } = useDebouncedSearch();
   const { data, isLoading, isError, error } = useEvaluationsList({
     limit: 100,
     sort: '-createdAt',
-    ...searchParam,
   });
   const { data: candidatesData } = useCandidatesList({ limit: 100 });
   const mutations = useEvaluationMutations();
@@ -124,11 +123,6 @@ export function EvaluationManagementView({
   const isEditMode = editingEvaluationId != null;
   const canSaveEvaluation = isEditMode || canCreateEvaluation;
 
-  const candidateNames = useMemo(
-    () => [...new Set(records.map((r) => r.candidateName))].sort(),
-    [records],
-  );
-
   const evaluatorNames = useMemo(
     () => [...new Set(records.map((r) => r.evaluatorName))].sort(),
     [records],
@@ -180,12 +174,21 @@ export function EvaluationManagementView({
       }
     }
 
+    const q = search.trim().toLowerCase();
+    if (q) {
+      rows = rows.filter((r) =>
+        [r.candidateName, r.evaluatorName, r.evaluationType, r.recommendation].some((field) =>
+          String(field ?? '').toLowerCase().includes(q),
+        ),
+      );
+    }
+
     rows.sort(
       (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
     );
 
     return rows;
-  }, [records, filters, searchParams]);
+  }, [records, filters, search, searchParams]);
 
   const resetCreateForm = useCallback(() => {
     setSelectedCandidateId('');
@@ -615,19 +618,6 @@ export function EvaluationManagementView({
           }
           filters={
             <ListingFiltersRow>
-              <label className="flex min-w-[180px] flex-1 flex-col gap-1">
-                <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-                  Candidate
-                </span>
-                <SearchableSelect
-                  value={filters.candidate}
-                  onChange={(v) => updateFilter('candidate', v)}
-                  options={[
-                    { value: 'all', label: 'All candidates' },
-                    ...candidateNames.map((c) => ({ value: c, label: c })),
-                  ]}
-                />
-              </label>
               <ListingFilterSelect
                 label="EVALUATOR"
                 value={filters.evaluator}
@@ -665,17 +655,6 @@ export function EvaluationManagementView({
               />
             </ListingFiltersRow>
           }
-          globalFilterFn={(row, _columnId, filterValue) => {
-            const q = String(filterValue).toLowerCase().trim();
-            if (!q) return true;
-            const r = row.original;
-            return [
-              r.candidateName,
-              r.evaluatorName,
-              r.evaluationType,
-              r.recommendation,
-            ].some((field) => String(field ?? '').toLowerCase().includes(q));
-          }}
         />
       </ListingPageShell>
 
