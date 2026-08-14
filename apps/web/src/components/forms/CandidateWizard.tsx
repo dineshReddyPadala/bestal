@@ -666,27 +666,30 @@ function AvailabilityTab() {
 
 function PricingTab() {
   const { register, watch } = useFormContext<CandidateWizardFormValues>();
-  const { canViewPayRate } = usePermissions();
   const payRate = watch('payRate');
+  const expectedRate = watch('expectedRate');
   const billRate = watch('billRate');
-  const pay = typeof payRate === 'number' && Number.isFinite(payRate) ? payRate : null;
+  const pay =
+    typeof payRate === 'number' && Number.isFinite(payRate)
+      ? payRate
+      : typeof expectedRate === 'number' && Number.isFinite(expectedRate)
+        ? expectedRate
+        : null;
   const bill = typeof billRate === 'number' && Number.isFinite(billRate) ? billRate : null;
   const margin = pay != null && bill != null ? bill - pay : null;
 
   return (
     <SectionCard title="Pricing (Internal Only)">
       <div className="grid gap-4 sm:grid-cols-3">
-        {canViewPayRate && (
-          <FormField label="Candidate Pay Rate ($/hr)" name="payRate">
-            <Input
-              id="payRate"
-              type="number"
-              min={0}
-              step={0.01}
-              {...register('payRate', { valueAsNumber: true })}
-            />
-          </FormField>
-        )}
+        <FormField label="Candidate Pay Rate ($/hr)" name="payRate">
+          <Input
+            id="payRate"
+            type="number"
+            min={0}
+            step={0.01}
+            {...register('payRate', { valueAsNumber: true })}
+          />
+        </FormField>
         <FormField label="Client Bill Rate ($/hr)" name="billRate">
           <Input
             id="billRate"

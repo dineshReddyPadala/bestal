@@ -152,6 +152,15 @@ export const listCandidatesQuerySchema = z.object({
     },
     z.boolean().optional(),
   ),
+  archived: z.preprocess(
+    (v) => {
+      if (v === undefined || v === null || v === '') return undefined;
+      if (v === true || v === 'true' || v === '1' || v === 1) return true;
+      if (v === false || v === 'false' || v === '0' || v === 0) return false;
+      return v;
+    },
+    z.boolean().optional(),
+  ),
 });
 
 export const rejectCandidateBodySchema = z.object({

@@ -173,12 +173,6 @@ export function DeploymentsPage() {
                   onSelect: () => setViewDeploymentId(row.original.id),
                 },
                 {
-                  id: 'view-candidate',
-                  label: 'View candidate profile',
-                  href: `/client/candidates/${row.original.candidateId}`,
-                  separatorBefore: true,
-                },
-                {
                   id: 'extend',
                   label: 'Extend',
                   hidden: !canExtend,

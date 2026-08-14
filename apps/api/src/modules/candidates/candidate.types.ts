@@ -159,6 +159,8 @@ export interface CandidateListFilters {
   clientView?: boolean;
   /** When true, only candidates submitted for admin approval. */
   pendingApproval?: boolean;
+  /** When true, only archived (inactive) candidates; when false, exclude archived. */
+  archived?: boolean;
 }
 
 export interface CreateCandidateSkillInput {

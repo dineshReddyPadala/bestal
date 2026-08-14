@@ -282,7 +282,7 @@ export function AddCandidatePage() {
         show(existingDraftId || isEdit ? 'Candidate updated' : 'Draft saved');
       }
 
-      if (isEdit && !options.submit) {
+      if (isEdit && !options.submit && !options.silent) {
         navigate(`${basePath}/candidates`);
         return true;
       }

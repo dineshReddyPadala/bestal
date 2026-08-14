@@ -56,6 +56,7 @@ export async function adminRoutes(fastify: FastifyInstance): Promise<void> {
   app.patch('/candidates/:id/hide', { ...secure, schema: { tags: ['Admin'], params: adminIdParamSchema, security: [{ bearerAuth: [] }] } }, controller.hideCandidate);
   app.patch('/candidates/:id/publish', { ...secure, schema: { tags: ['Admin'], params: adminIdParamSchema, security: [{ bearerAuth: [] }] } }, controller.publishCandidate);
   app.patch('/candidates/:id/archive', { ...secure, schema: { tags: ['Admin'], params: adminIdParamSchema, security: [{ bearerAuth: [] }] } }, controller.archiveCandidate);
+  app.patch('/candidates/:id/unarchive', { ...secure, schema: { tags: ['Admin'], params: adminIdParamSchema, security: [{ bearerAuth: [] }] } }, controller.unarchiveCandidate);
   app.patch('/candidates/:id/pricing', { ...secure, schema: { tags: ['Admin'], params: adminIdParamSchema, security: [{ bearerAuth: [] }] } }, controller.updateCandidatePricing);
   app.patch('/candidates/:id/send-back', { ...secure, schema: { tags: ['Admin'], params: adminIdParamSchema, security: [{ bearerAuth: [] }] } }, controller.sendBackCandidate);
 

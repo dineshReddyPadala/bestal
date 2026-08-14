@@ -171,8 +171,13 @@ export function SuperAdminUsersPage() {
                   description: `A temporary password reset email will be sent to ${r.email}.`,
                   confirmLabel: 'Reset Password',
                   onConfirm: async () => {
-                    await mutations.resetUserPassword.mutateAsync(r.id);
-                    show('Password reset emailed');
+                    const result = await mutations.resetUserPassword.mutateAsync(r.id);
+                    show(
+                      result.emailSent
+                        ? 'Password reset emailed'
+                        : 'Password reset — email was not sent (check SMTP / FROM_MAIL settings)',
+                      result.emailSent ? 'success' : 'error',
+                    );
                   },
                   onError: showError,
                 }),
@@ -186,17 +191,16 @@ export function SuperAdminUsersPage() {
                   description: `A new invitation email with login credentials will be sent to ${r.email}.`,
                   confirmLabel: 'Resend Invitation',
                   onConfirm: async () => {
-                    await mutations.resendInvite.mutateAsync(r.id);
-                    show('Invitation resent');
+                    const result = await mutations.resendInvite.mutateAsync(r.id);
+                    show(
+                      result.emailSent
+                        ? 'Invitation resent'
+                        : 'Invitation not sent — email delivery failed (check SMTP settings)',
+                      result.emailSent ? 'success' : 'error',
+                    );
                   },
                   onError: showError,
                 }),
-            },
-            {
-              id: 'audit',
-              label: 'View Audit History',
-              href: '/super-admin/audit-logs',
-              separatorBefore: true,
             },
           ];
 

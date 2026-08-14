@@ -135,6 +135,18 @@ export class CandidateController {
     return reply.status(200).send({ data });
   };
 
+  archive = async (request: FastifyRequest, reply: FastifyReply) => {
+    const { id } = request.params as { id: number };
+    const data = await this.candidateService.archive(request.authUser!, id);
+    return reply.status(200).send({ data });
+  };
+
+  unarchive = async (request: FastifyRequest, reply: FastifyReply) => {
+    const { id } = request.params as { id: number };
+    const data = await this.candidateService.unarchive(request.authUser!, id);
+    return reply.status(200).send({ data });
+  };
+
   approve = async (request: FastifyRequest, reply: FastifyReply) => {
     const { id } = request.params as { id: number };
     const data = await this.candidateService.approve(request.authUser!, id);

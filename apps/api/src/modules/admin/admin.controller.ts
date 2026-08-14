@@ -250,6 +250,16 @@ export class AdminController {
     return reply.send({ data });
   };
 
+  unarchiveCandidate = async (request: FastifyRequest, reply: FastifyReply) => {
+    const { id } = request.params as { id: number };
+    const data = await this.admin.unarchiveCandidate(
+      request.authUser!,
+      id,
+      this.ctx(request),
+    );
+    return reply.send({ data });
+  };
+
   updateCandidatePricing = async (request: FastifyRequest, reply: FastifyReply) => {
     const { id } = request.params as { id: number };
     const data = await this.admin.updateCandidatePricing(

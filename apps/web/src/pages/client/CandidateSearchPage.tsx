@@ -63,6 +63,7 @@ export function CandidateSearchPage() {
   const searchParam = filters.query.trim() || undefined;
   const { data: apiCandidates, isLoading } = useCandidatesList({
     limit: 100,
+    sort: '-publishedAt',
     search: searchParam,
   });
 

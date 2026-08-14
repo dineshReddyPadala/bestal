@@ -2,7 +2,7 @@ import type { NavItem } from './types.js';
 
 export const salesNav = [
   { id: 'dashboard', label: 'Dashboard', href: '/sales', icon: 'layout-dashboard' },
-  { id: 'clients', label: 'Client Accounts', href: '/sales/clients', icon: 'briefcase' },
+  { id: 'clients', label: 'Clients', href: '/sales/clients', icon: 'briefcase' },
   { id: 'candidates', label: 'Candidates', href: '/sales/candidates', icon: 'users' },
   { id: 'trials', label: 'Trial Requests', href: '/sales/trials', icon: 'flask-conical', badge: 3 },
   { id: 'deployments', label: 'Deployments', href: '/sales/deployments', icon: 'rocket' },

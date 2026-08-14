@@ -907,6 +907,7 @@ export class CandidateService {
       skillCommunityId: query.skillCommunityId,
       clientView,
       pendingApproval: query.pendingApproval,
+      archived: query.archived,
     });
 
     const data = await Promise.all(
@@ -1076,7 +1077,26 @@ export class CandidateService {
     return this.toDto(updated, authUser);
   }
 
-  async approve(authUser: AuthenticatedUser, id: number): Promise<CandidateDto> {
+  async archive(authUser: AuthenticatedUser, id: number): Promise<CandidateDto> {
+    const organizationId = this.requireOrganization(authUser);
+    await this.getCandidateOrThrow(organizationId, id);
+    const updated = await this.candidateRepository.archive(organizationId, id);
+    await this.writeCandidateAudit(authUser, 'UPDATE', id, 'Archived candidate');
+    return this.toDto(updated, authUser);
+  }
+
+  async unarchive(authUser: AuthenticatedUser, id: number): Promise<CandidateDto> {
+    const organizationId = this.requireOrganization(authUser);
+    const candidate = await this.getCandidateOrThrow(organizationId, id);
+    if (candidate.profileStatus !== 'INACTIVE') {
+      throw new BadRequestError('Candidate is not archived');
+    }
+    const updated = await this.candidateRepository.unarchive(organizationId, id);
+    await this.writeCandidateAudit(authUser, 'UPDATE', id, 'Unarchived candidate');
+    return this.toDto(updated, authUser);
+  }
+
+  async approveInternal(authUser: AuthenticatedUser, id: number): Promise<CandidateDto> {
     const organizationId = this.requireOrganization(authUser);
     const candidate = await this.getCandidateOrThrow(organizationId, id);
 
@@ -1087,8 +1107,38 @@ export class CandidateService {
       id,
       authUser.id,
     );
-    await this.writeCandidateAudit(authUser, 'APPROVE', id, 'Approved candidate profile');
+    await this.writeCandidateAudit(
+      authUser,
+      'APPROVE',
+      id,
+      'Approved candidate profile (internal only)',
+    );
     return this.toDto(updated, authUser);
+  }
+
+  async approveAndPublish(authUser: AuthenticatedUser, id: number): Promise<CandidateDto> {
+    const organizationId = this.requireOrganization(authUser);
+    const candidate = await this.getCandidateOrThrow(organizationId, id);
+
+    assertCanApprove(this.toPipelineSnapshot(candidate));
+
+    const updated = await this.candidateRepository.approveAndPublish(
+      organizationId,
+      id,
+      authUser.id,
+    );
+    await this.writeCandidateAudit(
+      authUser,
+      'APPROVE',
+      id,
+      'Approved and published candidate to client portal',
+    );
+    return this.toDto(updated, authUser);
+  }
+
+  /** Approve and publish — visible on the client portal (matches candidates:approve permission). */
+  async approve(authUser: AuthenticatedUser, id: number): Promise<CandidateDto> {
+    return this.approveAndPublish(authUser, id);
   }
 
   async reject(

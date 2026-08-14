@@ -246,7 +246,8 @@ export function SuperAdminCandidateDetailPage() {
         <Section title="Pricing (internal)">
           <KV label="Bill rate" value={c.clientBillRate != null ? `$${c.clientBillRate}` : '—'} />
           <KV label="Pay rate" value={c.candidatePayRate != null ? `$${c.candidatePayRate}` : '—'} />
-          <KV label="Gross margin" value={c.grossMargin != null ? `$${c.grossMargin}` : '—'} />
+          <KV label="Expected rate" value={c.expectedRate != null ? `$${c.expectedRate}` : '—'} />
+          <KV label="Gross margin ($/hr)" value={c.grossMargin != null ? `$${c.grossMargin}` : '—'} />
         </Section>
 
         <Section title="Availability">
