@@ -268,6 +268,8 @@ export const candidatesApi = {
     apiAction<CandidateDto>(`/candidates/${id}/send-back`, reason ? { reason } : {}),
   publish: (id: number) => apiAction<CandidateDto>(`/candidates/${id}/publish`),
   hide: (id: number) => apiAction<CandidateDto>(`/candidates/${id}/hide`),
+  archive: (id: number) => apiAction<CandidateDto>(`/candidates/${id}/archive`),
+  unarchive: (id: number) => apiAction<CandidateDto>(`/candidates/${id}/unarchive`),
   runAiScreening: (id: number, body?: Record<string, unknown>) =>
     apiAction<CandidateDto>(`/candidates/${id}/pipeline/ai-screening`, body ?? {}),
   completeRecruiterReview: (id: number, body?: Record<string, unknown>) =>

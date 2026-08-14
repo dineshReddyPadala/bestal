@@ -179,6 +179,30 @@ export class CandidateRepository extends BaseRepository {
     });
   }
 
+  archive(organizationId: number, id: number): Promise<CandidateRecord> {
+    return this.prisma.candidate.update({
+      where: { id: BigInt(id), organizationId: BigInt(organizationId) },
+      data: {
+        status: 'INACTIVE',
+        visibility: 'HIDDEN',
+        profileStatus: 'INACTIVE',
+      },
+      include: candidateInclude,
+    });
+  }
+
+  unarchive(organizationId: number, id: number): Promise<CandidateRecord> {
+    return this.prisma.candidate.update({
+      where: { id: BigInt(id), organizationId: BigInt(organizationId) },
+      data: {
+        status: 'ACTIVE',
+        visibility: 'INTERNAL_ONLY',
+        profileStatus: 'RECRUITER_SCREENED',
+      },
+      include: candidateInclude,
+    });
+  }
+
   approve(
     organizationId: number,
     id: number,
@@ -189,6 +213,30 @@ export class CandidateRepository extends BaseRepository {
       data: {
         approvalStatus: 'APPROVED',
         profileStatus: 'ADMIN_APPROVED',
+        approvedAt: new Date(),
+        approvedById: BigInt(approvedById),
+        rejectedAt: null,
+        rejectedById: null,
+        rejectionReason: null,
+      },
+      include: candidateInclude,
+    });
+  }
+
+  /** Admin approval with immediate client portal visibility. */
+  approveAndPublish(
+    organizationId: number,
+    id: number,
+    approvedById: number,
+  ): Promise<CandidateRecord> {
+    return this.prisma.candidate.update({
+      where: { id: BigInt(id), organizationId: BigInt(organizationId) },
+      data: {
+        approvalStatus: 'APPROVED',
+        profileStatus: 'CLIENT_VISIBLE',
+        visibility: 'CLIENT_VISIBLE',
+        publishedAt: new Date(),
+        hiddenAt: null,
         approvedAt: new Date(),
         approvedById: BigInt(approvedById),
         rejectedAt: null,
@@ -330,6 +378,7 @@ export class CandidateRepository extends BaseRepository {
     if (filters.clientView) {
       where.visibility = 'CLIENT_VISIBLE';
       where.approvalStatus = 'APPROVED';
+      where.status = 'ACTIVE';
     } else if (filters.pendingApproval) {
       where.approvalStatus = 'PENDING';
       where.submittedForApprovalAt = { not: null };
@@ -345,6 +394,13 @@ export class CandidateRepository extends BaseRepository {
 
     if (filters.status) {
       where.status = filters.status;
+    }
+
+    if (filters.archived === true) {
+      where.profileStatus = 'INACTIVE';
+      where.status = 'INACTIVE';
+    } else if (filters.archived === false) {
+      where.NOT = { profileStatus: 'INACTIVE' };
     }
 
     if (filters.source) {

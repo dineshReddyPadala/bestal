@@ -2,11 +2,13 @@ import { Button, Dialog, Select, StatusBadge, TanStackDataTable } from '@bestal/
 import { type ColumnDef } from '@tanstack/react-table';
 import { Plus } from 'lucide-react';
 import { useMemo, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Link, useNavigate } from 'react-router-dom';
 import { ListingPageShell } from '../../components/layout/ListingPageShell';
 import { ActionMenu, type ActionMenuItem } from '../../components/super-admin/ActionMenu';
 import { useConfirmAction } from '../../components/super-admin/useConfirmAction';
-import { useAdminClients, useAdminMutations, useAdminUsers } from '../../hooks/api/useAdmin';
+import { useAdminClients, useAdminMutations } from '../../hooks/api/useAdmin';
+import { clientsApi } from '../../lib/api/clients';
 import { useDebouncedSearch } from '../../hooks/useDebouncedSearch';
 import { useDemoToast } from '../../lib/use-demo-toast';
 
@@ -28,26 +30,13 @@ export function SuperAdminClientsPage() {
   const { requestConfirm, confirmDialog } = useConfirmAction();
   const { searchInput, setSearchInput, search, searchParam } = useDebouncedSearch();
   const { data, isLoading, isError, error } = useAdminClients({ limit: 100, ...searchParam });
-  const { data: usersData } = useAdminUsers({ limit: 200, sort: 'firstName' });
+  const { data: managersData } = useQuery({
+    queryKey: ['clients', 'account-managers'],
+    queryFn: async () => (await clientsApi.listAccountManagers()).data,
+  });
   const mutations = useAdminMutations();
   const rows = (data?.data ?? []) as unknown as Row[];
-  const managerUsers = useMemo(
-    () =>
-      ((usersData?.data ?? []) as Array<{
-        id: number;
-        role: string | null;
-        email?: string | null;
-        isActive?: boolean;
-        firstName?: string;
-        lastName?: string;
-      }>).filter(
-        (u) =>
-          u.isActive !== false &&
-          u.role != null &&
-          ['ADMIN', 'RECRUITER', 'SALES'].includes(String(u.role)),
-      ),
-    [usersData],
-  );
+  const managerUsers = managersData ?? [];
 
   const [assignTarget, setAssignTarget] = useState<Row | null>(null);
   const [selectedManagerId, setSelectedManagerId] = useState('');
@@ -245,8 +234,7 @@ export function SuperAdminClientsPage() {
             <option value="">— Unassigned —</option>
             {managerUsers.map((u) => (
               <option key={String(u.id)} value={String(u.id)}>
-                {String(u.firstName)} {String(u.lastName)} ({String(u.email)}) —{' '}
-                {String(u.role)}
+                {u.label}
               </option>
             ))}
           </Select>

@@ -1,8 +1,10 @@
 import { Button, Input, PageHeader, Select } from '@bestal/ui';
 import { useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useConfirmAction } from '../../components/super-admin/useConfirmAction';
-import { useAdminClient, useAdminMutations, useAdminUsers } from '../../hooks/api/useAdmin';
+import { useAdminClient, useAdminMutations } from '../../hooks/api/useAdmin';
+import { clientsApi } from '../../lib/api/clients';
 import { useDemoToast } from '../../lib/use-demo-toast';
 
 const REQUIRED_FIELDS = [
@@ -25,11 +27,12 @@ export function SuperAdminClientFormPage() {
   const { show, showError } = useDemoToast();
   const { requestConfirm, confirmDialog } = useConfirmAction();
   const { data, isLoading } = useAdminClient(clientId);
-  const { data: usersData } = useAdminUsers({ limit: 200, sort: 'firstName' });
+  const { data: managersData } = useQuery({
+    queryKey: ['clients', 'account-managers'],
+    queryFn: async () => (await clientsApi.listAccountManagers()).data,
+  });
   const mutations = useAdminMutations();
-  const managers = ((usersData?.data ?? []) as Array<Record<string, unknown>>).filter(
-    (u) => u.role !== 'SUPER_ADMIN' && u.role !== 'CLIENT' && u.isActive !== false,
-  );
+  const managers = managersData ?? [];
 
   const [form, setForm] = useState({
     companyName: '',
@@ -215,7 +218,7 @@ export function SuperAdminClientFormPage() {
             <option value="">— None —</option>
             {managers.map((m) => (
               <option key={String(m.id)} value={String(m.id)}>
-                {String(m.firstName)} {String(m.lastName)} — {String(m.role)}
+                {m.label}
               </option>
             ))}
           </Select>

@@ -178,6 +178,7 @@ export function parseSortParam(
       case 'visibility':
       case 'approvalStatus':
       case 'yearsExperience':
+      case 'publishedAt':
       case 'createdAt':
       case 'updatedAt':
         return { [key]: direction };

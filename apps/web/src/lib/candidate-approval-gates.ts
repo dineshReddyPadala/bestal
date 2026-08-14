@@ -85,8 +85,11 @@ export function canPublish(input: ApprovalGateInput): ApprovalGateResult {
   if (evaluationStatus !== 'COMPLETED') {
     blockers.push('Evaluation must be completed');
   }
-  if (!isBgvClear(bgvStatus)) {
-    blockers.push('Background verification must be clear');
+  if (bgvStatus === 'NOT_STARTED') {
+    blockers.push('Background verification must be requested');
+  }
+  if (bgvStatus === 'FAILED') {
+    blockers.push('Background verification failed');
   }
 
   return { allowed: blockers.length === 0, blockers };

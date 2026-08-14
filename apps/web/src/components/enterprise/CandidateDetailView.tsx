@@ -251,6 +251,8 @@ export function CandidateDetailView({ candidateId, basePath }: CandidateDetailVi
 
   const billRate = candidate.clientBillRate ?? null;
   const payRate = candidate.candidatePayRate ?? null;
+  const expectedRate = candidate.expectedRate ?? null;
+  const grossMarginPerHour = candidate.grossMargin ?? null;
   const marginPercent =
     billRate != null && payRate != null && billRate > 0
       ? Number((((billRate - payRate) / billRate) * 100).toFixed(1))
@@ -306,8 +308,22 @@ export function CandidateDetailView({ candidateId, basePath }: CandidateDetailVi
     { key: 'bill', label: 'Bill Rate', value: billRate, format: 'currency', currency },
     { key: 'pay', label: 'Pay Rate', value: payRate, format: 'currency', currency },
     {
+      key: 'expected',
+      label: 'Expected Rate',
+      value: expectedRate,
+      format: 'currency',
+      currency,
+    },
+    {
+      key: 'margin-hr',
+      label: 'Gross Margin ($/hr)',
+      value: grossMarginPerHour,
+      format: 'currency',
+      currency,
+    },
+    {
       key: 'margin',
-      label: 'Margin',
+      label: 'Margin %',
       value: marginPercent != null ? `${marginPercent}%` : null,
     },
   ];

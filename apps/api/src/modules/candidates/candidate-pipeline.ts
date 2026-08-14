@@ -226,8 +226,11 @@ export function assertCanPublish(candidate: PipelineCandidateSnapshot): void {
   if (candidate.evaluationStatus !== 'COMPLETED') {
     throw new BadRequestError('Evaluation must be completed before publishing');
   }
-  if (!isBgvClear(candidate.bgvStatus)) {
-    throw new BadRequestError('Background verification must be clear before publishing');
+  if (!candidate.bgvStatus || candidate.bgvStatus === 'NOT_STARTED') {
+    throw new BadRequestError('Background verification must be started before publishing');
+  }
+  if (candidate.bgvStatus === 'FAILED') {
+    throw new BadRequestError('Background verification failed — cannot publish');
   }
 }
 
