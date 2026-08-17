@@ -12,7 +12,7 @@ import {
   requireOrganization,
 } from '../../utils/index.js';
 import { EmailService } from '../../services/email.service.js';
-import { notifyCandidateSentBack } from '../../services/notification-events.js';
+import { notifyCandidateApproved, notifyCandidateSentBack } from '../../services/notification-events.js';
 import { buildPaginationMeta } from '../../validators/common.validator.js';
 import { CandidateService } from '../candidates/candidate.service.js';
 import { ClientService } from '../clients/client.service.js';
@@ -449,7 +449,7 @@ export class AdminService {
         : user.role === 'SUPER_ADMIN'
           ? '/admin/login'
           : `/${String(user.role ?? 'recruiter').toLowerCase()}/login`;
-    await this.email.sendInviteCredentials({
+    const emailResult = await this.email.sendInviteCredentials({
       to: user.email,
       firstName: user.firstName,
       lastName: user.lastName,
@@ -459,7 +459,11 @@ export class AdminService {
       portalLoginUrl: `${this.fastify.config.webAppUrl}${portalPath}`,
     });
     await this.auditWrite(authUser, 'UPDATE', 'User', id, `Reset password for ${user.email}`, undefined, ctx);
-    return { message: 'Password reset and emailed', email: user.email };
+    return {
+      message: emailResult.sent ? 'Password reset and emailed' : 'Password reset (email not sent — check SMTP settings)',
+      email: user.email,
+      emailSent: emailResult.sent,
+    };
   }
 
   async resendInvite(authUser: AuthenticatedUser, id: number) {
@@ -630,6 +634,12 @@ export class AdminService {
     if (query.evaluationStatus) where.evaluationStatus = String(query.evaluationStatus);
     if (query.bgvStatus) where.bgvStatus = String(query.bgvStatus);
     if (query.profileStatus) where.profileStatus = query.profileStatus as never;
+    if (query.archived === true || query.archived === 'true') {
+      where.profileStatus = 'INACTIVE';
+      where.status = 'INACTIVE';
+    } else if (query.archived === false || query.archived === 'false') {
+      where.NOT = { profileStatus: 'INACTIVE' };
+    }
     if (query.visibilityStatus) where.visibility = query.visibilityStatus as never;
     if (query.search) {
       const q = String(query.search);
@@ -802,23 +812,19 @@ export class AdminService {
     ctx?: { ipAddress?: string | null; userAgent?: string | null },
   ) {
     const organizationId = requireOrganization(authUser);
-    const approved = await this.candidates.approve(authUser, id);
-    if (mode === 'publish') {
-      try {
-        await this.candidates.publish(authUser, id);
-      } catch {
-        // publish may fail gates — approval still stands
-      }
-    }
+    const result =
+      mode === 'internal'
+        ? await this.candidates.approveInternal(authUser, id)
+        : await this.candidates.approveAndPublish(authUser, id);
     await this.auditWrite(authUser, 'APPROVE', 'Candidate', id, `Approved candidate ${id} (${mode})`, { mode }, ctx);
-    await this.notifyStaff(
+    void notifyCandidateApproved(this.prisma, this.fastify.config, {
       organizationId,
-      authUser.id,
-      'Candidate approved',
-      `Candidate #${id} was approved (${mode}).`,
-      `/super-admin/candidates/${id}`,
-    );
-    return approved;
+      candidateId: id,
+      candidateName: `${result.firstName} ${result.lastName}`.trim(),
+      approvedById: authUser.id,
+      createdById: result.createdById,
+    });
+    return result;
   }
 
   async rejectCandidate(
@@ -859,6 +865,30 @@ export class AdminService {
       data: { status: 'INACTIVE', visibility: 'HIDDEN', profileStatus: 'INACTIVE' },
     });
     await this.auditWrite(authUser, 'UPDATE', 'Candidate', id, 'Archived candidate', undefined, ctx);
+    return this.getCandidateDetail(authUser, id);
+  }
+
+  async unarchiveCandidate(authUser: AuthenticatedUser, id: number, ctx?: { ipAddress?: string | null; userAgent?: string | null }) {
+    const organizationId = requireOrganization(authUser);
+    const existing = await this.prisma.candidate.findFirst({
+      where: { id: BigInt(id), organizationId: BigInt(organizationId), deletedAt: null },
+      select: { profileStatus: true },
+    });
+    if (!existing) {
+      throw new NotFoundError('Candidate not found');
+    }
+    if (existing.profileStatus !== 'INACTIVE') {
+      throw new BadRequestError('Candidate is not archived');
+    }
+    await this.prisma.candidate.updateMany({
+      where: { id: BigInt(id), organizationId: BigInt(organizationId), deletedAt: null },
+      data: {
+        status: 'ACTIVE',
+        visibility: 'INTERNAL_ONLY',
+        profileStatus: 'RECRUITER_SCREENED',
+      },
+    });
+    await this.auditWrite(authUser, 'UPDATE', 'Candidate', id, 'Unarchived candidate', undefined, ctx);
     return this.getCandidateDetail(authUser, id);
   }
 

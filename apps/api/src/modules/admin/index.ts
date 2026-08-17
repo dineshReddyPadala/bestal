@@ -56,6 +56,7 @@ export async function adminRoutes(fastify: FastifyInstance): Promise<void> {
   app.patch('/candidates/:id/hide', { ...secure, schema: { tags: ['Admin'], params: adminIdParamSchema, security: [{ bearerAuth: [] }] } }, controller.hideCandidate);
   app.patch('/candidates/:id/publish', { ...secure, schema: { tags: ['Admin'], params: adminIdParamSchema, security: [{ bearerAuth: [] }] } }, controller.publishCandidate);
   app.patch('/candidates/:id/archive', { ...secure, schema: { tags: ['Admin'], params: adminIdParamSchema, security: [{ bearerAuth: [] }] } }, controller.archiveCandidate);
+  app.patch('/candidates/:id/unarchive', { ...secure, schema: { tags: ['Admin'], params: adminIdParamSchema, security: [{ bearerAuth: [] }] } }, controller.unarchiveCandidate);
   app.patch('/candidates/:id/pricing', { ...secure, schema: { tags: ['Admin'], params: adminIdParamSchema, security: [{ bearerAuth: [] }] } }, controller.updateCandidatePricing);
   app.patch('/candidates/:id/send-back', { ...secure, schema: { tags: ['Admin'], params: adminIdParamSchema, security: [{ bearerAuth: [] }] } }, controller.sendBackCandidate);
 
@@ -113,6 +114,7 @@ export async function adminRoutes(fastify: FastifyInstance): Promise<void> {
   app.put('/settings/commercials', { ...secure, schema: { tags: ['Admin'], security: [{ bearerAuth: [] }] } }, controller.putSetting('commercials'));
   app.put('/settings/workflows', { ...secure, schema: { tags: ['Admin'], security: [{ bearerAuth: [] }] } }, controller.putSetting('workflows'));
   app.put('/settings/localization', { ...secure, schema: { tags: ['Admin'], security: [{ bearerAuth: [] }] } }, controller.putSetting('localization'));
+  app.put('/settings/storage', { ...secure, schema: { tags: ['Admin'], security: [{ bearerAuth: [] }] } }, controller.putSetting('storage'));
 
   app.get('/communication-templates', { ...secure, schema: { tags: ['Admin'], security: [{ bearerAuth: [] }] } }, controller.listCommunicationTemplates);
   app.put('/communication-templates', { ...secure, schema: { tags: ['Admin'], security: [{ bearerAuth: [] }] } }, controller.upsertCommunicationTemplate);

@@ -28,10 +28,20 @@ export const adminApi = {
     );
     return json.data;
   },
-  resetUserPassword: (id: number) =>
-    apiAction<Record<string, unknown>>(`/admin/users/${id}/reset-password`),
-  resendInvite: (id: number) =>
-    apiAction<Record<string, unknown>>(`/admin/users/${id}/resend-invite`),
+  resetUserPassword: async (id: number) => {
+    const json = await apiRequest<{ data: { message: string; emailSent?: boolean } }>(
+      `/admin/users/${id}/reset-password`,
+      { method: 'POST', body: {} },
+    );
+    return json.data;
+  },
+  resendInvite: async (id: number) => {
+    const json = await apiRequest<{ data: { message: string; emailSent?: boolean } }>(
+      `/admin/users/${id}/resend-invite`,
+      { method: 'POST', body: {} },
+    );
+    return json.data;
+  },
   deleteUser: (id: number) =>
     apiRequest<{ data: { message: string } }>(`/admin/users/${id}`, { method: 'DELETE' }),
 
@@ -104,6 +114,13 @@ export const adminApi = {
   archiveCandidate: async (id: number) => {
     const json = await apiRequest<{ data: Record<string, unknown> }>(
       `/admin/candidates/${id}/archive`,
+      { method: 'PATCH', body: {} },
+    );
+    return json.data;
+  },
+  unarchiveCandidate: async (id: number) => {
+    const json = await apiRequest<{ data: Record<string, unknown> }>(
+      `/admin/candidates/${id}/unarchive`,
       { method: 'PATCH', body: {} },
     );
     return json.data;
@@ -254,7 +271,8 @@ export const adminApi = {
       | 'integrations'
       | 'commercials'
       | 'workflows'
-      | 'localization',
+      | 'localization'
+      | 'storage',
     body: unknown,
   ) => {
     const json = await apiRequest<{ data: Record<string, unknown> }>(`/admin/settings/${key}`, {

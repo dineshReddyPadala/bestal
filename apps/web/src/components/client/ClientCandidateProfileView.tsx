@@ -26,6 +26,8 @@ type ClientCandidateProfileViewProps = {
   onPilot?: () => void;
   canRequestTrial?: boolean;
   canRequestDeployment?: boolean;
+  trialBlockReason?: string | null;
+  deploymentBlockReason?: string | null;
 };
 
 const PROFICIENCY_SCORE: Record<string, number> = {
@@ -115,11 +117,15 @@ export function ClientCandidateProfileView({
   onPilot,
   canRequestTrial = true,
   canRequestDeployment = true,
+  trialBlockReason = null,
+  deploymentBlockReason = null,
 }: ClientCandidateProfileViewProps) {
   const rateLabel = `${formatCurrency(profile.billRate, profile.currency)}/hr`;
   const trialHandler = onTrial ?? onPilot;
-  const trialEnabled = profile.trialEligible && canRequestTrial;
-  const deployEnabled = Boolean(onRequestDeployment) && canRequestDeployment;
+  const trialEnabled =
+    profile.trialEligible && canRequestTrial && !trialBlockReason;
+  const deployEnabled =
+    Boolean(onRequestDeployment) && canRequestDeployment && !deploymentBlockReason;
   const companyLine = [profile.currentCompany, profile.currentTitle].filter(Boolean).join(' | ');
   const timezoneLabel =
     profile.availabilityDetail.timezone.replace(/_/g, ' ') || profile.location;
@@ -331,6 +337,8 @@ export function ClientCandidateProfileView({
                 title={
                   trialEnabled
                     ? 'Request a trial'
+                    : trialBlockReason
+                      ? trialBlockReason
                     : !canRequestTrial
                       ? 'Your login is not linked to a client account'
                       : 'Candidate is not yet trial eligible'
@@ -348,6 +356,8 @@ export function ClientCandidateProfileView({
                   title={
                     deployEnabled
                       ? 'Request deployment'
+                      : deploymentBlockReason
+                        ? deploymentBlockReason
                       : !canRequestDeployment
                         ? 'Your login is not linked to a client account or lacks deploy permission'
                         : 'Request deployment'

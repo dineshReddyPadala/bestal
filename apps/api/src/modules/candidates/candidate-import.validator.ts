@@ -3,14 +3,18 @@ import {
   BGV_SHEET_COLUMNS,
   CANDIDATE_REQUIRED_FIELDS,
   CANDIDATE_SHEET_COLUMNS,
+  DEPRECATED_SCORES_SHEET_COLUMNS,
   EVALUATION_SHEET_COLUMNS,
   IMPORT_AVAILABILITY_STATUSES,
+  IMPORT_BGV_PER_CHECK_STATUSES,
+  IMPORT_BGV_PACKAGE_TYPES,
   IMPORT_BGV_STATUSES,
   IMPORT_CANDIDATE_SOURCES,
   IMPORT_CURRENCIES,
   IMPORT_DATA_SHEETS,
   IMPORT_EVALUATION_TYPES,
   IMPORT_PREFERRED_ENGAGEMENTS,
+  IMPORT_PREFERRED_SHIFTS,
   IMPORT_PROFICIENCY_LEVELS,
   IMPORT_RECOMMENDATION_VALUES,
   IMPORT_SKILL_COMMUNITY_ALIASES,
@@ -22,7 +26,6 @@ import {
   SKILLS_SHEET_COLUMNS,
   normalizeEvaluationRecommendation,
   normalizeEvaluationType,
-  parseNoticePeriodToDays,
 } from '@bestal/shared-utils';
 import type {
   CandidateAvailabilityStatus,
@@ -132,6 +135,20 @@ function readSheetRows(
     }
   }
 
+  if (sheetName === IMPORT_WORKBOOK_SHEETS.SCORES) {
+    for (const deprecated of DEPRECATED_SCORES_SHEET_COLUMNS) {
+      if (headers.includes(deprecated)) {
+        pushError(errors, {
+          sheetName,
+          rowNumber: 1,
+          columnName: deprecated,
+          errorCode: 'DEPRECATED_COLUMN',
+          message: `Column "${deprecated}" was removed from the Scores sheet. Dimension scores belong on the Evaluation sheet. Download the latest import template.`,
+        });
+      }
+    }
+  }
+
   const rows: RawRow[] = [];
   sheet.eachRow({ includeEmpty: false }, (row, rowNumber) => {
     if (rowNumber === 1) return;
@@ -196,6 +213,25 @@ function parseDate(
     return null;
   }
   return value;
+}
+
+function todayUtcDateString(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function isFutureDate(value: string): boolean {
+  return value > todayUtcDateString();
+}
+
+function evaluationRowHasScores(raw: RawRow): boolean {
+  const scoreColumns = [
+    'technical_score',
+    'communication_score',
+    'problem_solving_score',
+    'architecture_score',
+    'client_readiness_score',
+  ] as const;
+  return scoreColumns.some((column) => raw[column]?.trim());
 }
 
 function parseNumber(
@@ -611,7 +647,7 @@ export async function parseAndValidateCandidateWorkbook(
       errors,
       sourceCandidateId,
     );
-    const noticePeriodDaysFromColumn = parseNumber(
+    const noticePeriodDays = parseNumber(
       raw.notice_period_days,
       IMPORT_WORKBOOK_SHEETS.CANDIDATE,
       rowNumber,
@@ -620,14 +656,8 @@ export async function parseAndValidateCandidateWorkbook(
       sourceCandidateId,
       { min: 0, max: 365, integer: true },
     );
-    const noticePeriodDays =
-      noticePeriodDaysFromColumn ??
-      parseNoticePeriodToDays(raw.notice_period) ??
-      null;
     const noticePeriod =
-      noticePeriodDays != null
-        ? `${noticePeriodDays} days`
-        : raw.notice_period?.trim() || null;
+      noticePeriodDays != null ? `${noticePeriodDays} days` : null;
     const minHoursPerWeek = parseNumber(
       raw.min_hours_per_week,
       IMPORT_WORKBOOK_SHEETS.CANDIDATE,
@@ -661,6 +691,15 @@ export async function parseAndValidateCandidateWorkbook(
       IMPORT_WORKBOOK_SHEETS.CANDIDATE,
       rowNumber,
       'preferred_engagement',
+      errors,
+      sourceCandidateId,
+    );
+    assertAllowed(
+      raw.preferred_shift,
+      IMPORT_PREFERRED_SHIFTS,
+      IMPORT_WORKBOOK_SHEETS.CANDIDATE,
+      rowNumber,
+      'preferred_shift',
       errors,
       sourceCandidateId,
     );
@@ -720,7 +759,6 @@ export async function parseAndValidateCandidateWorkbook(
       minHoursPerWeek: minHoursPerWeek ?? hoursPerWeek,
       maxHoursPerWeek: maxHoursPerWeek ?? hoursPerWeek,
       hoursPerWeek,
-      timezoneOverlap: raw.timezone_overlap?.trim() || null,
       resumeUrl: raw.resume_url?.trim() || null,
       skills: [],
       evaluations: [],
@@ -908,6 +946,22 @@ export async function parseAndValidateCandidateWorkbook(
     if (evaluation.aiEvaluationSummary) {
       candidate.hasAiFields = true;
     }
+    if (
+      evaluation.evaluationDate &&
+      evaluationRowHasScores(raw) &&
+      isFutureDate(evaluation.evaluationDate)
+    ) {
+      pushError(errors, {
+        sheetName: IMPORT_WORKBOOK_SHEETS.EVALUATION,
+        rowNumber,
+        sourceCandidateId,
+        columnName: 'evaluation_date',
+        suppliedValue: evaluation.evaluationDate,
+        errorCode: 'FUTURE_EVALUATION_DATE',
+        message:
+          'Evaluation date cannot be in the future when dimension scores are provided.',
+      });
+    }
     candidate.evaluations.push(evaluation);
   }
 
@@ -947,6 +1001,33 @@ export async function parseAndValidateCandidateWorkbook(
       errors,
       sourceCandidateId,
     );
+    assertAllowed(
+      raw.package_type,
+      IMPORT_BGV_PACKAGE_TYPES,
+      IMPORT_WORKBOOK_SHEETS.BGV,
+      rowNumber,
+      'package_type',
+      errors,
+      sourceCandidateId,
+    );
+    for (const column of [
+      'id_check_status',
+      'address_check_status',
+      'employment_check_status',
+      'education_check_status',
+      'criminal_check_status',
+      'reference_check_status',
+    ] as const) {
+      assertAllowed(
+        raw[column],
+        IMPORT_BGV_PER_CHECK_STATUSES,
+        IMPORT_WORKBOOK_SHEETS.BGV,
+        rowNumber,
+        column,
+        errors,
+        sourceCandidateId,
+      );
+    }
     if (candidate.bgv) {
       pushError(errors, {
         sheetName: IMPORT_WORKBOOK_SHEETS.BGV,
@@ -959,6 +1040,7 @@ export async function parseAndValidateCandidateWorkbook(
     }
     const bgv: NormalizedBgvRow = {
       bgvStatus: raw.bgv_status.trim(),
+      packageType: raw.package_type?.trim() || 'COMPREHENSIVE',
       vendor: raw.vendor?.trim() || null,
       idCheckStatus: raw.id_check_status?.trim() || null,
       addressCheckStatus: raw.address_check_status?.trim() || null,
@@ -1033,51 +1115,11 @@ export async function parseAndValidateCandidateWorkbook(
         errors,
         sourceCandidateId,
       ),
-      technicalScore: parseScore(
-        raw.technical_score,
-        IMPORT_WORKBOOK_SHEETS.SCORES,
-        rowNumber,
-        'technical_score',
-        errors,
-        sourceCandidateId,
-      ),
-      communicationScore: parseScore(
-        raw.communication_score,
-        IMPORT_WORKBOOK_SHEETS.SCORES,
-        rowNumber,
-        'communication_score',
-        errors,
-        sourceCandidateId,
-      ),
-      problemSolvingScore: parseScore(
-        raw.problem_solving_score,
-        IMPORT_WORKBOOK_SHEETS.SCORES,
-        rowNumber,
-        'problem_solving_score',
-        errors,
-        sourceCandidateId,
-      ),
-      architectureScore: parseScore(
-        raw.architecture_score,
-        IMPORT_WORKBOOK_SHEETS.SCORES,
-        rowNumber,
-        'architecture_score',
-        errors,
-        sourceCandidateId,
-      ),
       reliabilityScore: parseScore(
         raw.reliability_score,
         IMPORT_WORKBOOK_SHEETS.SCORES,
         rowNumber,
         'reliability_score',
-        errors,
-        sourceCandidateId,
-      ),
-      clientReadinessScore: parseScore(
-        raw.client_readiness_score,
-        IMPORT_WORKBOOK_SHEETS.SCORES,
-        rowNumber,
-        'client_readiness_score',
         errors,
         sourceCandidateId,
       ),
@@ -1091,6 +1133,22 @@ export async function parseAndValidateCandidateWorkbook(
         sourceCandidateId,
       ),
     };
+    if (
+      score.scoreDate &&
+      (score.bestalScore != null || score.reliabilityScore != null) &&
+      isFutureDate(score.scoreDate)
+    ) {
+      pushError(errors, {
+        sheetName: IMPORT_WORKBOOK_SHEETS.SCORES,
+        rowNumber,
+        sourceCandidateId,
+        columnName: 'score_date',
+        suppliedValue: score.scoreDate,
+        errorCode: 'FUTURE_EVALUATION_DATE',
+        message:
+          'Score date cannot be in the future when aggregate scores are provided.',
+      });
+    }
     if (score.scoreSource === 'ATS_AI' || score.scoreSource === 'BESTAL_AI') {
       candidate.hasAiFields = true;
     }

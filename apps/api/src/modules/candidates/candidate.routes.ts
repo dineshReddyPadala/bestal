@@ -369,6 +369,36 @@ export async function candidateRoutes(fastify: FastifyInstance): Promise<void> {
   );
 
   app.post(
+    '/:id/archive',
+    {
+      preHandler: [authenticate, requirePermission(PERMISSIONS.CANDIDATES_WRITE)],
+      schema: {
+        tags: ['Candidates'],
+        summary: 'Archive candidate',
+        security: [{ bearerAuth: [] }],
+        params: candidateIdParamSchema,
+        response: { 200: candidateResponseSchema },
+      },
+    },
+    candidateController.archive,
+  );
+
+  app.post(
+    '/:id/unarchive',
+    {
+      preHandler: [authenticate, requirePermission(PERMISSIONS.CANDIDATES_WRITE)],
+      schema: {
+        tags: ['Candidates'],
+        summary: 'Unarchive candidate',
+        security: [{ bearerAuth: [] }],
+        params: candidateIdParamSchema,
+        response: { 200: candidateResponseSchema },
+      },
+    },
+    candidateController.unarchive,
+  );
+
+  app.post(
     '/:id/approve',
     {
       preHandler: [authenticate, requirePermission(PERMISSIONS.CANDIDATES_APPROVE)],

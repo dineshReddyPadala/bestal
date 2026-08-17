@@ -227,6 +227,10 @@ export function useAdminMutations() {
       mutationFn: (id: number) => adminApi.archiveCandidate(id),
       onSuccess: invalidate,
     }),
+    unarchiveCandidate: useMutation({
+      mutationFn: (id: number) => adminApi.unarchiveCandidate(id),
+      onSuccess: invalidate,
+    }),
     sendBackCandidate: useMutation({
       mutationFn: ({ id, reason }: { id: number; reason?: string }) =>
         adminApi.sendBackCandidate(id, reason),
@@ -307,7 +311,8 @@ export function useAdminMutations() {
           | 'integrations'
           | 'commercials'
           | 'workflows'
-          | 'localization';
+          | 'localization'
+          | 'storage';
         body: unknown;
       }) => adminApi.putSetting(key, body),
       onSuccess: invalidate,

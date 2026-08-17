@@ -124,6 +124,25 @@ export class DeploymentRepository extends BaseRepository {
     });
   }
 
+  findByCandidateClientAndStatuses(
+    organizationId: number,
+    candidateId: number,
+    clientId: number,
+    statuses: Deployment['status'][],
+  ): Promise<DeploymentRecord | null> {
+    return this.prisma.deployment.findFirst({
+      where: {
+        organizationId: BigInt(organizationId),
+        candidateId: BigInt(candidateId),
+        clientId: BigInt(clientId),
+        deletedAt: null,
+        status: { in: statuses },
+      },
+      include: deploymentInclude,
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
   activate(organizationId: number, id: number): Promise<DeploymentRecord> {
     return this.prisma.deployment.update({
       where: {

@@ -13,6 +13,7 @@ import { notificationRoutes } from '../modules/notifications/notification.routes
 import { searchRoutes } from '../modules/search/search.routes.js';
 import { shortlistRoutes } from '../modules/shortlists/shortlist.routes.js';
 import { trialRoutes } from '../modules/trials/trial.routes.js';
+import { jobRequestRoutes, jobRequestPublicRoutes } from '../modules/job-requests/index.js';
 import { userRoutes } from '../modules/users/user.routes.js';
 import { skillCommunityRoutes } from '../modules/skill-communities/skill-community.routes.js';
 import { settingsRoutes } from '../modules/settings/settings.routes.js';
@@ -39,6 +40,8 @@ export async function registerRoutes(fastify: FastifyInstance): Promise<void> {
       await api.register(backgroundCheckRoutes, { prefix: '/background-checks' });
       await api.register(deploymentRoutes, { prefix: '/deployments' });
       await api.register(trialRoutes, { prefix: '/trials' });
+      await api.register(jobRequestRoutes, { prefix: '/job-requests' });
+      await api.register(jobRequestPublicRoutes, { prefix: '/public/job-requests' });
       await api.register(shortlistRoutes, { prefix: '/shortlists' });
       await api.register(searchRoutes, { prefix: '/search' });
       await api.register(notificationRoutes, { prefix: '/notifications' });

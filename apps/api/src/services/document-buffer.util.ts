@@ -16,7 +16,7 @@ export async function readStoredDocumentBuffer(
   config: AppConfig,
   storageService: StorageService,
 ): Promise<DocumentDownloadPayload> {
-  if (config.storage.driver === 'local') {
+  if ((await storageService.getDriver()) === 'local') {
     const filePath = path.join(config.storage.localPath, document.s3Key);
     try {
       const buffer = await readFile(filePath);

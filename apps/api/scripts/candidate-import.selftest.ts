@@ -49,8 +49,13 @@ function baseCandidate(
     currentCompany: null,
     currentTitle: null,
     noticePeriod: null,
+    noticePeriodDays: null,
     preferredShift: null,
-    timezoneOverlap: null,
+    preferredEngagement: null,
+    minHoursPerWeek: null,
+    maxHoursPerWeek: null,
+    hoursPerWeek: null,
+    education: null,
     resumeUrl: null,
     skills: [],
     evaluations: [],
@@ -80,7 +85,7 @@ async function main() {
   assert.equal(parsed.errors.length, 0, JSON.stringify(parsed.errors, null, 2));
 
   assert.equal(IMPORT_UPLOAD_REQUIRED_SHEETS.length, 5);
-  assert.equal(IMPORT_TEMPLATE_SHEETS.length, 15);
+  assert.equal(IMPORT_TEMPLATE_SHEETS.length, 20);
   assert.equal(CANDIDATE_SHEET_COLUMNS[0], 'candidate_id');
   assert.ok(IMPORT_SKILL_COMMUNITIES.includes('Full Stack'));
   assert.equal(IMPORT_WORKBOOK_SHEETS.CANDIDATE, 'Candidate');

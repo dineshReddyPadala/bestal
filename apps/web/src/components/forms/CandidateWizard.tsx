@@ -3,6 +3,7 @@ import {
   CANDIDATE_AVAILABILITY_LABELS,
   CANDIDATE_AVAILABILITY_STATUSES,
   CANDIDATE_PROFILE_STATUS_LABELS,
+  CANDIDATE_SOURCE_OPTIONS,
   CANDIDATE_VISIBILITY_LABELS,
   CANDIDATE_VISIBILITY_STATUSES,
   EVALUATION_RECOMMENDATIONS,
@@ -53,9 +54,11 @@ import {
   candidateWizardFormSchema,
   candidateWizardSaveSchema,
   candidateWizardSubmitSchema,
+  getCandidateSourceLabel,
   PREFERRED_SHIFT_OPTIONS,
   DRAFT_STORAGE_KEY,
   getInitialTabForEntryMethod,
+  validateWizardTabForSave,
   WIZARD_TABS,
   BGV_WIZARD_STATUS_OPTIONS,
   type CandidateEntryMethod,
@@ -313,13 +316,11 @@ function BasicDetailsTab({
           </FormField>
           <FormField label="Source" name="source" required>
             <Select id="source" {...register('source')}>
-              <option value="DIRECT">Direct</option>
-              <option value="REFERRAL">Referral</option>
-              <option value="JOB_BOARD">Job Board</option>
-              <option value="LINKEDIN">LinkedIn</option>
-              <option value="AGENCY">Agency</option>
-              <option value="INTERNAL">Internal</option>
-              <option value="OTHER">Other</option>
+              {CANDIDATE_SOURCE_OPTIONS.map((value) => (
+                <option key={value} value={value}>
+                  {getCandidateSourceLabel(value)}
+                </option>
+              ))}
             </Select>
           </FormField>
         </div>
@@ -665,27 +666,30 @@ function AvailabilityTab() {
 
 function PricingTab() {
   const { register, watch } = useFormContext<CandidateWizardFormValues>();
-  const { canViewPayRate } = usePermissions();
   const payRate = watch('payRate');
+  const expectedRate = watch('expectedRate');
   const billRate = watch('billRate');
-  const pay = typeof payRate === 'number' && Number.isFinite(payRate) ? payRate : null;
+  const pay =
+    typeof payRate === 'number' && Number.isFinite(payRate)
+      ? payRate
+      : typeof expectedRate === 'number' && Number.isFinite(expectedRate)
+        ? expectedRate
+        : null;
   const bill = typeof billRate === 'number' && Number.isFinite(billRate) ? billRate : null;
   const margin = pay != null && bill != null ? bill - pay : null;
 
   return (
     <SectionCard title="Pricing (Internal Only)">
       <div className="grid gap-4 sm:grid-cols-3">
-        {canViewPayRate && (
-          <FormField label="Candidate Pay Rate ($/hr)" name="payRate">
-            <Input
-              id="payRate"
-              type="number"
-              min={0}
-              step={0.01}
-              {...register('payRate', { valueAsNumber: true })}
-            />
-          </FormField>
-        )}
+        <FormField label="Candidate Pay Rate ($/hr)" name="payRate">
+          <Input
+            id="payRate"
+            type="number"
+            min={0}
+            step={0.01}
+            {...register('payRate', { valueAsNumber: true })}
+          />
+        </FormField>
         <FormField label="Client Bill Rate ($/hr)" name="billRate">
           <Input
             id="billRate"
@@ -1058,11 +1062,11 @@ function BackgroundCheckTab({
   const bgvAi = useBgvAiJob();
   const bgvFileName = watch('bgvFileName');
   const aiBgvSummary = watch('aiBgvSummary');
-  const bgvResultSummary = watch('bgvResultSummary');
   const extracting = bgvAi.isRunning;
   const checkType = watch('bgvCheckType');
 
   useEffect(() => {
+    if (!allowAiAnalysis) return;
     if (!checkType) return;
     const checks = getBgvChecksForType(checkType);
     setValue('bgvEmployment', checks.employment);
@@ -1070,7 +1074,7 @@ function BackgroundCheckTab({
     setValue('bgvReference', checks.reference);
     setValue('bgvAddress', checks.address);
     setValue('bgvCriminal', checks.criminal);
-  }, [checkType, setValue]);
+  }, [checkType, setValue, allowAiAnalysis]);
 
   function handleBgvReportSelect(file: File) {
     pendingUploads.current.bgvFile = file;
@@ -1283,13 +1287,6 @@ function BackgroundCheckTab({
           <FormField label="Vendor" name="bgvVendor">
             <Input id="bgvVendor" {...register('bgvVendor')} placeholder="e.g. Checkr, Sterling" />
           </FormField>
-          <FormField label="Requested by" name="bgvRequestedByName">
-            <Input
-              id="bgvRequestedByName"
-              {...register('bgvRequestedByName')}
-              placeholder="Requester full name"
-            />
-          </FormField>
           <FormField label="Package type" name="bgvCheckType">
             <Select id="bgvCheckType" {...register('bgvCheckType')}>
               <option value="COMPREHENSIVE">Comprehensive</option>
@@ -1300,6 +1297,12 @@ function BackgroundCheckTab({
               <option value="IDENTITY">Identity / address</option>
               <option value="CREDIT">Credit</option>
             </Select>
+          </FormField>
+          <FormField label="Initiated date" name="bgvInitiatedDate">
+            <Input id="bgvInitiatedDate" type="date" {...register('bgvInitiatedDate')} />
+          </FormField>
+          <FormField label="Completed date" name="bgvCompletedDate">
+            <Input id="bgvCompletedDate" type="date" {...register('bgvCompletedDate')} />
           </FormField>
         </div>
       </SectionCard>
@@ -1347,16 +1350,15 @@ function BackgroundCheckTab({
 
       <SectionCard title="AI results & notes">
         <div className="space-y-4">
-          {bgvResultSummary?.trim() ? (
-            <div className="rounded-lg border border-border/70 bg-muted/20 p-3">
-              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                Check statuses
-              </p>
-              <pre className="max-h-32 overflow-auto whitespace-pre-wrap text-xs text-foreground">
-                {bgvResultSummary}
-              </pre>
-            </div>
-          ) : null}
+          <FormField label="BGV summary" name="bgvResultSummary">
+            <textarea
+              id="bgvResultSummary"
+              rows={3}
+              className={textareaClass}
+              {...register('bgvResultSummary')}
+              placeholder="Overall BGV summary from import or manual entry"
+            />
+          </FormField>
           <FormField label="AI BGV summary" name="aiBgvSummary">
             <textarea
               id="aiBgvSummary"
@@ -1703,6 +1705,7 @@ export function CandidateWizard({
   const [activeTab, setActiveTab] = useState<WizardTabId>(
     initialTab ?? getInitialTabForEntryMethod(entryMethod),
   );
+  const [isPersisting, setIsPersisting] = useState(false);
   const pendingUploads = useRef<CandidateWizardUploads>(initialUploads ?? {});
   const {
     data: skillCommunities = [],
@@ -1753,7 +1756,10 @@ export function CandidateWizard({
   const isFirstTab = currentTabIndex <= 0;
   const isLastTab = currentTabIndex >= WIZARD_TABS.length - 1;
   const formValues = watchedValues ?? getValues();
-  const submitReady = canSubmitCandidateForApproval(formValues);
+  const submitReady = canSubmitCandidateForApproval(formValues, {
+    importedEdit: wizardMode === 'importedEdit',
+  });
+  const isBusy = isPersisting || isSavingDraft || isSubmitting;
 
   const handleAiScreeningComplete = useCallback(
     (draftId: number, mapped: Partial<CandidateWizardFormValues>) => {
@@ -1772,6 +1778,11 @@ export function CandidateWizard({
 
   async function saveDraft(silent = false): Promise<boolean> {
     const values = getValues();
+    const tabValidation = validateWizardTabForSave(activeTab, values);
+    if (!tabValidation.success) {
+      onToast(tabValidation.message);
+      return false;
+    }
     const parsed = candidateWizardSaveSchema.safeParse(values);
     if (!parsed.success) {
       const first = parsed.error.issues[0];
@@ -1780,11 +1791,16 @@ export function CandidateWizard({
       return false;
     }
     persistLocalDraft();
-    return onSaveDraft(
-      buildCandidatePayload(values),
-      { ...pendingUploads.current },
-      { silent },
-    );
+    setIsPersisting(true);
+    try {
+      return await onSaveDraft(
+        buildCandidatePayload(values),
+        { ...pendingUploads.current },
+        { silent },
+      );
+    } finally {
+      setIsPersisting(false);
+    }
   }
 
   async function goNext() {
@@ -1802,7 +1818,11 @@ export function CandidateWizard({
   }
 
   async function submitForApproval(formValuesToSubmit: CandidateWizardFormValues) {
-    if (!canSubmitCandidateForApproval(formValuesToSubmit)) {
+    if (
+      !canSubmitCandidateForApproval(formValuesToSubmit, {
+        importedEdit: wizardMode === 'importedEdit',
+      })
+    ) {
       onToast(
         'Complete Basic Details (with AI screening), Skills, Availability, Pricing, Evaluation, and Background Verification before submitting',
       );
@@ -1871,10 +1891,6 @@ export function CandidateWizard({
 
             <div>
               <h2 className="text-base font-semibold">{currentTab.label}</h2>
-              <p className="text-sm text-muted-foreground">{currentTab.description}</p>
-              {draftCandidateId ? (
-                <p className="mt-1 text-xs text-muted-foreground">Draft candidate #{draftCandidateId}</p>
-              ) : null}
             </div>
 
             <div>
@@ -1913,30 +1929,30 @@ export function CandidateWizard({
               </div>
               <div className="flex flex-wrap items-center gap-2">
                 {!isFirstTab ? (
-                  <Button type="button" variant="outline" size="sm" onClick={goPrevious}>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={isBusy}
+                    onClick={goPrevious}
+                  >
                     <ChevronLeft className="mr-1 h-4 w-4" />
                     Previous
                   </Button>
                 ) : null}
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  disabled={isSavingDraft || isSubmitting}
-                  onClick={() => void saveDraft()}
-                >
-                  {isSavingDraft ? 'Saving…' : 'Save Draft'}
-                </Button>
                 {!isLastTab ? (
                   <Button
                     type="button"
                     variant="primary"
                     size="sm"
-                    disabled={isSavingDraft || isSubmitting}
+                    disabled={isBusy}
                     onClick={() => void goNext()}
                   >
-                    {isSavingDraft ? (
-                      'Saving…'
+                    {isBusy ? (
+                      <>
+                        <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+                        Saving…
+                      </>
                     ) : (
                       <>
                         Next
@@ -1949,24 +1965,38 @@ export function CandidateWizard({
                     type="button"
                     variant="primary"
                     size="sm"
-                    disabled={isSavingDraft || isSubmitting}
+                    disabled={isBusy}
                     onClick={() => void saveDraft()}
                   >
-                    {isSavingDraft ? 'Updating…' : 'Update'}
+                    {isBusy ? (
+                      <>
+                        <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+                        Updating…
+                      </>
+                    ) : (
+                      'Update'
+                    )}
                   </Button>
                 ) : (
                   <Button
                     type="submit"
                     variant="primary"
                     size="sm"
-                    disabled={!submitReady || isSavingDraft || isSubmitting}
+                    disabled={!submitReady || isBusy}
                     title={
                       submitReady
                         ? undefined
                         : 'Complete Basic Details (with AI screening), Skills, Availability, Pricing, Evaluation, and Background Verification first'
                     }
                   >
-                    {isSubmitting ? 'Submitting…' : 'Submit for Approval'}
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+                        Submitting…
+                      </>
+                    ) : (
+                      'Submit for Approval'
+                    )}
                   </Button>
                 )}
               </div>

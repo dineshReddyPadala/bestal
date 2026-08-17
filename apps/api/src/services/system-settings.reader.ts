@@ -1,5 +1,5 @@
 import type { AutomationJobType, PrismaClient, Role } from '@prisma/client';
-import type { N8nConfig } from '../config/index.js';
+import type { AppConfig, N8nConfig, StorageConfig } from '../config/index.js';
 import { DEFAULT_AUTOMATION_WORKFLOW_IDENTITIES } from '../modules/automation/automation.constants.js';
 
 export type TrialsSettings = {
@@ -465,6 +465,103 @@ export function mergeIntegrationsSettingsUpdate(
   const apiKey = trimOrNull(asObj(incoming).smsApiKey);
   if (!apiKey || apiKey === MASKED_SECRET) {
     next.smsApiKey = prev.smsApiKey;
+  }
+  return next;
+}
+
+export type StorageSettings = {
+  driver: 'local' | 's3' | null;
+  region: string | null;
+  bucket: string | null;
+  accessKeyId: string | null;
+  secretAccessKey: string | null;
+  presignedUrlExpirySeconds: number | null;
+  endpoint: string | null;
+  forcePathStyle: boolean | null;
+  localPath: string | null;
+};
+
+function parseStorageFromStorage(value: unknown): StorageSettings {
+  const obj = asObj(value);
+  const driverRaw = trimOrNull(obj.driver);
+  const driver =
+    driverRaw === 'local' || driverRaw === 's3' ? driverRaw : null;
+  const expiry = Number(obj.presignedUrlExpirySeconds);
+  return {
+    driver,
+    region: trimOrNull(obj.region),
+    bucket: trimOrNull(obj.bucket),
+    accessKeyId: trimOrNull(obj.accessKeyId),
+    secretAccessKey: trimOrNull(obj.secretAccessKey),
+    presignedUrlExpirySeconds:
+      Number.isFinite(expiry) && expiry > 0 ? Math.floor(expiry) : null,
+    endpoint: trimOrNull(obj.endpoint),
+    forcePathStyle:
+      obj.forcePathStyle === undefined || obj.forcePathStyle === null
+        ? null
+        : Boolean(obj.forcePathStyle),
+    localPath: trimOrNull(obj.localPath),
+  };
+}
+
+export async function readStorageSettings(prisma: PrismaClient): Promise<StorageSettings> {
+  const row = await prisma.systemSetting.findUnique({ where: { key: 'storage' } });
+  return parseStorageFromStorage(row?.value);
+}
+
+export function resolveStorageConfig(
+  config: AppConfig,
+  dbSettings?: StorageSettings | null,
+): StorageConfig {
+  const driver = dbSettings?.driver ?? config.storage.driver;
+  if (driver === 's3') {
+    const region = dbSettings?.region ?? config.storage.aws?.region;
+    const bucket = dbSettings?.bucket ?? config.storage.aws?.bucket;
+    if (!region || !bucket) {
+      return config.storage;
+    }
+    return {
+      driver: 's3',
+      localPath: dbSettings?.localPath ?? config.storage.localPath,
+      aws: {
+        region,
+        bucket,
+        accessKeyId: dbSettings?.accessKeyId ?? config.storage.aws?.accessKeyId,
+        secretAccessKey:
+          dbSettings?.secretAccessKey ?? config.storage.aws?.secretAccessKey,
+        presignedUrlExpirySeconds:
+          dbSettings?.presignedUrlExpirySeconds ??
+          config.storage.aws?.presignedUrlExpirySeconds ??
+          3600,
+        endpoint: dbSettings?.endpoint ?? config.storage.aws?.endpoint,
+        forcePathStyle:
+          dbSettings?.forcePathStyle ?? config.storage.aws?.forcePathStyle,
+      },
+    };
+  }
+  return {
+    driver: 'local',
+    localPath: dbSettings?.localPath ?? config.storage.localPath,
+  };
+}
+
+export function maskStorageSettingsForAdmin(value: unknown): Record<string, unknown> {
+  const settings = parseStorageFromStorage(value);
+  return {
+    ...settings,
+    secretAccessKey: settings.secretAccessKey ? MASKED_SECRET : null,
+  };
+}
+
+export function mergeStorageSettingsUpdate(
+  incoming: unknown,
+  existing: unknown,
+): StorageSettings {
+  const next = parseStorageFromStorage(incoming);
+  const prev = parseStorageFromStorage(existing);
+  const secret = trimOrNull(asObj(incoming).secretAccessKey);
+  if (!secret || secret === MASKED_SECRET) {
+    next.secretAccessKey = prev.secretAccessKey;
   }
   return next;
 }

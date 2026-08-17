@@ -19,6 +19,7 @@ import {
   XCircle,
 } from 'lucide-react';
 import { ActionMenu } from '../../components/ui/ActionMenu';
+import { ClientTrialDetailDialog } from '../../components/client/ClientTrialDetailDialog';
 import { useMemo, useState } from 'react';
 import { ClientPortalStatCard } from '../../components/client/ClientPortalStatCard';
 import { ClientSegmentTabs } from '../../components/client/ClientSegmentTabs';
@@ -52,6 +53,7 @@ export function TrialRequestsPage() {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [selected, setSelected] = useState<{ id: number; name: string } | null>(null);
   const [feedbackTrialId, setFeedbackTrialId] = useState<number | null>(null);
+  const [viewTrialId, setViewTrialId] = useState<number | null>(null);
   const [feedbackText, setFeedbackText] = useState('');
   const [rating, setRating] = useState('5');
   const [decision, setDecision] = useState<'CONTINUE' | 'DO_NOT_CONTINUE'>('CONTINUE');
@@ -166,9 +168,9 @@ export function TrialRequestsPage() {
             label="Trial actions"
             items={[
               {
-                id: 'view',
-                label: 'View candidate',
-                href: `/client/candidates/${row.original.candidateId}`,
+                id: 'view-trial',
+                label: 'View Trial Details',
+                onSelect: () => setViewTrialId(row.original.id),
               },
               {
                 id: 'feedback',
@@ -386,6 +388,7 @@ export function TrialRequestsPage() {
           </div>
         </div>
       ) : null}
+      <ClientTrialDetailDialog trialId={viewTrialId} onClose={() => setViewTrialId(null)} />
     </div>
   );
 }

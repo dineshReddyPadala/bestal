@@ -46,7 +46,39 @@ import type { ListEvaluationsQuery } from './evaluation.validator.js';
 
 const DRAFT_EVALUATOR_NAME = 'Pending AI Analysis';
 
-function wasAiProcessed(input: {
+const SCORE_FIELD_KEYS = [
+  'technicalScore',
+  'communicationScore',
+  'problemSolvingScore',
+  'architectureScore',
+  'clientReadinessScore',
+] as const;
+
+function evaluationScoreFieldsChanged(
+  existing: {
+    technicalScore: number | null;
+    communicationScore: number | null;
+    problemSolvingScore: number | null;
+    architectureScore: number | null;
+    clientReadinessScore: number | null;
+    aiEvaluationSummary: string | null;
+  },
+  input: UpdateEvaluationInput,
+): boolean {
+  for (const key of SCORE_FIELD_KEYS) {
+    if (input[key] !== undefined && input[key] !== existing[key]) {
+      return true;
+    }
+  }
+  if (input.aiEvaluationSummary !== undefined) {
+    const next = input.aiEvaluationSummary?.trim() ?? '';
+    const prev = existing.aiEvaluationSummary?.trim() ?? '';
+    if (next !== prev) return true;
+  }
+  return false;
+}
+
+function hasEvaluationScoreData(input: {
   aiEvaluationSummary?: string | null;
   technicalScore?: number | null;
   communicationScore?: number | null;
@@ -56,11 +88,7 @@ function wasAiProcessed(input: {
 }): boolean {
   return Boolean(
     input.aiEvaluationSummary?.trim() ||
-      input.technicalScore != null ||
-      input.communicationScore != null ||
-      input.problemSolvingScore != null ||
-      input.architectureScore != null ||
-      input.clientReadinessScore != null,
+      SCORE_FIELD_KEYS.some((key) => input[key] != null),
   );
 }
 
@@ -91,7 +119,7 @@ export class EvaluationService {
     this.prisma = fastify.prisma;
     this.config = fastify.config;
     this.webAppUrl = fastify.config.webAppUrl;
-    this.storageService = new StorageService(fastify.config);
+    this.storageService = new StorageService(fastify.config, fastify.prisma);
   }
 
   private async isN8nEvaluationAnalysisEnabled(): Promise<boolean> {
@@ -263,7 +291,7 @@ export class EvaluationService {
     });
 
     if (
-      wasAiProcessed({
+      hasEvaluationScoreData({
         aiEvaluationSummary,
         technicalScore: output.technicalScore,
         communicationScore: output.communicationScore,
@@ -303,7 +331,7 @@ export class EvaluationService {
 
     const dto = mapEvaluationToDto(evaluation);
 
-    if (wasAiProcessed(input)) {
+    if (hasEvaluationScoreData(input)) {
       await this.runPostProcessing(
         organizationId,
         evaluation.candidateId,
@@ -352,7 +380,7 @@ export class EvaluationService {
     );
     const dto = mapEvaluationToDto(evaluation);
 
-    if (wasAiProcessed(normalizedInput)) {
+    if (evaluationScoreFieldsChanged(existing, normalizedInput)) {
       await this.runPostProcessing(
         organizationId,
         existing.candidateId,
@@ -720,7 +748,7 @@ export class EvaluationService {
       bestalScoreOverride != null ? { bestalScoreOverride } : undefined,
     );
 
-    await notifyEvaluationProcessed(this.prisma, this.config, {
+    void notifyEvaluationProcessed(this.prisma, this.config, {
       organizationId,
       candidateId: Number(candidateId),
       candidateName: `${firstName} ${lastName}`.trim(),
@@ -728,13 +756,8 @@ export class EvaluationService {
       bestalScore,
       triggeredByUserId,
       webAppUrl: this.webAppUrl,
-    });
+    }).catch(() => undefined);
 
-    await syncImportedCandidateProfileStatus(
-      this.prisma,
-      organizationId,
-      Number(candidateId),
-    );
     await maybeAutoSubmitSuperAdminCandidate(
       this.prisma,
       this.config,

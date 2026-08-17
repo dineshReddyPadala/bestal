@@ -3,6 +3,7 @@
  * One template for every ATS — no vendor-specific parsing branches.
  */
 
+import { BGV_PER_CHECK_STATUS_OPTIONS } from './bgv-check-summary.js';
 import { EVALUATION_RECOMMENDATIONS, EVALUATION_TYPES } from './evaluation-options.js';
 
 export const IMPORT_WORKBOOK_SHEETS = {
@@ -20,6 +21,11 @@ export const IMPORT_WORKBOOK_SHEETS = {
   RECOMMENDATION_VALUES: 'Recommendation Values_values',
   CURRENCY: 'Currency_values',
   TIMEZONES: 'Timezones_values',
+  PREFERRED_SHIFTS: 'Preferred Shifts_values',
+  PREFERRED_ENGAGEMENTS: 'Preferred Engagements_values',
+  BGV_PER_CHECK_STATUS: 'BGV Per Check Status_values',
+  BGV_PACKAGE_TYPES: 'BGV Package Types_values',
+  SCORE_SOURCES: 'Score Sources_values',
   IMPORT_INSTRUCTIONS: 'Import Instructions',
 } as const;
 
@@ -41,6 +47,11 @@ export const IMPORT_METADATA_SHEETS = [
   IMPORT_WORKBOOK_SHEETS.RECOMMENDATION_VALUES,
   IMPORT_WORKBOOK_SHEETS.CURRENCY,
   IMPORT_WORKBOOK_SHEETS.TIMEZONES,
+  IMPORT_WORKBOOK_SHEETS.PREFERRED_SHIFTS,
+  IMPORT_WORKBOOK_SHEETS.PREFERRED_ENGAGEMENTS,
+  IMPORT_WORKBOOK_SHEETS.BGV_PER_CHECK_STATUS,
+  IMPORT_WORKBOOK_SHEETS.BGV_PACKAGE_TYPES,
+  IMPORT_WORKBOOK_SHEETS.SCORE_SOURCES,
   IMPORT_WORKBOOK_SHEETS.IMPORT_INSTRUCTIONS,
 ] as const;
 
@@ -92,14 +103,12 @@ export const CANDIDATE_SHEET_COLUMNS = [
   'current_company',
   'current_title',
   'education',
-  'notice_period',
   'notice_period_days',
   'preferred_shift',
   'preferred_engagement',
   'min_hours_per_week',
   'max_hours_per_week',
   'hours_per_week',
-  'timezone_overlap',
   'resume_url',
 ] as const;
 
@@ -131,6 +140,7 @@ export const EVALUATION_SHEET_COLUMNS = [
 export const BGV_SHEET_COLUMNS = [
   'candidate_id',
   'bgv_status',
+  'package_type',
   'vendor',
   'id_check_status',
   'address_check_status',
@@ -147,14 +157,18 @@ export const BGV_SHEET_COLUMNS = [
 export const SCORES_SHEET_COLUMNS = [
   'candidate_id',
   'bestal_score',
+  'reliability_score',
+  'score_source',
+  'score_date',
+] as const;
+
+/** Removed from Scores sheet — dimension scores belong on Evaluation rows only. */
+export const DEPRECATED_SCORES_SHEET_COLUMNS = [
   'technical_score',
   'communication_score',
   'problem_solving_score',
   'architecture_score',
-  'reliability_score',
   'client_readiness_score',
-  'score_source',
-  'score_date',
 ] as const;
 
 export const CANDIDATE_REQUIRED_FIELDS = [
@@ -194,15 +208,34 @@ export const IMPORT_AVAILABILITY_STATUSES = [
 /** @deprecated Use EVALUATION_TYPES — template dropdowns use UI labels. */
 export const IMPORT_EVALUATION_TYPES = EVALUATION_TYPES;
 
+/** Matches Prisma BackgroundCheckStatus enum values. */
 export const IMPORT_BGV_STATUSES = [
   'NOT_STARTED',
+  'PENDING',
   'CONSENT_PENDING',
   'INITIATED',
   'IN_PROGRESS',
+  'CLEAR',
+  'CONSIDER',
   'COMPLETED_CLEAR',
   'COMPLETED_WITH_CONCERN',
+  'SUSPENDED',
   'FAILED',
+  'CANCELLED',
   'EXPIRED',
+] as const;
+
+export const IMPORT_BGV_PER_CHECK_STATUSES = BGV_PER_CHECK_STATUS_OPTIONS;
+
+/** Matches Prisma BackgroundCheckType enum values. */
+export const IMPORT_BGV_PACKAGE_TYPES = [
+  'COMPREHENSIVE',
+  'CRIMINAL',
+  'EMPLOYMENT',
+  'EDUCATION',
+  'REFERENCE',
+  'IDENTITY',
+  'CREDIT',
 ] as const;
 
 export const IMPORT_CANDIDATE_SOURCES = [
@@ -220,6 +253,33 @@ export const IMPORT_CANDIDATE_SOURCES = [
   'OTHER',
 ] as const;
 
+/** Legacy manual-entry sources kept for candidates created before import alignment. */
+export const LEGACY_CANDIDATE_SOURCES = ['DIRECT', 'JOB_BOARD', 'INTERNAL'] as const;
+
+/** Canonical source values for wizard UI, validation, and API (import + legacy). */
+export const CANDIDATE_SOURCE_OPTIONS = [
+  ...IMPORT_CANDIDATE_SOURCES,
+  ...LEGACY_CANDIDATE_SOURCES,
+] as const;
+
+export const CANDIDATE_SOURCE_LABELS: Record<(typeof CANDIDATE_SOURCE_OPTIONS)[number], string> = {
+  OORWIN: 'Oorwin',
+  WORKDAY: 'Workday',
+  GREENHOUSE: 'Greenhouse',
+  LEVER: 'Lever',
+  BULLHORN: 'Bullhorn',
+  ZOHO_RECRUIT: 'Zoho Recruit',
+  LINKEDIN: 'LinkedIn',
+  INDEED: 'Indeed',
+  REFERRAL: 'Referral',
+  CAREER_PAGE: 'Career Page',
+  AGENCY: 'Agency',
+  OTHER: 'Other',
+  DIRECT: 'Direct',
+  JOB_BOARD: 'Job Board',
+  INTERNAL: 'Internal',
+};
+
 export const IMPORT_PROFICIENCY_LEVELS = [
   'Beginner',
   'Intermediate',
@@ -234,6 +294,15 @@ export const IMPORT_PREFERRED_ENGAGEMENTS = [
   'PART_TIME',
   'CONTRACT',
   'FREELANCE',
+] as const;
+
+export const IMPORT_PREFERRED_SHIFTS = [
+  'IST Morning',
+  'IST Evening',
+  'US Eastern',
+  'US Pacific',
+  'Flexible',
+  'Custom/Other',
 ] as const;
 
 export const IMPORT_CURRENCIES = ['USD', 'EUR', 'GBP', 'INR', 'CAD', 'AUD'] as const;
@@ -266,8 +335,11 @@ export const IMPORT_INSTRUCTIONS = [
   'candidate_id must be unique within the Candidate sheet.',
   'All related sheets must reference the same candidate_id.',
   'Multiple skills require multiple rows in the Skills sheet.',
-  'Scores must be between 0 and 100.',
-  'Dates must use YYYY-MM-DD.',
+  'Evaluation dimension scores (technical, communication, etc.) belong on the Evaluation sheet only.',
+  'Scores sheet holds aggregate bestal_score and reliability_score only.',
+  'All score values must be integers from 0 to 100.',
+  'notice_period_days is the notice period in calendar days (single column).',
+  'Dates must use YYYY-MM-DD. Evaluation and score dates cannot be in the future when scores are provided.',
   'Multiple values in a single field use | as the separator.',
   'AI-generated fields are optional and imported exactly as provided.',
   'Missing AI fields remain blank — BesTal does not run AI during import.',
@@ -284,6 +356,9 @@ export type ImportCandidateSource = (typeof IMPORT_CANDIDATE_SOURCES)[number];
 export type ImportProficiencyLevel = (typeof IMPORT_PROFICIENCY_LEVELS)[number];
 export type ImportCurrency = (typeof IMPORT_CURRENCIES)[number];
 export type ImportPreferredEngagement = (typeof IMPORT_PREFERRED_ENGAGEMENTS)[number];
+export type ImportPreferredShift = (typeof IMPORT_PREFERRED_SHIFTS)[number];
+export type ImportBgvPerCheckStatus = (typeof IMPORT_BGV_PER_CHECK_STATUSES)[number];
+export type ImportBgvPackageType = (typeof IMPORT_BGV_PACKAGE_TYPES)[number];
 export type ImportScoreSource = (typeof IMPORT_SCORE_SOURCES)[number];
 
 export function slugifySkillCommunity(name: string): string {

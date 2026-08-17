@@ -72,6 +72,7 @@ export class DeploymentService {
         createdById: dto.createdById,
         requestedById: dto.requestedById,
         clientId: dto.clientId,
+        actedById: authUser.id,
       });
     }
 
@@ -90,6 +91,32 @@ export class DeploymentService {
     const clientId = await this.resolveScopedClientId(authUser, organizationId);
     await this.validateCandidate(organizationId, input.candidateId);
     await this.validateClient(organizationId, clientId);
+
+    const pendingDeployment =
+      await this.deploymentRepository.findByCandidateClientAndStatuses(
+        organizationId,
+        input.candidateId,
+        clientId,
+        ['PENDING'],
+      );
+    if (pendingDeployment) {
+      throw new BadRequestError(
+        'A deployment request is already pending for this candidate.',
+      );
+    }
+
+    const activeDeployment =
+      await this.deploymentRepository.findByCandidateClientAndStatuses(
+        organizationId,
+        input.candidateId,
+        clientId,
+        ['ACTIVE', 'ON_HOLD'],
+      );
+    if (activeDeployment) {
+      throw new BadRequestError(
+        'This candidate already has an active deployment. Request a contract extension instead.',
+      );
+    }
 
     const deployment = await this.deploymentRepository.create(
       organizationId,
@@ -110,6 +137,7 @@ export class DeploymentService {
       candidateName: dto.candidateName,
       clientName: dto.clientName,
       roleTitle: dto.roleTitle,
+      requestedById: authUser.id,
     });
 
     return dto;
@@ -156,6 +184,7 @@ export class DeploymentService {
       createdById: dto.createdById,
       requestedById: dto.requestedById,
       clientId: dto.clientId,
+      actedById: authUser.id,
     });
 
     return dto;
@@ -226,6 +255,7 @@ export class DeploymentService {
       createdById: dto.createdById,
       requestedById: dto.requestedById,
       clientId: dto.clientId,
+      actedById: authUser.id,
     });
 
     return dto;
@@ -260,6 +290,7 @@ export class DeploymentService {
       createdById: dto.createdById,
       requestedById: dto.requestedById,
       clientId: dto.clientId,
+      actedById: authUser.id,
     });
 
     return dto;
@@ -310,6 +341,7 @@ export class DeploymentService {
       createdById: dto.createdById,
       requestedById: dto.requestedById,
       clientId: dto.clientId,
+      actedById: authUser.id,
     });
 
     return dto;
@@ -359,6 +391,7 @@ export class DeploymentService {
       candidateName: dto.candidateName,
       clientName: dto.clientName,
       roleTitle: `extension to ${input.endDate} — ${dto.roleTitle}`,
+      requestedById: authUser.id,
     });
 
     return dto;

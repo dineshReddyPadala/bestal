@@ -46,6 +46,7 @@ const defaultFilters = {
 function buildCandidateActions(
   r: Row,
   pendingOnly: boolean,
+  archivedTab: boolean,
   helpers: {
     mutations: ReturnType<typeof useAdminMutations>;
     show: (m: string) => void;
@@ -58,22 +59,23 @@ function buildCandidateActions(
 ): ActionMenuItem[] {
   const { mutations, show, showError, requestConfirm, requestReason } = helpers;
   const profile = (r.profileStatus ?? '').toUpperCase();
-  const visibility = (r.visibilityStatus ?? '').toUpperCase();
   const approval = (r.approvalStatus ?? '').toUpperCase();
-  const isArchived = profile.includes('ARCHIVE') || visibility === 'ARCHIVED';
+  const isArchived = profile === 'INACTIVE';
   const isPending =
-    pendingOnly ||
-    profile === 'PENDING_APPROVAL' ||
-    (approval === 'PENDING' && Boolean(r.submittedForApprovalAt)) ||
-    (profile === 'PROFILE_DRAFT' && Boolean(r.submittedForApprovalAt));
-  const isPublished = visibility === 'CLIENT_VISIBLE';
+    !archivedTab &&
+    (pendingOnly ||
+      profile === 'PENDING_APPROVAL' ||
+      (approval === 'PENDING' && Boolean(r.submittedForApprovalAt)) ||
+      (profile === 'PROFILE_DRAFT' && Boolean(r.submittedForApprovalAt)));
+  const isPublished = !archivedTab && (r.visibilityStatus ?? '').toUpperCase() === 'CLIENT_VISIBLE';
   const isApproved =
-    approval === 'APPROVED' ||
-    profile.includes('APPROVED') ||
-    profile === 'ADMIN_APPROVED';
+    !archivedTab &&
+    (approval === 'APPROVED' ||
+      profile.includes('APPROVED') ||
+      profile === 'ADMIN_APPROVED');
   const isDraft =
-    profile.includes('DRAFT') || profile === '' || profile === 'PROFILE_DRAFT';
-  const isAiScreened = profile.includes('AI') || profile.includes('SCREEN');
+    !archivedTab && (profile.includes('DRAFT') || profile === '' || profile === 'PROFILE_DRAFT');
+  const isAiScreened = !archivedTab && (profile.includes('AI') || profile.includes('SCREEN'));
 
   const view: ActionMenuItem = {
     id: 'view',
@@ -87,25 +89,43 @@ function buildCandidateActions(
     href: `/super-admin/candidates/${r.id}/edit`,
   };
 
-  if (isArchived) {
-    return [
-      view,
-      edit,
-      {
-        id: 'restore',
-        label: 'Restore',
-        disabled: true,
-        disabledReason: 'Restore is not available yet for archived candidates',
-      },
-      {
-        id: 'delete',
-        label: 'Permanently Delete',
+  const archiveAction: ActionMenuItem = {
+    id: 'archive',
+    label: 'Archive',
+    destructive: true,
+    separatorBefore: true,
+    onSelect: () =>
+      requestConfirm({
+        title: 'Archive Candidate?',
+        description: `${r.name} will be archived and removed from active listings.`,
+        confirmLabel: 'Archive',
         destructive: true,
-        separatorBefore: true,
-        disabled: true,
-        disabledReason: 'Permanent delete requires additional confirmation workflow',
-      },
-    ];
+        onConfirm: async () => {
+          await mutations.archiveCandidate.mutateAsync(r.id);
+          show('Candidate archived');
+        },
+        onError: showError,
+      }),
+  };
+
+  const unarchiveAction: ActionMenuItem = {
+    id: 'unarchive',
+    label: 'Unarchive',
+    onSelect: () =>
+      requestConfirm({
+        title: 'Unarchive Candidate?',
+        description: `${r.name} will be restored to active candidates.`,
+        confirmLabel: 'Unarchive',
+        onConfirm: async () => {
+          await mutations.unarchiveCandidate.mutateAsync(r.id);
+          show('Candidate unarchived');
+        },
+        onError: showError,
+      }),
+  };
+
+  if (archivedTab || isArchived) {
+    return [view, edit, unarchiveAction];
   }
 
   if (isPending) {
@@ -181,43 +201,7 @@ function buildCandidateActions(
   }
 
   if (isPublished) {
-    return [
-      view,
-      edit,
-      {
-        id: 'hide',
-        label: 'Hide from Clients',
-        separatorBefore: true,
-        onSelect: () =>
-          requestConfirm({
-            title: 'Hide from Clients?',
-            description: `${r.name} will no longer appear in the client portal.`,
-            confirmLabel: 'Hide from Clients',
-            destructive: true,
-            onConfirm: async () => {
-              await mutations.hideCandidate.mutateAsync(r.id);
-              show('Hidden from clients');
-            },
-          }),
-      },
-      {
-        id: 'archive',
-        label: 'Archive',
-        destructive: true,
-        separatorBefore: true,
-        onSelect: () =>
-          requestConfirm({
-            title: 'Archive Candidate?',
-            description: `${r.name} will be archived and removed from active pipelines.`,
-            confirmLabel: 'Archive',
-            destructive: true,
-            onConfirm: async () => {
-              await mutations.archiveCandidate.mutateAsync(r.id);
-              show('Archived');
-            },
-          }),
-      },
-    ];
+    return [view, edit, archiveAction];
   }
 
   if (isApproved) {
@@ -233,32 +217,7 @@ function buildCandidateActions(
             .then(() => show('Published'))
             .catch((e) => showError(e instanceof Error ? e.message : 'Failed')),
       },
-      {
-        id: 'hide',
-        label: 'Hide',
-        onSelect: () =>
-          void mutations.hideCandidate
-            .mutateAsync(r.id)
-            .then(() => show('Hidden'))
-            .catch((e) => showError(e instanceof Error ? e.message : 'Failed')),
-      },
-      {
-        id: 'archive',
-        label: 'Archive',
-        destructive: true,
-        separatorBefore: true,
-        onSelect: () =>
-          requestConfirm({
-            title: 'Archive Candidate?',
-            description: `${r.name} will be archived.`,
-            confirmLabel: 'Archive',
-            destructive: true,
-            onConfirm: async () => {
-              await mutations.archiveCandidate.mutateAsync(r.id);
-              show('Archived');
-            },
-          }),
-      },
+      archiveAction,
     ];
   }
 
@@ -279,23 +238,7 @@ function buildCandidateActions(
       disabled: true,
       disabledReason: 'Submit for approval is available from the recruiter workflow',
     },
-    {
-      id: 'archive',
-      label: 'Archive',
-      destructive: true,
-      separatorBefore: true,
-      onSelect: () =>
-        requestConfirm({
-          title: 'Archive Candidate?',
-          description: `${r.name} will be archived.`,
-          confirmLabel: 'Archive',
-          destructive: true,
-          onConfirm: async () => {
-            await mutations.archiveCandidate.mutateAsync(r.id);
-            show('Archived');
-          },
-        }),
-    },
+    archiveAction,
   ];
 }
 
@@ -304,10 +247,12 @@ function CandidatesTable({ pendingOnly }: { pendingOnly: boolean }) {
   const { requestConfirm, confirmDialog } = useConfirmAction();
   const { requestReason, reasonDialog } = useReasonPrompt();
   const [filters, setFilters] = useState(defaultFilters);
+  const [listTab, setListTab] = useState<'active' | 'archived'>('active');
   const { searchInput, setSearchInput, search, searchParam } = useDebouncedSearch();
   const query = {
     limit: 100,
     ...searchParam,
+    archived: listTab === 'archived' ? 'true' : 'false',
     ...(filters.profileStatus !== 'all' ? { profileStatus: filters.profileStatus } : {}),
     ...(filters.visibilityStatus !== 'all' ? { visibilityStatus: filters.visibilityStatus } : {}),
   };
@@ -394,7 +339,7 @@ function CandidatesTable({ pendingOnly }: { pendingOnly: boolean }) {
         header: 'Actions',
         cell: ({ row }) => (
           <ActionMenu
-            items={buildCandidateActions(row.original, pendingOnly, {
+            items={buildCandidateActions(row.original, pendingOnly, listTab === 'archived', {
               mutations,
               show,
               showError,
@@ -406,7 +351,7 @@ function CandidatesTable({ pendingOnly }: { pendingOnly: boolean }) {
         ),
       },
     ],
-    [mutations, pendingOnly, requestConfirm, requestReason, show, showError],
+    [listTab, mutations, pendingOnly, requestConfirm, requestReason, show, showError],
   );
 
   return (
@@ -419,8 +364,26 @@ function CandidatesTable({ pendingOnly }: { pendingOnly: boolean }) {
         loading={isLoading}
         loadingLabel="Loading candidates…"
       >
+        {!pendingOnly ? (
+          <div className="mb-4 flex flex-wrap gap-2">
+            <Button
+              size="sm"
+              variant={listTab === 'active' ? 'primary' : 'outline'}
+              onClick={() => setListTab('active')}
+            >
+              Candidates
+            </Button>
+            <Button
+              size="sm"
+              variant={listTab === 'archived' ? 'primary' : 'outline'}
+              onClick={() => setListTab('archived')}
+            >
+              Archived Candidates
+            </Button>
+          </div>
+        ) : null}
         <TanStackDataTable
-          key={`${pendingOnly}-${search}`}
+          key={`${pendingOnly}-${listTab}-${search}`}
           columns={columns}
           data={rows}
           searchPlaceholder="Search candidates…"
@@ -431,9 +394,9 @@ function CandidatesTable({ pendingOnly }: { pendingOnly: boolean }) {
           stickyHeader
           fillHeight
           dense
-          filtersInline={!pendingOnly}
+          filtersInline={!pendingOnly && listTab === 'active'}
           toolbar={
-            pendingOnly ? undefined : (
+            pendingOnly || listTab === 'archived' ? undefined : (
               <>
                 <Button size="sm" to="/super-admin/candidates/import">
                   <FileSpreadsheet className="mr-1.5 h-3.5 w-3.5" />
@@ -447,7 +410,7 @@ function CandidatesTable({ pendingOnly }: { pendingOnly: boolean }) {
             )
           }
           filters={
-            pendingOnly ? undefined : (
+            pendingOnly || listTab === 'archived' ? undefined : (
               <ListingFiltersRow>
                 <ListingFilterSelect
                   label="PROFILE"

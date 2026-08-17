@@ -15,6 +15,7 @@ import { usePermissions } from '../../hooks/usePermissions';
 import { getApiErrorMessage } from '../../lib/api/errors';
 import type { CandidateListItem } from '../../lib/api/types';
 import { useDemoToast } from '../../lib/use-demo-toast';
+import { useConfirmAction } from '../super-admin/useConfirmAction';
 import {
   ListingFilterSelect,
   ListingFiltersRow,
@@ -87,12 +88,18 @@ function CandidateRowActionsMenu({
   onSubmit,
   submitting,
   enableSubmitForApproval,
+  archivedTab,
+  onArchive,
+  onUnarchive,
 }: {
   basePath: string;
   row: ApiCandidateRow;
   onSubmit: (row: ApiCandidateRow) => void;
   submitting: boolean;
   enableSubmitForApproval?: boolean;
+  archivedTab?: boolean;
+  onArchive?: (row: ApiCandidateRow) => void;
+  onUnarchive?: (row: ApiCandidateRow) => void;
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -155,6 +162,31 @@ function CandidateRowActionsMenu({
               Submit for approval
             </button>
           ) : null}
+          {archivedTab ? (
+            onUnarchive ? (
+              <button
+                type="button"
+                className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-muted"
+                onClick={() => {
+                  onUnarchive(row);
+                  setOpen(false);
+                }}
+              >
+                Unarchive
+              </button>
+            ) : null
+          ) : onArchive ? (
+            <button
+              type="button"
+              className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50"
+              onClick={() => {
+                onArchive(row);
+                setOpen(false);
+              }}
+            >
+              Archive
+            </button>
+          ) : null}
         </div>
       ) : null}
     </div>
@@ -173,8 +205,10 @@ export function CandidateListingView({
   const navigate = useNavigate();
   const { canWriteCandidates } = usePermissions();
   const mutations = useCandidateMutations();
+  const { requestConfirm, confirmDialog } = useConfirmAction();
   const { message, variant, show, showError, dismiss } = useDemoToast();
   const [filters, setFilters] = useState(defaultFilters);
+  const [listTab, setListTab] = useState<'active' | 'archived'>('active');
   const [submitting, setSubmitting] = useState(false);
   const { searchInput, setSearchInput, search, searchParam } = useDebouncedSearch();
 
@@ -185,11 +219,12 @@ export function CandidateListingView({
       limit: 100,
       sort: '-createdAt',
       ...searchParam,
+      archived: listTab === 'archived',
       status: filters.status === 'all' ? undefined : filters.status,
       visibility: filters.visibility === 'all' ? undefined : filters.visibility,
       approvalStatus: filters.approvalStatus === 'all' ? undefined : filters.approvalStatus,
     }),
-    [filters, searchParam],
+    [filters, listTab, searchParam],
   );
 
   const { data, isLoading, isError, error } = useCandidatesList(listParams);
@@ -253,6 +288,39 @@ export function CandidateListingView({
       }
     },
     [mutations.submitForApproval, show, showError],
+  );
+
+  const archiveOne = useCallback(
+    (row: ApiCandidateRow) => {
+      requestConfirm({
+        title: 'Archive Candidate?',
+        description: `${row.fullName} will be archived and removed from active listings.`,
+        confirmLabel: 'Archive',
+        destructive: true,
+        onConfirm: async () => {
+          await mutations.archive.mutateAsync(row.id);
+          show('Candidate archived');
+        },
+        onError: showError,
+      });
+    },
+    [mutations.archive, requestConfirm, show, showError],
+  );
+
+  const unarchiveOne = useCallback(
+    (row: ApiCandidateRow) => {
+      requestConfirm({
+        title: 'Unarchive Candidate?',
+        description: `${row.fullName} will be restored to active candidates.`,
+        confirmLabel: 'Unarchive',
+        onConfirm: async () => {
+          await mutations.unarchive.mutateAsync(row.id);
+          show('Candidate unarchived');
+        },
+        onError: showError,
+      });
+    },
+    [mutations.unarchive, requestConfirm, show, showError],
   );
 
   const columns = useMemo<ColumnDef<ApiCandidateRow>[]>(() => {
@@ -364,7 +432,10 @@ export function CandidateListingView({
             row={row.original}
             onSubmit={submitOne}
             submitting={submitting}
-            enableSubmitForApproval={showSubmitActions}
+            enableSubmitForApproval={showSubmitActions && listTab === 'active'}
+            archivedTab={listTab === 'archived'}
+            onArchive={canWriteCandidates && listTab === 'active' ? archiveOne : undefined}
+            onUnarchive={canWriteCandidates && listTab === 'archived' ? unarchiveOne : undefined}
           />
         ),
         enableSorting: false,
@@ -390,7 +461,7 @@ export function CandidateListingView({
     }
 
     return cols;
-  }, [basePath, onAddToShortlist, readOnly, showSubmitActions, submitOne, submitting]);
+  }, [archiveOne, basePath, canWriteCandidates, listTab, onAddToShortlist, readOnly, showSubmitActions, submitOne, submitting, unarchiveOne]);
 
   return (
     <>
@@ -403,8 +474,24 @@ export function CandidateListingView({
         loadingLabel="Loading candidates…"
         error={isError ? (error instanceof Error ? error.message : 'Failed to load candidates') : null}
       >
+        <div className="mb-4 flex flex-wrap gap-2">
+          <Button
+            size="sm"
+            variant={listTab === 'active' ? 'primary' : 'outline'}
+            onClick={() => setListTab('active')}
+          >
+            Candidates
+          </Button>
+          <Button
+            size="sm"
+            variant={listTab === 'archived' ? 'primary' : 'outline'}
+            onClick={() => setListTab('archived')}
+          >
+            Archived Candidates
+          </Button>
+        </div>
         <TanStackDataTable
-          key={search}
+          key={`${listTab}-${search}`}
           columns={columns}
           data={rows}
           searchPlaceholder="Search by name or email…"
@@ -525,6 +612,7 @@ export function CandidateListingView({
           }}
         />
       </ListingPageShell>
+      {confirmDialog}
     </>
   );
 }

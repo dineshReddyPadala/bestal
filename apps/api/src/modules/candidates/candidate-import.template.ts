@@ -4,11 +4,15 @@ import {
   CANDIDATE_SHEET_COLUMNS,
   EVALUATION_SHEET_COLUMNS,
   IMPORT_AVAILABILITY_STATUSES,
+  IMPORT_BGV_PER_CHECK_STATUSES,
+  IMPORT_BGV_PACKAGE_TYPES,
   IMPORT_BGV_STATUSES,
   IMPORT_CANDIDATE_SOURCES,
   IMPORT_CURRENCIES,
   IMPORT_EVALUATION_TYPES,
   IMPORT_INSTRUCTIONS,
+  IMPORT_PREFERRED_ENGAGEMENTS,
+  IMPORT_PREFERRED_SHIFTS,
   IMPORT_PROFICIENCY_LEVELS,
   IMPORT_RECOMMENDATION_VALUES,
   IMPORT_SCORE_SOURCES,
@@ -108,6 +112,31 @@ function applyListValidation(
   }
 }
 
+function applyIntegerValidation(
+  sheet: ExcelJS.Worksheet,
+  columnKey: string,
+  headers: readonly string[],
+  options?: { min?: number; max?: number; fromRow?: number; toRow?: number },
+): void {
+  const colIndex = headers.indexOf(columnKey) + 1;
+  if (colIndex <= 0) return;
+  const min = options?.min ?? 0;
+  const max = options?.max ?? 100;
+  const fromRow = options?.fromRow ?? 2;
+  const toRow = options?.toRow ?? 1002;
+  for (let row = fromRow; row <= toRow; row += 1) {
+    sheet.getCell(row, colIndex).dataValidation = {
+      type: 'whole',
+      operator: 'between',
+      allowBlank: true,
+      formulae: [min, max],
+      showErrorMessage: true,
+      errorTitle: 'Invalid score',
+      error: `Enter a whole number between ${min} and ${max}.`,
+    };
+  }
+}
+
 export type CandidateImportTemplateOptions = {
   skillCommunities?: readonly string[];
   timezones?: readonly string[];
@@ -132,6 +161,8 @@ export async function buildCandidateImportTemplate(
     'currency',
     'skill_community',
     'timezone',
+    'preferred_shift',
+    'preferred_engagement',
   ] as const;
 
   const candidateSheet = addSheetWithHeaders(
@@ -169,14 +200,12 @@ export async function buildCandidateImportTemplate(
     current_company: 'Example Corp',
     current_title: 'Staff Engineer',
     education: 'BSc Computer Science',
-    notice_period: '2 weeks',
     notice_period_days: 14,
-    preferred_shift: 'Day',
+    preferred_shift: 'US Eastern',
     preferred_engagement: 'CONTRACT',
     min_hours_per_week: 32,
     max_hours_per_week: 40,
     hours_per_week: 40,
-    timezone_overlap: '4 hours EST',
     resume_url: '',
   });
 
@@ -217,8 +246,7 @@ export async function buildCandidateImportTemplate(
     comments: '',
   });
 
-  const bgvDropdownColumns = [
-    'bgv_status',
+  const bgvPerCheckDropdownColumns = [
     'id_check_status',
     'address_check_status',
     'employment_check_status',
@@ -226,6 +254,8 @@ export async function buildCandidateImportTemplate(
     'criminal_check_status',
     'reference_check_status',
   ] as const;
+
+  const bgvDropdownColumns = ['bgv_status', 'package_type', ...bgvPerCheckDropdownColumns] as const;
 
   const bgvSheet = addSheetWithHeaders(
     workbook,
@@ -236,6 +266,7 @@ export async function buildCandidateImportTemplate(
   bgvSheet.addRow({
     candidate_id: '1001',
     bgv_status: 'INITIATED',
+    package_type: 'COMPREHENSIVE',
     vendor: 'Example BGV Vendor',
     id_check_status: 'PENDING',
     address_check_status: 'PENDING',
@@ -258,12 +289,7 @@ export async function buildCandidateImportTemplate(
   scoresSheet.addRow({
     candidate_id: '1001',
     bestal_score: 86,
-    technical_score: 88,
-    communication_score: 90,
-    problem_solving_score: 85,
-    architecture_score: 80,
     reliability_score: 84,
-    client_readiness_score: 87,
     score_source: 'MANUAL',
     score_date: '2026-07-15',
   });
@@ -288,7 +314,7 @@ export async function buildCandidateImportTemplate(
     IMPORT_WORKBOOK_SHEETS.BGV_STATUS,
     IMPORT_BGV_STATUSES,
   );
-  const sourceSheet = addMetadataSheet(
+  const candidateSourcesSheet = addMetadataSheet(
     workbook,
     IMPORT_WORKBOOK_SHEETS.CANDIDATE_SOURCES,
     IMPORT_CANDIDATE_SOURCES,
@@ -313,7 +339,31 @@ export async function buildCandidateImportTemplate(
     IMPORT_WORKBOOK_SHEETS.TIMEZONES,
     timezones,
   );
-  const scoreSourcesSheet = addMetadataSheet(workbook, 'Score Sources_values', IMPORT_SCORE_SOURCES);
+  const preferredShiftSheet = addMetadataSheet(
+    workbook,
+    IMPORT_WORKBOOK_SHEETS.PREFERRED_SHIFTS,
+    IMPORT_PREFERRED_SHIFTS,
+  );
+  const preferredEngagementSheet = addMetadataSheet(
+    workbook,
+    IMPORT_WORKBOOK_SHEETS.PREFERRED_ENGAGEMENTS,
+    IMPORT_PREFERRED_ENGAGEMENTS,
+  );
+  const bgvPerCheckStatusSheet = addMetadataSheet(
+    workbook,
+    IMPORT_WORKBOOK_SHEETS.BGV_PER_CHECK_STATUS,
+    IMPORT_BGV_PER_CHECK_STATUSES,
+  );
+  const bgvPackageTypesSheet = addMetadataSheet(
+    workbook,
+    IMPORT_WORKBOOK_SHEETS.BGV_PACKAGE_TYPES,
+    IMPORT_BGV_PACKAGE_TYPES,
+  );
+  const scoreSourcesSheet = addMetadataSheet(
+    workbook,
+    IMPORT_WORKBOOK_SHEETS.SCORE_SOURCES,
+    IMPORT_SCORE_SOURCES,
+  );
 
   const instructions = workbook.addWorksheet(IMPORT_WORKBOOK_SHEETS.IMPORT_INSTRUCTIONS);
   instructions.addRow(['Instruction']);
@@ -326,10 +376,7 @@ export async function buildCandidateImportTemplate(
   instructions.views = [{ state: 'frozen', ySplit: 1 }];
 
   for (const column of candidateDropdownColumns) {
-    applyListValidation(
-      candidateSheet,
-      column,
-      CANDIDATE_SHEET_COLUMNS,
+    const sourceSheet =
       column === 'source'
         ? IMPORT_WORKBOOK_SHEETS.CANDIDATE_SOURCES
         : column === 'availability_status'
@@ -338,16 +385,31 @@ export async function buildCandidateImportTemplate(
             ? IMPORT_WORKBOOK_SHEETS.CURRENCY
             : column === 'skill_community'
               ? IMPORT_WORKBOOK_SHEETS.SKILL_COMMUNITIES
-              : IMPORT_WORKBOOK_SHEETS.TIMEZONES,
+              : column === 'preferred_shift'
+                ? IMPORT_WORKBOOK_SHEETS.PREFERRED_SHIFTS
+                : column === 'preferred_engagement'
+                  ? IMPORT_WORKBOOK_SHEETS.PREFERRED_ENGAGEMENTS
+                  : IMPORT_WORKBOOK_SHEETS.TIMEZONES;
+    const sourceRowCount =
       column === 'source'
-        ? sourceSheet.rowCount
+        ? candidateSourcesSheet.rowCount
         : column === 'availability_status'
           ? availabilitySheet.rowCount
           : column === 'currency'
             ? currencySheet.rowCount
             : column === 'skill_community'
               ? communitySheet.rowCount
-              : timezoneSheet.rowCount,
+              : column === 'preferred_shift'
+                ? preferredShiftSheet.rowCount
+                : column === 'preferred_engagement'
+                  ? preferredEngagementSheet.rowCount
+                  : timezoneSheet.rowCount;
+    applyListValidation(
+      candidateSheet,
+      column,
+      CANDIDATE_SHEET_COLUMNS,
+      sourceSheet,
+      sourceRowCount,
       { allowBlank: column !== 'source' },
     );
   }
@@ -380,16 +442,39 @@ export async function buildCandidateImportTemplate(
       bgvSheet,
       column,
       BGV_SHEET_COLUMNS,
-      IMPORT_WORKBOOK_SHEETS.BGV_STATUS,
-      bgvStatusSheet.rowCount,
+      column === 'bgv_status'
+        ? IMPORT_WORKBOOK_SHEETS.BGV_STATUS
+        : column === 'package_type'
+          ? IMPORT_WORKBOOK_SHEETS.BGV_PACKAGE_TYPES
+          : IMPORT_WORKBOOK_SHEETS.BGV_PER_CHECK_STATUS,
+      column === 'bgv_status'
+        ? bgvStatusSheet.rowCount
+        : column === 'package_type'
+          ? bgvPackageTypesSheet.rowCount
+          : bgvPerCheckStatusSheet.rowCount,
+      { allowBlank: column !== 'bgv_status' },
     );
   }
+
+  const evaluationScoreColumns = [
+    'technical_score',
+    'communication_score',
+    'problem_solving_score',
+    'architecture_score',
+    'client_readiness_score',
+  ] as const;
+  for (const column of evaluationScoreColumns) {
+    applyIntegerValidation(evaluationSheet, column, EVALUATION_SHEET_COLUMNS);
+  }
+
+  applyIntegerValidation(scoresSheet, 'bestal_score', SCORES_SHEET_COLUMNS);
+  applyIntegerValidation(scoresSheet, 'reliability_score', SCORES_SHEET_COLUMNS);
 
   applyListValidation(
     scoresSheet,
     'score_source',
     SCORES_SHEET_COLUMNS,
-    'Score Sources_values',
+    IMPORT_WORKBOOK_SHEETS.SCORE_SOURCES,
     scoreSourcesSheet.rowCount,
   );
 

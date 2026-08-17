@@ -43,6 +43,7 @@ export type NormalizedEvaluationRow = {
 
 export type NormalizedBgvRow = {
   bgvStatus: string;
+  packageType: string;
   vendor: string | null;
   idCheckStatus: string | null;
   addressCheckStatus: string | null;
@@ -58,12 +59,7 @@ export type NormalizedBgvRow = {
 
 export type NormalizedScoreRow = {
   bestalScore: number | null;
-  technicalScore: number | null;
-  communicationScore: number | null;
-  problemSolvingScore: number | null;
-  architectureScore: number | null;
   reliabilityScore: number | null;
-  clientReadinessScore: number | null;
   scoreSource: CandidateScoreSource;
   scoreDate: string | null;
 };
@@ -103,7 +99,6 @@ export type NormalizedCandidateImport = {
   minHoursPerWeek: number | null;
   maxHoursPerWeek: number | null;
   hoursPerWeek: number | null;
-  timezoneOverlap: string | null;
   education: string | null;
   resumeUrl: string | null;
   skills: NormalizedSkillRow[];

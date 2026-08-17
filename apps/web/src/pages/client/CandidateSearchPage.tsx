@@ -16,6 +16,9 @@ import { RequestTrialDialog } from '../../components/client/RequestTrialDialog';
 import { useAuth } from '../../contexts/AuthContext';
 import { useClientTrialRequests } from '../../hooks/useClientEngagementRequests';
 import {
+  hasBlockingTrialForCandidate,
+} from '../../lib/client-engagement-gates';
+import {
   DEFAULT_CLIENT_SEARCH_FILTERS,
   DEFAULT_CLIENT_SEARCH_SORT,
   filterClientSearchRecords,
@@ -41,8 +44,8 @@ export function CandidateSearchPage() {
   const [searchParams] = useSearchParams();
   const { user } = useAuth();
   const { message, variant, show, showError, dismiss } = useDemoToast();
-  const { addRequest: addTrialRequest } = useClientTrialRequests();
-  const canRequestTrial = user?.clientId != null;
+  const { addRequest: addTrialRequest, trials } = useClientTrialRequests();
+  const canRequestTrialBase = user?.clientId != null;
 
   const [filters, setFilters] = useState<ClientSearchFilters>(() => ({
     ...DEFAULT_CLIENT_SEARCH_FILTERS,
@@ -61,6 +64,7 @@ export function CandidateSearchPage() {
   const searchParam = filters.query.trim() || undefined;
   const { data: apiCandidates, isLoading } = useCandidatesList({
     limit: 100,
+    sort: '-publishedAt',
     search: searchParam,
   });
 
@@ -113,8 +117,13 @@ export function CandidateSearchPage() {
   );
 
   const eligibleSelectedRecords = useMemo(
-    () => selectedRecords.filter((record) => record.trialEligible),
-    [selectedRecords],
+    () =>
+      selectedRecords.filter(
+        (record) =>
+          record.trialEligible &&
+          !hasBlockingTrialForCandidate(record.id, trials),
+      ),
+    [selectedRecords, trials],
   );
 
   function toggleSelected(id: number, next: boolean) {
@@ -214,7 +223,10 @@ export function CandidateSearchPage() {
               <ClientCandidateSearchCard
                 key={record.id}
                 record={record}
-                canRequestTrial={canRequestTrial}
+                canRequestTrial={
+                  canRequestTrialBase &&
+                  !hasBlockingTrialForCandidate(record.id, trials)
+                }
                 selected={selectedIds.has(record.id)}
                 onSelectedChange={(next) => toggleSelected(record.id, next)}
                 onView={() => navigate(`/client/candidates/${record.id}`)}
@@ -235,7 +247,7 @@ export function CandidateSearchPage() {
               <Button
                 variant="primary"
                 size="sm"
-                disabled={!canRequestTrial || eligibleSelectedRecords.length === 0}
+                disabled={!canRequestTrialBase || eligibleSelectedRecords.length === 0}
                 onClick={() => openTrialDialog(eligibleSelectedRecords)}
               >
                 Request Trial free ({eligibleSelectedRecords.length})

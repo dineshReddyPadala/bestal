@@ -58,6 +58,14 @@ export function useCandidateMutations() {
       mutationFn: (id: number) => candidatesApi.hide(id),
       onSuccess: (_data, id) => invalidateDetail(id),
     }),
+    archive: useMutation({
+      mutationFn: (id: number) => candidatesApi.archive(id),
+      onSuccess: (_data, id) => invalidateDetail(id),
+    }),
+    unarchive: useMutation({
+      mutationFn: (id: number) => candidatesApi.unarchive(id),
+      onSuccess: (_data, id) => invalidateDetail(id),
+    }),
     runAiScreening: useMutation({
       mutationFn: ({ id, body }: { id: number; body?: Record<string, unknown> }) =>
         candidatesApi.runAiScreening(id, body),
