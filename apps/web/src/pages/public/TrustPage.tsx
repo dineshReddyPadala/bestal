@@ -1,7 +1,7 @@
-import { Link } from 'react-router-dom';
+// import { Link } from 'react-router-dom';
 import { PageMeta } from '../../components/PageMeta';
 import { MktShell } from '../../components/marketing/MktShell';
-import { TRUST_STATS, TRUST_VERIFICATION } from '../../lib/marketing-copy';
+// import { TRUST_STATS, TRUST_VERIFICATION } from '../../lib/marketing-copy';
 import { PAGE_SEO } from '../../lib/marketing-seo';
 
 export function TrustPage() {

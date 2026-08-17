@@ -69,7 +69,7 @@ export function MarketingLayout({
         <div className="mkt-shell">
           <div className="mkt-hdr">
             <Link to="/" onClick={() => setNavOpen(false)} aria-label="BesTal home">
-              <BesTalBrand variant="light" />
+              <BesTalBrand variant="light" logoSrc={brandLogoSrc} />
             </Link>
 
             <nav className={`mkt-nav ${navOpen ? 'open' : ''}`} aria-label="Primary">
@@ -113,7 +113,7 @@ export function MarketingLayout({
           <div className="mkt-ftg">
             <div>
               <Link to="/" aria-label="BesTal home">
-                <BesTalBrand variant="light" />
+                <BesTalBrand variant="light" logoSrc={brandLogoSrc} />
               </Link>
               <p className="mt-[18px] max-w-xs text-[15px] text-[var(--mkt-ink-d)]">{footerTagline}</p>
             </div>
