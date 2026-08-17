@@ -3,6 +3,7 @@ import { cn, formatCurrency, initials } from '@bestal/shared-utils';
 import { Button } from '@bestal/ui';
 import { Ban, CheckCircle2, Loader2, Star } from 'lucide-react';
 import { useEffect, useState, type ReactNode } from 'react';
+import { ForwardArrow } from '../ui/ForwardArrow';
 import { isBgvClear } from '../../lib/candidate-approval-gates';
 
 export type ClientCandidateSearchCardProps = {
@@ -257,13 +258,14 @@ export function ClientCandidateSearchCard({
           type="button"
           variant="outline"
           size="sm"
-          className="h-8 flex-1 text-xs"
+          className="h-8 flex-1 gap-1.5 text-xs"
           onClick={(event) => {
             event.stopPropagation();
             onView();
           }}
         >
-          Profile →
+          Profile
+          <ForwardArrow />
         </Button>
       </div>
     </article>

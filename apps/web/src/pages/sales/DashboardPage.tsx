@@ -3,6 +3,7 @@ import { PageHeader, StatCard, StatusBadge, TanStackDataTable } from '@bestal/ui
 import { type ColumnDef } from '@tanstack/react-table';
 import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
+import { ForwardArrow } from '../../components/ui/ForwardArrow';
 import { useClientsList } from '../../hooks/api/useClients';
 import { useDeploymentsList } from '../../hooks/api/useDeployments';
 import { useTrialsList } from '../../hooks/api/useTrials';
@@ -112,8 +113,12 @@ export function DashboardPage() {
       <div className="px-6 pb-6">
         <div className="mb-4 flex items-center justify-between">
           <h3 className="text-lg font-semibold">Active deployments</h3>
-          <Link to="/sales/margin" className="text-sm font-medium text-brand hover:underline">
-            View margin report →
+          <Link
+            to="/sales/margin"
+            className="inline-flex items-center gap-1 text-sm font-medium text-brand hover:underline"
+          >
+            View margin report
+            <ForwardArrow />
           </Link>
         </div>
         <TanStackDataTable

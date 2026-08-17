@@ -104,7 +104,7 @@ export function MarginReportPage() {
 
   return (
     <ListingPageShell title="Margin Report">
-      <div className="flex min-h-0 flex-1 flex-col gap-4">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-4">
         <div className="shrink-0 grid gap-4 md:grid-cols-3">
           <StatCard label="Avg margin" value={`${totals.avgMargin}%`} />
           <StatCard label="Weekly margin (all)" value={formatCurrency(totals.weekly, 'USD')} />
@@ -117,7 +117,7 @@ export function MarginReportPage() {
           </ChartCard>
         </div>
 
-        <div className="flex min-h-0 flex-1 flex-col">
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col">
           <TanStackDataTable
             columns={columns}
             data={rows}

@@ -1,20 +1,14 @@
 import { Link } from 'react-router-dom';
-import type { ReactNode } from 'react';
 import { PageMeta } from '../../components/PageMeta';
+import { MktShell } from '../../components/marketing/MktShell';
 import { FOR_ENGINEERS_ASK, FOR_ENGINEERS_GET } from '../../lib/marketing-copy';
 import { PAGE_SEO } from '../../lib/marketing-seo';
-
-function MktWrap({ children, className = '' }: { children: ReactNode; className?: string }) {
-  return (
-    <div className={`mx-auto max-w-[1150px] px-[22px] sm:px-[34px] ${className}`}>{children}</div>
-  );
-}
 
 export function ForEngineersPage() {
   return (
     <>
       <PageMeta title={PAGE_SEO.forEngineers.title} description={PAGE_SEO.forEngineers.description} />
-      <MktWrap className="mkt-page-hd max-w-[860px]">
+      <MktShell className="mkt-page-hd mkt-shell-narrow">
         <div className="mkt-eyebrow">For engineers</div>
         <h1 className="mt-4">
           Get tested once. Be seen by companies that already trust the result.
@@ -28,10 +22,10 @@ export function ForEngineersPage() {
           profile with your rate, your start date and the US hours you&apos;ve committed to. Clients
           read it before they contact you.
         </p>
-      </MktWrap>
+      </MktShell>
 
       <section className="mkt-section">
-        <MktWrap className="mkt-g2t">
+        <MktShell className="mkt-g2t">
           <div>
             <h2>What we ask</h2>
             <div className="mkt-stack mt-[26px]">
@@ -57,11 +51,11 @@ export function ForEngineersPage() {
               ))}
             </div>
           </div>
-        </MktWrap>
+        </MktShell>
       </section>
 
       <section className="mkt-band mkt-section">
-        <MktWrap className="max-w-[860px]">
+        <MktShell className="mkt-shell-narrow">
           <h2>What we don&apos;t do</h2>
           <p className="mkt-big mt-[18px]">
             We don&apos;t spam your profile to every client. We don&apos;t send you to roles that
@@ -75,7 +69,7 @@ export function ForEngineersPage() {
           <Link to="/contact" className="mkt-btn mkt-btn-primary mkt-btn-lg mt-8">
             Apply to be tested
           </Link>
-        </MktWrap>
+        </MktShell>
       </section>
     </>
   );

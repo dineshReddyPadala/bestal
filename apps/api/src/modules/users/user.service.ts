@@ -9,6 +9,7 @@ import {
   NotFoundError,
   requireOrganization,
 } from '../../utils/index.js';
+import { rolePortalLoginPath } from '../../utils/role-portal-paths.js';
 import { EmailService } from '../../services/email.service.js';
 import { buildPaginationMeta } from '../../validators/common.validator.js';
 import { mapUserToDto, mapUserToListItem } from './user.mapper.js';
@@ -20,13 +21,6 @@ import type {
   UserListItemDto,
 } from './user.types.js';
 import type { ListUsersQuery } from './user.validator.js';
-
-const ROLE_PORTAL_PATH: Record<string, string> = {
-  ADMIN: '/admin/login',
-  RECRUITER: '/recruiter/login',
-  SALES: '/sales/login',
-  CLIENT: '/client/login',
-};
 
 function generateTemporaryPassword(length = 12): string {
   const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$';
@@ -116,7 +110,7 @@ export class UserService {
       });
     }
 
-    const portalLoginUrl = `${this.fastify.config.webAppUrl}${ROLE_PORTAL_PATH[input.role] ?? '/login'}`;
+    const portalLoginUrl = `${this.fastify.config.webAppUrl}${rolePortalLoginPath(input.role)}`;
 
     const emailResult = await this.emailService.sendInviteCredentials({
       to: input.email.toLowerCase(),

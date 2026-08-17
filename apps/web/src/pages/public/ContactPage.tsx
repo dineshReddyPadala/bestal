@@ -1,50 +1,40 @@
-import { Link } from 'react-router-dom';
-import type { FormEvent, ReactNode } from 'react';
-import { useState } from 'react';
 import { PageMeta } from '../../components/PageMeta';
-import { CONTACT_REASONS } from '../../lib/marketing-copy';
-import { PAGE_SEO } from '../../lib/marketing-seo';
-
-function MktWrap({ children, className = '' }: { children: ReactNode; className?: string }) {
-  return (
-    <div className={`mx-auto max-w-[1150px] px-[22px] sm:px-[34px] ${className}`}>{children}</div>
-  );
-}
+import { MktShell } from '../../components/marketing/MktShell';
+import { ReachOutWizard } from '../../components/marketing/ReachOutWizard';
+import { PAGE_SEO } from '../../lib/marketing-seo';// import { CONTACT_REASONS } from '../../lib/marketing-copy';
 
 export function ContactPage() {
-  const [submitted, setSubmitted] = useState(false);
-  const [emailError, setEmailError] = useState(false);
+  // const [submitted, setSubmitted] = useState(false);
+  // const [emailError, setEmailError] = useState(false);
 
-  function handleSubmit(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    const form = e.currentTarget;
-    const email = (form.elements.namedItem('email') as HTMLInputElement).value;
-    const personalDomains = ['gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com'];
-    const domain = email.split('@')[1]?.toLowerCase();
-    if (domain && personalDomains.includes(domain)) {
-      setEmailError(true);
-      return;
-    }
-    setEmailError(false);
-    setSubmitted(true);
-  }
-
+  // function handleSubmit(e: FormEvent<HTMLFormElement>) {
+  //   e.preventDefault();
+  //   const form = e.currentTarget;
+  //   const email = (form.elements.namedItem('email') as HTMLInputElement).value;
+  //   const personalDomains = ['gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com'];
+  //   const domain = email.split('@')[1]?.toLowerCase();
+  //   if (domain && personalDomains.includes(domain)) {
+  //     setEmailError(true);
+  //     return;
+  //   }
+  //   setEmailError(false);
+  //   setSubmitted(true);
+  // }
   return (
-    <>
+    <div className="mkt-contact-page">
       <PageMeta title={PAGE_SEO.contact.title} description={PAGE_SEO.contact.description} />
-      <MktWrap className="mkt-page-hd max-w-[660px]">
-        <div className="mkt-eyebrow">Contact</div>
-        <h1 className="mt-4">Talk to us</h1>
-        <p className="mkt-lead mt-[22px]">
-          Want to see the platform, discuss what you need, or run a security review first? This
-          reaches a person, not a queue.
+      <MktShell className="mkt-page-hd mkt-hiw-hero">
+        <div className="mkt-hiw-label">Reach out</div>
+        <h1>Reach out to us</h1>
+        <p className="mkt-lead">
+          Tell us what you need — role, skills, and timeline. Our talent team will match against
+          vetted engineers with evidence on every profile.
         </p>
-      </MktWrap>
+      </MktShell>
 
-      <section className="mkt-section">
-        <MktWrap className="mkt-g2t">
-          <div className="mkt-card p-8">
-            {submitted ? (
+      <section className="mkt-section mkt-reach-out-section">
+        <MktShell className="mkt-reach-out-shell">
+        {/* <div className="mkt-card p-8">            {submitted ? (
               <div>
                 <h3>Message received.</h3>
                 <p className="mt-3 text-base">
@@ -129,16 +119,18 @@ export function ContactPage() {
                 </button>
               </form>
             )}
-          </div>
+          </div> */}
+          <ReachOutWizard />
 
-          <div className="mkt-stack">
+          {/* <div className="mkt-stack">
             <div className="mkt-card">
               <h4>Just want to look first?</h4>
               <p className="mt-[7px] text-[15px]">
-                Browse engineers with full test results and rates. No account needed.
+                Browse vetted talents with full test results and rates. No account needed.
               </p>
               <Link to="/sample-talent" className="mkt-btn mkt-btn-ghost mt-[10px] pl-0">
-                Browse Engineers →
+                Browse Vetted Talents
+                <ForwardArrow />
               </Link>
             </div>
             <div className="mkt-card">
@@ -147,19 +139,20 @@ export function ContactPage() {
                 Start with what we verify and what we deliberately don&apos;t claim.
               </p>
               <Link to="/trust" className="mkt-btn mkt-btn-ghost mt-[10px] pl-0">
-                Trust & Verification →
+                Trust & Verification
+                <ForwardArrow />
               </Link>
             </div>
             <div className="mkt-card">
               <h4>You&apos;re an engineer?</h4>
               <p className="mt-[7px] text-[15px]">Wrong page, right company.</p>
               <Link to="/for-engineers" className="mkt-btn mkt-btn-ghost mt-[10px] pl-0">
-                For Engineers →
+                For Engineers
+                <ForwardArrow />
               </Link>
             </div>
-          </div>
-        </MktWrap>
+          </div> */}        </MktShell>
       </section>
-    </>
+    </div>
   );
 }

@@ -168,14 +168,14 @@ export function SuperAdminUsersPage() {
               onSelect: () =>
                 requestConfirm({
                   title: 'Reset Password?',
-                  description: `A temporary password reset email will be sent to ${r.email}.`,
-                  confirmLabel: 'Reset Password',
+                  description: `A password reset link will be sent to ${r.email}. The user can set a new password from that link.`,
+                  confirmLabel: 'Send Reset Email',
                   onConfirm: async () => {
                     const result = await mutations.resetUserPassword.mutateAsync(r.id);
                     show(
                       result.emailSent
-                        ? 'Password reset emailed'
-                        : 'Password reset — email was not sent (check SMTP / FROM_MAIL settings)',
+                        ? `Password reset email sent to ${r.email}`
+                        : 'Password reset link created — email was not sent (check SMTP / Platform Settings)',
                       result.emailSent ? 'success' : 'error',
                     );
                   },
@@ -188,14 +188,14 @@ export function SuperAdminUsersPage() {
               onSelect: () =>
                 requestConfirm({
                   title: 'Resend Invitation?',
-                  description: `A new invitation email with login credentials will be sent to ${r.email}.`,
+                  description: `A new invitation email with portal login credentials will be sent to ${r.email}.`,
                   confirmLabel: 'Resend Invitation',
                   onConfirm: async () => {
                     const result = await mutations.resendInvite.mutateAsync(r.id);
                     show(
                       result.emailSent
-                        ? 'Invitation resent'
-                        : 'Invitation not sent — email delivery failed (check SMTP settings)',
+                        ? `Invitation email sent to ${r.email}`
+                        : 'Invitation not sent — email delivery failed (check SMTP / Platform Settings)',
                       result.emailSent ? 'success' : 'error',
                     );
                   },

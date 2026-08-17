@@ -5,7 +5,7 @@ export function LoginPage() {
     <PortalLoginForm
       portal="ADMIN"
       defaultEmail="admin@bestal.com"
-      footerLink={{ label: 'Back to portal selector', href: '/login' }}
+      footerLink={{ label: 'Back to sign in', href: '/login' }}
     />
   );
 }

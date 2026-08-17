@@ -39,7 +39,7 @@ export function ListingPageShell({
   useDashboardHeaderLeading(headerLeading);
 
   return (
-    <div className="flex h-[calc(100svh-var(--shell-header-h))] min-h-0 flex-col overflow-hidden bg-background">
+    <div className="flex h-[calc(100svh-var(--shell-header-h))] min-h-0 min-w-0 flex-col overflow-hidden bg-background">
       <ToastHost message={message ?? null} variant={messageVariant} onDismiss={onMessageDismiss} />
 
       {actions ? (
@@ -54,7 +54,7 @@ export function ListingPageShell({
         </div>
       ) : null}
 
-      <div className="scrollbar-thin flex min-h-0 flex-1 flex-col overflow-y-auto px-5 py-4 sm:px-6">
+      <div className="scrollbar-thin flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto overflow-x-hidden px-5 py-4 sm:px-6">
         {loading ? (
           <div className="flex flex-1 items-center justify-center rounded-lg border border-border text-sm text-muted-foreground">
             {loadingLabel}

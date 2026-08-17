@@ -68,7 +68,7 @@ export type LoginRequest = {
 
 export type ForgotPasswordRequest = {
   email: string;
-  portal: Extract<Portal, 'RECRUITER' | 'SALES' | 'CLIENT'>;
+  portal: Portal;
 };
 
 export type ResetPasswordRequest = {
