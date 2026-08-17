@@ -1,8 +1,179 @@
+/* @import url() FONT IMPORTS MUST ALWAYS BE AT THE VERY TOP OF THIS FILE, ABOVE THE TAILWIND IMPORTS — DO NOT DELETE THIS COMMENT */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
 @import '@bestal/ui/globals.css';
 @import './styles/marketing.css';
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: #f4f2ea;
+  color: #0a0d0b;
+  -webkit-font-smoothing: antialiased;
+}
+
+.section-shell {
+  width: 100%;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding-left: 24px;
+  padding-right: 24px;
+}
+
+/*
+ * Home landing palette utilities.
+ * Defined here so they always win over marketing-site / shadcn accent conflicts.
+ */
+.home-landing {
+  --ink: #0a0d0b;
+  --forest: #0e241c;
+  --moss: #14372b;
+  --accent: #1c7a5a;
+  --accent-bright: #2fa07a;
+  --cream: #f4f2ea;
+  --cream-deep: #ebe8dc;
+  --line: #dedacb;
+  background-color: var(--cream);
+  color: var(--ink);
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+}
+
+.home-landing .font-display {
+  font-family: 'Plus Jakarta Sans', Inter, ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: -0.02em;
+}
+
+.home-landing .bg-ink {
+  background-color: #0a0d0b !important;
+}
+.home-landing .bg-ink\/90,
+.home-landing .bg-ink\/95 {
+  background-color: rgb(10 13 11 / 0.95) !important;
+}
+.home-landing .bg-forest {
+  background-color: #0e241c !important;
+}
+.home-landing .bg-moss {
+  background-color: #14372b !important;
+}
+.home-landing .bg-cream {
+  background-color: #f4f2ea !important;
+}
+.home-landing .bg-cream-deep {
+  background-color: #ebe8dc !important;
+}
+.home-landing .bg-accent {
+  background-color: #1c7a5a !important;
+}
+.home-landing .bg-accent-bright {
+  background-color: #2fa07a !important;
+}
+.home-landing .hover\:bg-accent:hover {
+  background-color: #1c7a5a !important;
+}
+.home-landing .hover\:bg-accent-bright:hover {
+  background-color: #2fa07a !important;
+}
+.home-landing .hover\:bg-cream:hover {
+  background-color: #f4f2ea !important;
+}
+
+.home-landing .text-ink {
+  color: #0a0d0b !important;
+}
+.home-landing .text-ink\/45 {
+  color: rgb(10 13 11 / 0.45) !important;
+}
+.home-landing .text-ink\/55 {
+  color: rgb(10 13 11 / 0.55) !important;
+}
+.home-landing .text-ink\/60 {
+  color: rgb(10 13 11 / 0.6) !important;
+}
+.home-landing .text-ink\/65 {
+  color: rgb(10 13 11 / 0.65) !important;
+}
+.home-landing .text-ink\/70 {
+  color: rgb(10 13 11 / 0.7) !important;
+}
+.home-landing .text-accent {
+  color: #1c7a5a !important;
+}
+.home-landing .text-accent-bright {
+  color: #2fa07a !important;
+}
+.home-landing .fill-accent {
+  fill: #1c7a5a !important;
+}
+.home-landing .text-white {
+  color: #fff !important;
+}
+.home-landing .text-white\/45 {
+  color: rgb(255 255 255 / 0.45) !important;
+}
+.home-landing .text-white\/55 {
+  color: rgb(255 255 255 / 0.55) !important;
+}
+.home-landing .text-white\/65 {
+  color: rgb(255 255 255 / 0.65) !important;
+}
+.home-landing .text-white\/70 {
+  color: rgb(255 255 255 / 0.7) !important;
+}
+.home-landing .text-white\/75 {
+  color: rgb(255 255 255 / 0.75) !important;
+}
+.home-landing .text-white\/85 {
+  color: rgb(255 255 255 / 0.85) !important;
+}
+
+.home-landing .border-line {
+  border-color: #dedacb !important;
+}
+.home-landing .divide-line > :not([hidden]) ~ :not([hidden]) {
+  border-color: #dedacb !important;
+}
+.home-landing .border-white\/10 {
+  border-color: rgb(255 255 255 / 0.1) !important;
+}
+.home-landing .border-white\/15 {
+  border-color: rgb(255 255 255 / 0.15) !important;
+}
+.home-landing .border-white\/20 {
+  border-color: rgb(255 255 255 / 0.2) !important;
+}
+.home-landing .border-white\/25 {
+  border-color: rgb(255 255 255 / 0.25) !important;
+}
+.home-landing .border-white\/30 {
+  border-color: rgb(255 255 255 / 0.3) !important;
+}
+
+.home-landing h1,
+.home-landing h2,
+.home-landing h3,
+.home-landing h4,
+.home-landing p {
+  color: inherit;
+}
 
 @layer utilities {
   .text-balance {
     text-wrap: balance;
   }
+}
+.mkt-trust-quote-em {
+  color: #12100e !important;
+  font-weight: 700;
+}
+
+.trust-body-quote {
+  color: #4f5e64 !important;
+}
+
+.trust-body-quote .mkt-trust-quote-em {
+  color: #12100e !important;
+  font-weight: 700;
 }

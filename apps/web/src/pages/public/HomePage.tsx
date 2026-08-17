@@ -1,32 +1,39 @@
-import { PUBLIC_SKILL_COMMUNITIES } from '@bestal/shared-utils';
 import { Link } from 'react-router-dom';
-import type { ReactNode } from 'react';
+import { useState } from 'react';
 import { DemoEngineerCard } from '../../components/marketing/DemoEngineerCard';
+import { ProfileTabs } from '../../components/marketing/ProfileTabs';
+import { MktShell } from '../../components/marketing/MktShell';
 import { PageMeta } from '../../components/PageMeta';
 import {
-  BUYER_QUESTIONS,
   EVIDENCE_STRIP,
+  HOME_BUYER_FAQ,
+  HOME_COMMUNITIES,
   HOME_STATS,
   HOME_STEPS,
   TIMEZONE_BLOCKS,
 } from '../../lib/marketing-copy';
 import { HERO_ENGINEER } from '../../lib/demo-engineers';
+import { images } from '../../data/homeCopy';
 import { PAGE_SEO } from '../../lib/marketing-seo';
+import { cn } from '@bestal/shared-utils';
+import { ForwardArrow } from '../../components/ui/ForwardArrow';
 
-function MktWrap({ children, className = '' }: { children: ReactNode; className?: string }) {
-  return (
-    <div className={`mx-auto max-w-[1150px] px-[22px] sm:px-[34px] ${className}`}>{children}</div>
-  );
-}
+const TIMEZONE_CHIPS = [
+  { abbr: 'ET', name: 'Eastern' },
+  { abbr: 'CT', name: 'Central' },
+  { abbr: 'MT', name: 'Mountain' },
+  { abbr: 'PT', name: 'Pacific' },
+] as const;
 
 export function HomePage() {
+  const [openFaq, setOpenFaq] = useState(0);
+
   return (
-    <>
+    <div className="mkt-home">
       <PageMeta title={PAGE_SEO.home.title} description={PAGE_SEO.home.description} />
 
-      {/* Hero */}
       <section className="mkt-hero">
-        <MktWrap className="mkt-g2">
+        <MktShell className="mkt-g2">
           <div>
             <h1>
               Proven Talent.
@@ -34,15 +41,14 @@ export function HomePage() {
               Ready to Perform.
             </h1>
             <p className="mkt-lead mt-[26px] max-w-[540px]">
-              Pre-vetted engineers who work <em className="mkt-hl">your hours, not theirs</em>. See
-              their test results, their rate and their start date up front — then try them{' '}
-              <em className="mkt-hl">free for 20 hours</em> before you commit.
+              Vetted Talents who work your hours. See their test results, their rate and their start
+              date up front — then try them free for 20 hours before you commit.
             </p>
             <div className="mkt-actions mt-9">
-              <Link to="/sample-talent" className="mkt-btn mkt-btn-primary mkt-btn-lg">
-                Browse Engineers
+              <Link to="/login" className="mkt-btn mkt-btn-primary mkt-btn-lg">
+              Browse Vetted Talents
               </Link>
-              <Link to="/evaluation-standard" className="mkt-btn mkt-btn-secondary mkt-btn-lg">
+              <Link to="/evaluation-standard" className="mkt-btn mkt-btn-white mkt-btn-lg">
                 See how we test
               </Link>
             </div>
@@ -50,210 +56,282 @@ export function HomePage() {
               No recruiter calls. No sourcing cycle. No commitment for the first 20 hours.
             </p>
           </div>
-          <DemoEngineerCard engineer={HERO_ENGINEER} />
-        </MktWrap>
+          <DemoEngineerCard engineer={HERO_ENGINEER} hideScorecard />
+        </MktShell>
       </section>
 
-      {/* Stats band */}
       <div className="mkt-band mkt-section-tight">
-        <MktWrap className="mkt-stats">
+        <MktShell className="mkt-stats">
           {HOME_STATS.map((stat) => (
             <div key={stat.value}>
               <div className="mkt-stat-v">{stat.value}</div>
               <div className="mkt-stat-l whitespace-pre-line">{stat.label}</div>
             </div>
           ))}
-        </MktWrap>
+        </MktShell>
       </div>
 
-      {/* Evidence */}
-      <section className="mkt-section">
-        <MktWrap>
-          <div className="mb-14 max-w-[700px]">
-            <div className="mkt-eyebrow">The evidence</div>
-            <h2 className="mt-4">Six things you can check before you talk to anyone</h2>
+      <section className="mkt-cream mkt-section">
+        <MktShell>
+          <div className="mkt-ev-hd">
+            <div className="max-w-[520px]">
+              <div className="mkt-kicker">The evidence</div>
+              <h2 className="mt-4">Six things you can check before you talk to anyone</h2>
+            </div>
           </div>
           <div className="mkt-g6">
             {EVIDENCE_STRIP.map((item) => (
-              <div key={item.num} className="mkt-ev">
-                <div className="mkt-ev-n">{item.num}</div>
-                <div>
-                  <h4>{item.title}</h4>
-                  <p>{item.body}</p>
-                </div>
+              <div key={item.num} className="mkt-ev-col">
+                <div className="mkt-ev-num">{item.num}</div>
+                <h4>{item.title}</h4>
+                <p>{item.body}</p>
               </div>
             ))}
           </div>
-        </MktWrap>
+        </MktShell>
       </section>
 
-      {/* Differentiation */}
       <section className="mkt-dark mkt-section">
-        <MktWrap className="max-w-[840px]">
-          <h2>
-            Everyone claims the top 3%.
-            <br />
-            We show you the test.
-          </h2>
-          <p className="mt-6 text-lg">
-            Most talent platforms ask you to trust a badge. A percentage, a promise, a curated
-            shortlist — and no way to check any of it.
-          </p>
-          <p className="mt-[18px] text-lg">
-            BesTal publishes the test instead. Every engineer&apos;s profile shows what was tested,
-            how they scored on five separate areas, who tested them, and when — including the
-            reservations.
-          </p>
-          <p className="mt-[18px] text-lg font-medium text-white">
-            You don&apos;t have to believe our standard. You can read it.
-          </p>
-          <Link to="/evaluation-standard" className="mkt-btn mkt-btn-white mkt-btn-lg mt-8">
-            See how we test →
-          </Link>
-        </MktWrap>
+        <MktShell className="mkt-g2 items-start">
+          <div>
+            <h2>
+              Everyone claims the top 3%.
+              <br />
+              We show you the test.
+            </h2>
+            <p className="mkt-dark-p mt-6">
+              Most talent platforms ask you to trust a badge. A percentage, a promise, a curated
+              shortlist — and no way to check any of it.
+            </p>
+            <p className="mkt-dark-p mt-4">
+              BesTal publishes the test instead. Every engineer&apos;s profile shows what was
+              tested, how they scored on five separate areas, who tested them, and when — including
+              the reservations.
+            </p>
+            <p className="mkt-dark-p mkt-dark-em mt-4">
+              You don&apos;t have to believe our standard. You can read it.
+            </p>
+            <Link to="/evaluation-standard" className="mkt-btn mkt-btn-white mkt-btn-lg mt-8">
+              See how we test
+              <ForwardArrow />
+            </Link>
+          </div>
+          <div className="mkt-score-dark">
+            <div className="mkt-score-dark-hd">
+              <span>Scorecard · Senior Data Engineer</span>
+              <strong>
+                {HERO_ENGINEER.score}
+                <span>/100</span>
+              </strong>
+            </div>
+            {HERO_ENGINEER.dimensions.map((dim) => (
+              <div key={dim.label} className="mkt-scr">
+                <span className="mkt-scr-n">{dim.label}</span>
+                <span className="mkt-tr">
+                  <span
+                    className={cn('mkt-fl', dim.tone === 'gold' && 'mkt-fl-amber')}
+                    style={{ width: `${dim.value * 10}%` }}
+                  />
+                </span>
+                <span className="mkt-scr-v">{dim.value}</span>
+              </div>
+            ))}
+            <p className="mkt-evl">
+              {HERO_ENGINEER.quoteIsPlaceholder ? (
+                <span className="italic">{HERO_ENGINEER.quote}</span>
+              ) : (
+                <>“{HERO_ENGINEER.quote}”</>
+              )}
+              <br />
+              <span className="mkt-evl-meta">
+                — External Specialist, tested {HERO_ENGINEER.testedOn}
+              </span>
+            </p>
+          </div>
+        </MktShell>
       </section>
 
-      {/* Time zone */}
-      <section className="mkt-band mkt-section">
-        <MktWrap className="mkt-g2">
+      <section id="time-zone" className="mkt-white mkt-section">
+        <MktShell className="mkt-g2">
           <div>
-            <div className="mkt-eyebrow">Time zone</div>
+            <div className="mkt-kicker">Time zone</div>
             <h2 className="mt-4">
               They work your hours.
               <br />
               Not &ldquo;some overlap.&rdquo;
             </h2>
-            <p className="mkt-lead mt-[22px]">
+            <p className="mkt-lead mt-6">
               Every BesTal engineer is assigned to one US time zone and works a full business day in
               it — Eastern, Central, Mountain or Pacific.
             </p>
-            <p className="mkt-big mt-[18px]">
-              No 6am standups for them. No 9pm handoffs for you. No hunting for three usable hours
+            <p className="mkt-big mt-4">
+              No 6am standups for them. No 8pm handoffs for you. No hunting for three usable hours
               in the middle of the day.
             </p>
-            <Link to="/sample-talent" className="mkt-btn mkt-btn-secondary mt-[26px]">
-              Browse by time zone
+            <Link to="/how-it-works" className="mkt-btn mkt-btn-primary mt-7">
+              See a sample scorecard
+              <ForwardArrow />
             </Link>
+            <div className="mkt-tz-chips">
+              {TIMEZONE_CHIPS.map((z) => (
+                <span key={z.abbr} className="mkt-tz-chip">
+                  <strong>{z.abbr}</strong> {z.name}
+                </span>
+              ))}
+            </div>
           </div>
           <div className="mkt-stack">
             {TIMEZONE_BLOCKS.map((block) => (
-              <div key={block.title} className="mkt-card">
+              <div key={block.title}>
                 <h4>{block.title}</h4>
-                <p className="mt-[7px] text-[15px]">{block.body}</p>
+                <p className="mt-2">{block.body}</p>
               </div>
             ))}
           </div>
-        </MktWrap>
+        </MktShell>
       </section>
 
-      {/* Steps */}
-      <section className="mkt-section">
-        <MktWrap className="max-w-[860px]">
-          <h2>Four steps. No sourcing cycle.</h2>
-          <div className="mkt-steps mt-10">
-            {HOME_STEPS.map((item) => (
-              <div key={item.step} className="mkt-step">
-                <div className="mkt-step-n">{item.step}</div>
-                <div>
-                  <h3>{item.title}</h3>
-                  <p>{item.body}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-          <Link to="/how-it-works" className="mkt-btn mkt-btn-ghost mt-[26px] pl-0">
-            How it works in detail →
-          </Link>
-        </MktWrap>
-      </section>
-
-      {/* Trial + Scale */}
-      <section className="mkt-section-tight">
-        <MktWrap className="mkt-g2t">
-          <div className="mkt-card mkt-card-dark p-11">
-            <h2>Don&apos;t hire from a résumé. See them perform.</h2>
-            <p className="mt-5 text-[17px]">
-              20 hours of real work with your team, free, before you commit to anything. You keep
-              the work whatever you decide.
+      <section className="mkt-white mkt-section" style={{ paddingTop: 0 }}>
+        <MktShell className="mkt-profile">
+          <div>
+            <div className="mkt-kicker">The profile</div>
+            <h2 className="mt-4">This is what a profile looks like</h2>
+            <p className="mkt-lead mt-3 max-w-[380px]">
+              Score, rate, availability and overlap — decided before you send a message.
             </p>
-            <Link to="/try-for-a-week" className="mkt-btn mkt-btn-amber mt-7">
-              How the 20-hour trial works →
+          </div>
+          <div className="mkt-profile-panel">
+            <ProfileTabs />
+          </div>
+        </MktShell>
+      </section>
+
+      <section className="mkt-white mkt-section" style={{ paddingTop: 0 }}>
+        <MktShell>
+          <div className="mb-8 flex flex-wrap items-end justify-between gap-4 mkt-step-hd">
+            <h2>Four steps. No sourcing cycle.</h2>
+            {/* <Link to="/how-it-works" className="mkt-btn mkt-btn-secondary">
+              How it works in detail →
+            </Link> */}
+          </div>
+          <div className="mkt-step4">
+            {HOME_STEPS.map((item) => (
+              <div key={item.step} className="mkt-step4-item">
+                <div className="mkt-step4-l">Step {item.step}</div>
+                <h3>{item.title}</h3>
+                <p>{item.body}</p>
+              </div>
+            ))}
+          </div>
+        </MktShell>
+      </section>
+
+      <section className="mkt-cream mkt-section-tight">
+        <MktShell className="mkt-g2t mkt-equal-cards">
+          <div className="mkt-card mkt-card-dark mkt-card-fill p-8">
+            <h2>Don&apos;t hire from a résumé. <br /> See them perform.</h2>
+            <p className="mt-4">
+              One cold email or scoped work brief is your trial, and your process, agreed in
+              advance.
+            </p>
+            <Link to="/try-for-a-week" className="mkt-btn mkt-btn-white mt-7">
+              How the 20-hour Trial works
+              <ForwardArrow />
             </Link>
           </div>
-          <div className="mkt-card mkt-card-amber p-11">
+          <div className="mkt-card mkt-card-amber mkt-card-fill p-8">
             <h2>Scale without carrying bench</h2>
-            <p className="mt-5 text-[17px]">
+            <p className="mt-4">
               One engineer this week. Four more next month. A SAP team for two quarters, then
               nothing.
             </p>
-            <p className="mt-4 text-[17px]">
-              BesTal is asset-light by design — we don&apos;t hold a bench, so you&apos;re not paying
-              for one.
-            </p>
           </div>
-        </MktWrap>
+        </MktShell>
       </section>
 
-      {/* Communities */}
-      <section className="mkt-section">
-        <MktWrap>
+      <section className="mkt-white mkt-section">
+        <MktShell>
           <div className="mb-11 max-w-[700px]">
             <h2>Engineers, organised by discipline</h2>
-            <p className="mkt-lead mt-[18px]">
+            <p className="mkt-big mt-3 max-w-[620px]">
               Not a general résumé database. Every engineer belongs to a specialist community with
               its own tests and its own outside testers.
             </p>
           </div>
           <div className="mkt-g3">
-            {PUBLIC_SKILL_COMMUNITIES.slice(0, 6).map((c) => (
-              <Link key={c.slug} to="/communities" className="mkt-comm">
+            {HOME_COMMUNITIES.map((c) => (
+              <Link key={c.name} to="/communities" className="mkt-comm">
                 <h3>{c.name}</h3>
-                <p>{c.description}</p>
+                <p>{c.body}</p>
               </Link>
             ))}
           </div>
-          <Link to="/communities" className="mkt-comm mt-[22px] block">
-            <h3>{PUBLIC_SKILL_COMMUNITIES[6]?.name}</h3>
-            <p>{PUBLIC_SKILL_COMMUNITIES[6]?.description}</p>
-          </Link>
-        </MktWrap>
+        </MktShell>
       </section>
 
-      {/* Buyer questions */}
-      <section className="mkt-band mkt-section">
-        <MktWrap className="mkt-g2 items-start">
+      <section className="mkt-cream mkt-section">
+        <MktShell className="mkt-g2 mkt-faq-split">
           <div>
             <h2>The questions we built this platform to answer</h2>
-            <p className="mkt-big mt-[22px]">
+            <p className="mkt-big mt-4">
               Every one of these is answerable on a profile, without a call.
             </p>
           </div>
-          <ul className="mkt-tk">
-            {BUYER_QUESTIONS.map((q) => (
-              <li key={q}>{q}</li>
-            ))}
-          </ul>
-        </MktWrap>
+          <div className="mkt-faq mkt-faq-list">
+            {HOME_BUYER_FAQ.map((item, i) => {
+              const isOpen = openFaq === i;
+              return (
+                <div key={item.question} className={cn('mkt-faq-item', isOpen && 'is-open')}>
+                  <button
+                    type="button"
+                    className="mkt-faq-btn"
+                    aria-expanded={isOpen}
+                    onClick={() => setOpenFaq(isOpen ? -1 : i)}
+                  >
+                    <span className="mkt-faq-check" aria-hidden>
+                      ✓
+                    </span>
+                    <span className="mkt-faq-q">{item.question}</span>
+                    <span className="mkt-faq-chev" aria-hidden>
+                      {isOpen ? '⌃' : '⌄'}
+                    </span>
+                  </button>
+                  {isOpen && <p className="mkt-faq-a">{item.answer}</p>}
+                </div>
+              );
+            })}
+          </div>
+        </MktShell>
       </section>
 
-      {/* Final CTA */}
-      <section className="mkt-section">
-        <MktWrap className="max-w-[660px] text-center">
-          <h2>Start with the evidence.</h2>
-          <p className="mkt-lead mt-5">
-            Browse engineers by discipline and time zone, or tell us what you need and we&apos;ll
-            match against it.
-          </p>
-          <div className="mkt-actions mkt-actions-center mt-[34px]">
-            <Link to="/sample-talent" className="mkt-btn mkt-btn-primary mkt-btn-lg">
-              Browse Engineers
-            </Link>
-            <Link to="/contact" className="mkt-btn mkt-btn-secondary mkt-btn-lg">
-              Tell us what you need
-            </Link>
+      <section className="mkt-white mkt-section-tight">
+        <MktShell>
+          <div className="mkt-cta-banner">
+            <div className="mkt-cta-copy">
+              <h2>Start with the evidence.</h2>
+              <p>
+                Browse the 6 Skill Communities, or tell us what you need and we&apos;ll match against
+                it.
+              </p>
+              <div className="mkt-actions">
+                <Link to="/login" className="mkt-btn mkt-btn-dark mkt-btn-lg">
+                  Browse Vetted Talents
+                  <ForwardArrow />
+                </Link>
+                <Link to="/contact" className="mkt-btn mkt-btn-outline mkt-btn-lg">
+                  Tell us what you need
+                </Link>
+              </div>
+            </div>
+            <div className="mkt-cta-photo">
+              <img
+                src={images.cta}
+                alt="A team reviewing engineer evidence together at a table"
+              />
+            </div>
           </div>
-        </MktWrap>
+        </MktShell>
       </section>
-    </>
+    </div>
   );
 }

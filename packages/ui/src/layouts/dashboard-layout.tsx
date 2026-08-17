@@ -364,7 +364,7 @@ export function DashboardLayout({
             </div>
           </header>
 
-          <main className="scrollbar-thin min-h-0 flex-1 overflow-y-auto overflow-x-hidden bg-background">
+          <main className="scrollbar-thin min-h-0 min-w-0 flex-1 overflow-y-auto overflow-x-hidden bg-background">
             {children}
           </main>
         </div>

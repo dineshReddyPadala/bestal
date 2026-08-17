@@ -9,7 +9,7 @@ const workspaceRoot = path.resolve(__dirname, '../..');
 export default defineConfig({
   plugins: [react()],
   server: {
-    port: 5173,
+    port: 5174,
     strictPort: true,
     allowedHosts: ['bestal.co', 'www.bestal.co'],
     proxy: {

@@ -5,12 +5,18 @@ type DemoEngineerCardProps = {
   engineer: DemoEngineer;
   className?: string;
   compact?: boolean;
+  hideScorecard?: boolean;
 };
 
-export function DemoEngineerCard({ engineer, className, compact }: DemoEngineerCardProps) {
+export function DemoEngineerCard({
+  engineer,
+  className,
+  compact,
+  hideScorecard = false,
+}: DemoEngineerCardProps) {
   return (
     <article className={cn('mkt-prof', className)}>
-      <div className="mkt-dtag">◆ Demo profile · fictional engineer</div>
+      <div className="mkt-dtag">Demo profile · Fictional engineer</div>
       <div className="mkt-pb">
         <div className="mkt-ptop">
           <div className="mkt-av">{engineer.initials}</div>
@@ -37,22 +43,22 @@ export function DemoEngineerCard({ engineer, className, compact }: DemoEngineerC
           <span className="mkt-bdg mkt-bdg-teal">Tested by Experts</span>
           <span className="mkt-bdg mkt-bdg-green">Background Verified</span>
           <span className="mkt-bdg mkt-bdg-green">Identity Verified</span>
-          {engineer.trialEligible ? (
+          {/* {engineer.trialEligible ? (
             <span className="mkt-bdg mkt-bdg-amber">20-Hour Trial</span>
           ) : (
             <span className="mkt-bdg mkt-bdg-muted">Trial unavailable</span>
-          )}
+          )} */}
         </div>
 
         <div className="mkt-tz-row">
           <div className="mkt-tz-ic">◷</div>
           <div>
-            <div className="mkt-tz-l">Works {engineer.timezone}</div>
-            <div className="mkt-tz-s">{engineer.timezoneDetail}</div>
+            <div className="mkt-tz-l">{engineer.zoneLabel}</div>
+            <div className="mkt-tz-s">{engineer.zoneHours}</div>
           </div>
         </div>
 
-        {!compact && (
+        {!hideScorecard && !compact && (
           <div className="mkt-sc">
             <div className="mkt-sch">
               <span className="mkt-sch-l">Test Results</span>
@@ -66,10 +72,7 @@ export function DemoEngineerCard({ engineer, className, compact }: DemoEngineerC
                 <span className="mkt-scr-n">{dim.label}</span>
                 <span className="mkt-tr">
                   <span
-                    className={cn(
-                      'mkt-fl',
-                      dim.label === 'Communication' && 'mkt-fl-amber',
-                    )}
+                    className={cn('mkt-fl', dim.tone === 'gold' && 'mkt-fl-amber')}
                     style={{ width: `${dim.value * 10}%` }}
                   />
                 </span>
@@ -77,16 +80,20 @@ export function DemoEngineerCard({ engineer, className, compact }: DemoEngineerC
               </div>
             ))}
             <p className="mkt-evl">
-              &ldquo;{engineer.evaluation}&rdquo;
+              {engineer.quoteIsPlaceholder ? (
+                <span className="italic">{engineer.quote}</span>
+              ) : (
+                <>“{engineer.quote}”</>
+              )}
               <br />
-              <span className="mkt-evl-meta">— Outside specialist, tested Mar 2026</span>
+              <span className="mkt-evl-meta">— External Specialist, tested {engineer.testedOn}</span>
             </p>
           </div>
         )}
 
         <div className="mkt-avl">
-          <span className="mkt-avl-s">● {engineer.availability}</span>
-          <span className="mkt-micro">Confirmed {engineer.confirmed}</span>
+          <span className="mkt-avl-s">{engineer.availability}</span>
+          <span className="mkt-avl-confirmed">{engineer.confirmed}</span>
         </div>
 
         {!compact && (
@@ -96,8 +103,19 @@ export function DemoEngineerCard({ engineer, className, compact }: DemoEngineerC
             ) : (
               <span className="mkt-btn mkt-btn-primary mkt-btn-sm">Request availability</span>
             )}
-            <span className="mkt-btn mkt-btn-secondary mkt-btn-sm">Shortlist</span>
-            {!compact && <span className="mkt-btn mkt-btn-secondary mkt-btn-sm">Compare</span>}
+            <span className="mkt-btn mkt-btn-secondary mkt-btn-sm">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
+              </svg>
+              Shortlist
+            </span>
+            <span className="mkt-btn mkt-btn-secondary mkt-btn-sm">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                <rect x="3" y="4" width="7" height="16" rx="1.5" />
+                <rect x="14" y="4" width="7" height="16" rx="1.5" />
+              </svg>
+              Compare
+            </span>
           </div>
         )}
       </div>

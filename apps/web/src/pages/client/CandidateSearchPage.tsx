@@ -6,6 +6,7 @@ import { Home, Users } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ClientCandidateSearchCard } from '../../components/client/ClientCandidateSearchCard';
+import { ForwardArrow } from '../../components/ui/ForwardArrow';
 import { ClientCandidateSearchTable } from '../../components/client/ClientCandidateSearchTable';
 import {
   ClientSearchToolbar,
@@ -243,12 +244,14 @@ export function CandidateSearchPage() {
                 <Button
                   variant="outline"
                   size="sm"
+                  className="gap-1.5"
                   onClick={() => {
                     const id = selectedRecords[0]?.id;
                     if (id) navigate(`/client/candidates/${id}`);
                   }}
                 >
-                  Profile →
+                  Profile
+                  <ForwardArrow />
                 </Button>
               ) : null}
             </div>

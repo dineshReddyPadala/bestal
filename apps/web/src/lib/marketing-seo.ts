@@ -1,7 +1,7 @@
 export const DEFAULT_TITLE = 'BesTal — Proven Talent. Ready to Perform.';
 
 export const DEFAULT_DESCRIPTION =
-  'Pre-vetted engineers who work your hours, not theirs. See their test results, their rate and their start date up front — then try them free for 20 hours before you commit.';
+  'Vetted Talents who work your hours. See their test results, their rate and their start date up front — then try them free for 20 hours before you commit.';
 
 export const PAGE_SEO = {
   home: {
@@ -34,14 +34,14 @@ export const PAGE_SEO = {
       'Identity bound to assessment, independent education and employment checks, written exclusivity declarations, IP assigned at creation. What BesTal verifies and what it deliberately does not publish.',
   },
   rates: {
-    title: 'How BesTal Rates Work — Transparent Hourly Pricing',
+    title: 'How BesTal Pricing Works — Transparent Hourly Pricing',
     description:
-      'Every profile shows the hourly client rate before you shortlist. The seven factors that set it, what it includes, and why BesTal doesn\'t compete on being cheapest.',
+      'Every profile shows the hourly client price before you shortlist. The seven factors that set it, what it includes, and why BesTal doesn\'t compete on being cheapest.',
   },
   tryForAWeek: {
-    title: 'Try for a Week — See a Professional Perform Before You Commit',
+    title: '20-Hour Trial — See Them Perform Before You Commit',
     description:
-      'A one-week paid working engagement on real work, with defined success criteria and a named manager. You keep the work product. Then continue, extend, replace or stop.',
+      'See test results, rate and start date up front, then try an engineer free for 20 hours. No recruiter calls, no sourcing cycle, no commitment for the first 20 hours.',
   },
   jobs: {
     title: 'Open Roles | BesTal',
@@ -64,9 +64,9 @@ export const PAGE_SEO = {
       'BesTal connects enterprises with proven technology specialists. Every profile includes external evaluation scorecards, BGV status, and transparent pricing before you interview.',
   },
   contact: {
-    title: 'Contact BesTal',
+    title: 'Reach out to us | BesTal',
     description:
-      'Talk to BesTal about a technology talent requirement, a platform walkthrough, or a procurement and security review.',
+      'Tell BesTal what role you need, required skills, and timeline. Our talent team will match you with vetted engineers — test results and rates on every profile.',
   },
   forEngineers: {
     title: 'For Engineers | BesTal',

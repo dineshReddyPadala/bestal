@@ -178,6 +178,7 @@ export function TanStackDataTable<TData>({
   return (
     <div
       className={cn(
+        'min-w-0 w-full',
         fillHeight ? 'flex h-full min-h-0 flex-col gap-3' : 'space-y-4',
       )}
     >
@@ -243,11 +244,11 @@ export function TanStackDataTable<TData>({
       ) : (
         <div
           className={cn(
-            'min-h-0 overflow-auto rounded-lg border border-border bg-background',
-            fillHeight ? 'flex-1' : undefined,
+            'min-h-[200px] min-w-0 w-full overflow-x-auto overflow-y-auto rounded-lg border border-border bg-background sm:min-h-0',
+            fillHeight ? 'sm:flex-1' : undefined,
           )}
         >
-          <table className={cn('w-full caption-bottom text-sm', dense && 'text-[13px]')}>
+          <table className={cn('w-full min-w-max caption-bottom text-sm', dense && 'text-[13px]')}>
             <DataTableHeader className={cn(stickyHeader && 'sticky top-0 z-10 bg-muted/90 backdrop-blur')}>
               {table.getHeaderGroups().map((headerGroup) => (
                 <DataTableRow key={headerGroup.id}>

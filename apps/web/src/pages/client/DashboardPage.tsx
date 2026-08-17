@@ -1,7 +1,6 @@
 import { formatCurrency, formatDate } from '@bestal/shared-utils';
 import { Avatar, Button, useDashboardHeaderLeading } from '@bestal/ui';
 import {
-  ArrowRight,
   Monitor,
   Rocket,
   Sparkles,
@@ -9,6 +8,7 @@ import {
 } from 'lucide-react';
 import { useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { ForwardArrow } from '../../components/ui/ForwardArrow';
 import { ClientDashboardTalentRow } from '../../components/client/ClientDashboardTalentRow';
 import { ClientPortalStatCard } from '../../components/client/ClientPortalStatCard';
 import { useCandidatesList } from '../../hooks/api/useCandidates';
@@ -166,7 +166,7 @@ export function DashboardPage() {
               to="/client/trials"
               className="inline-flex items-center gap-1 text-xs font-medium text-brand hover:underline"
             >
-              Browse <ArrowRight className="h-3 w-3" />
+              Browse <ForwardArrow />
             </Link>
           </div>
           <div className="divide-y divide-border/60">
@@ -200,7 +200,7 @@ export function DashboardPage() {
               to="/client/search"
               className="inline-flex items-center gap-1 text-xs font-medium text-brand hover:underline"
             >
-              Browse <ArrowRight className="h-3 w-3" />
+              Browse <ForwardArrow />
             </Link>
           </div>
           <div className="divide-y divide-border/60">
@@ -261,8 +261,12 @@ export function DashboardPage() {
               <h2 className="text-sm font-semibold text-foreground">Bench Composition</h2>
               <p className="text-xs text-muted-foreground">Vetted talent by designation</p>
             </div>
-            <Link to="/client/search" className="text-xs font-medium text-brand hover:underline">
-              View all →
+            <Link
+              to="/client/search"
+              className="inline-flex items-center gap-1 text-xs font-medium text-brand hover:underline"
+            >
+              View all
+              <ForwardArrow />
             </Link>
           </div>
           <ul className="mt-4 space-y-2">
