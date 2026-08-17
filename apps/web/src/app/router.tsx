@@ -36,7 +36,8 @@ import { HomePage } from '../pages/public/HomePage';
 import { HowItWorksPage } from '../pages/public/HowItWorksPage';
 import { JobDetailPage } from '../pages/public/JobDetailPage';
 import { JobsPage } from '../pages/public/JobsPage';
-import { PortalLoginPage } from '../pages/public/LoginPage';
+import { AdminPortalSelectorPage, PortalSelectorPage } from '../pages/public/LoginPage';
+import { MarketingLoginPage } from '../pages/public/MarketingLoginPage';
 import { RatesPage } from '../pages/public/RatesPage';
 import { SampleTalentPage } from '../pages/public/SampleTalentPage';
 import { TalentPage } from '../pages/public/TalentPage';
@@ -155,8 +156,8 @@ function MarketingShell() {
     <div data-prerender-ready="">
       <MarketingLayout
         navItems={[...marketingNav]}
-        ctaLabel="Browse Engineers"
-        ctaHref="/sample-talent"
+        ctaLabel="Reach out to us"
+        ctaHref="/contact"
         brandLogoSrc={BESTAL_LOGO_SRC}
       >
         <Outlet />
@@ -165,12 +166,27 @@ function MarketingShell() {
   );
 }
 
-function PortalSelectorShell() {
+function LoginRoutesLayout() {
+  return <Outlet />;
+}
+
+function LoginAdminPortalsRoute() {
   return (
     <>
       <PageMeta title="Sign In | BesTal" description="Sign in to your BesTal portal." noIndex />
       <AuthLayout title="Welcome to BesTal" brandLogoSrc={BESTAL_LOGO_SRC}>
-        <Outlet />
+        <AdminPortalSelectorPage />
+      </AuthLayout>
+    </>
+  );
+}
+
+function LoginPortalsRoute() {
+  return (
+    <>
+      <PageMeta title="Sign In | BesTal" description="Sign in to your BesTal portal." noIndex />
+      <AuthLayout title="Welcome to BesTal" brandLogoSrc={BESTAL_LOGO_SRC}>
+        <PortalSelectorPage />
       </AuthLayout>
     </>
   );
@@ -221,8 +237,15 @@ const router = createBrowserRouter([
     ],
   },
   {
-    element: <PortalSelectorShell />,
-    children: [{ path: 'login', element: <PortalLoginPage /> }],
+    path: 'login',
+    element: <LoginRoutesLayout />,
+    children: [
+      { index: true, element: <MarketingLoginPage /> },
+      { path: 'engineers', element: <MarketingLoginPage variant="client" /> },
+      { path: 'client', element: <Navigate to="/login/engineers" replace /> },
+      { path: 'portals/admin', element: <LoginAdminPortalsRoute /> },
+      { path: 'portals', element: <LoginPortalsRoute /> },
+    ],
   },
   {
     path: 'admin',

@@ -9,17 +9,17 @@ export const EVIDENCE_STRIP = [
   {
     num: '02',
     title: 'Background Verified',
-    body: 'Identity, education and employment checked before the profile goes live. Status shown; documents never shared.',
+    body: 'Identity, education and employment checked before the profile goes live.',
   },
   {
     num: '03',
-    title: 'Your Hours, Not Theirs',
-    body: 'Every engineer works a full business day in your US time zone. Not "some overlap."',
+    title: 'Your Timezone',
+    body: 'Every engineer works in your Timezone.',
   },
   {
     num: '04',
     title: 'Rate Up Front',
-    body: "The hourly rate is on the profile before you shortlist — and it doesn't change later.",
+    body: "The hourly rate is on the profile before you shortlist.",
   },
   {
     num: '05',
@@ -29,15 +29,15 @@ export const EVIDENCE_STRIP = [
   {
     num: '06',
     title: '20 Hours Free',
-    body: 'Try any engineer on real work at no charge. Keep the work either way.',
+    body: 'Try any engineer on real work at no charge.',
   },
 ] as const;
 
 export const HOME_STATS = [
   { value: '20', label: 'Hours free, on real work,\nbefore you commit' },
-  { value: '100%', label: 'Working a full day in\nyour time zone' },
+  { value: '100%', label: 'Working in\nyour time zone' },
   { value: '5', label: 'Areas every engineer\nis tested on' },
-  { value: '7', label: 'Specialist engineering\ncommunities' },
+  { value: '7', label: 'Skill Communities' },
 ] as const;
 
 export const HOME_STEPS = [
@@ -58,8 +58,8 @@ export const HOME_STEPS = [
   },
   {
     step: 4,
-    title: "Keep them, or don't",
-    body: 'Continue into a paid engagement, swap for someone else, or walk away. You keep the work either way.',
+    title: 'Engage them',
+    body: 'Continue into a paid engagement.',
   },
 ] as const;
 
@@ -70,11 +70,11 @@ export const TIMEZONE_BLOCKS = [
   },
   {
     title: 'Committed in writing',
-    body: 'The working day is confirmed before the profile goes live, and reconfirmed regularly. If it lapses, the profile says so.',
+    body: 'The working day is confirmed before the profile goes live.',
   },
   {
     title: 'Filter by your zone',
-    body: 'Only see engineers already working the hours your team works. Eastern, Central, Mountain or Pacific.',
+    body: 'See engineers that can work in your timezone.',
   },
 ] as const;
 
@@ -86,6 +86,52 @@ export const BUYER_QUESTIONS = [
   'Is their identity verified? Their employment history?',
   'What is the hourly rate?',
   'Can I see them work before I pay anything?',
+] as const;
+
+export const HOME_BUYER_FAQ = [
+  {
+    question: 'Who can start today, and in which discipline?',
+    answer:
+      'Filter for engineers who can start now, in 24 hours, or in 48. Every start date is confirmed and dated on the profile.',
+  },
+  {
+    question: "Do they work my team's hours — a full day, not a few?",
+    answer:
+      'Every engineer works a full business day in one US time zone. Overlap hours are shown on the profile and committed in writing.',
+  },
+  {
+    question: 'What can this engineer actually do, and who says so?',
+    answer:
+      'An outside specialist tested them against role-specific criteria. You read the scorecard — including what they were weak at.',
+  },
+  {
+    question: 'Who tested them, and what did they get wrong?',
+    answer:
+      'The profile names the tester, the discipline, the criteria and the date. Reservations are published, not hidden.',
+  },
+  {
+    question: 'Is their identity verified? Their employment history?',
+    answer:
+      'Identity, education and employment are checked before a profile goes live. Status is shown; documents are never shared.',
+  },
+  {
+    question: 'What is the hourly rate?',
+    answer: 'The hourly rate is on the profile before you shortlist — and it does not change later.',
+  },
+  {
+    question: 'Can I see their work before I pay anything?',
+    answer: 'Try any engineer on real work for 20 hours at no charge. You keep the work either way.',
+  },
+] as const;
+
+export const HOME_COMMUNITIES = [
+  { name: 'Data & AI', body: 'Engineering, analytics, machine learning and applied AI.' },
+  { name: 'Cloud & Platform', body: 'Cloud architecture, platform engineering, DevOps and SRE.' },
+  { name: 'Full Stack & Engineering', body: 'Front-end, back-end and full-stack product engineering.' },
+  { name: 'SAP', body: 'Functional and technical roles across S/4HANA programmes.' },
+  { name: 'ServiceNow', body: 'Implementation, development and administration across ITSM.' },
+  { name: 'Salesforce', body: 'Admin, development and configuration across CRM.' },
+  { name: 'Cybersecurity', body: 'Security engineering, cloud security, identity and governance.' },
 ] as const;
 
 export const ONBOARDING_STEPS = [
@@ -194,16 +240,16 @@ export const EVALUATION_DIMENSIONS = [
 
 export const RATE_FACTORS = [
   { num: '01', title: 'Skill and discipline', body: 'Scarcity differs sharply. A GenAI engineer and a QA automation engineer aren\'t priced alike.' },
-  { num: '02', title: 'Tested depth', body: 'What the test showed, not what the résumé claimed.' },
-  { num: '03', title: 'Certification', body: "Where it's genuinely load-bearing, as in SAP and ServiceNow." },
+  { num: '02', title: 'Experience', body: 'Depend on the experiecen level, what the test showed and what resume claimed.' },
+  { num: '03', title: 'Tested depth', body: 'What the test showed, not what the résumé claimed.' },
   { num: '04', title: 'Scarcity', body: 'Real supply in that discipline at the depth you need.' },
   { num: '05', title: 'Start date', body: "Available-now senior engineers carry a premium. That's honest supply and demand." },
-  { num: '06', title: 'Time zone', body: "A full Pacific business day from India is a real quality-of-life cost, and it's priced accordingly." },
+  { num: '06', title: 'Certification', body: "Where it's genuinely load-bearing, as in SAP and ServiceNow." },
 ] as const;
 
 export const TRIAL_STEPS = [
   { step: 1, title: 'Pick the engineer', body: 'Any profile marked 20-Hour Trial. No interview round required — the test results tell you what an interview would.' },
-  { step: 2, title: 'Define the 20 hours', body: 'A specific deliverable, written success criteria, and a named manager on your side. We require all three — hours without a defined outcome can\'t be judged.' },
+  { step: 2, title: 'Define the 20 hours', body: 'A specific deliverable, written success criteria, and a named manager on your side.' },
   { step: 3, title: 'They start', body: 'Your systems, your access controls, your standups, working your business hours. Most trials begin within 24 to 48 hours of confirmation.' },
   { step: 4, title: 'Decide', body: 'Continue into a paid engagement, swap for a different engineer, or stop. No charge for the 20 hours either way.' },
 ] as const;

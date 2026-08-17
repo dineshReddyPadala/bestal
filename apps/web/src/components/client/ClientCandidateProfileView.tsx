@@ -2,7 +2,6 @@ import type { ClientCandidateProfile, ClientGroupedSkill } from '@bestal/mock-da
 import { cn, formatCurrency, initials } from '@bestal/shared-utils';
 import { Button, Tabs } from '@bestal/ui';
 import {
-  ArrowRight,
   BadgeCheck,
   Calendar,
   Clock,
@@ -12,6 +11,7 @@ import {
   Star,
 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
+import { ForwardArrow } from '../ui/ForwardArrow';
 import {
   clientBgvStatusText,
   clientEvaluationStatusText,
@@ -364,7 +364,7 @@ export function ClientCandidateProfileView({
                   }
                 >
                   Request Deployment
-                  <ArrowRight className="ml-1.5 h-4 w-4" />
+                  <ForwardArrow className="ml-1.5" />
                 </Button>
               ) : null}
             </div>
