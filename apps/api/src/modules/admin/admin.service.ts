@@ -1,19 +1,23 @@
 import argon2 from 'argon2';
-import { randomBytes } from 'node:crypto';
+import { randomBytes, randomUUID } from 'node:crypto';
 import type { AuditAction, ClientStatus, Prisma, PrismaClient } from '@prisma/client';
 import type { FastifyInstance } from 'fastify';
-import type { Role } from '../../constants/index.js';
+import { ROLES, type Role } from '../../constants/index.js';
 import type { AuthenticatedUser } from '../../types/index.js';
 import {
   BadRequestError,
   ConflictError,
   NotFoundError,
   bigintToNumber,
+  hashToken,
+  parseDurationToMs,
   requireOrganization,
 } from '../../utils/index.js';
+import { rolePasswordResetPath, rolePortalEmailLabel, rolePortalLoginPath } from '../../utils/role-portal-paths.js';
 import { EmailService } from '../../services/email.service.js';
 import { notifyCandidateApproved, notifyCandidateSentBack } from '../../services/notification-events.js';
 import { buildPaginationMeta } from '../../validators/common.validator.js';
+import { AuthRepository } from '../auth/auth.repository.js';
 import { CandidateService } from '../candidates/candidate.service.js';
 import { ClientService } from '../clients/client.service.js';
 import { UserRepository } from '../users/user.repository.js';
@@ -343,10 +347,7 @@ export class AdminService {
       });
     }
 
-    const portalPath =
-      input.role === 'VIEWER' || input.role === 'ADMIN'
-        ? '/admin/login'
-        : `/${input.role.toLowerCase()}/login`;
+    const portalPath = rolePortalLoginPath(input.role);
     const emailResult = await this.email.sendInviteCredentials({
       to: input.email.toLowerCase(),
       firstName: input.firstName,
@@ -437,37 +438,105 @@ export class AdminService {
     ctx?: { ipAddress?: string | null; userAgent?: string | null },
   ) {
     const user = await this.getUser(authUser, id);
-    const temporaryPassword = tempPassword();
-    await this.prisma.user.update({
-      where: { id: BigInt(id) },
-      data: { passwordHash: await argon2.hash(temporaryPassword) },
+    if (!user.isActive) {
+      throw new BadRequestError('Cannot reset password for an inactive user');
+    }
+
+    const authRepository = new AuthRepository(this.prisma);
+    await authRepository.invalidatePasswordResetTokens(id);
+
+    const rawToken = randomUUID();
+    const tokenHash = await hashToken(rawToken);
+    const expiresAt = new Date(
+      Date.now() + parseDurationToMs(this.fastify.config.passwordResetExpiry),
+    );
+
+    await authRepository.createPasswordResetToken({
+      userId: id,
+      tokenHash,
+      expiresAt,
     });
-    const organization = await this.users.findOrganizationById(requireOrganization(authUser));
-    const portalPath =
-      user.role === 'VIEWER' || user.role === 'ADMIN'
-        ? '/admin/login'
-        : user.role === 'SUPER_ADMIN'
-          ? '/admin/login'
-          : `/${String(user.role ?? 'recruiter').toLowerCase()}/login`;
-    const emailResult = await this.email.sendInviteCredentials({
+
+    const role = (user.role ?? ROLES.VIEWER) as Role;
+    const resetPath = rolePasswordResetPath(role);
+    const resetUrl = `${this.fastify.config.webAppUrl}${resetPath}?token=${encodeURIComponent(rawToken)}`;
+
+    const emailResult = await this.email.sendPasswordResetEmail({
       to: user.email,
       firstName: user.firstName,
-      lastName: user.lastName,
-      role: (user.role ?? 'VIEWER') as Role,
-      organizationName: organization?.name ?? 'BesTal',
-      temporaryPassword,
-      portalLoginUrl: `${this.fastify.config.webAppUrl}${portalPath}`,
+      resetUrl,
+      portalLabel: rolePortalEmailLabel(role),
+      expiresIn: this.fastify.config.passwordResetExpiry,
     });
-    await this.auditWrite(authUser, 'UPDATE', 'User', id, `Reset password for ${user.email}`, undefined, ctx);
+
+    await this.auditWrite(
+      authUser,
+      'UPDATE',
+      'User',
+      id,
+      `Sent password reset email to ${user.email}`,
+      undefined,
+      ctx,
+    );
+
+    if (this.fastify.config.isDevelopment) {
+      this.fastify.log.debug({ resetToken: rawToken, resetUrl, userId: id }, 'Dev admin password reset');
+    }
+
     return {
-      message: emailResult.sent ? 'Password reset and emailed' : 'Password reset (email not sent — check SMTP settings)',
+      message: emailResult.sent
+        ? 'Password reset email sent'
+        : 'Password reset link created (email not sent — check SMTP settings)',
       email: user.email,
       emailSent: emailResult.sent,
     };
   }
 
-  async resendInvite(authUser: AuthenticatedUser, id: number) {
-    return this.resetUserPassword(authUser, id);
+  async resendInvite(
+    authUser: AuthenticatedUser,
+    id: number,
+    ctx?: { ipAddress?: string | null; userAgent?: string | null },
+  ) {
+    const user = await this.getUser(authUser, id);
+    if (!user.isActive) {
+      throw new BadRequestError('Cannot resend invitation to an inactive user');
+    }
+
+    const temporaryPassword = tempPassword();
+    await this.prisma.user.update({
+      where: { id: BigInt(id) },
+      data: { passwordHash: await argon2.hash(temporaryPassword) },
+    });
+
+    const organization = await this.users.findOrganizationById(requireOrganization(authUser));
+    const role = (user.role ?? ROLES.VIEWER) as Role;
+    const emailResult = await this.email.sendInviteCredentials({
+      to: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      role,
+      organizationName: organization?.name ?? 'BesTal',
+      temporaryPassword,
+      portalLoginUrl: `${this.fastify.config.webAppUrl}${rolePortalLoginPath(role)}`,
+    });
+
+    await this.auditWrite(
+      authUser,
+      'UPDATE',
+      'User',
+      id,
+      `Resent invitation email to ${user.email}`,
+      undefined,
+      ctx,
+    );
+
+    return {
+      message: emailResult.sent
+        ? 'Invitation email sent'
+        : 'Invitation not sent — check SMTP settings',
+      email: user.email,
+      emailSent: emailResult.sent,
+    };
   }
 
   async deleteUser(

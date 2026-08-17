@@ -19,9 +19,12 @@ export function PortalLoginForm({
   const [email, setEmail] = useState(defaultEmail);
   const [password, setPassword] = useState('Password123!');
   const { handleLogin, error, submitting } = usePortalLogin(portal);
-  const forgotPasswordHref = isSelfServicePortal(portal)
-    ? `/${portal.toLowerCase()}/forgot-password`
-    : undefined;
+  const forgotPasswordHref =
+    portal === 'ADMIN'
+      ? '/admin/forgot-password'
+      : isSelfServicePortal(portal)
+        ? `/${portal.toLowerCase()}/forgot-password`
+        : undefined;
 
   function onSubmit(e: React.FormEvent) {
     e.preventDefault();

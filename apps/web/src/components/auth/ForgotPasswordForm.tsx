@@ -2,10 +2,10 @@ import { Button, Input } from '@bestal/ui';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { forgotPassword } from '../../lib/api/client';
-import type { SelfServicePortal } from '../../lib/auth-portal-config';
+import type { Portal } from '../../lib/api/types';
 
 type ForgotPasswordFormProps = {
-  portal: SelfServicePortal;
+  portal: Portal;
   loginPath: string;
   defaultEmail?: string;
 };

@@ -222,15 +222,22 @@ export class EmailService {
       return { sent: false };
     }
 
-    await this.transporter.sendMail({
-      from: `"${resolved.fromName}" <${resolved.fromAddress}>`,
-      to: payload.to,
-      subject,
-      text,
-      html,
-    });
-
-    return { sent: true };
+    try {
+      await this.transporter.sendMail({
+        from: `"${resolved.fromName}" <${resolved.fromAddress}>`,
+        to: payload.to,
+        subject,
+        text,
+        html,
+      });
+      return { sent: true };
+    } catch (err) {
+      console.error('[email] Failed to send password reset email:', {
+        to: payload.to,
+        error: err instanceof Error ? err.message : err,
+      });
+      return { sent: false };
+    }
   }
 
   async sendNotificationEmail(payload: {

@@ -17,6 +17,8 @@ import { DashboardPage as AdminDashboardPage } from '../pages/admin/DashboardPag
 import { DeploymentsPage as AdminDeploymentsPage } from '../pages/admin/DeploymentsPage';
 import { EvaluationsPage as AdminEvaluationsPage } from '../pages/admin/EvaluationsPage';
 import { LoginPage as AdminLoginPage } from '../pages/admin/LoginPage';
+import { ForgotPasswordPage as AdminForgotPasswordPage } from '../pages/admin/ForgotPasswordPage';
+import { ResetPasswordPage as AdminResetPasswordPage } from '../pages/admin/ResetPasswordPage';
 import { TrialsPage } from '../pages/admin/TrialsPage';
 import { CandidateDetailPage as ClientCandidateDetailPage } from '../pages/client/CandidateDetailPage';
 import { CandidateSearchPage } from '../pages/client/CandidateSearchPage';
@@ -227,7 +229,11 @@ const router = createBrowserRouter([
     children: [
       {
         element: <AdminAuthShell />,
-        children: [{ path: 'login', element: <AdminLoginPage /> }],
+        children: [
+          { path: 'login', element: <AdminLoginPage /> },
+          { path: 'forgot-password', element: <AdminForgotPasswordPage /> },
+          { path: 'reset-password', element: <AdminResetPasswordPage /> },
+        ],
       },
       {
         element: <ProtectedAdminShell />,

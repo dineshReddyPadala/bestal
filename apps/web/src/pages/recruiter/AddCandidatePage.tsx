@@ -67,6 +67,8 @@ export function AddCandidatePage() {
   >();
   const draftCandidateIdRef = useRef<number | null>(isEdit ? editId : null);
   const resumeUploadedViaExtractRef = useRef(false);
+  /** Prevents re-hydrating the wizard (and resetting the active step) on background refetches after save. */
+  const hydratedCandidateIdRef = useRef<number | null>(null);
 
   const [isSaving, setIsSaving] = useState(false);
   const [linkedDataLoading, setLinkedDataLoading] = useState(false);
@@ -91,12 +93,24 @@ export function AddCandidatePage() {
   }, [isEdit, isImportOnlyRole, importPath, navigate]);
 
   useEffect(() => {
+    hydratedCandidateIdRef.current = null;
+    setInitialFormValues(undefined);
+    setLinkedDataLoading(false);
+  }, [editId]);
+
+  useEffect(() => {
     if (!isEdit || !existingQuery.data) return;
 
-    setDraftId(existingQuery.data.id);
+    const candidateId = existingQuery.data.id;
+    setDraftId(candidateId);
+
+    if (hydratedCandidateIdRef.current === candidateId) {
+      return;
+    }
 
     if (wizardMode !== 'importedEdit') {
       setInitialFormValues(mapCandidateDtoToWizardForm(existingQuery.data));
+      hydratedCandidateIdRef.current = candidateId;
       return;
     }
 
@@ -104,7 +118,6 @@ export function AddCandidatePage() {
     setLinkedDataLoading(true);
     void (async () => {
       try {
-        const candidateId = existingQuery.data!.id;
         const [evalListRes, bgvRes] = await Promise.all([
           evaluationsApi.list({ candidateId, limit: 1, sort: '-createdAt' }),
           backgroundChecksApi.list({ candidateId, limit: 1, sort: '-createdAt' }),
@@ -123,9 +136,11 @@ export function AddCandidatePage() {
             bgv: bgvDetail,
           }),
         );
+        hydratedCandidateIdRef.current = candidateId;
       } catch {
         if (!cancelled) {
           setInitialFormValues(mapCandidateDtoToWizardForm(existingQuery.data!));
+          hydratedCandidateIdRef.current = candidateId;
         }
       } finally {
         if (!cancelled) setLinkedDataLoading(false);
@@ -169,7 +184,7 @@ export function AddCandidatePage() {
   async function persistCandidate(
     values: CandidateWizardValues,
     uploads: CandidateWizardUploads,
-    options: { submit: boolean; silent?: boolean },
+    options: { submit: boolean; silent?: boolean; redirectToListing?: boolean },
   ): Promise<boolean> {
     setSubmitError(null);
     setIsSaving(true);
@@ -282,7 +297,11 @@ export function AddCandidatePage() {
         show(existingDraftId || isEdit ? 'Candidate updated' : 'Draft saved');
       }
 
-      if (isEdit && !options.submit && !options.silent) {
+      const shouldRedirectToListing =
+        options.redirectToListing ??
+        (isEdit && !options.submit && !options.silent);
+
+      if (shouldRedirectToListing) {
         navigate(`${basePath}/candidates`);
         return true;
       }
@@ -376,6 +395,7 @@ export function AddCandidatePage() {
                   persistCandidate(values, uploads, {
                     submit: false,
                     silent: options?.silent,
+                    redirectToListing: options?.redirectToListing,
                   })
                 }
                 onSubmitForApproval={(values, uploads) =>

@@ -38,18 +38,26 @@ const FORGOT_PASSWORD_MESSAGE =
   'If an account with that email exists, a password reset link has been sent.';
 
 const PORTAL_RESET_PATH: Record<
-  typeof PORTALS.RECRUITER | typeof PORTALS.SALES | typeof PORTALS.CLIENT,
+  | typeof PORTALS.ADMIN
+  | typeof PORTALS.RECRUITER
+  | typeof PORTALS.SALES
+  | typeof PORTALS.CLIENT,
   string
 > = {
+  [PORTALS.ADMIN]: '/admin/reset-password',
   [PORTALS.RECRUITER]: '/recruiter/reset-password',
   [PORTALS.SALES]: '/sales/reset-password',
   [PORTALS.CLIENT]: '/client/reset-password',
 };
 
 const PORTAL_LABEL: Record<
-  typeof PORTALS.RECRUITER | typeof PORTALS.SALES | typeof PORTALS.CLIENT,
+  | typeof PORTALS.ADMIN
+  | typeof PORTALS.RECRUITER
+  | typeof PORTALS.SALES
+  | typeof PORTALS.CLIENT,
   string
 > = {
+  [PORTALS.ADMIN]: 'Admin Portal',
   [PORTALS.RECRUITER]: 'Recruiter Portal',
   [PORTALS.SALES]: 'Sales Portal',
   [PORTALS.CLIENT]: 'Client Portal',

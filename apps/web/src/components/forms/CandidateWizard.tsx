@@ -84,7 +84,7 @@ type CandidateWizardProps = {
   onSaveDraft: (
     values: CandidateWizardValues,
     uploads: CandidateWizardUploads,
-    options?: { silent?: boolean },
+    options?: { silent?: boolean; redirectToListing?: boolean },
   ) => boolean | Promise<boolean>;
   onSubmitForApproval: (
     values: CandidateWizardValues,
@@ -1707,6 +1707,7 @@ export function CandidateWizard({
   );
   const [isPersisting, setIsPersisting] = useState(false);
   const pendingUploads = useRef<CandidateWizardUploads>(initialUploads ?? {});
+  const appliedInitialFormRef = useRef(false);
   const {
     data: skillCommunities = [],
     isLoading: skillCommunitiesLoading,
@@ -1729,14 +1730,22 @@ export function CandidateWizard({
 
   useEffect(() => {
     if (initialFormValues) {
-      reset({ ...candidateWizardDefaults, ...initialFormValues });
-      pendingUploads.current = initialUploads ?? {};
+      if (!appliedInitialFormRef.current) {
+        reset({ ...candidateWizardDefaults, ...initialFormValues });
+        pendingUploads.current = initialUploads ?? {};
+        appliedInitialFormRef.current = true;
+      }
       return;
     }
 
     if (freshStart) {
       localStorage.removeItem(DRAFT_STORAGE_KEY);
       reset({ ...candidateWizardDefaults });
+      appliedInitialFormRef.current = true;
+      return;
+    }
+
+    if (appliedInitialFormRef.current) {
       return;
     }
 
@@ -1748,6 +1757,8 @@ export function CandidateWizard({
       }
     } catch {
       /* ignore corrupt draft */
+    } finally {
+      appliedInitialFormRef.current = true;
     }
   }, [freshStart, initialFormValues, initialUploads, reset]);
 
@@ -1776,7 +1787,10 @@ export function CandidateWizard({
     localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(getValues()));
   }, [getValues]);
 
-  async function saveDraft(silent = false): Promise<boolean> {
+  async function saveDraft(
+    options: { silent?: boolean; redirectToListing?: boolean } = {},
+  ): Promise<boolean> {
+    const silent = options.silent ?? false;
     const values = getValues();
     const tabValidation = validateWizardTabForSave(activeTab, values);
     if (!tabValidation.success) {
@@ -1793,11 +1807,10 @@ export function CandidateWizard({
     persistLocalDraft();
     setIsPersisting(true);
     try {
-      return await onSaveDraft(
-        buildCandidatePayload(values),
-        { ...pendingUploads.current },
-        { silent },
-      );
+      return await onSaveDraft(buildCandidatePayload(values), { ...pendingUploads.current }, {
+        silent,
+        redirectToListing: options.redirectToListing,
+      });
     } finally {
       setIsPersisting(false);
     }
@@ -1805,7 +1818,7 @@ export function CandidateWizard({
 
   async function goNext() {
     if (isLastTab) return;
-    const saved = await saveDraft(true);
+    const saved = await saveDraft({ silent: true, redirectToListing: false });
     if (!saved) return;
     const next = WIZARD_TABS[currentTabIndex + 1];
     if (next) setActiveTab(next.id);
@@ -1966,7 +1979,7 @@ export function CandidateWizard({
                     variant="primary"
                     size="sm"
                     disabled={isBusy}
-                    onClick={() => void saveDraft()}
+                    onClick={() => void saveDraft({ redirectToListing: true })}
                   >
                     {isBusy ? (
                       <>

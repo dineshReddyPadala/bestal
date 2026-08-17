@@ -91,7 +91,7 @@ export class AdminController {
 
   resendInvite = async (request: FastifyRequest, reply: FastifyReply) => {
     const { id } = request.params as { id: number };
-    const data = await this.admin.resendInvite(request.authUser!, id);
+    const data = await this.admin.resendInvite(request.authUser!, id, this.ctx(request));
     return reply.send({ data });
   };
 
