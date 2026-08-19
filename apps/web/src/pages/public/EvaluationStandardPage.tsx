@@ -26,7 +26,7 @@ export function EvaluationStandardPage() {
           <br />
           A test is evidence.
         </h1>
-        <p className="mkt-lead">
+        <p className="mkt-lead howitworks-body-style">
           A qualified specialist — not a BesTal recruiter — tests the engineer against role-specific
           criteria and scores technical depth, problem solving, architecture, code quality and
           communication separately.
@@ -45,17 +45,17 @@ export function EvaluationStandardPage() {
               </div>
             ))}
           </div>
-          <div className="mkt-fact mt-8">[FACT: tester sourcing and qualification criteria]</div>
+          {/* <div className="mkt-fact mt-8">[FACT: tester sourcing and qualification criteria]</div> */}
         </MktShell>
       </section>
 
       <section className="mkt-section mkt-test-read">
         <MktShell>
           <h2>How to read the results</h2>
-          <div className="mkt-fact mt-6">[FACT: score scale and weighting]</div>
+          {/* <div className="mkt-fact mt-6">[FACT: score scale and weighting]</div> */}
           <p className="mkt-test-body">
             An engineer is published only above{' '}
-            <span className="mkt-test-fact">[FACT: publish threshold]</span>. Below it, they don&apos;t
+            Below it, they don&apos;t
             appear.
           </p>
           <p className="mkt-test-body">
@@ -74,7 +74,7 @@ export function EvaluationStandardPage() {
           <h3>Re-testing</h3>
           <p className="mkt-test-body">
             Skills move. Results carry a date and are refreshed{' '}
-            <span className="mkt-test-fact">[FACT: re-test cadence]</span>. An engineer who changes
+             An engineer who changes
             primary stack is re-tested before appearing in that community.
           </p>
         </MktShell>
@@ -85,7 +85,7 @@ export function EvaluationStandardPage() {
           <h2>What this does not tell you</h2>
           <p>
             A test predicts capability. It does not predict fit with your codebase, your team or your
-            standards. That&apos;s what the 20 hours are for.
+            standards. That&apos;s what the free trial is for.
           </p>
           <p>
             We&apos;re deliberate about this boundary. A platform claiming its score removes all your
@@ -96,7 +96,7 @@ export function EvaluationStandardPage() {
               See real test results
             </Link>
             <Link to="/try-for-a-week" className="mkt-btn mkt-btn-white">
-              How the 20-hour trial works
+              How the free trial works
             </Link>
           </div>
         </MktShell>

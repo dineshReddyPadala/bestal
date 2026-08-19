@@ -15,7 +15,7 @@ export function TrustPage() {
           <h1>
           The BesTal Verification <br /> Advantage.
           </h1>
-          <p className="mkt-lead">
+          <p className="mkt-lead howitworks-body-style">
           At <span className="font-bold">BesTal</span>, we understand that hiring decisions are only as good as the information behind them. Unlike traditional recruitment partners who forward resumes, BesTal goes a step further by conducting a thorough background verification (BCV) before presenting candidates to clients.
           </p>
           {/* <p className="mkt-lead mkt-trust-sub">
@@ -78,7 +78,7 @@ export function TrustPage() {
         </MktShell>
       </section>
 
-      <section className="mkt-section mkt-trust-verify">
+      <section className="mkt-section mkt-trust-verify bg-white">
         <MktShell>
           <h2>Our Commitment</h2>
          
@@ -94,7 +94,7 @@ export function TrustPage() {
         </MktShell>
       </section>
 
-      <div className="mkt-trust-hero-band">
+      <div className="mkt-trust-hero-band bg-cream-light">
         <MktShell className="mkt-trust-hero">
           <div className="mkt-trust-label">Trust</div>
           <h1>
@@ -107,9 +107,9 @@ Trust at the Core of Every Engagement          </h1>
         </MktShell>
       </div>
 
-      <section className="mkt-section mkt-trust-verify">
+      <section className="mkt-section mkt-trust-verify bg-white">
         <MktShell>
-        <p className="mkt-rates-quote trust-body-quote">As part of our continued investment in operational excellence, <span className="mkt-trust-quote-em">we are strengthening our security and compliance framework to align with globally recognized standards,</span> ensuring BesTal remains a trusted partner for growing organizations worldwide.</p>
+        <p className="mkt-rates-quote trust-body-quote mt-0 pt-0 margintop0">As part of our continued investment in operational excellence, <span className="mkt-trust-quote-em">we are strengthening our security and compliance framework to align with globally recognized standards,</span> ensuring BesTal remains a trusted partner for growing organizations worldwide.</p>
 
         </MktShell>
       </section>

@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react';
-import { Link, NavLink } from 'react-router-dom';
+import { Link, NavLink, useLocation } from 'react-router-dom';
 import { BesTalBrand } from '../components/bestal-brand.js';
 
 export type MarketingNavItem = {
@@ -20,6 +20,11 @@ export type MarketingLayoutProps = {
   ctaHref?: string;
   brandLogoSrc?: string;
   footerTagline?: string;
+  hideFooter?: boolean;
+  layoutClassName?: string;
+  isAuthenticated?: boolean;
+  loginHref?: string;
+  onLogout?: () => void | Promise<void>;
 };
 
 const defaultFooterColumns: MarketingFooterColumn[] = [
@@ -60,11 +65,34 @@ export function MarketingLayout({
   ctaHref = '/contact',
   brandLogoSrc,
   footerTagline = 'Evaluated, verified and priced before you interview — with a committed working window in your zone.',
+  hideFooter = false,
+  layoutClassName = '',
+  isAuthenticated = false,
+  loginHref = '/login/portals',
+  onLogout,
 }: MarketingLayoutProps) {
   const [navOpen, setNavOpen] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
+  const location = useLocation();
+
+  function isNavItemActive(item: MarketingNavItem, isActive: boolean) {
+    if (isActive) return true;
+    return item.href === '/sample-talent' && location.pathname === '/talent';
+  }
+
+  async function handleLogout() {
+    if (!onLogout || loggingOut) return;
+    setLoggingOut(true);
+    try {
+      await onLogout();
+    } finally {
+      setLoggingOut(false);
+      setNavOpen(false);
+    }
+  }
 
   return (
-    <div className="marketing-site flex min-h-screen flex-col">
+    <div className={`marketing-site flex min-h-screen flex-col ${layoutClassName}`.trim()}>
       <header className="mkt-header mkt-header-light relative">
         <div className="mkt-shell">
           <div className="mkt-hdr">
@@ -78,7 +106,9 @@ export function MarketingLayout({
                   key={item.href}
                   to={item.href}
                   onClick={() => setNavOpen(false)}
-                  className={({ isActive }) => (isActive ? 'is-active' : undefined)}
+                  className={({ isActive }) =>
+                    isNavItemActive(item, isActive) ? 'is-active' : undefined
+                  }
                 >
                   {item.label}
                 </NavLink>
@@ -86,9 +116,20 @@ export function MarketingLayout({
             </nav>
 
             <div className="mkt-hdr-cta">
-              <Link to="/login" className="mkt-btn mkt-btn-ghost">
-                Log in
-              </Link>
+              {isAuthenticated ? (
+                <button
+                  type="button"
+                  className="mkt-btn mkt-btn-ghost"
+                  onClick={() => void handleLogout()}
+                  disabled={loggingOut}
+                >
+                  {loggingOut ? 'Logging out…' : 'Log out'}
+                </button>
+              ) : (
+                <Link to={loginHref} className="mkt-btn mkt-btn-ghost" onClick={() => setNavOpen(false)}>
+                  Log in
+                </Link>
+              )}
               <Link to={ctaHref} className="mkt-btn mkt-btn-primary mkt-btn-sm">
                 <span className="hidden min-[480px]:inline">{ctaLabel}</span>
                 <span className="min-[480px]:hidden">Contact</span>
@@ -108,6 +149,7 @@ export function MarketingLayout({
 
       <main className="flex-1 overflow-x-clip">{children}</main>
 
+      {!hideFooter && (
       <footer className="mkt-footer">
         <div className="mkt-shell">
           <div className="mkt-ftg">
@@ -135,6 +177,7 @@ export function MarketingLayout({
           </div>
         </div>
       </footer>
+      )}
     </div>
   );
 }

@@ -1,6 +1,6 @@
 import { publicNav } from '@bestal/mock-data';
-import { AuthLayout, MarketingLayout } from '@bestal/ui';
-import { createBrowserRouter, Navigate, Outlet, RouterProvider } from 'react-router-dom';
+import { MarketingLayout } from '@bestal/ui';
+import { createBrowserRouter, Navigate, Outlet, RouterProvider, useNavigate } from 'react-router-dom';
 import { PageMeta } from '../components/PageMeta';
 import { AdminShell } from '../layouts/AdminShell';
 import { ClientShell } from '../layouts/ClientShell';
@@ -36,8 +36,9 @@ import { HomePage } from '../pages/public/HomePage';
 import { HowItWorksPage } from '../pages/public/HowItWorksPage';
 import { JobDetailPage } from '../pages/public/JobDetailPage';
 import { JobsPage } from '../pages/public/JobsPage';
-import { AdminPortalSelectorPage, PortalSelectorPage } from '../pages/public/LoginPage';
 import { MarketingLoginPage } from '../pages/public/MarketingLoginPage';
+import { SplitPortalSelectorPage } from '../pages/public/SplitPortalSelectorPage';
+import { SplitTeamPortalsPage } from '../pages/public/SplitTeamPortalsPage';
 import { RatesPage } from '../pages/public/RatesPage';
 import { SampleTalentPage } from '../pages/public/SampleTalentPage';
 import { TalentPage } from '../pages/public/TalentPage';
@@ -65,6 +66,7 @@ import { MarginReportPage as SalesMarginReportPage } from '../pages/sales/Margin
 import { TrialsPage as SalesTrialsPage } from '../pages/sales/TrialsPage';
 import { ProtectedRoute } from '../components/auth/ProtectedRoute';
 import { PortalAuthShell } from '../components/auth/PortalAuthShell';
+import { ScrollToTop } from '../components/ScrollToTop';
 import { PORTAL_AUTH_CONFIG } from '../lib/auth-portal-config';
 import { PortalForgotPasswordPage } from '../pages/shared/PortalForgotPasswordPage';
 import { PortalResetPasswordPage } from '../pages/shared/PortalResetPasswordPage';
@@ -92,6 +94,7 @@ import { SuperAdminAuditLogsPage } from '../pages/super-admin/AuditLogsPage';
 import { SuperAdminSettingsPage } from '../pages/super-admin/SettingsPage';
 import { useAuth } from '../contexts/AuthContext';
 import { usePermissions } from '../hooks/usePermissions';
+import { LOGIN_PORTAL_PICKER_PATH } from '../lib/login-portals';
 
 function ProtectedAdminShell() {
   return (
@@ -151,7 +154,47 @@ function ProtectedSalesShell() {
 
 const marketingNav = publicNav.map(({ label, href }) => ({ label, href }));
 
+function useMarketingAuthLayoutProps() {
+  const { isAuthenticated, logout } = useAuth();
+  const navigate = useNavigate();
+
+  async function handleLogout() {
+    try {
+      await logout();
+    } finally {
+      navigate(LOGIN_PORTAL_PICKER_PATH, { replace: true });
+    }
+  }
+
+  return {
+    isAuthenticated,
+    loginHref: LOGIN_PORTAL_PICKER_PATH,
+    onLogout: handleLogout,
+  };
+}
+
 function MarketingShell() {
+  const authLayoutProps = useMarketingAuthLayoutProps();
+
+  return (
+    <div data-prerender-ready="">
+      <ScrollToTop />
+      <MarketingLayout
+        navItems={[...marketingNav]}
+        ctaLabel="Reach out to us"
+        ctaHref="/contact"
+        brandLogoSrc={BESTAL_LOGO_SRC}
+        {...authLayoutProps}
+      >
+        <Outlet />
+      </MarketingLayout>
+    </div>
+  );
+}
+
+function MarketingLoginShell() {
+  const authLayoutProps = useMarketingAuthLayoutProps();
+
   return (
     <div data-prerender-ready="">
       <MarketingLayout
@@ -159,6 +202,8 @@ function MarketingShell() {
         ctaLabel="Reach out to us"
         ctaHref="/contact"
         brandLogoSrc={BESTAL_LOGO_SRC}
+        layoutClassName="mkt-login-layout"
+        {...authLayoutProps}
       >
         <Outlet />
       </MarketingLayout>
@@ -167,39 +212,31 @@ function MarketingShell() {
 }
 
 function LoginRoutesLayout() {
-  return <Outlet />;
-}
-
-function LoginAdminPortalsRoute() {
   return (
     <>
-      <PageMeta title="Sign In | BesTal" description="Sign in to your BesTal portal." noIndex />
-      <AuthLayout title="Welcome to BesTal" brandLogoSrc={BESTAL_LOGO_SRC}>
-        <AdminPortalSelectorPage />
-      </AuthLayout>
-    </>
-  );
-}
-
-function LoginPortalsRoute() {
-  return (
-    <>
-      <PageMeta title="Sign In | BesTal" description="Sign in to your BesTal portal." noIndex />
-      <AuthLayout title="Welcome to BesTal" brandLogoSrc={BESTAL_LOGO_SRC}>
-        <PortalSelectorPage />
-      </AuthLayout>
+      <ScrollToTop />
+      <Outlet />
     </>
   );
 }
 
 function AdminAuthShell() {
+  const authLayoutProps = useMarketingAuthLayoutProps();
+
   return (
-    <>
-      <PageMeta title="Admin Sign In | BesTal" description="Admin portal sign in." noIndex />
-      <AuthLayout title="Admin Portal" brandLogoSrc={BESTAL_LOGO_SRC}>
+    <div data-prerender-ready="">
+      <ScrollToTop />
+      <MarketingLayout
+        navItems={[...marketingNav]}
+        ctaLabel="Reach out to us"
+        ctaHref="/contact"
+        brandLogoSrc={BESTAL_LOGO_SRC}
+        layoutClassName="mkt-login-layout"
+        {...authLayoutProps}
+      >
         <Outlet />
-      </AuthLayout>
-    </>
+      </MarketingLayout>
+    </div>
   );
 }
 
@@ -240,11 +277,17 @@ const router = createBrowserRouter([
     path: 'login',
     element: <LoginRoutesLayout />,
     children: [
-      { index: true, element: <MarketingLoginPage /> },
-      { path: 'engineers', element: <MarketingLoginPage variant="client" /> },
+      {
+        element: <MarketingLoginShell />,
+        children: [
+          { index: true, element: <MarketingLoginPage /> },
+          { path: 'portals/admin', element: <SplitTeamPortalsPage /> },
+          { path: 'portals/team', element: <SplitTeamPortalsPage /> },
+          { path: 'portals', element: <SplitPortalSelectorPage /> },
+          { path: 'engineers', element: <MarketingLoginPage variant="client" /> },
+        ],
+      },
       { path: 'client', element: <Navigate to="/login/engineers" replace /> },
-      { path: 'portals/admin', element: <LoginAdminPortalsRoute /> },
-      { path: 'portals', element: <LoginPortalsRoute /> },
     ],
   },
   {

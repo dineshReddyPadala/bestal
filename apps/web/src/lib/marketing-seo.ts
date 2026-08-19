@@ -1,7 +1,7 @@
 export const DEFAULT_TITLE = 'BesTal — Proven Talent. Ready to Perform.';
 
 export const DEFAULT_DESCRIPTION =
-  'Vetted Talents who work your hours. See their test results, their rate and their start date up front — then try them free for 20 hours before you commit.';
+  'Pre vetted Talents who work your hours. See their test results, their rate and their start date up front — then try them free before you commit.';
 
 export const PAGE_SEO = {
   home: {
@@ -41,7 +41,7 @@ export const PAGE_SEO = {
   tryForAWeek: {
     title: '20-Hour Trial — See Them Perform Before You Commit',
     description:
-      'See test results, rate and start date up front, then try an engineer free for 20 hours. No recruiter calls, no sourcing cycle, no commitment for the first 20 hours.',
+      'See test results, rate and start date up front, then try an engineer free. No recruiter calls, no sourcing cycle, no commitment for the first 10 hours.',
   },
   jobs: {
     title: 'Open Roles | BesTal',

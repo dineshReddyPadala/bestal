@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
-import { useState } from 'react';
-import { DemoEngineerCard } from '../../components/marketing/DemoEngineerCard';
+import { useCallback, useState } from 'react';
+import { CommunityDisciplineCard } from '../../components/marketing/CommunityDisciplineCard';
+import { CommunityProfileSlider } from '../../components/marketing/CommunityProfileSlider';
 import { ProfileTabs } from '../../components/marketing/ProfileTabs';
 import { MktShell } from '../../components/marketing/MktShell';
 import { PageMeta } from '../../components/PageMeta';
@@ -12,7 +13,7 @@ import {
   HOME_STEPS,
   TIMEZONE_BLOCKS,
 } from '../../lib/marketing-copy';
-import { HERO_ENGINEER } from '../../lib/demo-engineers';
+import { COMMUNITY_PROFILE_SLIDES, type CommunityProfileSlide } from '../../lib/demo-engineers';
 import { images } from '../../data/homeCopy';
 import { PAGE_SEO } from '../../lib/marketing-seo';
 import { cn } from '@bestal/shared-utils';
@@ -27,6 +28,13 @@ const TIMEZONE_CHIPS = [
 
 export function HomePage() {
   const [openFaq, setOpenFaq] = useState(0);
+  const [heroSlide, setHeroSlide] = useState<CommunityProfileSlide>(COMMUNITY_PROFILE_SLIDES[0]);
+
+  const handleHeroSlideChange = useCallback((slide: CommunityProfileSlide) => {
+    setHeroSlide(slide);
+  }, []);
+
+  const heroEngineer = heroSlide.engineer;
 
   return (
     <div className="mkt-home">
@@ -41,22 +49,23 @@ export function HomePage() {
               Ready to Perform.
             </h1>
             <p className="mkt-lead mt-[26px] max-w-[540px]">
-              Vetted Talents who work your hours. See their test results, their rate and their start
-              date up front — then try them free for 20 hours before you commit.
+              Pre vetted Talents who work your hours. See their test results, their rate and their start
+              date up front — Try them free before commit.
             </p>
             <div className="mkt-actions mt-9">
-              <Link to="/login" className="mkt-btn mkt-btn-primary mkt-btn-lg">
-              Browse Vetted Talents
+              <Link to="/sample-talent" className="mkt-btn mkt-btn-primary mkt-btn-lg">
+              Browse Pre Vetted Talent
+               <ForwardArrow />
               </Link>
               <Link to="/evaluation-standard" className="mkt-btn mkt-btn-white mkt-btn-lg">
                 See how we test
               </Link>
             </div>
             <p className="mkt-micro mt-5">
-              No recruiter calls. No sourcing cycle. No commitment for the first 20 hours.
+              No recruiter calls. No sourcing cycle. No commitment for the free trial.
             </p>
           </div>
-          <DemoEngineerCard engineer={HERO_ENGINEER} hideScorecard />
+          <CommunityProfileSlider hideScorecard onSlideChange={handleHeroSlideChange} />
         </MktShell>
       </section>
 
@@ -76,7 +85,7 @@ export function HomePage() {
           <div className="mkt-ev-hd">
             <div className="max-w-[520px]">
               <div className="mkt-kicker">The evidence</div>
-              <h2 className="mt-4">Six things you can check before you talk to anyone</h2>
+              <h2 className="mt-4 mb-6">Six things you can check before you talk to anyone</h2>
             </div>
           </div>
           <div className="mkt-g6">
@@ -118,13 +127,13 @@ export function HomePage() {
           </div>
           <div className="mkt-score-dark">
             <div className="mkt-score-dark-hd">
-              <span>Scorecard · Senior Data Engineer</span>
+              <span>Scorecard · {heroEngineer.role}</span>
               <strong>
-                {HERO_ENGINEER.score}
+                {heroEngineer.score}
                 <span>/100</span>
               </strong>
             </div>
-            {HERO_ENGINEER.dimensions.map((dim) => (
+            {heroEngineer.dimensions.map((dim) => (
               <div key={dim.label} className="mkt-scr">
                 <span className="mkt-scr-n">{dim.label}</span>
                 <span className="mkt-tr">
@@ -137,21 +146,21 @@ export function HomePage() {
               </div>
             ))}
             <p className="mkt-evl">
-              {HERO_ENGINEER.quoteIsPlaceholder ? (
-                <span className="italic">{HERO_ENGINEER.quote}</span>
+              {heroEngineer.quoteIsPlaceholder ? (
+                <span className="italic">{heroEngineer.quote}</span>
               ) : (
-                <>“{HERO_ENGINEER.quote}”</>
+                <>“{heroEngineer.quote}”</>
               )}
               <br />
               <span className="mkt-evl-meta">
-                — External Specialist, tested {HERO_ENGINEER.testedOn}
+                — External Specialist, tested {heroEngineer.testedOn}
               </span>
             </p>
           </div>
         </MktShell>
       </section>
 
-      <section id="time-zone" className="mkt-white mkt-section">
+      <section id="time-zone" className="mkt-cream mkt-section ">
         <MktShell className="mkt-g2">
           <div>
             <div className="mkt-kicker">Time zone</div>
@@ -182,7 +191,7 @@ export function HomePage() {
           </div>
           <div className="mkt-stack">
             {TIMEZONE_BLOCKS.map((block) => (
-              <div key={block.title}>
+              <div key={block.title} className="border-b-2 border-b-[#EDEDED] pb-8 last:border-b-0">
                 <h4>{block.title}</h4>
                 <p className="mt-2">{block.body}</p>
               </div>
@@ -191,14 +200,14 @@ export function HomePage() {
         </MktShell>
       </section>
 
-      <section className="mkt-white mkt-section" style={{ paddingTop: 0 }}>
+      <section className="mkt-white mkt-section markeingsectionplayout">
         <MktShell className="mkt-profile">
           <div>
             <div className="mkt-kicker">The profile</div>
             <h2 className="mt-4">This is what a profile looks like</h2>
-            <p className="mkt-lead mt-3 max-w-[380px]">
-              Score, rate, availability and overlap — decided before you send a message.
-            </p>
+            <h3 className="mkt-lead mt-3 max-w-[380px] text-lg">
+              Score, rate, availability <br/> and overlap — decided before <br/> you send a message.
+            </h3>
           </div>
           <div className="mkt-profile-panel">
             <ProfileTabs />
@@ -228,14 +237,14 @@ export function HomePage() {
 
       <section className="mkt-cream mkt-section-tight">
         <MktShell className="mkt-g2t mkt-equal-cards">
-          <div className="mkt-card mkt-card-dark mkt-card-fill p-8">
+          <div className="mkt-card mkt-card-dark mkt-card-fill p-8 bgcolordrakgreen">
             <h2>Don&apos;t hire from a résumé. <br /> See them perform.</h2>
             <p className="mt-4">
               One cold email or scoped work brief is your trial, and your process, agreed in
               advance.
             </p>
             <Link to="/try-for-a-week" className="mkt-btn mkt-btn-white mt-7">
-              How the 20-hour Trial works
+              How the free Trial works
               <ForwardArrow />
             </Link>
           </div>
@@ -245,14 +254,22 @@ export function HomePage() {
               One engineer this week. Four more next month. A SAP team for two quarters, then
               nothing.
             </p>
-          </div>
+            
+<p className="mt-4">Scale your technology workforce up or down as business demand changes—without the cost and complexity of maintaining a large bench.
+  </p>          </div>
         </MktShell>
       </section>
 
       <section className="mkt-white mkt-section">
         <MktShell>
-          <div className="mb-11 max-w-[700px]">
-            <h2>Engineers, organised by discipline</h2>
+          <div className="mb-11">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <h2 className="mb-0">Engineers, organised by discipline</h2>
+              <Link to="/sample-talent" className="mkt-btn mkt-btn-primary mkt-btn-lg shrink-0">
+                Browse Pre Vetted Talent
+                <ForwardArrow />
+              </Link>
+            </div>
             <p className="mkt-big mt-3 max-w-[620px]">
               Not a general résumé database. Every engineer belongs to a specialist community with
               its own tests and its own outside testers.
@@ -260,10 +277,10 @@ export function HomePage() {
           </div>
           <div className="mkt-g3">
             {HOME_COMMUNITIES.map((c) => (
-              <Link key={c.name} to="/communities" className="mkt-comm">
+              <div key={c.name} className="mkt-comm mkt-comm--static">
                 <h3>{c.name}</h3>
                 <p>{c.body}</p>
-              </Link>
+              </div>
             ))}
           </div>
         </MktShell>
@@ -310,12 +327,12 @@ export function HomePage() {
             <div className="mkt-cta-copy">
               <h2>Start with the evidence.</h2>
               <p>
-                Browse the 6 Skill Communities, or tell us what you need and we&apos;ll match against
+                Browse the 7 Skill Communities, or tell us what you need and we&apos;ll match against
                 it.
               </p>
               <div className="mkt-actions">
-                <Link to="/login" className="mkt-btn mkt-btn-dark mkt-btn-lg">
-                  Browse Vetted Talents
+                <Link to="/sample-talent" className="mkt-btn mkt-btn-dark mkt-btn-lg">
+                  Browse Pre Vetted Talent
                   <ForwardArrow />
                 </Link>
                 <Link to="/contact" className="mkt-btn mkt-btn-outline mkt-btn-lg">

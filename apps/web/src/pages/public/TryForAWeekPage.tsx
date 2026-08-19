@@ -3,6 +3,7 @@ import { PageMeta } from '../../components/PageMeta';
 import { MktShell } from '../../components/marketing/MktShell';
 import { TRIAL_SETTLED, TRIAL_STEPS } from '../../lib/marketing-copy';
 import { PAGE_SEO } from '../../lib/marketing-seo';
+import { ForwardArrow } from '@/components/ui/ForwardArrow';
 
 export function TryForAWeekPage() {
   return (
@@ -17,16 +18,15 @@ export function TryForAWeekPage() {
             <br />
             See them perform.
           </h1>
-          <p className="mkt-lead">
-            See their test results, their rate and their start date up front — then try them free for
-            20 hours before you commit.
+          <p className="mkt-lead howitworks-body-style">
+            See their test results, rate, and start date upfront—then try them for free before you commit.
           </p>
-          <p className="mkt-lead mkt-trial-sub">
-            No recruiter calls. No sourcing cycle. No commitment for the first 20 hours.
+          <p className="mkt-lead mkt-trial-sub howitworks-body-style">
+            No recruiter calls. No sourcing cycle. No commitment for the first 10 hours.
           </p>
           <div className="mkt-actions">
-            <Link to="/sample-talent" className="mkt-btn mkt-btn-amber">
-              Browse trial-ready engineers
+            <Link to="/login/portals" className="mkt-btn mkt-btn-amber">
+              Browse Pre Vetted Talent <ForwardArrow />
             </Link>
             <Link to="/contact" className="mkt-btn mkt-btn-secondary">
               Tell us what you need
@@ -46,7 +46,7 @@ export function TryForAWeekPage() {
 
       <section className="mkt-section mkt-trial-why">
         <MktShell>
-          <h2>Why 20 hours</h2>
+          <h2>Why 10 hours</h2>
           <p>
             Half a working week is long enough to ship something real — a feature, a pipeline, a
             fix, a migration step — and see how someone handles your codebase, your ambiguity and
