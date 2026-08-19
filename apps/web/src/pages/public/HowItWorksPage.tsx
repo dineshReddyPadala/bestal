@@ -7,27 +7,29 @@ import {
   ONBOARDING_STEPS,
 } from '../../lib/marketing-copy';
 import { PAGE_SEO } from '../../lib/marketing-seo';
+import { ForwardArrow } from '@/components/ui/ForwardArrow';
 
 export function HowItWorksPage() {
   return (
     <div className="mkt-hiw-page">
       <PageMeta title={PAGE_SEO.howItWorks.title} description={PAGE_SEO.howItWorks.description} />
-      <MktShell className="mkt-page-hd mkt-hiw-hero">
-        <div className="mkt-hiw-label">Process</div>
-        <h1>How BesTal works</h1>
-        <p className="mkt-lead">
-          Two processes run in parallel. One builds the engineering communities. One serves your
-          requirement. You should be able to audit the first before you trust the second.
-        </p>
-        <div className="mkt-actions">
-          <Link to="/sample-talent" className="mkt-btn mkt-btn-primary">
-            Browse Vetted Talents
-          </Link>
-          <Link to="/evaluation-standard" className="mkt-btn mkt-btn-secondary">
-            See how we test
-          </Link>
-        </div>
-      </MktShell>
+      <section className="mkt-hiw-hero-band">
+        <MktShell className="mkt-page-hd mkt-hiw-hero">
+          <div className="mkt-hiw-label">Process</div>
+          <h1>How BesTal works</h1>
+          <p className="mkt-lead howitworks-body-style">
+            Two processes run in parallel. One builds the engineering communities. One serves your requirement. You should be able to audit the first before you trust the second.
+          </p>
+          <div className="mkt-actions">
+            <Link to="/sample-talent" className="mkt-btn mkt-btn-primary">
+              Browse Pre Vetted Talent <ForwardArrow />
+            </Link>
+            <Link to="/evaluation-standard" className="mkt-btn mkt-btn-secondary">
+              See how we test
+            </Link>
+          </div>
+        </MktShell>
+      </section>
 
       <section className="mkt-section mkt-hiw-part">
         <MktShell className="mkt-hiw-grid">
@@ -49,21 +51,21 @@ export function HowItWorksPage() {
                     <div>
                       <h3>{item.title}</h3>
                       <p>{item.body}</p>
-                      {'fact' in item && item.fact && (
+                      {/* {'fact' in item && item.fact && (
                         <div className="mkt-fact mt-3">{item.fact}</div>
-                      )}
+                      )} */}
                     </div>
                   </div>
                 ))}
               </div>
             </div>
-            <div className="mkt-hiw-note mt-9">
+            {/* <div className="mkt-hiw-note mt-9">
               <h3>Why the tester is external</h3>
               <p className="mt-[10px] text-base">
                 A recruiter measured on placements should not be the person grading the engineer.
                 Separating testing from sourcing is the only way a score means anything.
               </p>
-            </div>
+            </div> */}
           </div>
         </MktShell>
       </section>
@@ -87,9 +89,9 @@ export function HowItWorksPage() {
                   <div>
                     <h3>{item.title}</h3>
                     <p>{item.body}</p>
-                    {'fact' in item && item.fact && (
+                    {/* {'fact' in item && item.fact && (
                       <div className="mkt-fact mt-3">{item.fact}</div>
-                    )}
+                    )} */}
                   </div>
                 </div>
               ))}

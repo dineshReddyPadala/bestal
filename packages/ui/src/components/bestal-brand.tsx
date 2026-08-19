@@ -1,6 +1,8 @@
 import { cn } from '@bestal/shared-utils';
 import { Check, ShieldCheck } from 'lucide-react';
 
+export const DEFAULT_BESTAL_LOGO_SRC = '/New logo (1).svg';
+
 export type BesTalBrandProps = {
   logoSrc?: string;
   compact?: boolean;
@@ -27,19 +29,40 @@ export function BesTalWordmark({
 }
 
 export function BesTalBrand({
-  logoSrc,
+  logoSrc = DEFAULT_BESTAL_LOGO_SRC,
   compact = false,
   variant = 'light',
   className,
   wordmarkClassName,
 }: BesTalBrandProps) {
-  const logo = logoSrc ? (
-    <img
-      src={logoSrc}
-      alt=""
-      className={cn('bestal-brand-image shrink-0 rounded-lg object-contain', compact ? 'h-8 w-8' : 'h-8 w-8')}
-    />
-  ) : (
+  if (logoSrc) {
+    const logoImage = (
+      <img
+        src={logoSrc}
+        alt="BesTal"
+        className={cn(
+          'bestal-brand-image shrink-0 object-contain object-left',
+          compact ? 'h-7 w-auto max-w-[7.5rem]' : 'h-2-8rem w-auto max-w-[9.5rem]',
+        )}
+      />
+    );
+
+    if (compact) {
+      return (
+        <span className={cn('inline-flex items-center', className)} title="BesTal">
+          {logoImage}
+        </span>
+      );
+    }
+
+    return (
+      <div className={cn('bestal-brand flex min-w-0 items-center', className)}>
+        {logoImage}
+      </div>
+    );
+  }
+
+  const icon = (
     <span className="bestal-brand-icon" aria-hidden="true">
       <Check className="bestal-brand-check" strokeWidth={3} />
     </span>
@@ -48,27 +71,15 @@ export function BesTalBrand({
   if (compact) {
     return (
       <span className={cn('inline-flex items-center', className)} title="BesTal">
-        {logoSrc ? (
-          logo
-        ) : (
-          <span className="bestal-brand-icon" aria-hidden="true">
-            <Check className="bestal-brand-check" strokeWidth={3} />
-          </span>
-        )}
+        {icon}
       </span>
     );
   }
 
   return (
     <div className={cn('bestal-brand flex min-w-0 items-center gap-2', className)}>
-      {logo}
-      {!logoSrc && <BesTalWordmark variant={variant} className={wordmarkClassName} />}
-      {logoSrc && (
-        <span className={cn('font-semibold leading-none tracking-tight', wordmarkClassName)}>
-          <span className="text-foreground">Bes</span>
-          <span className="text-[#E8941A]">Tal</span>
-        </span>
-      )}
+      {icon}
+      <BesTalWordmark variant={variant} className={wordmarkClassName} />
     </div>
   );
 }
@@ -82,7 +93,14 @@ export function BrandMark({
   const logoSize = compact ? 'h-8 w-8' : 'h-8 w-8';
 
   const logo = logoSrc ? (
-    <img src={logoSrc} alt="" className={cn('shrink-0 rounded-lg object-contain', logoSize)} />
+    <img
+      src={logoSrc}
+      alt=""
+      className={cn(
+        'shrink-0 object-contain object-left',
+        compact ? 'h-7 w-auto max-w-[7.5rem]' : 'h-8 w-auto max-w-[9.5rem]',
+      )}
+    />
   ) : (
     <span
       className={cn(

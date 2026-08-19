@@ -28,13 +28,13 @@ export const EVIDENCE_STRIP = [
   },
   {
     num: '06',
-    title: '20 Hours Free',
+    title: '10 Hours Free',
     body: 'Try any engineer on real work at no charge.',
   },
 ] as const;
 
 export const HOME_STATS = [
-  { value: '20', label: 'Hours free, on real work,\nbefore you commit' },
+  { value: '10', label: 'Hours free, on real work,\nbefore you commit' },
   { value: '100%', label: 'Working in\nyour time zone' },
   { value: '5', label: 'Areas every engineer\nis tested on' },
   { value: '7', label: 'Skill Communities' },
@@ -53,7 +53,7 @@ export const HOME_STEPS = [
   },
   {
     step: 3,
-    title: 'Try them free for 20 hours',
+    title: 'Try them free',
     body: 'Real work, your systems, your team. No charge, and no obligation to continue.',
   },
   {
@@ -120,7 +120,7 @@ export const HOME_BUYER_FAQ = [
   },
   {
     question: 'Can I see their work before I pay anything?',
-    answer: 'Try any engineer on real work for 20 hours at no charge. You keep the work either way.',
+    answer: 'Try any engineer on real work at no charge. You keep the work either way.',
   },
 ] as const;
 
@@ -133,6 +133,135 @@ export const HOME_COMMUNITIES = [
   { name: 'Salesforce', body: 'Admin, development and configuration across CRM.' },
   { name: 'Cybersecurity', body: 'Security engineering, cloud security, identity and governance.' },
 ] as const;
+
+export type HomeCommunityCard = {
+  name: (typeof HOME_COMMUNITIES)[number]['name'];
+  body: string;
+  badges: readonly [string, string];
+  tags: readonly string[];
+};
+
+export const HOME_COMMUNITY_CARDS: HomeCommunityCard[] = [
+  {
+    name: 'Data & AI',
+    body: 'Engineering, analytics, machine learning and applied AI.',
+    badges: ['Fullstack', 'Developer'],
+    tags: [
+      'Data Engineers',
+      'Databricks',
+      'Snowflake',
+      'Analytics Engineers',
+      'Data Scientists',
+      'ML Engineers',
+      'GenAI Engineers',
+      'Agentic AI',
+      'MLOps',
+      'AI Architects',
+    ],
+  },
+  {
+    name: 'Cloud & Platform',
+    body: 'Cloud architecture, platform engineering, DevOps and SRE.',
+    badges: ['Platform', 'DevOps'],
+    tags: [
+      'Cloud Architects',
+      'Kubernetes',
+      'Terraform',
+      'AWS',
+      'GCP',
+      'Azure',
+      'Site Reliability',
+      'Platform Engineers',
+      'CI/CD',
+      'Infrastructure',
+    ],
+  },
+  {
+    name: 'Full Stack & Engineering',
+    body: 'Front-end, back-end and full-stack product engineering.',
+    badges: ['Product', 'Engineering'],
+    tags: [
+      'React',
+      'Node.js',
+      'TypeScript',
+      'Java',
+      'Spring Boot',
+      'PostgreSQL',
+      'Microservices',
+      'API Design',
+      'Mobile',
+      'System Design',
+    ],
+  },
+  {
+    name: 'SAP',
+    body: 'Functional and technical roles across S/4HANA programmes.',
+    badges: ['Functional', 'Technical'],
+    tags: [
+      'S/4HANA',
+      'ABAP',
+      'Fiori',
+      'SAP BTP',
+      'Integration',
+      'FI/CO',
+      'MM',
+      'SD',
+      'Basis',
+      'Migration',
+    ],
+  },
+  {
+    name: 'ServiceNow',
+    body: 'Implementation, development and administration across ITSM.',
+    badges: ['ITSM', 'Developer'],
+    tags: [
+      'ServiceNow Admin',
+      'ITSM',
+      'CSM',
+      'HRSD',
+      'Flow Designer',
+      'Integration Hub',
+      'CMDB',
+      'SecOps',
+      'App Engine',
+      'Architect',
+    ],
+  },
+  {
+    name: 'Salesforce',
+    body: 'Admin, development and configuration across CRM.',
+    badges: ['Admin', 'Developer'],
+    tags: [
+      'Sales Cloud',
+      'Service Cloud',
+      'Apex',
+      'Lightning',
+      'Flows',
+      'Integration',
+      'Marketing Cloud',
+      'CPQ',
+      'Architect',
+      'CRM',
+    ],
+  },
+  {
+    name: 'Cybersecurity',
+    body: 'Security engineering, cloud security, identity and governance.',
+    badges: ['Security', 'Engineering'],
+    tags: [
+      'AppSec',
+      'Cloud Security',
+      'IAM',
+      'SIEM',
+      'Pen Testing',
+      'GRC',
+      'Zero Trust',
+      'DevSecOps',
+      'SOC',
+      'Compliance',
+    ],
+  },
+];
 
 export const ONBOARDING_STEPS = [
   {
@@ -149,17 +278,17 @@ export const ONBOARDING_STEPS = [
     step: 3,
     title: 'Tested by an outside specialist',
     body: 'A qualified specialist — not a BesTal recruiter — tests the engineer against role-specific criteria and scores technical depth, problem solving, architecture, code quality and communication separately.',
-    fact: '[FACT: tester sourcing and qualification criteria]',
+    // fact: '[FACT: tester sourcing and qualification criteria]',
   },
   {
     step: 4,
     title: 'Verified',
     body: 'Identity confirmed against a live capture. Education and employment history independently checked.',
-    fact: '[FACT: verification provider and scope]',
+    // fact: '[FACT: verification provider and scope]',
   },
   {
     step: 5,
-    title: 'Rated',
+    title: 'Pricing',
     body: 'An hourly rate is set from skill, seniority, certification, scarcity and time-zone commitment. It is published on the profile.',
   },
   {
@@ -197,14 +326,14 @@ export const ENGAGEMENT_STEPS = [
   },
   {
     step: 4,
-    title: 'Start a 20-hour free trial',
-    body: 'Pick an engineer and put them on real work for 20 hours, at no charge. No interview round required — the test results and the trial replace it.',
+    title: 'Start a 10-hour free trial',
+    body: 'Pick an engineer and put them on real work for free trial. No interview round required — the test results and the trial replace it.',
   },
   {
     step: 5,
     title: 'Continue, swap, or stop',
     body: 'Move into a paid engagement, swap for a different engineer, or stop.',
-    fact: '[FACT: replacement turnaround commitment]',
+    // fact: '[FACT: replacement turnaround commitment]',
   },
   {
     step: 6,
@@ -216,7 +345,7 @@ export const ENGAGEMENT_STEPS = [
 export const CONTROL_TABLE = {
   youControl: [
     'Which engineer goes on trial',
-    'What the 20 hours are spent on',
+    'What the 10 hours are spent on',
     'Timesheet approval',
     'Continue / swap / stop',
     'Which of your team gets access to what',
@@ -248,14 +377,14 @@ export const RATE_FACTORS = [
 ] as const;
 
 export const TRIAL_STEPS = [
-  { step: 1, title: 'Pick the engineer', body: 'Any profile marked 20-Hour Trial. No interview round required — the test results tell you what an interview would.' },
-  { step: 2, title: 'Define the 20 hours', body: 'A specific deliverable, written success criteria, and a named manager on your side.' },
+  { step: 1, title: 'Pick the engineer', body: 'Any profile marked free Trial. No interview round required — the test results tell you what an interview would.' },
+  { step: 2, title: 'Define the 10 hours', body: 'A specific deliverable, written success criteria, and a named manager on your side.' },
   { step: 3, title: 'They start', body: 'Your systems, your access controls, your standups, working your business hours. Most trials begin within 24 to 48 hours of confirmation.' },
-  { step: 4, title: 'Decide', body: 'Continue into a paid engagement, swap for a different engineer, or stop. No charge for the 20 hours either way.' },
+  { step: 4, title: 'Decide', body: 'Continue into a paid engagement, swap for a different engineer, or stop. No charge for the 10 hours either way.' },
 ] as const;
 
 export const TRIAL_SETTLED = [
-  { strong: 'The 20 hours are free.', rest: ' No card, no deposit, no invoice.' },
+  { strong: 'The 10 hours are free.', rest: ' No card, no deposit, no invoice.' },
   { strong: 'You keep the work.', rest: ' Whatever you decide afterwards.' },
   { strong: 'IP is assigned to you at the point of creation', rest: ' — not on payment, not by licence.' },
   { strong: 'Stopping costs nothing.', rest: ' No continuation obligation, no notice period, no conversation about staying.' },

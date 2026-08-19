@@ -23,14 +23,16 @@ export function ContactPage() {
   return (
     <div className="mkt-contact-page">
       <PageMeta title={PAGE_SEO.contact.title} description={PAGE_SEO.contact.description} />
-      <MktShell className="mkt-page-hd mkt-hiw-hero">
-        <div className="mkt-hiw-label">Reach out</div>
-        <h1>Reach out to us</h1>
-        <p className="mkt-lead">
-          Tell us what you need — role, skills, and timeline. Our talent team will match against
-          vetted engineers with evidence on every profile.
-        </p>
-      </MktShell>
+      <section className="mkt-hiw-hero-band">
+        <MktShell className="mkt-page-hd mkt-hiw-hero">
+          <div className="mkt-hiw-label">Reach out</div>
+          <h1>Reach out to us</h1>
+          <p className="mkt-lead">
+            Tell us what you need — role, skills, and timeline. Our talent team will match against
+            vetted engineers with evidence on every profile.
+          </p>
+        </MktShell>
+      </section>
 
       <section className="mkt-section mkt-reach-out-section">
         <MktShell className="mkt-reach-out-shell">
@@ -126,10 +128,10 @@ export function ContactPage() {
             <div className="mkt-card">
               <h4>Just want to look first?</h4>
               <p className="mt-[7px] text-[15px]">
-                Browse vetted talents with full test results and rates. No account needed.
+                Browse pre vetted talents with full test results and rates. No account needed.
               </p>
-              <Link to="/sample-talent" className="mkt-btn mkt-btn-ghost mt-[10px] pl-0">
-                Browse Vetted Talents
+              <Link to="/login/portals" className="mkt-btn mkt-btn-ghost mt-[10px] pl-0">
+                Browse Pre Vetted Talents
                 <ForwardArrow />
               </Link>
             </div>

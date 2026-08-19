@@ -18,12 +18,12 @@ export function RatesPage() {
             <br />
             you shortlist
           </h1>
-          <p className="mkt-lead">
+          <p className="mkt-lead howitworks-body-style">
             Every profile shows one number: the hourly price you&apos;d pay. It&apos;s on the profile,
             it&apos;s filterable.
           </p>
-          <p className="mkt-lead mkt-rates-sub">
-            That&apos;s unusual here- pricing discovery is normally a phone call, <br /> and the phone number.
+          <p className="mkt-lead mkt-rates-sub howitworks-body-style">
+            That&apos;s unusual here- pricing discovery is normally a phone call, and the phone number.
           </p>
         </MktShell>
       </div>
@@ -47,7 +47,7 @@ export function RatesPage() {
         <MktShell>
           <h2>What the price includes</h2>
           <p>
-            The published price is the all-in hourly price for engaged time. The first 20 hours are
+            The published price is the all-in hourly price for engaged time. The first 10 hours are
             not billed at all.
           </p>
           {/* <div className="mkt-fact">[FACT: precise inclusions and exclusions]</div>
@@ -73,8 +73,7 @@ export function RatesPage() {
             with no test, no verification, no time-zone commitment and no replacement path. 
           </p>
           <p className="mkt-rates-quote">
-            What we compete on is a price you can see, evidence you can check, and 20 hours of
-            proof that costs you nothing.
+            What we compete on is transparent pricing, verifiable evidence, and a risk-free way to evaluate our value.
           </p>
         </MktShell>
       </section>
@@ -82,7 +81,7 @@ export function RatesPage() {
       <section className="mkt-section mkt-rates-bands">
         <MktShell>
           <h2>Price bands</h2>
-          <div className="mkt-fact">[FACT: published price bands per discipline]</div>
+          {/* <div className="mkt-fact">[FACT: published price bands per discipline]</div> */}
           <div className="mkt-rates-pills">
             {PRICE_BANDS.map((band) => (
               <span key={band}>{band}</span>

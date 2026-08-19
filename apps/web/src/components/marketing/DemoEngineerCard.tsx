@@ -1,4 +1,5 @@
 import { cn } from '@bestal/shared-utils';
+import { MAX_COMPARE } from '../../hooks/useSampleTalentShortlist';
 import type { DemoEngineer } from '../../lib/demo-engineers';
 
 type DemoEngineerCardProps = {
@@ -6,6 +7,13 @@ type DemoEngineerCardProps = {
   className?: string;
   compact?: boolean;
   hideScorecard?: boolean;
+  communityLabel?: string;
+  showTalentActions?: boolean;
+  isShortlisted?: boolean;
+  isInCompare?: boolean;
+  compareDisabled?: boolean;
+  onShortlist?: () => void;
+  onCompare?: () => void;
 };
 
 export function DemoEngineerCard({
@@ -13,10 +21,26 @@ export function DemoEngineerCard({
   className,
   compact,
   hideScorecard = false,
+  communityLabel,
+  showTalentActions = false,
+  isShortlisted = false,
+  isInCompare = false,
+  compareDisabled = false,
+  onShortlist,
+  onCompare,
 }: DemoEngineerCardProps) {
   return (
-    <article className={cn('mkt-prof', className)}>
-      <div className="mkt-dtag">Demo profile · Fictional engineer</div>
+    <article
+      className={cn(
+        'mkt-prof',
+        showTalentActions && isShortlisted && 'is-shortlisted',
+        showTalentActions && isInCompare && 'is-in-compare',
+        className,
+      )}
+    >
+      {(communityLabel ?? engineer.discipline) ? (
+        <div className="mkt-dtag">{communityLabel ?? engineer.discipline}</div>
+      ) : null}
       <div className="mkt-pb">
         <div className="mkt-ptop">
           <div className="mkt-av">{engineer.initials}</div>
@@ -99,23 +123,61 @@ export function DemoEngineerCard({
         {!compact && (
           <div className="mkt-pacts">
             {engineer.trialEligible ? (
-              <span className="mkt-btn mkt-btn-amber mkt-btn-sm">Start 20-Hour Free Trial</span>
+              <span className="mkt-btn mkt-btn-amber mkt-btn-sm">Start free trial</span>
             ) : (
               <span className="mkt-btn mkt-btn-primary mkt-btn-sm">Request availability</span>
             )}
-            <span className="mkt-btn mkt-btn-secondary mkt-btn-sm">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-                <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
-              </svg>
-              Shortlist
-            </span>
-            <span className="mkt-btn mkt-btn-secondary mkt-btn-sm">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-                <rect x="3" y="4" width="7" height="16" rx="1.5" />
-                <rect x="14" y="4" width="7" height="16" rx="1.5" />
-              </svg>
-              Compare
-            </span>
+            {showTalentActions ? (
+              <>
+                <button
+                  type="button"
+                  className={cn(
+                    'mkt-btn mkt-btn-sm',
+                    isShortlisted ? 'mkt-btn-primary' : 'mkt-btn-secondary',
+                  )}
+                  onClick={onShortlist}
+                  aria-pressed={isShortlisted}
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                    <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
+                  </svg>
+                  {isShortlisted ? 'Shortlisted' : 'Shortlist'}
+                </button>
+                <button
+                  type="button"
+                  className={cn(
+                    'mkt-btn mkt-btn-sm',
+                    isInCompare ? 'mkt-btn-primary' : 'mkt-btn-secondary',
+                  )}
+                  onClick={onCompare}
+                  disabled={compareDisabled}
+                  aria-pressed={isInCompare}
+                  title={compareDisabled ? `Compare up to ${MAX_COMPARE} engineers — remove one to add another` : undefined}
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                    <rect x="3" y="4" width="7" height="16" rx="1.5" />
+                    <rect x="14" y="4" width="7" height="16" rx="1.5" />
+                  </svg>
+                  {isInCompare ? 'In compare' : 'Compare'}
+                </button>
+              </>
+            ) : (
+              <>
+                <span className="mkt-btn mkt-btn-secondary mkt-btn-sm">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                    <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
+                  </svg>
+                  Shortlist
+                </span>
+                <span className="mkt-btn mkt-btn-secondary mkt-btn-sm">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                    <rect x="3" y="4" width="7" height="16" rx="1.5" />
+                    <rect x="14" y="4" width="7" height="16" rx="1.5" />
+                  </svg>
+                  Compare
+                </span>
+              </>
+            )}
           </div>
         )}
       </div>

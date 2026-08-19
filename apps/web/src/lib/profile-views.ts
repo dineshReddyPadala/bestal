@@ -31,7 +31,7 @@ export const PROFILE_VIEWS: ProfileView[] = [
   {
     id: 'bgv',
     label: 'BGV',
-    src: '/Container_bvg.png',
+    src: '/BGV.png',
     fileName: 'Container-2.png',
     alt: 'Background verification — five-category verification status',
     fit: 'contain',
