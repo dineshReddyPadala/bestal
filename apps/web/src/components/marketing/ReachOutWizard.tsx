@@ -1,4 +1,4 @@
-import { ArrowLeft, Check, CheckCircle2, Copy, FileText, Plus, Upload, X } from 'lucide-react';
+import { ArrowLeft, Check, CheckCircle2, FileText, Plus, Upload, X } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ForwardArrow } from '../ui/ForwardArrow';
@@ -129,7 +129,6 @@ export function ReachOutWizard() {
   const [uploads, setUploads] = useState<UploadItem[]>([]);
   const [submitted, setSubmitted] = useState(false);
   const [requestId, setRequestId] = useState<string | null>(null);
-  const [requestIdCopied, setRequestIdCopied] = useState(false);
   const [emailError, setEmailError] = useState(false);
   const [fileError, setFileError] = useState<string | null>(null);
   const [uploadRequiredError, setUploadRequiredError] = useState(false);
@@ -188,7 +187,6 @@ export function ReachOutWizard() {
     setUploadRequiredError(false);
     setSubmitted(false);
     setRequestId(null);
-    setRequestIdCopied(false);
     nextJobId.current = 2;
     nextUploadId.current = 1;
     if (fileInputRef.current) fileInputRef.current.value = '';
@@ -310,17 +308,6 @@ export function ReachOutWizard() {
     }
     setRequestId(createRequestId());
     setSubmitted(true);
-  }
-
-  async function copyRequestId() {
-    if (!requestId) return;
-    try {
-      await navigator.clipboard.writeText(requestId);
-      setRequestIdCopied(true);
-      window.setTimeout(() => setRequestIdCopied(false), 2000);
-    } catch {
-      setRequestIdCopied(false);
-    }
   }
 
   function handleStepKeyDown(e: KeyboardEvent<HTMLDivElement>) {

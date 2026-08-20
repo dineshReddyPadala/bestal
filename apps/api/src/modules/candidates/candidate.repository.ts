@@ -159,6 +159,7 @@ export class CandidateRepository extends BaseRepository {
     return this.prisma.candidate.update({
       where: { id: BigInt(id), organizationId: BigInt(organizationId) },
       data: {
+        status: 'ACTIVE',
         visibility: 'CLIENT_VISIBLE',
         profileStatus: 'CLIENT_VISIBLE',
         publishedAt: new Date(),
@@ -233,6 +234,7 @@ export class CandidateRepository extends BaseRepository {
       where: { id: BigInt(id), organizationId: BigInt(organizationId) },
       data: {
         approvalStatus: 'APPROVED',
+        status: 'ACTIVE',
         profileStatus: 'CLIENT_VISIBLE',
         visibility: 'CLIENT_VISIBLE',
         publishedAt: new Date(),
