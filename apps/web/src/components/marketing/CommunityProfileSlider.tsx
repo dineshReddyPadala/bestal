@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { cn } from '@bestal/shared-utils';
 import {
   COMMUNITY_PROFILE_SLIDES,
@@ -21,12 +21,6 @@ export function CommunityProfileSlider({
   onSlideChange,
 }: CommunityProfileSliderProps) {
   const [active, setActive] = useState(0);
-  const [cycle, setCycle] = useState(0);
-
-  const select = useCallback((index: number) => {
-    setActive(index);
-    setCycle((c) => c + 1);
-  }, []);
 
   useEffect(() => {
     onSlideChange?.(COMMUNITY_PROFILE_SLIDES[active]);
@@ -37,7 +31,7 @@ export function CommunityProfileSlider({
       setActive((current) => (current + 1) % COMMUNITY_PROFILE_SLIDES.length);
     }, AUTOPLAY_MS);
     return () => window.clearInterval(id);
-  }, [cycle]);
+  }, []);
 
   const activeSlide = COMMUNITY_PROFILE_SLIDES[active];
 

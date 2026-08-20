@@ -1,6 +1,5 @@
 import { Link } from 'react-router-dom';
 import { useCallback, useState } from 'react';
-import { CommunityDisciplineCard } from '../../components/marketing/CommunityDisciplineCard';
 import { CommunityProfileSlider } from '../../components/marketing/CommunityProfileSlider';
 import { ProfileTabs } from '../../components/marketing/ProfileTabs';
 import { MktShell } from '../../components/marketing/MktShell';

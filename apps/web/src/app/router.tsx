@@ -1,7 +1,6 @@
 import { publicNav } from '@bestal/mock-data';
 import { MarketingLayout } from '@bestal/ui';
 import { createBrowserRouter, Navigate, Outlet, RouterProvider, useNavigate } from 'react-router-dom';
-import { PageMeta } from '../components/PageMeta';
 import { AdminShell } from '../layouts/AdminShell';
 import { ClientShell } from '../layouts/ClientShell';
 import { RecruiterShell } from '../layouts/RecruiterShell';
