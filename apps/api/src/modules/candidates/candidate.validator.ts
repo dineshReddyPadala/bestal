@@ -131,7 +131,7 @@ export const listCandidatesQuerySchema = z.object({
   sort: z
     .string()
     .regex(
-      /^(-?(createdAt|updatedAt|firstName|lastName|email|status|visibility|approvalStatus|yearsExperience))(,-?(createdAt|updatedAt|firstName|lastName|email|status|visibility|approvalStatus|yearsExperience))*$/,
+      /^(-?(createdAt|updatedAt|publishedAt|firstName|lastName|email|status|visibility|approvalStatus|yearsExperience))(,-?(createdAt|updatedAt|publishedAt|firstName|lastName|email|status|visibility|approvalStatus|yearsExperience))*$/,
       'Invalid sort format. Example: -createdAt,lastName',
     )
     .optional(),
@@ -349,6 +349,7 @@ export const messageResponseSchema = z.object({
 export const SORTABLE_FIELDS = [
   'createdAt',
   'updatedAt',
+  'publishedAt',
   'firstName',
   'lastName',
   'email',
