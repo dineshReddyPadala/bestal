@@ -1483,8 +1483,6 @@ function DocumentsTab({
 function ReviewTab({ canEditVisibility }: { canEditVisibility: boolean }) {
   const { register, watch } = useFormContext<CandidateWizardFormValues>();
   const values = watch();
-  const profileStatus = values.profileStatus;
-  const visibility = values.visibility;
   const currency = values.currency ?? 'USD';
 
   const summaryFields: Array<{ label: string; value: string }> = [
@@ -1554,18 +1552,18 @@ function ReviewTab({ canEditVisibility }: { canEditVisibility: boolean }) {
         </dl>
       </SectionCard>
 
-      <SectionCard title="Visibility">
-        <div className="grid gap-4 sm:grid-cols-2">
-          <FormField label="Profile Status" name="profileStatus">
-            <input type="hidden" {...register('profileStatus')} />
-            <div className="flex h-11 items-center rounded-md border border-border bg-muted/30 px-3 text-sm font-medium text-foreground">
-              {profileStatus
-                ? CANDIDATE_PROFILE_STATUS_LABELS[profileStatus]
-                : 'Sourced'}
-            </div>
-          </FormField>
-          <FormField label="Visibility" name="visibility">
-            {canEditVisibility ? (
+      {canEditVisibility ? (
+        <SectionCard title="Visibility">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <FormField label="Profile Status" name="profileStatus">
+              <input type="hidden" {...register('profileStatus')} />
+              <div className="flex h-11 items-center rounded-md border border-border bg-muted/30 px-3 text-sm font-medium text-foreground">
+                {values.profileStatus
+                  ? CANDIDATE_PROFILE_STATUS_LABELS[values.profileStatus]
+                  : 'Sourced'}
+              </div>
+            </FormField>
+            <FormField label="Visibility" name="visibility">
               <Select id="visibility" {...register('visibility')}>
                 {CANDIDATE_VISIBILITY_STATUSES.map((status) => (
                   <option key={status} value={status}>
@@ -1573,28 +1571,20 @@ function ReviewTab({ canEditVisibility }: { canEditVisibility: boolean }) {
                   </option>
                 ))}
               </Select>
-            ) : (
-              <>
-                <input type="hidden" {...register('visibility')} />
-                <div className="flex h-11 items-center rounded-md border border-border bg-muted/30 px-3 text-sm font-medium text-foreground">
-                  {visibility ? CANDIDATE_VISIBILITY_LABELS[visibility] : 'Internal Only'}
-                </div>
-              </>
-            )}
-          </FormField>
-          <div className="sm:col-span-2">
-            <label className="flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                className="h-4 w-4 accent-brand"
-                disabled={!canEditVisibility}
-                {...register('publishAfterApproval')}
-              />
-              Publish to Clients after Approval
-            </label>
+            </FormField>
+            <div className="sm:col-span-2">
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  className="h-4 w-4 accent-brand"
+                  {...register('publishAfterApproval')}
+                />
+                Publish to Clients after Approval
+              </label>
+            </div>
           </div>
-        </div>
-      </SectionCard>
+        </SectionCard>
+      ) : null}
 
       <SectionCard title="Notes">
         <FormField label="Recruiter Notes" name="recruiterNotes">
