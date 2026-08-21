@@ -1,6 +1,11 @@
 import type { Prisma } from '@prisma/client';
 import { bigintToNumber } from '../../utils/index.js';
-import type { JobRequestDto, JobRequestListItemDto } from './job-request.types.js';
+import type {
+  ClientEnquiryAttachment,
+  ClientEnquiryJobEntry,
+  JobRequestDto,
+  JobRequestListItemDto,
+} from './job-request.types.js';
 import type { JobRequestRecord } from './job-request.repository.js';
 
 function formatPersonName(firstName: string, lastName: string): string {
@@ -12,20 +17,63 @@ function parseRequiredSkills(value: unknown): string[] {
   return value.filter((item): item is string => typeof item === 'string');
 }
 
+function parseJobs(value: unknown): ClientEnquiryJobEntry[] | null {
+  if (!Array.isArray(value)) return null;
+  const jobs = value
+    .filter((item): item is Record<string, unknown> => typeof item === 'object' && item !== null)
+    .map((item) => ({
+      jobTitle: String(item.jobTitle ?? ''),
+      jobDescription: String(item.jobDescription ?? ''),
+      requiredSkills: parseRequiredSkills(item.requiredSkills),
+      experienceRequired: String(item.experienceRequired ?? ''),
+      numberOfResources: String(item.numberOfResources ?? ''),
+    }))
+    .filter((job) => job.jobTitle.length > 0);
+  return jobs.length > 0 ? jobs : null;
+}
+
+function parseAttachments(value: unknown): ClientEnquiryAttachment[] | null {
+  if (!Array.isArray(value)) return null;
+  const attachments = value
+    .filter((item): item is Record<string, unknown> => typeof item === 'object' && item !== null)
+    .map((item) => ({
+      fileName: String(item.fileName ?? ''),
+      fileSize: Number(item.fileSize ?? 0),
+      mimeType: String(item.mimeType ?? ''),
+      storageKey: String(item.storageKey ?? ''),
+      bucket: String(item.bucket ?? ''),
+      ...(item.downloadUrl != null ? { downloadUrl: String(item.downloadUrl) } : {}),
+    }))
+    .filter((attachment) => attachment.fileName.length > 0 && attachment.storageKey.length > 0);
+  return attachments.length > 0 ? attachments : null;
+}
+
+function countRoles(record: JobRequestRecord): number {
+  const jobs = parseJobs(record.jobs);
+  return jobs?.length ?? 1;
+}
+
 export function mapJobRequestToDto(record: JobRequestRecord): JobRequestDto {
   return {
     id: bigintToNumber(record.id),
     organizationId: bigintToNumber(record.organizationId),
+    referenceCode: record.referenceCode,
     jobTitle: record.jobTitle,
     jobDescription: record.jobDescription,
     requiredSkills: parseRequiredSkills(record.requiredSkills),
     experienceRequired: record.experienceRequired,
     numberOfResources: record.numberOfResources,
     companyName: record.companyName,
+    companyDomain: record.companyDomain,
+    location: record.location,
+    timezone: record.timezone,
     website: record.website,
     contactName: record.contactName,
     contactEmail: record.contactEmail,
     contactPhone: record.contactPhone,
+    additionalRequirements: record.additionalRequirements,
+    jobs: parseJobs(record.jobs),
+    attachments: parseAttachments(record.attachments),
     status: record.status,
     source: record.source,
     assignedToId: record.assignedToId ? bigintToNumber(record.assignedToId) : null,
@@ -41,6 +89,7 @@ export function mapJobRequestToDto(record: JobRequestRecord): JobRequestDto {
 export function mapJobRequestToListItem(record: JobRequestRecord): JobRequestListItemDto {
   return {
     id: bigintToNumber(record.id),
+    referenceCode: record.referenceCode,
     jobTitle: record.jobTitle,
     companyName: record.companyName,
     contactName: record.contactName,
@@ -48,6 +97,7 @@ export function mapJobRequestToListItem(record: JobRequestRecord): JobRequestLis
     contactPhone: record.contactPhone,
     experienceRequired: record.experienceRequired,
     numberOfResources: record.numberOfResources,
+    rolesCount: countRoles(record),
     status: record.status,
     assignedToId: record.assignedToId ? bigintToNumber(record.assignedToId) : null,
     assignedToName: record.assignedTo
@@ -74,6 +124,7 @@ export function parseSortParam(
       case 'status':
       case 'companyName':
       case 'jobTitle':
+      case 'referenceCode':
       case 'createdAt':
       case 'updatedAt':
         return { [key]: direction };

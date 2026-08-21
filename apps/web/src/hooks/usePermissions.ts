@@ -26,6 +26,8 @@ export function usePermissions() {
       canUploadBgv: has('background_checks:write'),
       canApproveBgv: has('background_checks:approve'),
       canReadBgv: has('background_checks:read'),
+      canReadClientEnquiries: has('job-requests:read'),
+      canWriteClientEnquiries: has('job-requests:write'),
       isPlatformAdmin: has('admin:platform'),
     }),
     [has, permissions],

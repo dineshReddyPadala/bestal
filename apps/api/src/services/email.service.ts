@@ -22,6 +22,13 @@ export type PasswordResetEmailPayload = {
   expiresIn: string;
 };
 
+export type ClientRegistrationAcknowledgementPayload = {
+  to: string;
+  contactName: string;
+  companyName: string;
+  loginUrl: string;
+};
+
 export type ResolvedMailConfig = {
   enabled: boolean;
   host: string;
@@ -291,6 +298,58 @@ export class EmailService {
     });
 
     return { sent: true };
+  }
+
+  async sendClientRegistrationAcknowledgement(
+    payload: ClientRegistrationAcknowledgementPayload,
+  ): Promise<{ sent: boolean }> {
+    const resolved = await this.ensureReady();
+    const subject = 'BesTal registration received';
+    const text = [
+      `Hi ${payload.contactName},`,
+      '',
+      `Thank you for registering ${payload.companyName} with BesTal.`,
+      '',
+      'Your account is pending review. We will email you when your account has been activated.',
+      '',
+      `You can sign in here once activated: ${payload.loginUrl}`,
+      '',
+      '— BesTal / Amnet Digital',
+    ].join('\n');
+
+    const html = `
+      <p>Hi ${escapeHtml(payload.contactName)},</p>
+      <p>Thank you for registering <strong>${escapeHtml(payload.companyName)}</strong> with BesTal.</p>
+      <p>Your account is pending review. We will email you when your account has been activated.</p>
+      <p><a href="${escapeHtml(payload.loginUrl)}">Client sign in</a></p>
+      <p>— BesTal / Amnet Digital</p>
+    `;
+
+    if (!this.transporter || !resolved.fromAddress) {
+      console.info('[email] Mail not configured — client registration acknowledgement (dev):', {
+        to: payload.to,
+        companyName: payload.companyName,
+        loginUrl: payload.loginUrl,
+      });
+      return { sent: false };
+    }
+
+    try {
+      await this.transporter.sendMail({
+        from: `"${resolved.fromName}" <${resolved.fromAddress}>`,
+        to: payload.to,
+        subject,
+        text,
+        html,
+      });
+      return { sent: true };
+    } catch (err) {
+      console.error('[email] Failed to send client registration acknowledgement:', {
+        to: payload.to,
+        error: err instanceof Error ? err.message : err,
+      });
+      return { sent: false };
+    }
   }
 
   async sendTestEmail(to: string): Promise<{ sent: boolean }> {

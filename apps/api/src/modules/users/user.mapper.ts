@@ -15,19 +15,28 @@ type UserWithMembership = {
   memberships: Array<{
     role: Role;
     organizationId: bigint;
+    isActive: boolean;
     clientId?: bigint | null;
     organization: { id: bigint; name: string };
     client?: { id: bigint; name: string } | null;
   }>;
 };
 
+export function findOrgMembership(
+  memberships: UserWithMembership['memberships'],
+  organizationId: number,
+) {
+  const orgMemberships = memberships.filter(
+    (membership) => bigintToNumber(membership.organizationId) === organizationId,
+  );
+  return orgMemberships.find((membership) => membership.isActive) ?? orgMemberships[0];
+}
+
 export function mapUserToListItem(
   user: UserWithMembership,
   organizationId: number,
 ): UserListItemDto {
-  const membership = user.memberships.find(
-    (m) => bigintToNumber(m.organizationId) === organizationId,
-  );
+  const membership = findOrgMembership(user.memberships, organizationId);
 
   return {
     id: bigintToNumber(user.id),

@@ -1,4 +1,4 @@
-export { jobRequestRoutes, jobRequestPublicRoutes } from './job-request.routes.js';
+export { jobRequestRoutes, jobRequestPublicRoutes, clientEnquiryPublicRoutes } from './job-request.routes.js';
 export { JobRequestService } from './job-request.service.js';
 export { JobRequestRepository } from './job-request.repository.js';
 export { JobRequestController } from './job-request.controller.js';

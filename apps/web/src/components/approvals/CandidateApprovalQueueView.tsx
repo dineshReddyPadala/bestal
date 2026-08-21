@@ -250,7 +250,7 @@ export function CandidateApprovalQueueView({
     async (record: ApprovalRow) => {
       try {
         await mutations.approve.mutateAsync(record.id);
-        show(`Approved & published — ${record.fullName} is visible to clients`);
+        show(`Approved — ${record.fullName} is ready to publish`);
       } catch (err) {
         showError(getApiErrorMessage(err, 'Approve failed'));
       }

@@ -86,19 +86,99 @@ export type CreatePublicJobRequestBody = z.infer<typeof createPublicJobRequestBo
 export type UpdateJobRequestBody = z.infer<typeof updateJobRequestBodySchema>;
 export type ListJobRequestsQuery = z.infer<typeof listJobRequestsQuerySchema>;
 
+export const publicJobRequestSubmitResponseSchema = z.object({
+  data: z.object({
+    id: z.number(),
+    referenceCode: z.string().optional(),
+    message: z.string(),
+  }),
+});
+
+const clientEnquiryJobSchema = z.object({
+  jobTitle: z.string().trim().min(1).max(255),
+  jobDescription: z.string().trim().min(10).max(10000),
+  requiredSkills: z.string().trim().min(1).max(5000),
+  experienceRequired: z.enum(['0-2', '2-5', '5-8', '8+']),
+  numberOfResources: z.enum(['1', '2', '3', '4', '5+']),
+});
+
+export const createClientEnquiryBodySchema = z
+  .object({
+    companyName: z.string().trim().min(1).max(255),
+    companyDomain: z.string().trim().min(1).max(255).optional(),
+    location: z.string().trim().min(1).max(255),
+    timezone: z.string().trim().min(1).max(50),
+    companyWebsite: z
+      .string()
+      .trim()
+      .min(1)
+      .max(500)
+      .transform((val) => (/^https?:\/\//i.test(val) ? val : `https://${val}`))
+      .pipe(z.string().url()),
+    contactPersonName: z.string().trim().min(1).max(150),
+    email: z.string().trim().email().max(255),
+    phone: z.string().trim().min(7).max(30),
+    jobs: z.array(clientEnquiryJobSchema).min(1).max(10),
+    additionalRequirements: z.string().trim().min(1).max(10000),
+    websiteConfirm: z.string().max(0).optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (!isWorkEmail(data.email)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Please use a work email address',
+        path: ['email'],
+      });
+    }
+  });
+
+export type CreateClientEnquiryBody = z.infer<typeof createClientEnquiryBodySchema>;
+
+export const clientEnquirySubmitResponseSchema = z.object({
+  data: z.object({
+    id: z.number(),
+    referenceCode: z.string(),
+    message: z.string(),
+  }),
+});
+
+const clientEnquiryJobDtoSchema = z.object({
+  jobTitle: z.string(),
+  jobDescription: z.string(),
+  requiredSkills: z.array(z.string()),
+  experienceRequired: z.string(),
+  numberOfResources: z.string(),
+});
+
+const clientEnquiryAttachmentDtoSchema = z.object({
+  fileName: z.string(),
+  fileSize: z.number(),
+  mimeType: z.string(),
+  storageKey: z.string(),
+  bucket: z.string(),
+  downloadUrl: z.string().nullable().optional(),
+});
+
 const jobRequestDtoSchema = z.object({
   id: z.number(),
   organizationId: z.number(),
+  referenceCode: z.string(),
   jobTitle: z.string(),
   jobDescription: z.string(),
   requiredSkills: z.array(z.string()),
   experienceRequired: z.string(),
   numberOfResources: z.string(),
   companyName: z.string(),
+  companyDomain: z.string().nullable(),
+  location: z.string().nullable(),
+  timezone: z.string().nullable(),
   website: z.string(),
   contactName: z.string(),
   contactEmail: z.string(),
   contactPhone: z.string(),
+  additionalRequirements: z.string().nullable(),
+  jobs: z.array(clientEnquiryJobDtoSchema).nullable(),
+  attachments: z.array(clientEnquiryAttachmentDtoSchema).nullable(),
   status: z.string(),
   source: z.string(),
   assignedToId: z.number().nullable(),
@@ -114,6 +194,7 @@ export const jobRequestResponseSchema = z.object({
 
 export const jobRequestListItemSchema = z.object({
   id: z.number(),
+  referenceCode: z.string(),
   jobTitle: z.string(),
   companyName: z.string(),
   contactName: z.string(),
@@ -121,6 +202,7 @@ export const jobRequestListItemSchema = z.object({
   contactPhone: z.string(),
   experienceRequired: z.string(),
   numberOfResources: z.string(),
+  rolesCount: z.number(),
   status: z.string(),
   assignedToId: z.number().nullable(),
   assignedToName: z.string().nullable(),
@@ -131,11 +213,4 @@ export const jobRequestListItemSchema = z.object({
 export const jobRequestListResponseSchema = z.object({
   data: z.array(jobRequestListItemSchema),
   meta: paginationMetaSchema,
-});
-
-export const publicJobRequestSubmitResponseSchema = z.object({
-  data: z.object({
-    id: z.number(),
-    message: z.string(),
-  }),
 });

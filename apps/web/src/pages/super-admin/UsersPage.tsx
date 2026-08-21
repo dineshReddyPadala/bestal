@@ -17,6 +17,7 @@ type Row = {
   firstName: string;
   lastName: string;
   email: string;
+  phone: string | null;
   role: string | null;
   clientId?: number | null;
   clientName?: string | null;
@@ -68,6 +69,14 @@ export function SuperAdminUsersPage() {
         ),
       },
       { accessorKey: 'email', header: 'Email' },
+      {
+        accessorKey: 'phone',
+        header: 'Phone',
+        cell: ({ getValue }) => {
+          const phone = getValue() as string | null;
+          return phone ? <span className="text-sm text-foreground">{phone}</span> : '—';
+        },
+      },
       {
         accessorKey: 'role',
         header: 'Role',

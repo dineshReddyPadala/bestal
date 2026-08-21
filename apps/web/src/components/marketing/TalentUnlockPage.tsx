@@ -1,15 +1,16 @@
 import {
   BarChart3,
   Lock,
-  Mail,
   Shield,
   ShieldCheck,
   User,
+  UserPlus,
   Users,
   X,
 } from 'lucide-react';
 import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { CLIENT_LOGIN_PATH } from '../../lib/login-portals';
 
 type TalentUnlockDialogProps = {
   open: boolean;
@@ -32,6 +33,9 @@ export function TalentUnlockDialog({ open, discipline, onClose }: TalentUnlockDi
   }, [open, onClose]);
 
   if (!open) return null;
+
+  const loginHref = `${CLIENT_LOGIN_PATH}?discipline=${encodeURIComponent(discipline)}`;
+  const signupHref = `${CLIENT_LOGIN_PATH}/signup?discipline=${encodeURIComponent(discipline)}`;
 
   return (
     <div
@@ -69,17 +73,17 @@ export function TalentUnlockDialog({ open, discipline, onClose }: TalentUnlockDi
             Unlock detailed talent insights
           </h1>
           <p>
-            To aceess more about this decipline and pre vetted talent details, please login or reach out to our team.
+            To access more about this discipline and pre-vetted talent details, sign in or create a client account.
           </p>
 
           <div className="mkt-talent-unlock-features">
             <div className="mkt-talent-unlock-feature">
               <ShieldCheck className="h-5 w-5" strokeWidth={2.25} />
-              <span>Verified &amp; pre vetted talent profiles</span>
+              <span>Verified and pre-vetted talent profiles</span>
             </div>
             <div className="mkt-talent-unlock-feature">
               <User className="h-5 w-5" strokeWidth={2.25} />
-              <span>Detailed skills, experience &amp; more</span>
+              <span>Detailed skills, experience, and more</span>
             </div>
             <div className="mkt-talent-unlock-feature">
               <Users className="h-5 w-5" strokeWidth={2.25} />
@@ -89,21 +93,21 @@ export function TalentUnlockDialog({ open, discipline, onClose }: TalentUnlockDi
 
           <div className="mkt-talent-unlock-actions">
             <Link
-              to={`/login/engineers?discipline=${encodeURIComponent(discipline)}`}
+              to={loginHref}
               className="mkt-btn mkt-btn-secondary mkt-talent-unlock-btn"
             >
               <Lock className="h-4 w-4" strokeWidth={2.25} />
               Log in
             </Link>
-            <Link to="/contact" className="mkt-btn mkt-btn-primary mkt-talent-unlock-btn">
-              <Mail className="h-4 w-4" strokeWidth={2.25} />
-              Reach out to us
+            <Link to={signupHref} className="mkt-btn mkt-btn-primary mkt-talent-unlock-btn">
+              <UserPlus className="h-4 w-4" strokeWidth={2.25} />
+              Sign up
             </Link>
           </div>
 
           <p className="mkt-talent-unlock-secure">
             <Lock className="h-3.5 w-3.5" strokeWidth={2.25} />
-           Your information is secure with us.
+            Your information is secure with us.
           </p>
         </div>
       </div>

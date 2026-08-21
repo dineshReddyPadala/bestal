@@ -107,3 +107,17 @@ export function buildBackgroundCheckAssetKey(
     originalName,
   });
 }
+
+export function buildClientEnquiryAssetKey(
+  organizationId: number,
+  enquiryId: number,
+  originalName: string,
+): string {
+  return buildStorageKey({
+    organizationId,
+    entityFolder: 'client-enquiries',
+    entityId: enquiryId,
+    category: UPLOAD_CATEGORIES.CLIENT_ENQUIRY,
+    originalName,
+  });
+}

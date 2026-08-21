@@ -251,11 +251,10 @@ export class AdminService {
       where: {
         id: BigInt(id),
         deletedAt: null,
-        memberships: { some: { organizationId: BigInt(organizationId), isActive: true } },
+        memberships: { some: { organizationId: BigInt(organizationId) } },
       },
       include: {
         memberships: {
-          where: { isActive: true },
           include: {
             organization: { select: { id: true, name: true } },
             client: { select: { id: true, name: true } },
@@ -264,8 +263,67 @@ export class AdminService {
       },
     });
     if (!user) throw new NotFoundError('User not found');
-    const org = user.memberships[0]?.organization;
+    const org = user.memberships.find(
+      (membership) => bigintToNumber(membership.organizationId) === organizationId,
+    )?.organization;
     return mapUserToDto(user, organizationId, org?.name ?? '', false);
+  }
+
+  private async syncClientPortalAccess(
+    organizationId: number,
+    userId: number,
+    isActive: boolean,
+    clientId?: number | null,
+  ) {
+    await this.prisma.membership.updateMany({
+      where: {
+        userId: BigInt(userId),
+        organizationId: BigInt(organizationId),
+      },
+      data: { isActive },
+    });
+
+    if (isActive && clientId != null) {
+      await this.prisma.client.updateMany({
+        where: {
+          id: BigInt(clientId),
+          organizationId: BigInt(organizationId),
+          deletedAt: null,
+        },
+        data: { status: 'ACTIVE' },
+      });
+    }
+  }
+
+  private async syncClientUsersOnClientActivation(organizationId: number, clientId: number) {
+    const memberships = await this.prisma.membership.findMany({
+      where: {
+        organizationId: BigInt(organizationId),
+        clientId: BigInt(clientId),
+        role: 'CLIENT',
+      },
+      select: { userId: true },
+    });
+
+    if (memberships.length === 0) {
+      return;
+    }
+
+    const userIds = memberships.map((membership) => membership.userId);
+
+    await this.prisma.user.updateMany({
+      where: { id: { in: userIds }, deletedAt: null },
+      data: { isActive: true },
+    });
+
+    await this.prisma.membership.updateMany({
+      where: {
+        organizationId: BigInt(organizationId),
+        clientId: BigInt(clientId),
+        role: 'CLIENT',
+      },
+      data: { isActive: true },
+    });
   }
 
   private async resolvePlatformRoleId(roleCode: string): Promise<number | null> {
@@ -398,13 +456,14 @@ export class AdminService {
     });
 
     const nextRole = (input.role ?? existing.role ?? 'VIEWER') as AdminInviteRole;
+    let linkedClientId = existing.clientId;
     if (input.role || input.clientId !== undefined) {
       if (input.role && !ADMIN_INVITE_ROLES.includes(input.role)) {
         throw new BadRequestError(
           'Role must be ADMIN, RECRUITER, SALES, VIEWER, or CLIENT',
         );
       }
-      const linkedClientId = await this.assertAdminClientLink(
+      linkedClientId = await this.assertAdminClientLink(
         organizationId,
         nextRole,
         input.clientId !== undefined ? input.clientId : existing.clientId,
@@ -416,6 +475,18 @@ export class AdminService {
         ...(input.role ? { role: input.role as Role } : {}),
         ...(platformRoleId !== undefined ? { platformRoleId } : {}),
         clientId: linkedClientId,
+      });
+    }
+
+    if (input.isActive !== undefined && nextRole === 'CLIENT') {
+      await this.syncClientPortalAccess(organizationId, id, input.isActive, linkedClientId);
+    } else if (input.isActive !== undefined) {
+      await this.prisma.membership.updateMany({
+        where: {
+          userId: BigInt(id),
+          organizationId: BigInt(organizationId),
+        },
+        data: { isActive: input.isActive },
       });
     }
 
@@ -641,7 +712,12 @@ export class AdminService {
     status: ClientStatus,
     ctx?: { ipAddress?: string | null; userAgent?: string | null },
   ) {
-    return this.updateClient(authUser, id, { status }, ctx);
+    const organizationId = requireOrganization(authUser);
+    const updated = await this.updateClient(authUser, id, { status }, ctx);
+    if (status === 'ACTIVE') {
+      await this.syncClientUsersOnClientActivation(organizationId, id);
+    }
+    return updated;
   }
 
   async assignAccountManager(
@@ -877,7 +953,7 @@ export class AdminService {
   async approveCandidate(
     authUser: AuthenticatedUser,
     id: number,
-    mode: 'publish' | 'internal' = 'publish',
+    mode: 'internal' | 'publish' = 'internal',
     ctx?: { ipAddress?: string | null; userAgent?: string | null },
   ) {
     const organizationId = requireOrganization(authUser);

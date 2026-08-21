@@ -404,7 +404,7 @@ export async function candidateRoutes(fastify: FastifyInstance): Promise<void> {
       preHandler: [authenticate, requirePermission(PERMISSIONS.CANDIDATES_APPROVE)],
       schema: {
         tags: ['Candidates'],
-        summary: 'Approve candidate profile',
+        summary: 'Approve candidate profile (admin sign-off; does not publish to clients)',
         security: [{ bearerAuth: [] }],
         params: candidateIdParamSchema,
         response: { 200: candidateResponseSchema },

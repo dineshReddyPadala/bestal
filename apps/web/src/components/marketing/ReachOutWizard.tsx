@@ -1,6 +1,17 @@
-import { ArrowLeft, Check, CheckCircle2, FileText, Plus, Upload, X } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from 'react';
+import { ArrowLeft, Check, CheckCircle2, FileText, Loader2, Plus, Upload, X } from 'lucide-react';
+import { useCallback, useRef, useState, type KeyboardEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { clientEnquiriesApi } from '../../lib/api/client-enquiries';
+import {
+  getReachOutJobFieldError,
+  mapApiErrorsToReachOut,
+  reachOutStepForField,
+  validateReachOutStep1,
+  validateReachOutStep2,
+  validateReachOutForm,
+  firstReachOutStepWithErrors,
+  formatReachOutFieldLabel,
+} from '../../lib/reach-out-validation';
 import { ForwardArrow } from '../ui/ForwardArrow';
 
 const WHAT_HAPPENS_NEXT = [
@@ -9,11 +20,6 @@ const WHAT_HAPPENS_NEXT = [
   'Consultant Assignment',
   'Team Contact',
 ] as const;
-
-function createRequestId() {
-  const suffix = String(Math.floor(Math.random() * 9000) + 1000);
-  return `REQ-${new Date().getFullYear()}-${suffix}`;
-}
 
 const STEPS = [
   { id: 1, label: 'Company Details' },
@@ -46,7 +52,6 @@ const TIMEZONE_OPTIONS = [
   { value: 'Pacific', label: 'Pacific (PT)' },
 ];
 
-const PERSONAL_EMAIL_DOMAINS = ['gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com'];
 const MAX_FILE_BYTES = 10 * 1024 * 1024;
 const ACCEPTED_FILE_TYPES = [
   'application/pdf',
@@ -65,7 +70,6 @@ type JobEntry = {
 
 type FormState = {
   companyName: string;
-  companyDomain: string;
   location: string;
   timezone: string;
   companyWebsite: string;
@@ -89,7 +93,6 @@ function createEmptyJob(id: string): JobEntry {
 
 const INITIAL_FORM: FormState = {
   companyName: '',
-  companyDomain: '',
   location: '',
   timezone: '',
   companyWebsite: '',
@@ -100,16 +103,21 @@ const INITIAL_FORM: FormState = {
   additionalRequirements: '',
 };
 
-function isWorkEmail(email: string) {
-  const domain = email.split('@')[1]?.toLowerCase();
-  return !domain || !PERSONAL_EMAIL_DOMAINS.includes(domain);
+function deriveCompanyDomain(email: string, website: string) {
+  const fromEmail = email.split('@')[1]?.toLowerCase().trim();
+  if (fromEmail) return fromEmail;
+
+  try {
+    const normalized = /^https?:\/\//i.test(website) ? website : `https://${website}`;
+    return new URL(normalized).hostname.replace(/^www\./i, '').toLowerCase();
+  } catch {
+    return website.trim().toLowerCase();
+  }
 }
 
 type UploadItem = {
   id: string;
   file: File;
-  progress: number;
-  status: 'uploading' | 'complete' | 'error';
 };
 
 function formatFileSize(bytes: number) {
@@ -118,10 +126,33 @@ function formatFileSize(bytes: number) {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
+function FieldError({ message }: { message?: string }) {
+  if (!message) return null;
+  return <p className="mkt-reach-out-error">{message}</p>;
+}
+
+function formatValidationSummary(errors: Record<string, string>) {
+  return Object.entries(errors)
+    .map(([field, message]) => `${formatReachOutFieldLabel(field)}: ${message}`)
+    .join('. ');
+}
+
+function clearStepFieldErrors(
+  current: Record<string, string>,
+  stepNumber: number,
+): Record<string, string> {
+  const next = { ...current };
+  for (const field of Object.keys(next)) {
+    if (reachOutStepForField(field) === stepNumber) {
+      delete next[field];
+    }
+  }
+  return next;
+}
+
 export function ReachOutWizard() {
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const uploadTimersRef = useRef<Map<string, number>>(new Map());
   const nextJobId = useRef(2);
   const nextUploadId = useRef(1);
   const [step, setStep] = useState(1);
@@ -129,50 +160,30 @@ export function ReachOutWizard() {
   const [uploads, setUploads] = useState<UploadItem[]>([]);
   const [submitted, setSubmitted] = useState(false);
   const [requestId, setRequestId] = useState<string | null>(null);
-  const [emailError, setEmailError] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [fileError, setFileError] = useState<string | null>(null);
   const [uploadRequiredError, setUploadRequiredError] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
-  const clearUploadTimers = useCallback(() => {
-    uploadTimersRef.current.forEach((timerId) => window.clearInterval(timerId));
-    uploadTimersRef.current.clear();
+  const clearFieldError = useCallback((field: string) => {
+    setFieldErrors((current) => {
+      if (!current[field]) return current;
+      const next = { ...current };
+      delete next[field];
+      return next;
+    });
   }, []);
 
-  useEffect(() => () => clearUploadTimers(), [clearUploadTimers]);
-
-  const startUploadSimulation = useCallback((uploadId: string, fileSize: number) => {
-    const stepMs = 80;
-    const increment = Math.max(4, Math.min(18, Math.round(800_000 / fileSize)));
-
-    const timerId = window.setInterval(() => {
-      setUploads((current) => {
-        let finished = false;
-        const next = current.map((item) => {
-          if (item.id !== uploadId || item.status !== 'uploading') return item;
-          const progress = Math.min(item.progress + increment, 100);
-          if (progress >= 100) {
-            finished = true;
-            return { ...item, progress: 100, status: 'complete' as const };
-          }
-          return { ...item, progress };
-        });
-        if (finished) {
-          const existing = uploadTimersRef.current.get(uploadId);
-          if (existing) {
-            window.clearInterval(existing);
-            uploadTimersRef.current.delete(uploadId);
-          }
-        }
-        return next;
-      });
-    }, stepMs);
-
-    uploadTimersRef.current.set(uploadId, timerId);
-  }, []);
-
-  const update = useCallback((patch: Partial<FormState>) => {
-    setForm((current) => ({ ...current, ...patch }));
-  }, []);
+  const update = useCallback(
+    (patch: Partial<FormState>) => {
+      setForm((current) => ({ ...current, ...patch }));
+      for (const key of Object.keys(patch) as (keyof FormState)[]) {
+        if (key !== 'jobs') clearFieldError(String(key));
+      }
+    },
+    [clearFieldError],
+  );
 
   const reset = useCallback(() => {
     setStep(1);
@@ -180,17 +191,18 @@ export function ReachOutWizard() {
       ...INITIAL_FORM,
       jobs: [createEmptyJob('job-1')],
     });
-    clearUploadTimers();
     setUploads([]);
-    setEmailError(false);
+    setFieldErrors({});
     setFileError(null);
     setUploadRequiredError(false);
+    setSubmitError(null);
+    setSubmitting(false);
     setSubmitted(false);
     setRequestId(null);
     nextJobId.current = 2;
     nextUploadId.current = 1;
     if (fileInputRef.current) fileInputRef.current.value = '';
-  }, [clearUploadTimers]);
+  }, []);
 
   const addJob = useCallback(() => {
     setForm((current) => ({
@@ -199,12 +211,18 @@ export function ReachOutWizard() {
     }));
   }, []);
 
-  const updateJob = useCallback((id: string, patch: Partial<Omit<JobEntry, 'id'>>) => {
-    setForm((current) => ({
-      ...current,
-      jobs: current.jobs.map((job) => (job.id === id ? { ...job, ...patch } : job)),
-    }));
-  }, []);
+  const updateJob = useCallback(
+    (id: string, patch: Partial<Omit<JobEntry, 'id'>>, jobIndex: number) => {
+      setForm((current) => ({
+        ...current,
+        jobs: current.jobs.map((job) => (job.id === id ? { ...job, ...patch } : job)),
+      }));
+      for (const key of Object.keys(patch)) {
+        clearFieldError(`jobs.${jobIndex}.${key}`);
+      }
+    },
+    [clearFieldError],
+  );
 
   const removeJob = useCallback((id: string) => {
     setForm((current) => {
@@ -234,13 +252,22 @@ export function ReachOutWizard() {
 
   function goNext() {
     if (!validateCurrentStepFields()) return;
-    if (step === 1) {
-      if (!isWorkEmail(form.email.trim())) {
-        setEmailError(true);
-        return;
-      }
-      setEmailError(false);
+
+    const stepErrors =
+      step === 1
+        ? validateReachOutStep1(form)
+        : step === 2
+          ? validateReachOutStep2(form.jobs)
+          : {};
+
+    if (Object.keys(stepErrors).length > 0) {
+      setFieldErrors((current) => ({ ...current, ...stepErrors }));
+      setSubmitError(formatValidationSummary(stepErrors));
+      return;
     }
+
+    setFieldErrors((current) => clearStepFieldErrors(current, step));
+    setSubmitError(null);
     setStep((s) => Math.min(s + 1, 3));
   }
 
@@ -266,48 +293,74 @@ export function ReachOutWizard() {
       accepted.push({
         id: uploadId,
         file,
-        progress: 0,
-        status: 'uploading',
       });
     }
 
     setFileError(null);
     setUploadRequiredError(false);
+    clearFieldError('attachments');
     setUploads((current) => [...current, ...accepted]);
     if (fileInputRef.current) fileInputRef.current.value = '';
-
-    accepted.forEach((item) => startUploadSimulation(item.id, item.file.size));
   }
 
   function removeUpload(uploadId: string) {
-    const timerId = uploadTimersRef.current.get(uploadId);
-    if (timerId) {
-      window.clearInterval(timerId);
-      uploadTimersRef.current.delete(uploadId);
-    }
     setUploads((current) => current.filter((item) => item.id !== uploadId));
   }
 
-  function handleFinalSubmit() {
-    if (step !== 3) return;
+  async function handleFinalSubmit() {
+    if (step !== 3 || submitting) return;
     if (fileError) return;
-    if (uploads.some((item) => item.status === 'uploading')) return;
 
-    const hasCompletedUpload = uploads.some((item) => item.status === 'complete');
-    if (!hasCompletedUpload) {
-      setUploadRequiredError(true);
+    const allErrors = validateReachOutForm(form, uploads.length);
+    if (Object.keys(allErrors).length > 0) {
+      setFieldErrors(allErrors);
+      setSubmitError(formatValidationSummary(allErrors));
+      setUploadRequiredError(Boolean(allErrors.attachments));
+      setStep(firstReachOutStepWithErrors(allErrors));
       return;
     }
+
     setUploadRequiredError(false);
+    setFieldErrors({});
+    setSubmitError(null);
 
     if (!validateCurrentStepFields()) return;
-    if (!isWorkEmail(form.email.trim())) {
-      setEmailError(true);
-      setStep(1);
-      return;
+
+    setSubmitting(true);
+
+    try {
+      const result = await clientEnquiriesApi.submit(
+        {
+          companyName: form.companyName.trim(),
+          companyDomain: deriveCompanyDomain(form.email.trim(), form.companyWebsite.trim()),
+          location: form.location.trim(),
+          timezone: form.timezone,
+          companyWebsite: form.companyWebsite.trim(),
+          contactPersonName: form.contactPersonName.trim(),
+          email: form.email.trim(),
+          phone: form.phone.trim(),
+          jobs: form.jobs.map((job) => ({
+            jobTitle: job.jobTitle.trim(),
+            jobDescription: job.jobDescription.trim(),
+            requiredSkills: job.requiredSkills.trim(),
+            experienceRequired: job.experienceRequired,
+            numberOfResources: job.numberOfResources,
+          })),
+          additionalRequirements: form.additionalRequirements.trim(),
+        },
+        uploads.map((item) => item.file),
+      );
+      setRequestId(result.referenceCode);
+      setSubmitted(true);
+    } catch (error) {
+      const mapped = mapApiErrorsToReachOut(error);
+      setFieldErrors(mapped.fieldErrors);
+      setSubmitError(mapped.message);
+      setUploadRequiredError(Boolean(mapped.fieldErrors.attachments));
+      setStep(mapped.step);
+    } finally {
+      setSubmitting(false);
     }
-    setRequestId(createRequestId());
-    setSubmitted(true);
   }
 
   function handleStepKeyDown(e: KeyboardEvent<HTMLDivElement>) {
@@ -340,6 +393,12 @@ export function ReachOutWizard() {
           <h3 className="mkt-reach-out-success-title">Details received.</h3>
           <p className="mkt-reach-out-success-body">
             Our talent team will review your requirement and reach out on business days.
+            {requestId ? (
+              <>
+                {' '}
+                Reference: <strong>{requestId}</strong>
+              </>
+            ) : null}
           </p>
 
 
@@ -424,6 +483,12 @@ export function ReachOutWizard() {
         </div>
 
         <div className="mkt-reach-out-body" key={`step-body-${step}`}>
+          {submitError ? (
+            <div className="mkt-reach-out-form-error" role="alert">
+              {submitError}
+            </div>
+          ) : null}
+
           {step === 1 && (
             <div className="mkt-reach-out-grid">
               <label className="mkt-reach-out-field">
@@ -438,20 +503,7 @@ export function ReachOutWizard() {
                   onChange={(e) => update({ companyName: e.target.value })}
                   className="mkt-reach-out-input"
                 />
-              </label>
-
-              <label className="mkt-reach-out-field">
-                <span className="mkt-reach-out-label">
-                  Company domain <span className="mkt-reach-out-req">*</span>
-                </span>
-                <input
-                  type="text"
-                  required
-                  value={form.companyDomain}
-                  placeholder="e.g. bestal.com"
-                  onChange={(e) => update({ companyDomain: e.target.value })}
-                  className="mkt-reach-out-input"
-                />
+                <FieldError message={fieldErrors.companyName} />
               </label>
 
               <label className="mkt-reach-out-field">
@@ -466,6 +518,7 @@ export function ReachOutWizard() {
                   onChange={(e) => update({ location: e.target.value })}
                   className="mkt-reach-out-input"
                 />
+                <FieldError message={fieldErrors.location} />
               </label>
 
               <label className="mkt-reach-out-field">
@@ -484,59 +537,37 @@ export function ReachOutWizard() {
                     </option>
                   ))}
                 </select>
+                <FieldError message={fieldErrors.timezone} />
               </label>
-
-              <div className="mkt-reach-out-row mkt-reach-out-field--full">
-                <label className="mkt-reach-out-field">
-                  <span className="mkt-reach-out-label">
-                    Contact person name <span className="mkt-reach-out-req">*</span>
-                  </span>
-                  <input
-                    type="text"
-                    required
-                    value={form.contactPersonName}
-                    placeholder="Enter contact name"
-                    onChange={(e) => update({ contactPersonName: e.target.value })}
-                    className="mkt-reach-out-input"
-                  />
-                </label>
-
-                <label className="mkt-reach-out-field">
-                  <span className="mkt-reach-out-label">
-                    Company website <span className="mkt-reach-out-req">*</span>
-                  </span>
-                  <input
-                    type="url"
-                    required
-                    value={form.companyWebsite}
-                    placeholder="https://www.company.com"
-                    onChange={(e) => update({ companyWebsite: e.target.value })}
-                    className="mkt-reach-out-input"
-                  />
-                </label>
-              </div>
 
               <label className="mkt-reach-out-field">
                 <span className="mkt-reach-out-label">
-                  Email <span className="mkt-reach-out-req">*</span>
+                  Company website <span className="mkt-reach-out-req">*</span>
                 </span>
                 <input
-                  type="email"
+                  type="url"
                   required
-                  value={form.email}
-                  placeholder="eg. name@company.com"
-                  onChange={(e) => {
-                    update({ email: e.target.value });
-                    if (emailError) setEmailError(false);
-                  }}
+                  value={form.companyWebsite}
+                  placeholder="https://www.company.com"
+                  onChange={(e) => update({ companyWebsite: e.target.value })}
                   className="mkt-reach-out-input"
                 />
-                {emailError && (
-                  <p className="mkt-reach-out-error">
-                    Please use your work email — we can&apos;t route personal addresses to the right
-                    team.
-                  </p>
-                )}
+                <FieldError message={fieldErrors.companyWebsite} />
+              </label>
+
+              <label className="mkt-reach-out-field">
+                <span className="mkt-reach-out-label">
+                  Contact person name <span className="mkt-reach-out-req">*</span>
+                </span>
+                <input
+                  type="text"
+                  required
+                  value={form.contactPersonName}
+                  placeholder="Enter contact name"
+                  onChange={(e) => update({ contactPersonName: e.target.value })}
+                  className="mkt-reach-out-input"
+                />
+                <FieldError message={fieldErrors.contactPersonName} />
               </label>
 
               <label className="mkt-reach-out-field">
@@ -551,6 +582,22 @@ export function ReachOutWizard() {
                   onChange={(e) => update({ phone: e.target.value })}
                   className="mkt-reach-out-input"
                 />
+                <FieldError message={fieldErrors.phone} />
+              </label>
+
+              <label className="mkt-reach-out-field">
+                <span className="mkt-reach-out-label">
+                  Email <span className="mkt-reach-out-req">*</span>
+                </span>
+                <input
+                  type="email"
+                  required
+                  value={form.email}
+                  placeholder="eg. name@company.com"
+                  onChange={(e) => update({ email: e.target.value })}
+                  className="mkt-reach-out-input"
+                />
+                <FieldError message={fieldErrors.email} />
               </label>
             </div>
           )}
@@ -583,9 +630,10 @@ export function ReachOutWizard() {
                       autoComplete="off"
                       value={job.jobTitle}
                       placeholder="e.g. Senior Data Engineer"
-                      onChange={(e) => updateJob(job.id, { jobTitle: e.target.value })}
+                      onChange={(e) => updateJob(job.id, { jobTitle: e.target.value }, index)}
                       className="mkt-reach-out-input"
                     />
+                    <FieldError message={getReachOutJobFieldError(fieldErrors, index, 'jobTitle')} />
                   </label>
 
                   <label className="mkt-reach-out-field">
@@ -599,8 +647,11 @@ export function ReachOutWizard() {
                       autoComplete="off"
                       value={job.jobDescription}
                       placeholder="Type your message here."
-                      onChange={(e) => updateJob(job.id, { jobDescription: e.target.value })}
+                      onChange={(e) => updateJob(job.id, { jobDescription: e.target.value }, index)}
                       className="mkt-reach-out-textarea"
+                    />
+                    <FieldError
+                      message={getReachOutJobFieldError(fieldErrors, index, 'jobDescription')}
                     />
                   </label>
 
@@ -615,8 +666,11 @@ export function ReachOutWizard() {
                       autoComplete="off"
                       value={job.requiredSkills}
                       placeholder="Search and select skills"
-                      onChange={(e) => updateJob(job.id, { requiredSkills: e.target.value })}
+                      onChange={(e) => updateJob(job.id, { requiredSkills: e.target.value }, index)}
                       className="mkt-reach-out-textarea"
+                    />
+                    <FieldError
+                      message={getReachOutJobFieldError(fieldErrors, index, 'requiredSkills')}
                     />
                   </label>
 
@@ -630,7 +684,9 @@ export function ReachOutWizard() {
                         name={`job-experience-${job.id}`}
                         autoComplete="off"
                         value={job.experienceRequired}
-                        onChange={(e) => updateJob(job.id, { experienceRequired: e.target.value })}
+                        onChange={(e) =>
+                          updateJob(job.id, { experienceRequired: e.target.value }, index)
+                        }
                         className="mkt-reach-out-select"
                       >
                         {EXPERIENCE_OPTIONS.map((opt) => (
@@ -639,6 +695,9 @@ export function ReachOutWizard() {
                           </option>
                         ))}
                       </select>
+                      <FieldError
+                        message={getReachOutJobFieldError(fieldErrors, index, 'experienceRequired')}
+                      />
                     </label>
 
                     <label className="mkt-reach-out-field">
@@ -650,7 +709,9 @@ export function ReachOutWizard() {
                         name={`job-resources-${job.id}`}
                         autoComplete="off"
                         value={job.numberOfResources}
-                        onChange={(e) => updateJob(job.id, { numberOfResources: e.target.value })}
+                        onChange={(e) =>
+                          updateJob(job.id, { numberOfResources: e.target.value }, index)
+                        }
                         className="mkt-reach-out-select"
                       >
                         {RESOURCE_OPTIONS.map((opt) => (
@@ -659,6 +720,9 @@ export function ReachOutWizard() {
                           </option>
                         ))}
                       </select>
+                      <FieldError
+                        message={getReachOutJobFieldError(fieldErrors, index, 'numberOfResources')}
+                      />
                     </label>
                   </div>
                 </div>
@@ -709,16 +773,13 @@ export function ReachOutWizard() {
                             <span className="mkt-reach-out-upload-item-name">{item.file.name}</span>
                             <span className="mkt-reach-out-upload-item-size">
                               {formatFileSize(item.file.size)}
-                              {item.status === 'uploading' && ` · ${item.progress}%`}
-                              {item.status === 'complete' && ' · Uploaded'}
+                              {' · Ready to submit'}
                             </span>
                           </div>
-                          {item.status === 'complete' ? (
-                            <CheckCircle2
-                              className="mkt-reach-out-upload-item-done"
-                              aria-hidden="true"
-                            />
-                          ) : null}
+                          <CheckCircle2
+                            className="mkt-reach-out-upload-item-done"
+                            aria-hidden="true"
+                          />
                           <button
                             type="button"
                             className="mkt-reach-out-upload-item-remove"
@@ -728,29 +789,16 @@ export function ReachOutWizard() {
                             <X className="h-3.5 w-3.5" aria-hidden="true" />
                           </button>
                         </div>
-                        {item.status === 'uploading' && (
-                          <div
-                            className="mkt-reach-out-upload-progress"
-                            role="progressbar"
-                            aria-valuenow={item.progress}
-                            aria-valuemin={0}
-                            aria-valuemax={100}
-                            aria-label={`Uploading ${item.file.name}`}
-                          >
-                            <span
-                              className="mkt-reach-out-upload-progress-bar"
-                              style={{ width: `${item.progress}%` }}
-                            />
-                          </div>
-                        )}
                       </li>
                     ))}
                   </ul>
                 )}
 
                 {fileError && <p className="mkt-reach-out-error">{fileError}</p>}
-                {uploadRequiredError && !fileError && (
-                  <p className="mkt-reach-out-error">Please upload at least one document.</p>
+                {(uploadRequiredError || fieldErrors.attachments) && !fileError && (
+                  <p className="mkt-reach-out-error">
+                    {fieldErrors.attachments ?? 'Please upload at least one document.'}
+                  </p>
                 )}
               </div>
 
@@ -766,6 +814,7 @@ export function ReachOutWizard() {
                   onChange={(e) => update({ additionalRequirements: e.target.value })}
                   className="mkt-reach-out-textarea mkt-reach-out-textarea-lg"
                 />
+                <FieldError message={fieldErrors.additionalRequirements} />
                 <p className="mkt-reach-out-hint">
                   Certifications, domain experience, security clearance, or interview preferences.
                 </p>
@@ -813,11 +862,20 @@ export function ReachOutWizard() {
               <button
                 type="button"
                 className="mkt-btn mkt-btn-primary"
-                onClick={handleFinalSubmit}
-                disabled={uploads.some((item) => item.status === 'uploading')}
+                onClick={() => void handleFinalSubmit()}
+                disabled={submitting}
               >
-                Submit Details
-                <ForwardArrow />
+                {submitting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                    Submitting…
+                  </>
+                ) : (
+                  <>
+                    Submit Details
+                    <ForwardArrow />
+                  </>
+                )}
               </button>
             </>
           )}

@@ -1,0 +1,8 @@
+{
+  "watch": ["src", "prisma/schema.prisma"],
+  "ext": "ts,json,js",
+  "ignore": ["dist", "node_modules", "logs", "prisma/migrations"],
+  "exec": "tsx src/main.ts",
+  "signal": "SIGTERM",
+  "delay": 300
+}

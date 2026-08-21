@@ -68,7 +68,7 @@ export function MarketingLayout({
   hideFooter = false,
   layoutClassName = '',
   isAuthenticated = false,
-  loginHref = '/login/portals',
+  loginHref = '/login/portal',
   onLogout,
 }: MarketingLayoutProps) {
   const [navOpen, setNavOpen] = useState(false);

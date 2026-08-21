@@ -1,14 +1,20 @@
+import { useMemo } from 'react';
 import { DashboardLayout } from '@bestal/ui';
 import { Outlet, useLocation } from 'react-router-dom';
 import { NotificationBell } from '../components/notifications/NotificationBell';
 import { useDashboardUser } from '../hooks/useDashboardUser';
+import { usePermissions } from '../hooks/usePermissions';
 import { BESTAL_LOGO_SRC } from '../lib/brand';
-import { adminNavItems } from '../lib/nav';
+import { adminNavItems, filterNavItemsByPermissions } from '../lib/nav';
 
 export function AdminShell() {
   const { pathname } = useLocation();
   const { user, handleLogout } = useDashboardUser();
-  const currentPath = pathname.startsWith('/admin/candidate-approvals')
+  const { has } = usePermissions();
+  const navItems = useMemo(() => filterNavItemsByPermissions(adminNavItems, has), [has]);
+  const currentPath = pathname.startsWith('/admin/client-enquiries')
+    ? '/admin/client-enquiries'
+    : pathname.startsWith('/admin/candidate-approvals')
     ? '/admin/candidate-approvals'
     : pathname.startsWith('/admin/candidates')
       ? '/admin/candidates'
@@ -18,7 +24,7 @@ export function AdminShell() {
 
   return (
     <DashboardLayout
-      navItems={adminNavItems}
+      navItems={navItems}
       portalName="Admin Portal"
       user={user}
       currentPath={currentPath}

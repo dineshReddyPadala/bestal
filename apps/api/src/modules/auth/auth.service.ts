@@ -19,7 +19,7 @@ import {
   getPermissionsForRole as staticPermissionsForRole,
   type Permission,
 } from './auth.permissions.js';
-import { resolvePermissionsForMembership } from '../admin/admin-roles.service.js';
+import { resolvePermissionsForAuthUser } from '../admin/admin-roles.service.js';
 import type {
   AuthTokenResponse,
   AuthUserProfile,
@@ -78,15 +78,47 @@ export class AuthService {
   }
 
   async login(input: LoginBody): Promise<AuthTokenResponse> {
-    const user = await this.authRepository.findUserByEmail(input.email);
+    const credentialUser = await this.authRepository.findUserByEmailForCredentialCheck(
+      input.email,
+    );
 
-    if (!user) {
+    if (!credentialUser) {
       throw new AuthenticationError('Invalid email or password');
     }
 
-    const isValidPassword = await argon2.verify(user.passwordHash, input.password);
+    const isValidPassword = await argon2.verify(
+      credentialUser.passwordHash,
+      input.password,
+    );
 
     if (!isValidPassword) {
+      throw new AuthenticationError('Invalid email or password');
+    }
+
+    if (input.portal === PORTALS.CLIENT) {
+      if (!credentialUser.isActive) {
+        throw new AuthenticationError('Your account is pending activation');
+      }
+
+      const allowedRoles = PORTAL_ALLOWED_ROLES[PORTALS.CLIENT];
+      const clientMembership = credentialUser.memberships.find((membership) =>
+        allowedRoles.includes(membership.role as (typeof allowedRoles)[number]),
+      );
+
+      if (!clientMembership || !clientMembership.isActive) {
+        throw new AuthenticationError('Your account is pending activation');
+      }
+
+      if (clientMembership.client?.status !== 'ACTIVE') {
+        throw new AuthenticationError(
+          'Your client account is not active. Contact BesTal support.',
+        );
+      }
+    }
+
+    const user = await this.authRepository.findUserByEmail(input.email);
+
+    if (!user) {
       throw new AuthenticationError('Invalid email or password');
     }
 
@@ -276,11 +308,11 @@ export class AuthService {
         bigintToNumber(m.organizationId) === session.organizationId,
     );
 
-    const permissions = await resolvePermissionsForMembership(
-      this.fastify.prisma,
-      session.role,
-      null,
-    );
+    const permissions = await resolvePermissionsForAuthUser(this.fastify.prisma, {
+      id: session.id,
+      organizationId: session.organizationId,
+      role: session.role,
+    });
 
     let clientId: number | null = null;
     let clientName: string | null = null;

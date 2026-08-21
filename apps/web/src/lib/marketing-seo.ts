@@ -1,7 +1,7 @@
 export const DEFAULT_TITLE = 'BesTal — Proven Talent. Ready to Perform.';
 
 export const DEFAULT_DESCRIPTION =
-  'Pre vetted Talents who work your hours. See their test results, their rate and their start date up front — then try them free before you commit.';
+  'Pre-vetted Talents who work your hours. See their test results, their rate and their start date up front — then try them free before you commit.';
 
 export const PAGE_SEO = {
   home: {

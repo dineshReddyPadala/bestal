@@ -1,10 +1,32 @@
-import { Briefcase, LayoutDashboard, TrendingUp, User, Users, type LucideIcon } from 'lucide-react';
+import { LayoutDashboard, TrendingUp, Users, type LucideIcon } from 'lucide-react';
 import type { MarketingPortalOption } from '../components/marketing/MarketingPortalOptionList';
 
-export const LOGIN_PORTAL_PICKER_PATH = '/login/portals';
+export const LOGIN_PORTAL_CHOOSER_PATH = '/login/portal';
+export const STAFF_PORTAL_LOGIN_PATH = '/login/portal';
+export const CLIENT_LOGIN_PATH = '/login/client';
 
-export function isLoginPortalPickerPath(pathname: string): boolean {
-  return pathname === LOGIN_PORTAL_PICKER_PATH;
+export type LoginHeroVariant = 'staff' | 'client';
+
+export function getLoginHeroVariant(pathname: string): LoginHeroVariant {
+  if (pathname === STAFF_PORTAL_LOGIN_PATH || isStaffAuthPath(pathname)) return 'staff';
+  if (pathname.startsWith('/login/client')) return 'client';
+  return 'client';
+}
+
+export function isStaffAuthPath(pathname: string): boolean {
+  return /^\/(admin|sales|recruiter)\/(login|forgot-password|reset-password)/.test(pathname);
+}
+
+export function isStaffSplitLoginPath(pathname: string): boolean {
+  return pathname === STAFF_PORTAL_LOGIN_PATH || isStaffAuthPath(pathname);
+}
+
+export function isPortalLoginPath(pathname: string): boolean {
+  return pathname === STAFF_PORTAL_LOGIN_PATH || pathname.startsWith('/login/client');
+}
+
+export function isClientSignupPath(pathname: string): boolean {
+  return pathname.startsWith(`${CLIENT_LOGIN_PATH}/signup`);
 }
 
 export type PortalLink = {
@@ -16,31 +38,8 @@ export type PortalLink = {
   colorClass: string;
 };
 
-/** Top-level portal picker (Portal Login + Customer Login). */
-export const TOP_LEVEL_PORTALS: PortalLink[] = [
-  {
-    id: 'login',
-    name: 'Client Login',
-    description: 'Browse vetted engineers, review test results, and request trials.',
-    href: '/login/engineers',
-    icon: User,
-    colorClass: 'is-green',
-  },
-  {
-    id: 'admin',
-    name: 'Portal Login',
-    description: 'Daily platform operations: candidates, evaluations, BGV, clients, and trials.',
-    href: '/login/portals/admin',
-    icon: LayoutDashboard,
-    colorClass: 'is-violet',
-  },
-
-];
-
-export function getTeamPortals(options: {
-  adminHref: string;
-  clientHref: string;
-}): MarketingPortalOption[] {
+/** Staff portal picker at /login/portal — Admin, Sales, Recruiter. */
+export function getStaffTeamPortals(options: { adminHref: string }): MarketingPortalOption[] {
   return [
     {
       id: 'admin',
@@ -65,14 +64,6 @@ export function getTeamPortals(options: {
       href: '/recruiter/login',
       icon: Users,
       colorClass: 'is-teal',
-    },
-    {
-      id: 'client',
-      name: 'Client Portal',
-      description: 'Browse vetted engineers, review test results, and request trials.',
-      href: options.clientHref,
-      icon: Briefcase,
-      colorClass: 'is-green',
     },
   ];
 }

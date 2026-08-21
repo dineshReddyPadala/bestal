@@ -847,25 +847,32 @@ model TrialRequest {
 }
 
 model JobRequest {
-  id                 BigInt            @id @default(autoincrement())
-  organizationId     BigInt            @map("organization_id")
-  jobTitle           String            @map("job_title") @db.VarChar(255)
-  jobDescription     String            @map("job_description") @db.Text
-  requiredSkills     Json              @map("required_skills")
-  experienceRequired String            @map("experience_required") @db.VarChar(50)
-  numberOfResources  String            @map("number_of_resources") @db.VarChar(20)
-  companyName        String            @map("company_name") @db.VarChar(255)
-  website            String            @db.VarChar(500)
-  contactName        String            @map("contact_name") @db.VarChar(150)
-  contactEmail       String            @map("contact_email") @db.VarChar(255)
-  contactPhone       String            @map("contact_phone") @db.VarChar(30)
-  status             JobRequestStatus  @default(SUBMITTED)
-  source             JobRequestSource  @default(WEBSITE)
-  assignedToId       BigInt?           @map("assigned_to_id")
-  internalNotes      String?           @map("internal_notes") @db.Text
-  createdAt          DateTime          @default(now()) @map("created_at")
-  updatedAt          DateTime          @updatedAt @map("updated_at")
-  deletedAt          DateTime?         @map("deleted_at")
+  id                     BigInt            @id @default(autoincrement())
+  organizationId         BigInt            @map("organization_id")
+  referenceCode          String            @unique @map("reference_code") @db.VarChar(32)
+  jobTitle               String            @map("job_title") @db.VarChar(255)
+  jobDescription         String            @map("job_description") @db.Text
+  requiredSkills         Json              @map("required_skills")
+  experienceRequired     String            @map("experience_required") @db.VarChar(50)
+  numberOfResources      String            @map("number_of_resources") @db.VarChar(20)
+  companyName            String            @map("company_name") @db.VarChar(255)
+  companyDomain          String?           @map("company_domain") @db.VarChar(255)
+  location               String?           @db.VarChar(255)
+  timezone               String?           @db.VarChar(50)
+  website                String            @db.VarChar(500)
+  contactName            String            @map("contact_name") @db.VarChar(150)
+  contactEmail           String            @map("contact_email") @db.VarChar(255)
+  contactPhone           String            @map("contact_phone") @db.VarChar(30)
+  additionalRequirements String?           @map("additional_requirements") @db.Text
+  jobs                   Json?
+  attachments            Json?
+  status                 JobRequestStatus  @default(SUBMITTED)
+  source                 JobRequestSource  @default(WEBSITE)
+  assignedToId           BigInt?           @map("assigned_to_id")
+  internalNotes          String?           @map("internal_notes") @db.Text
+  createdAt              DateTime          @default(now()) @map("created_at")
+  updatedAt              DateTime          @updatedAt @map("updated_at")
+  deletedAt              DateTime?         @map("deleted_at")
 
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   assignedTo   User?        @relation("JobRequestAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)

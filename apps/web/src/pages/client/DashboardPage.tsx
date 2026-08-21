@@ -252,7 +252,7 @@ export function DashboardPage() {
           <div className="flex items-center justify-between gap-2">
             <div>
               <h2 className="text-sm font-semibold text-foreground">Bench Composition</h2>
-              <p className="text-xs text-muted-foreground">Pre vetted talent by designation</p>
+              <p className="text-xs text-muted-foreground">Pre-vetted talent by designation</p>
             </div>
             <Link
               to="/client/search"

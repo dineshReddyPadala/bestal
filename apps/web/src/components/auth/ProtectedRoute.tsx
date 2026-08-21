@@ -13,7 +13,7 @@ const PORTAL_LOGIN: Record<Portal, string> = {
   ADMIN: '/admin/login',
   RECRUITER: '/recruiter/login',
   SALES: '/sales/login',
-  CLIENT: '/client/login',
+  CLIENT: '/login/client',
 };
 
 export function ProtectedRoute({ portal, children }: ProtectedRouteProps) {

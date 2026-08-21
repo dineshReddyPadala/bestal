@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { adminApi } from '../../lib/api/admin';
 import type { ListQuery } from '../../lib/api/client';
+import { jobRequestsApi } from '../../lib/api/job-requests';
 import { queryKeys } from './query-keys';
 
 export function useAdminDashboard() {
@@ -150,6 +151,34 @@ export function useAdminRoleCatalog() {
     queryKey: queryKeys.admin.roleCatalog,
     queryFn: () => adminApi.getRoleCatalog(),
   });
+}
+
+export function useClientEnquiries(params?: ListQuery) {
+  return useQuery({
+    queryKey: queryKeys.clientEnquiries.list(params),
+    queryFn: () => jobRequestsApi.list(params),
+  });
+}
+
+export function useClientEnquiry(id: number) {
+  return useQuery({
+    queryKey: queryKeys.clientEnquiries.detail(id),
+    queryFn: () => jobRequestsApi.get(id),
+    enabled: id > 0,
+  });
+}
+
+export function useClientEnquiryMutations() {
+  const qc = useQueryClient();
+  const invalidate = () => qc.invalidateQueries({ queryKey: queryKeys.clientEnquiries.all });
+
+  return {
+    update: useMutation({
+      mutationFn: ({ id, body }: { id: number; body: Record<string, unknown> }) =>
+        jobRequestsApi.update(id, body),
+      onSuccess: invalidate,
+    }),
+  };
 }
 
 export function useAdminMutations() {

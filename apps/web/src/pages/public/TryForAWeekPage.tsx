@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { CLIENT_LOGIN_PATH } from '../../lib/login-portals';
 import { PageMeta } from '../../components/PageMeta';
 import { MktShell } from '../../components/marketing/MktShell';
 import { TRIAL_SETTLED, TRIAL_STEPS } from '../../lib/marketing-copy';
@@ -25,8 +26,8 @@ export function TryForAWeekPage() {
             No recruiter calls. No sourcing cycle. No commitment for the first 10 hours.
           </p>
           <div className="mkt-actions">
-            <Link to="/login/portals" className="mkt-btn mkt-btn-amber">
-              Browse Pre Vetted Talent <ForwardArrow />
+            <Link to={CLIENT_LOGIN_PATH} className="mkt-btn mkt-btn-amber">
+              Browse Pre-Vetted Talent <ForwardArrow />
             </Link>
             <Link to="/contact" className="mkt-btn mkt-btn-secondary">
               Tell us what you need

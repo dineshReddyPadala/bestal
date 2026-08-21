@@ -179,6 +179,7 @@ async function seedPlatformRoles(): Promise<Map<string, bigint>> {
         isSystem: true,
         isProtected: seed.isProtected,
         deletedAt: null,
+        permissions: seed.permissions,
       },
     });
     roleIds.set(seed.code, role.id);

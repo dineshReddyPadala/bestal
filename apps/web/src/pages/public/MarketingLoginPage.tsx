@@ -6,6 +6,7 @@ import { PageMeta } from '../../components/PageMeta';
 import { ForwardArrow } from '../../components/ui/ForwardArrow';
 import { useAuth } from '../../contexts/AuthContext';
 import { getMe, type Portal } from '../../lib/api';
+import { CLIENT_LOGIN_PATH } from '../../lib/login-portals';
 
 type MarketingLoginPageProps = {
   variant?: 'admin' | 'client';
@@ -16,19 +17,19 @@ const LOGIN_CONFIG = {
     portal: 'ADMIN' as Portal,
     demoEmail: 'admin@bestal.com',
     demoPassword: 'Password123!',
-    successPath: '/login/portals',
+    successPath: '/login/portal',
     forgotPath: '/admin/forgot-password',
-    secondaryHref: '/login/portals',
+    secondaryHref: '/login/portal',
     // secondaryLabel: "Don't have an account? Sign up",
   },
   client: {
     portal: 'CLIENT' as Portal,
     demoEmail: 'client@bestal.com',
     demoPassword: 'Password123!',
-    successPath: '/sample-talent',
+    successPath: '/client',
     forgotPath: '/client/forgot-password',
-    secondaryHref: '/login/portals',
-    // secondaryLabel: "Don't have an account? Sign up here",
+    secondaryHref: `${CLIENT_LOGIN_PATH}/signup`,
+    secondaryLabel: 'New to BesTal? Sign up',
   },
 };
 
@@ -44,9 +45,13 @@ export function MarketingLoginPage({ variant = 'admin' }: MarketingLoginPageProp
 
   const isClientLogin = variant === 'client';
   const discipline = searchParams.get('discipline');
+  const signupHref =
+    discipline != null && discipline !== ''
+      ? `${CLIENT_LOGIN_PATH}/signup?discipline=${encodeURIComponent(discipline)}`
+      : `${CLIENT_LOGIN_PATH}/signup`;
   const successPath =
     isClientLogin && discipline
-      ? `/sample-talent?discipline=${encodeURIComponent(discipline)}`
+      ? `/client/search?q=${encodeURIComponent(discipline)}`
       : config.successPath;
 
   // Admin login: skip form if already signed in as admin
@@ -92,7 +97,7 @@ export function MarketingLoginPage({ variant = 'admin' }: MarketingLoginPageProp
     <>
       <PageMeta title="Sign In | BesTal" description="Sign in to BesTal." noIndex />
       <SplitLoginLayout>
-        <SplitLoginPanel>
+        <SplitLoginPanel brandHref={isClientLogin ? '/' : undefined}>
           <form className="mkt-login-form" onSubmit={handleSubmit}>
               {error && <div className="mkt-login-error">{error}</div>}
 
@@ -133,9 +138,11 @@ export function MarketingLoginPage({ variant = 'admin' }: MarketingLoginPageProp
                 {!submitting && <ForwardArrow className="h-4 w-4" />}
               </button>
 
-              {/* <Link to={config.secondaryHref} className="mkt-btn mkt-login-signup">
-                {config.secondaryLabel}
-              </Link> */}
+              {isClientLogin ? (
+                <Link to={signupHref} className="mkt-btn mkt-login-signup">
+                  New to BesTal? Sign up
+                </Link>
+              ) : null}
 
             {/* <p className="mkt-login-demo-hint">
               Demo: {config.demoEmail} / {config.demoPassword}

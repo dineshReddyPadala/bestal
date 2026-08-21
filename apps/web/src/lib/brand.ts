@@ -1,8 +1,14 @@
 /** BesTal full wordmark — served from public/bestal-logo.svg */
 export const BESTAL_LOGO_SRC = '/New logo (1).svg';
 
-/** Login split-layout hero — served from public/login-image.png */
-export const LOGIN_HERO_IMAGE_SRC = '/login-image-AI.png';
+/** Client login split-layout hero */
+export const CLIENT_LOGIN_HERO_IMAGE_SRC = '/login-image-AI.png';
+
+/** Staff portal login split-layout hero */
+export const STAFF_LOGIN_HERO_IMAGE_SRC = '/login-image.png';
+
+/** @deprecated Use CLIENT_LOGIN_HERO_IMAGE_SRC */
+export const LOGIN_HERO_IMAGE_SRC = CLIENT_LOGIN_HERO_IMAGE_SRC;
 
 /** Sample talent communities orbit — confident woman headshot, 180×180 display */
 export const SAMPLE_TALENT_HERO_AVATAR_SRC = '/Generated image_ Confident Woman in Modern Office.png';

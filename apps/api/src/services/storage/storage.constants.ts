@@ -7,6 +7,7 @@ export const UPLOAD_CATEGORIES = {
   BACKGROUND_CHECK: 'BACKGROUND_CHECK',
   CANDIDATE_PHOTO: 'CANDIDATE_PHOTO',
   VIDEO: 'VIDEO',
+  CLIENT_ENQUIRY: 'CLIENT_ENQUIRY',
 } as const;
 
 export type UploadCategory =
@@ -70,6 +71,16 @@ export const UPLOAD_CATEGORY_CONFIG: Record<
     allowedMimeTypes: ['video/mp4', 'video/webm', 'video/quicktime'],
     maxBytes: 100 * 1024 * 1024,
     s3Prefix: 'videos',
+  },
+  [UPLOAD_CATEGORIES.CLIENT_ENQUIRY]: {
+    label: 'Client Enquiry',
+    allowedMimeTypes: [
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    ],
+    maxBytes: 10 * 1024 * 1024,
+    s3Prefix: 'client-enquiry-docs',
   },
 };
 
