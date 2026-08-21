@@ -12,3 +12,6 @@ export const LOGIN_HERO_IMAGE_SRC = CLIENT_LOGIN_HERO_IMAGE_SRC;
 
 /** Sample talent communities orbit — confident woman headshot, 180×180 display */
 export const SAMPLE_TALENT_HERO_AVATAR_SRC = '/Generated image_ Confident Woman in Modern Office.png';
+
+/** Default profile image when a marketing/candidate photo is missing or fails to load */
+export const DEFAULT_PROFILE_IMAGE_SRC = SAMPLE_TALENT_HERO_AVATAR_SRC;

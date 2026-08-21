@@ -39,11 +39,8 @@ export const bgvAnalysisOutputSchema = z
     status: z.string().trim().max(50).optional(),
     vendorName: z.string().trim().max(100).optional(),
     idCheckStatus: bgvCheckItemStatusSchema,
-    addressCheckStatus: bgvCheckItemStatusSchema,
     employmentCheckStatus: bgvCheckItemStatusSchema,
-    educationCheckStatus: bgvCheckItemStatusSchema,
     criminalCheckStatus: bgvCheckItemStatusSchema,
-    referenceCheckStatus: bgvCheckItemStatusSchema,
     aiBgvSummary: z.string().trim().max(20000).optional(),
     concernNotes: z.string().trim().max(20000).optional(),
     checkType: z.string().trim().max(100).optional(),
@@ -53,11 +50,8 @@ export const bgvAnalysisOutputSchema = z
     const hasSummary = Boolean(value.aiBgvSummary?.trim());
     const hasCheck =
       value.idCheckStatus != null ||
-      value.addressCheckStatus != null ||
       value.employmentCheckStatus != null ||
-      value.educationCheckStatus != null ||
-      value.criminalCheckStatus != null ||
-      value.referenceCheckStatus != null;
+      value.criminalCheckStatus != null;
     if (!hasSummary && !hasCheck) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,

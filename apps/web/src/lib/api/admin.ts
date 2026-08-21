@@ -172,6 +172,37 @@ export const adminApi = {
     return json.data;
   },
 
+  listIcons: (query?: ListQuery) => apiList<Record<string, unknown>>('/admin/icons', query),
+  getIcon: (id: number) => apiGet<Record<string, unknown>>(`/admin/icons/${id}`),
+  createIcon: async (name: string, file: File) => {
+    const form = new FormData();
+    form.append('name', name);
+    form.append('file', file, file.name);
+    const json = await apiRequest<{ data: Record<string, unknown> }>('/admin/icons', {
+      method: 'POST',
+      body: form,
+    });
+    return json.data;
+  },
+  uploadIconFile: async (id: number, file: File) => {
+    const form = new FormData();
+    form.append('file', file, file.name);
+    const json = await apiRequest<{ data: Record<string, unknown> }>(`/admin/icons/${id}/file`, {
+      method: 'POST',
+      body: form,
+    });
+    return json.data;
+  },
+  updateIcon: async (id: number, body: Record<string, unknown>) => {
+    const json = await apiRequest<{ data: Record<string, unknown> }>(`/admin/icons/${id}`, {
+      method: 'PUT',
+      body,
+    });
+    return json.data;
+  },
+  deleteIcon: (id: number) =>
+    apiRequest<{ data: { message: string } }>(`/admin/icons/${id}`, { method: 'DELETE' }),
+
   listTrials: (query?: ListQuery) => apiList<Record<string, unknown>>('/admin/trials', query),
   getTrial: (id: number) => apiGet<Record<string, unknown>>(`/admin/trials/${id}`),
   approveTrial: async (id: number, recruiterId?: number) => {

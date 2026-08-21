@@ -75,11 +75,8 @@ function bgvOutputToExtraction(
     vendorName: str('vendorName'),
     status: str('overallStatus') ?? str('status'),
     idCheckStatus: str('idCheckStatus'),
-    addressCheckStatus: str('addressCheckStatus'),
     employmentCheckStatus: str('employmentCheckStatus'),
-    educationCheckStatus: str('educationCheckStatus'),
     criminalCheckStatus: str('criminalCheckStatus'),
-    referenceCheckStatus: str('referenceCheckStatus'),
     aiBgvSummary:
       str('aiBgvSummary') || 'Background verification analysis completed',
     concernNotes: str('concernNotes'),

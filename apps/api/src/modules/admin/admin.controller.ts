@@ -335,6 +335,91 @@ export class AdminController {
     return reply.send({ data });
   };
 
+  listIcons = async (request: FastifyRequest, reply: FastifyReply) => {
+    const q = request.query as { page?: string | number; limit?: string | number; search?: string };
+    const result = await this.admin.listIcons({
+      page: Number(q.page ?? 1),
+      limit: Number(q.limit ?? 50),
+      search: q.search,
+    });
+    return reply.send(result);
+  };
+
+  getIcon = async (request: FastifyRequest, reply: FastifyReply) => {
+    const { id } = request.params as { id: number };
+    const data = await this.admin.getIcon(id);
+    return reply.send({ data });
+  };
+
+  createIcon = async (request: FastifyRequest, reply: FastifyReply) => {
+    let name: string | undefined;
+    let file: { filename: string; mimetype: string; buffer: Buffer } | undefined;
+
+    for await (const part of request.parts()) {
+      if (part.type === 'field' && part.fieldname === 'name') {
+        name = String(part.value);
+        continue;
+      }
+      if (part.type === 'file' && part.fieldname === 'file') {
+        const buffer = await part.toBuffer();
+        file = {
+          filename: part.filename,
+          mimetype: part.mimetype,
+          buffer,
+        };
+      }
+    }
+
+    if (!name?.trim()) throw new BadRequestError('Icon name is required');
+    if (!file) throw new BadRequestError('Icon image is required');
+
+    const data = await this.admin.createIcon(
+      request.authUser!,
+      { name: name.trim(), file },
+      this.ctx(request),
+    );
+    return reply.status(201).send({ data });
+  };
+
+  updateIcon = async (request: FastifyRequest, reply: FastifyReply) => {
+    const { id } = request.params as { id: number };
+    const data = await this.admin.updateIcon(
+      request.authUser!,
+      id,
+      request.body as never,
+      this.ctx(request),
+    );
+    return reply.send({ data });
+  };
+
+  uploadIconFile = async (request: FastifyRequest, reply: FastifyReply) => {
+    const { id } = request.params as { id: number };
+    const file = await request.file();
+    if (!file) throw new BadRequestError('Icon image is required');
+    const buffer = await file.toBuffer();
+    const data = await this.admin.uploadIconFile(
+      request.authUser!,
+      id,
+      {
+        filename: file.filename,
+        mimetype: file.mimetype,
+        buffer,
+      },
+      this.ctx(request),
+    );
+    return reply.send({ data });
+  };
+
+  deleteIcon = async (request: FastifyRequest, reply: FastifyReply) => {
+    const { id } = request.params as { id: number };
+    const data = await this.admin.deleteIcon(
+      request.authUser!,
+      id,
+      this.ctx(request),
+    );
+    return reply.send({ data });
+  };
+
   uploadSkillCommunityIcon = async (request: FastifyRequest, reply: FastifyReply) => {
     const { id } = request.params as { id: number };
     const file = await request.file();

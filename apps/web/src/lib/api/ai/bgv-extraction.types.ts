@@ -7,11 +7,8 @@ export type BgvExtractionResponse = {
   vendorName?: string;
   status?: string;
   idCheckStatus?: string;
-  addressCheckStatus?: string;
   employmentCheckStatus?: string;
-  educationCheckStatus?: string;
   criminalCheckStatus?: string;
-  referenceCheckStatus?: string;
   reportUrl?: string | null;
   aiBgvSummary: string;
   concernNotes?: string;

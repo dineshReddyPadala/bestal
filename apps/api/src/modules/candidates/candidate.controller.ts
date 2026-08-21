@@ -43,6 +43,12 @@ export class CandidateController {
     return reply.status(200).send(result);
   };
 
+  listPublicFeatured = async (request: FastifyRequest, reply: FastifyReply) => {
+    const { limit } = request.query as { limit?: number };
+    const result = await this.candidateService.listPublicFeatured(limit ?? 5);
+    return reply.status(200).send(result);
+  };
+
   getById = async (request: FastifyRequest, reply: FastifyReply) => {
     const { id } = request.params as { id: number };
     const data = await this.candidateService.getById(request.authUser!, id);

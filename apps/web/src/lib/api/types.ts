@@ -87,6 +87,7 @@ export type SkillCommunityListItem = {
   name: string;
   slug: string;
   description: string | null;
+  iconUrl: string | null;
 };
 
 // ─── Trial ────────────────────────────────────────────────────────────────────
@@ -501,11 +502,8 @@ export type BackgroundCheckDto = BackgroundCheckListItem & {
   resultSummary?: string | null;
   reviewNotes?: string | null;
   idCheckStatus?: string | null;
-  addressCheckStatus?: string | null;
   employmentCheckStatus?: string | null;
-  educationCheckStatus?: string | null;
   criminalCheckStatus?: string | null;
-  referenceCheckStatus?: string | null;
   vendorAssignedAt?: string | null;
   reviewedAt?: string | null;
   reviewedByName?: string | null;

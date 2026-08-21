@@ -145,6 +145,26 @@ export interface CandidateListItemDto {
   updatedAt: string;
 }
 
+/** Marketing-safe evaluation summary for the landing page scorecard. */
+export interface PublicFeaturedEvaluationDto {
+  technicalScore: number | null;
+  problemSolvingScore: number | null;
+  collaborationCulturalFitScore: number | null;
+  clientReadinessScore: number | null;
+  communicationScore: number | null;
+  evaluationSummary: string | null;
+  recommendation: string | null;
+  evaluatorComments: string | null;
+  evaluationDate: string | null;
+}
+
+/** Marketing-safe candidate row for the public landing page slider. */
+export interface PublicFeaturedCandidateDto extends Omit<CandidateListItemDto, 'email'> {
+  skillNames: string[];
+  publishedAt: string | null;
+  evaluation: PublicFeaturedEvaluationDto | null;
+}
+
 export interface CandidateListFilters {
   organizationId: number;
   page: number;

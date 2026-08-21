@@ -12,28 +12,40 @@ const AUTOPLAY_MS = 4500;
 type CommunityProfileSliderProps = {
   className?: string;
   hideScorecard?: boolean;
+  slides?: CommunityProfileSlide[];
   onSlideChange?: (slide: CommunityProfileSlide) => void;
 };
 
 export function CommunityProfileSlider({
   className,
   hideScorecard = false,
+  slides = COMMUNITY_PROFILE_SLIDES,
   onSlideChange,
 }: CommunityProfileSliderProps) {
   const [active, setActive] = useState(0);
 
   useEffect(() => {
-    onSlideChange?.(COMMUNITY_PROFILE_SLIDES[active]);
-  }, [active, onSlideChange]);
+    setActive(0);
+  }, [slides]);
 
   useEffect(() => {
+    if (slides.length === 0) return;
+    onSlideChange?.(slides[active]);
+  }, [active, onSlideChange, slides]);
+
+  useEffect(() => {
+    if (slides.length <= 1) return;
     const id = window.setInterval(() => {
-      setActive((current) => (current + 1) % COMMUNITY_PROFILE_SLIDES.length);
+      setActive((current) => (current + 1) % slides.length);
     }, AUTOPLAY_MS);
     return () => window.clearInterval(id);
-  }, []);
+  }, [slides.length]);
 
-  const activeSlide = COMMUNITY_PROFILE_SLIDES[active];
+  if (slides.length === 0) {
+    return null;
+  }
+
+  const activeSlide = slides[active] ?? slides[0];
 
   return (
     <div className={cn('mkt-community-slider', className)}>
@@ -43,11 +55,11 @@ export function CommunityProfileSlider({
         aria-atomic="true"
         aria-label={`${activeSlide.community} profile`}
       >
-        {COMMUNITY_PROFILE_SLIDES.map((slide, index) => {
+        {slides.map((slide, index) => {
           const isActive = index === active;
           return (
             <div
-              key={slide.community}
+              key={slide.engineer.id}
               className={cn('mkt-community-slider-panel', isActive && 'is-active')}
               aria-hidden={!isActive}
             >
@@ -60,33 +72,6 @@ export function CommunityProfileSlider({
           );
         })}
       </div>
-
-      {/* <div className="mkt-community-slider-meta">
-        <p className="mkt-community-slider-name">{activeSlide.community}</p>
-        <p className="mkt-community-slider-desc">{activeSlide.description}</p>
-      </div>
-
-      <div
-        className="mkt-community-slider-nav"
-        role="tablist"
-        aria-label="Skill communities"
-      >
-        {COMMUNITY_PROFILE_SLIDES.map((slide, index) => {
-          const isActive = index === active;
-          return (
-            <button
-              key={slide.community}
-              type="button"
-              role="tab"
-              aria-selected={isActive}
-              aria-label={slide.community}
-              title={slide.community}
-              className={cn('mkt-community-slider-pill', isActive && 'is-active')}
-              onClick={() => select(index)}
-            />
-          );
-        })}
-      </div> */}
     </div>
   );
 }

@@ -13,6 +13,7 @@ import { PageMeta } from '../../components/PageMeta';
 import { ToastHost } from '../../components/ui/ToastHost';
 import { ForwardArrow } from '../../components/ui/ForwardArrow';
 import { useAuth } from '../../contexts/AuthContext';
+import { usePublicSkillCommunitiesList } from '../../hooks/api/useSkillCommunities';
 import { MAX_COMPARE, useSampleTalentShortlist } from '../../hooks/useSampleTalentShortlist';
 import { useDemoToast } from '../../lib/use-demo-toast';
 import { communityToDiscipline } from '../../lib/community-discipline';
@@ -23,7 +24,6 @@ import {
   START_DATES,
   TIMEZONES,
 } from '../../lib/demo-engineers';
-import { COMMUNITY_DETAILS } from '../../lib/marketing-copy';
 import { PAGE_SEO } from '../../lib/marketing-seo';
 
 type Discipline = (typeof DISCIPLINES)[number];
@@ -41,6 +41,8 @@ type SampleTalentBrowsePageProps = {
 };
 
 function SampleTalentBrowsePage({ onDisciplineClick }: SampleTalentBrowsePageProps) {
+  const { data: communities = [], isLoading, isError } = usePublicSkillCommunitiesList();
+
   return (
     <>
       <section className="mkt-white mkt-section mkt-st-comm-hero">
@@ -49,36 +51,48 @@ function SampleTalentBrowsePage({ onDisciplineClick }: SampleTalentBrowsePagePro
             <div className="mkt-st-comm-label">Engineering Communities</div>
             <h1 className="mkt-st-comm-title">
               Engineers, organised by{' '}
-              <span className="mkt-st-comm-highlight">
-                discipline
-               
-              </span>
+              <span className="mkt-st-comm-highlight">discipline</span>
             </h1>
             <p className="mkt-st-comm-lead howitworks-body-style">
-            Complete profiles in the real format — test results, verification status, rate, start date and assigned time zone, exactly as they appear in the platform.
-
+              Complete profiles in the real format — test results, verification status, rate, start
+              date and assigned time zone, exactly as they appear in the platform.
             </p>
-            <p className="mkt-st-comm-lead howitworks-body-style">The engineers below are fictional. They show the structure and depth of the evidence, not current capacity.
+            <p className="mkt-st-comm-lead howitworks-body-style">
+              The engineers below are fictional. They show the structure and depth of the evidence,
+              not current capacity.
             </p>
           </div>
           <div className="mkt-st-comm-orbit-wrap">
-            <SampleTalentCommunitiesHero />
+            <SampleTalentCommunitiesHero communities={isLoading ? undefined : communities} />
           </div>
         </MktShell>
       </section>
 
       <section className="mkt-cream mkt-section mkt-st-comm-cards">
         <MktShell>
-          <div className="mkt-st-comm-grid">
-            {COMMUNITY_DETAILS.map((community) => (
-              <SampleTalentCommunityCard
-                key={community.name}
-                name={community.name}
-                body={community.body}
-                onClick={() => onDisciplineClick(communityToDiscipline(community.name))}
-              />
-            ))}
-          </div>
+          {isLoading ? (
+            <p className="mkt-lead howitworks-body-style">Loading communities…</p>
+          ) : isError ? (
+            <p className="mkt-lead howitworks-body-style">
+              Unable to load skill communities right now. Please try again shortly.
+            </p>
+          ) : communities.length === 0 ? (
+            <p className="mkt-lead howitworks-body-style">No skill communities are available yet.</p>
+          ) : (
+            <div className="mkt-st-comm-grid">
+              {communities.map((community) => (
+                <SampleTalentCommunityCard
+                  key={community.id}
+                  name={community.name}
+                  body={community.description ?? ''}
+                  iconUrl={community.iconUrl}
+                  onClick={() =>
+                    onDisciplineClick(communityToDiscipline(community.name))
+                  }
+                />
+              ))}
+            </div>
+          )}
         </MktShell>
       </section>
     </>

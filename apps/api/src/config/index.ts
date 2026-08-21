@@ -144,7 +144,7 @@ function mapEnvToConfig(env: EnvSchema): AppConfig {
     port: env.PORT,
     logLevel: env.LOG_LEVEL,
     logFile: env.LOG_FILE,
-    logConsole: env.LOG_CONSOLE ?? false,
+    logConsole: env.LOG_CONSOLE ?? env.NODE_ENV === 'development',
     databaseUrl: env.DATABASE_URL,
     jwt: {
       secret: env.JWT_SECRET,

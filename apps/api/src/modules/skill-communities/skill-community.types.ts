@@ -3,4 +3,5 @@ export type SkillCommunityListItemDto = {
   name: string;
   slug: string;
   description: string | null;
+  iconUrl: string | null;
 };

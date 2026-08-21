@@ -131,7 +131,7 @@ export const listCandidatesQuerySchema = z.object({
   sort: z
     .string()
     .regex(
-      /^(-?(createdAt|updatedAt|publishedAt|firstName|lastName|email|status|visibility|approvalStatus|yearsExperience))(,-?(createdAt|updatedAt|publishedAt|firstName|lastName|email|status|visibility|approvalStatus|yearsExperience))*$/,
+      /^(-?(createdAt|updatedAt|publishedAt|firstName|lastName|email|status|visibility|approvalStatus|yearsExperience|bestalScore))(,-?(createdAt|updatedAt|publishedAt|firstName|lastName|email|status|visibility|approvalStatus|yearsExperience|bestalScore))*$/,
       'Invalid sort format. Example: -createdAt,lastName',
     )
     .optional(),
@@ -357,4 +357,33 @@ export const SORTABLE_FIELDS = [
   'visibility',
   'approvalStatus',
   'yearsExperience',
+  'bestalScore',
 ] as const;
+
+export const publicFeaturedCandidatesQuerySchema = z.object({
+  limit: z.coerce.number().int().positive().max(20).default(5),
+});
+
+export const publicFeaturedEvaluationSchema = z.object({
+  technicalScore: z.number().nullable(),
+  problemSolvingScore: z.number().nullable(),
+  collaborationCulturalFitScore: z.number().nullable(),
+  clientReadinessScore: z.number().nullable(),
+  communicationScore: z.number().nullable(),
+  evaluationSummary: z.string().nullable(),
+  recommendation: z.string().nullable(),
+  evaluatorComments: z.string().nullable(),
+  evaluationDate: z.string().nullable(),
+});
+
+export const publicFeaturedCandidateSchema = candidateListItemSchema
+  .omit({ email: true })
+  .extend({
+    skillNames: z.array(z.string()),
+    publishedAt: z.string().nullable(),
+    evaluation: publicFeaturedEvaluationSchema.nullable(),
+  });
+
+export const publicFeaturedCandidatesResponseSchema = z.object({
+  data: z.array(publicFeaturedCandidateSchema),
+});

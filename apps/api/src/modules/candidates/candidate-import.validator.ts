@@ -736,7 +736,6 @@ export async function parseAndValidateCandidateWorkbook(
       yearsExperience: yearsExperience ?? 0,
       primaryRole: raw.primary_role.trim(),
       skillCommunity,
-      summary: raw.summary?.trim() || null,
       aiSummary,
       strengths,
       weaknesses,
@@ -1012,11 +1011,8 @@ export async function parseAndValidateCandidateWorkbook(
     );
     for (const column of [
       'id_check_status',
-      'address_check_status',
       'employment_check_status',
-      'education_check_status',
       'criminal_check_status',
-      'reference_check_status',
     ] as const) {
       assertAllowed(
         raw[column],
@@ -1043,11 +1039,8 @@ export async function parseAndValidateCandidateWorkbook(
       packageType: raw.package_type?.trim() || 'COMPREHENSIVE',
       vendor: raw.vendor?.trim() || null,
       idCheckStatus: raw.id_check_status?.trim() || null,
-      addressCheckStatus: raw.address_check_status?.trim() || null,
       employmentCheckStatus: raw.employment_check_status?.trim() || null,
-      educationCheckStatus: raw.education_check_status?.trim() || null,
       criminalCheckStatus: raw.criminal_check_status?.trim() || null,
-      referenceCheckStatus: raw.reference_check_status?.trim() || null,
       initiatedDate: parseDate(
         raw.initiated_date,
         IMPORT_WORKBOOK_SHEETS.BGV,

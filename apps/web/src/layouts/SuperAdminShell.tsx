@@ -39,6 +39,8 @@ export function SuperAdminShell() {
                 : pathname.startsWith('/super-admin/platform-settings') ||
                     pathname.startsWith('/super-admin/settings')
                   ? '/super-admin/platform-settings'
+                  : pathname.startsWith('/super-admin/icons')
+                    ? '/super-admin/icons'
                   : pathname.startsWith('/super-admin/reports') ||
                       pathname.startsWith('/super-admin/margin')
                     ? '/super-admin/reports'

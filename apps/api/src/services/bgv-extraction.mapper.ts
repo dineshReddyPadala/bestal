@@ -54,18 +54,11 @@ export function normalizeBgvExtractionResponse(raw: unknown): BgvExtractionRespo
     vendorName: asString(pick(root, 'vendorName', 'vendor_name')),
     status: asString(root.status),
     idCheckStatus: asString(pick(root, 'idCheckStatus', 'id_check_status')),
-    addressCheckStatus: asString(pick(root, 'addressCheckStatus', 'address_check_status')),
     employmentCheckStatus: asString(
       pick(root, 'employmentCheckStatus', 'employment_check_status'),
     ),
-    educationCheckStatus: asString(
-      pick(root, 'educationCheckStatus', 'education_check_status'),
-    ),
     criminalCheckStatus: asString(
       pick(root, 'criminalCheckStatus', 'criminal_check_status'),
-    ),
-    referenceCheckStatus: asString(
-      pick(root, 'referenceCheckStatus', 'reference_check_status'),
     ),
     reportUrl: asString(pick(root, 'reportUrl', 'report_url')) ?? null,
     aiBgvSummary: summary,
@@ -81,11 +74,8 @@ export function normalizeBgvExtractionResponse(raw: unknown): BgvExtractionRespo
 export function formatBgvCheckStatusesSummary(extraction: BgvExtractionResponse): string {
   const lines = [
     `ID: ${extraction.idCheckStatus ?? 'N/A'}`,
-    `Address: ${extraction.addressCheckStatus ?? 'N/A'}`,
     `Employment: ${extraction.employmentCheckStatus ?? 'N/A'}`,
-    `Education: ${extraction.educationCheckStatus ?? 'N/A'}`,
     `Criminal: ${extraction.criminalCheckStatus ?? 'N/A'}`,
-    `Reference: ${extraction.referenceCheckStatus ?? 'N/A'}`,
   ];
   return lines.join('\n');
 }
@@ -103,11 +93,8 @@ export function formatBgvAiSummaryJson(
       package: extraction.checkType ?? meta?.checkType ?? null,
       checks: [
         { name: 'Identity', result: extraction.idCheckStatus ?? 'N/A' },
-        { name: 'Address', result: extraction.addressCheckStatus ?? 'N/A' },
         { name: 'Employment', result: extraction.employmentCheckStatus ?? 'N/A' },
-        { name: 'Education', result: extraction.educationCheckStatus ?? 'N/A' },
         { name: 'Criminal', result: extraction.criminalCheckStatus ?? 'N/A' },
-        { name: 'Reference', result: extraction.referenceCheckStatus ?? 'N/A' },
       ],
       summary: extraction.aiBgvSummary ?? '',
       concernNotes: extraction.concernNotes ?? '',
