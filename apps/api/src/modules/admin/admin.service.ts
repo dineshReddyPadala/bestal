@@ -15,6 +15,9 @@ import {
 } from '../../utils/index.js';
 import { rolePasswordResetPath, rolePortalEmailLabel, rolePortalLoginPath } from '../../utils/role-portal-paths.js';
 import { EmailService } from '../../services/email.service.js';
+import { StorageService } from '../../services/storage.service.js';
+import { UPLOAD_CATEGORIES } from '../../services/storage/storage.constants.js';
+import { buildS3ObjectReference } from '../../services/storage/upload.utils.js';
 import { notifyCandidateApproved, notifyCandidateSentBack } from '../../services/notification-events.js';
 import { buildPaginationMeta } from '../../validators/common.validator.js';
 import { AuthRepository } from '../auth/auth.repository.js';
@@ -44,6 +47,7 @@ export class AdminService {
   private readonly email: EmailService;
   private readonly candidates: CandidateService;
   private readonly clients: ClientService;
+  private readonly storageService: StorageService;
 
   constructor(private readonly fastify: FastifyInstance) {
     this.prisma = fastify.prisma;
@@ -52,6 +56,7 @@ export class AdminService {
     this.email = new EmailService(fastify.config, fastify.prisma);
     this.candidates = new CandidateService(fastify);
     this.clients = new ClientService(fastify);
+    this.storageService = new StorageService(fastify.config, fastify.prisma);
   }
 
   private async auditWrite(
@@ -933,13 +938,17 @@ export class AdminService {
         type: b.type,
         createdAt: b.createdAt.toISOString(),
       })),
-      documents: documents.map((d) => ({
-        id: bigintToNumber(d.id),
-        originalName: d.originalName,
-        kind: d.kind,
-        mimeType: d.mimeType,
-        createdAt: d.createdAt.toISOString(),
-      })),
+      documents: await Promise.all(
+        documents.map(async (d) => ({
+          id: bigintToNumber(d.id),
+          originalName: d.originalName,
+          kind: d.kind,
+          mimeType: d.mimeType,
+          createdAt: d.createdAt.toISOString(),
+          downloadUrl:
+            (await this.storageService.resolveFileUrl(d.s3Key, d.s3Bucket, d.mimeType)) ?? null,
+        })),
+      ),
       activityTimeline: activity.map((a) => ({
         id: bigintToNumber(a.id),
         action: a.action,
@@ -1161,6 +1170,7 @@ export class AdminService {
         name: s.name,
         slug: s.slug,
         description: s.description,
+        iconUrl: s.iconUrl,
         isActive: s.isActive,
         createdAt: s.createdAt.toISOString(),
         updatedAt: s.updatedAt.toISOString(),
@@ -1196,7 +1206,75 @@ export class AdminService {
       name: created.name,
       slug: created.slug,
       description: created.description,
+      iconUrl: created.iconUrl,
       isActive: created.isActive,
+    };
+  }
+
+  async uploadSkillCommunityIcon(
+    authUser: AuthenticatedUser,
+    id: number,
+    file: { filename: string; mimetype: string; buffer: Buffer },
+    ctx?: { ipAddress?: string | null; userAgent?: string | null },
+  ) {
+    const organizationId = requireOrganization(authUser);
+    const existing = await this.prisma.skillCommunity.findFirst({
+      where: { id: BigInt(id), deletedAt: null },
+    });
+    if (!existing) throw new NotFoundError('Skill community not found');
+
+    this.storageService.validateFile(UPLOAD_CATEGORIES.CANDIDATE_PHOTO, {
+      mimeType: file.mimetype,
+      size: file.buffer.length,
+      originalName: file.filename,
+    });
+
+    const bucket = await this.storageService.getBucket();
+    const storageKey = this.storageService.buildStorageKey({
+      organizationId,
+      entityFolder: 'skill-communities',
+      entityId: id,
+      category: UPLOAD_CATEGORIES.CANDIDATE_PHOTO,
+      originalName: file.filename,
+    });
+
+    await this.storageService.upload(
+      storageKey,
+      {
+        buffer: file.buffer,
+        mimeType: file.mimetype,
+        size: file.buffer.length,
+        originalName: file.filename,
+      },
+      {
+        category: UPLOAD_CATEGORIES.CANDIDATE_PHOTO,
+        organizationId,
+        entityId: id,
+      },
+    );
+
+    const iconUrl =
+      (await this.storageService.resolveFileUrl(storageKey, bucket, file.mimetype)) ??
+      buildS3ObjectReference(bucket, storageKey);
+
+    const updated = await this.prisma.skillCommunity.update({
+      where: { id: BigInt(id) },
+      data: { iconUrl },
+    });
+
+    await this.auditWrite(
+      authUser,
+      'UPDATE',
+      'SkillCommunity',
+      id,
+      `Uploaded icon for ${updated.name}`,
+      undefined,
+      ctx,
+    );
+
+    return {
+      id: bigintToNumber(updated.id),
+      iconUrl: updated.iconUrl,
     };
   }
 
@@ -1225,6 +1303,7 @@ export class AdminService {
       name: updated.name,
       slug: updated.slug,
       description: updated.description,
+      iconUrl: updated.iconUrl,
       isActive: updated.isActive,
     };
   }

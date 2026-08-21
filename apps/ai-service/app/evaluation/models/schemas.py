@@ -30,7 +30,7 @@ class EvaluationResponse(BaseModel):
     technical_score: int = Field(0, serialization_alias="technicalScore")
     communication_score: int = Field(0, serialization_alias="communicationScore")
     problem_solving_score: int = Field(0, serialization_alias="problemSolvingScore")
-    architecture_score: int = Field(0, serialization_alias="architectureScore")
+    collaboration_cultural_fit_score: int = Field(0, serialization_alias="collaborationCulturalFitScore")
     client_readiness_score: int = Field(0, serialization_alias="clientReadinessScore")
 
     recommendation: str = ""

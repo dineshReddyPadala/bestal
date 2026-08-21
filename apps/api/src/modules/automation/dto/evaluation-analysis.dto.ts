@@ -26,7 +26,7 @@ export const evaluationAnalysisOutputSchema = z
     technicalScore: scoreSchema,
     communicationScore: scoreSchema,
     problemSolvingScore: scoreSchema,
-    architectureScore: scoreSchema,
+    collaborationCulturalFitScore: scoreSchema,
     clientReadinessScore: scoreSchema,
     recommendation: z.string().trim().max(100).optional(),
     evaluationSummary: z.string().trim().max(20000).optional(),
@@ -42,7 +42,7 @@ export const evaluationAnalysisOutputSchema = z
       value.technicalScore != null ||
       value.communicationScore != null ||
       value.problemSolvingScore != null ||
-      value.architectureScore != null ||
+      value.collaborationCulturalFitScore != null ||
       value.clientReadinessScore != null;
     if (!hasSummary && !hasScore) {
       ctx.addIssue({

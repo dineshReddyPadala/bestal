@@ -38,7 +38,7 @@ export class EvaluationRepository extends BaseRepository {
         technicalScore: data.technicalScore,
         communicationScore: data.communicationScore,
         problemSolvingScore: data.problemSolvingScore,
-        architectureScore: data.architectureScore,
+        collaborationCulturalFitScore: data.collaborationCulturalFitScore,
         clientReadinessScore: data.clientReadinessScore,
         recommendation: data.recommendation,
         evaluationSummary: data.evaluationSummary,
@@ -90,8 +90,8 @@ export class EvaluationRepository extends BaseRepository {
         ...(data.problemSolvingScore !== undefined && {
           problemSolvingScore: data.problemSolvingScore,
         }),
-        ...(data.architectureScore !== undefined && {
-          architectureScore: data.architectureScore,
+        ...(data.collaborationCulturalFitScore !== undefined && {
+          collaborationCulturalFitScore: data.collaborationCulturalFitScore,
         }),
         ...(data.clientReadinessScore !== undefined && {
           clientReadinessScore: data.clientReadinessScore,

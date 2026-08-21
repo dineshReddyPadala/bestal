@@ -55,7 +55,7 @@ Auth: `Authorization: Bearer <AUTOMATION_CALLBACK_SECRET>`
     "technicalScore": 82,
     "communicationScore": 78,
     "problemSolvingScore": 80,
-    "architectureScore": 75,
+    "collaborationCulturalFitScore": 75,
     "clientReadinessScore": 70,
     "recommendation": "Hire",
     "evaluatorComments": "…",
@@ -81,7 +81,7 @@ Auth: `Authorization: Bearer <AUTOMATION_CALLBACK_SECRET>`
 
 Aligned with [`evaluationAnalysisOutputSchema`](../../apps/api/src/modules/automation/dto/evaluation-analysis.dto.ts):
 
-- `technicalScore`, `communicationScore`, `problemSolvingScore`, `architectureScore`, `clientReadinessScore`
+- `technicalScore`, `communicationScore`, `problemSolvingScore`, `collaborationCulturalFitScore`, `clientReadinessScore`
 - `recommendation`, `evaluatorComments`, `aiEvaluationSummary`
 - Optional: `evaluatorName`, `evaluatorCompany`, `evaluationType`, `evaluationDate`, `evaluationSummary`
 

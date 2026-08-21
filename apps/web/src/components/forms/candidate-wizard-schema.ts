@@ -101,7 +101,7 @@ export const candidateWizardFormSchema = z.object({
   technicalScore: optionalNumber,
   communicationScore: optionalNumber,
   problemSolvingScore: optionalNumber,
-  architectureScore: optionalNumber,
+  collaborationCulturalFitScore: optionalNumber,
   clientReadinessScore: optionalNumber,
   evaluatorName: z.string().max(200).optional().nullable(),
   evaluatorCompany: z.string().max(200).optional().nullable(),
@@ -260,7 +260,7 @@ export const candidateWizardDefaults: CandidateWizardFormValues = {
   technicalScore: undefined,
   communicationScore: undefined,
   problemSolvingScore: undefined,
-  architectureScore: undefined,
+  collaborationCulturalFitScore: undefined,
   clientReadinessScore: undefined,
   evaluatorName: '',
   evaluatorCompany: '',
@@ -591,7 +591,7 @@ export const USER_FIELD_LABELS: Record<keyof CandidateWizardFormValues, string> 
   technicalScore: 'Technical Score',
   communicationScore: 'Communication',
   problemSolvingScore: 'Problem Solving',
-  architectureScore: 'Architecture',
+  collaborationCulturalFitScore: 'Collaboration & Cultural Fit',
   clientReadinessScore: 'Client Readiness',
   evaluatorName: 'Evaluator Name',
   evaluatorCompany: 'Evaluator Company',
@@ -832,8 +832,8 @@ export function mapWizardToEvaluationUpdateBody(
   const problemSolvingScore = finiteNumberOrUndefined(form.problemSolvingScore);
   if (problemSolvingScore !== undefined) body.problemSolvingScore = problemSolvingScore;
 
-  const architectureScore = finiteNumberOrUndefined(form.architectureScore);
-  if (architectureScore !== undefined) body.architectureScore = architectureScore;
+  const collaborationCulturalFitScore = finiteNumberOrUndefined(form.collaborationCulturalFitScore);
+  if (collaborationCulturalFitScore !== undefined) body.collaborationCulturalFitScore = collaborationCulturalFitScore;
 
   const clientReadinessScore = finiteNumberOrUndefined(form.clientReadinessScore);
   if (clientReadinessScore !== undefined) body.clientReadinessScore = clientReadinessScore;
@@ -997,7 +997,7 @@ export function mapCandidateDtoToWizardForm(
       technicalScore?: number | null;
       communicationScore?: number | null;
       problemSolvingScore?: number | null;
-      architectureScore?: number | null;
+      collaborationCulturalFitScore?: number | null;
       clientReadinessScore?: number | null;
       evaluatorComments?: string | null;
       aiEvaluationSummary?: string | null;
@@ -1112,8 +1112,8 @@ export function mapCandidateDtoToWizardForm(
     if (evaluation.problemSolvingScore != null) {
       base.problemSolvingScore = evaluation.problemSolvingScore;
     }
-    if (evaluation.architectureScore != null) {
-      base.architectureScore = evaluation.architectureScore;
+    if (evaluation.collaborationCulturalFitScore != null) {
+      base.collaborationCulturalFitScore = evaluation.collaborationCulturalFitScore;
     }
     if (evaluation.clientReadinessScore != null) {
       base.clientReadinessScore = evaluation.clientReadinessScore;

@@ -277,7 +277,7 @@ export const ONBOARDING_STEPS = [
   {
     step: 3,
     title: 'Tested by an outside specialist',
-    body: 'A qualified specialist — not a BesTal recruiter — tests the engineer against role-specific criteria and scores technical depth, problem solving, architecture, code quality and communication separately.',
+    body: 'A qualified specialist — not a BesTal recruiter — tests the engineer against role-specific criteria and scores technical depth, problem solving, collaboration and cultural fit, code quality and communication separately.',
     // fact: '[FACT: tester sourcing and qualification criteria]',
   },
   {
@@ -362,7 +362,7 @@ export const CONTROL_TABLE = {
 export const EVALUATION_DIMENSIONS = [
   { title: 'Technical depth', body: 'Working command of the primary stack, at the depth the role requires. Not trivia.' },
   { title: 'Problem solving', body: 'How they approach an unfamiliar problem — including what they ask before they start.' },
-  { title: 'Architecture and design', body: 'Whether they can reason about trade-offs, failure modes and scale — or only implement.' },
+  { title: 'Collaboration & Cultural Fit', body: 'How well they collaborate with teams, adapt to client culture, and communicate under real working conditions.' },
   { title: 'Code quality', body: 'Structure, readability, testing instinct, error handling.' },
   { title: 'Communication', body: 'Whether they can explain a technical decision to your team, disagree usefully, and say "I don\'t know."' },
 ] as const;

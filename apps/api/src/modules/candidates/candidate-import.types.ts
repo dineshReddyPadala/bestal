@@ -33,7 +33,7 @@ export type NormalizedEvaluationRow = {
   technicalScore: number | null;
   communicationScore: number | null;
   problemSolvingScore: number | null;
-  architectureScore: number | null;
+  collaborationCulturalFitScore: number | null;
   clientReadinessScore: number | null;
   recommendation: string | null;
   evaluationSummary: string | null;

@@ -90,11 +90,6 @@ export function AdminTrialDetailDialog({ trialId, onClose }: AdminTrialDetailDia
             value={trial.assignedRecruiterName ?? '—'}
           />
           <DetailField label="Start date" value={formatDate(trial.startDate)} />
-          <DetailField label="End date" value={formatDate(trial.endDate)} />
-          <DetailField
-            label="Duration"
-            value={trial.durationDays != null ? `${trial.durationDays} days` : '—'}
-          />
           <DetailField
             label="Converted to paid"
             value={trial.convertedToPaid ? 'Yes' : 'No'}

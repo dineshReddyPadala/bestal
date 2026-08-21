@@ -89,7 +89,7 @@ export type EvaluationFormValues = {
   evaluatedDate: string;
   technicalScore?: number;
   communicationScore?: number;
-  architectureScore?: number;
+  collaborationCulturalFitScore?: number;
   problemSolvingScore?: number;
   clientReadinessScore?: number;
   recommendation?: EvaluationRecommendationValue;

@@ -1,7 +1,7 @@
 import { Button, Dialog, Input, StatusBadge, TanStackDataTable } from '@bestal/ui';
 import { type ColumnDef } from '@tanstack/react-table';
-import { Plus } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { Plus, Upload } from 'lucide-react';
+import { useMemo, useRef, useState } from 'react';
 import { ListingPageShell } from '../../components/layout/ListingPageShell';
 import { ActionMenu, type ActionMenuItem } from '../../components/super-admin/ActionMenu';
 import { useConfirmAction } from '../../components/super-admin/useConfirmAction';
@@ -14,6 +14,7 @@ type Row = {
   name: string;
   slug: string;
   description: string | null;
+  iconUrl?: string | null;
   isActive: boolean;
   candidateCount?: number;
 };
@@ -32,9 +33,26 @@ export function SuperAdminSkillCommunitiesPage() {
   const [name, setName] = useState('');
   const [slug, setSlug] = useState('');
   const [description, setDescription] = useState('');
+  const [iconFile, setIconFile] = useState<File | null>(null);
+  const [uploadIconCommunityId, setUploadIconCommunityId] = useState<number | null>(null);
+  const iconInputRef = useRef<HTMLInputElement>(null);
 
   const columns = useMemo<ColumnDef<Row>[]>(
     () => [
+      {
+        id: 'icon',
+        header: 'Icon',
+        cell: ({ row }) =>
+          row.original.iconUrl ? (
+            <img
+              src={row.original.iconUrl}
+              alt=""
+              className="h-8 w-8 rounded-md object-cover ring-1 ring-border/60"
+            />
+          ) : (
+            <span className="text-xs text-muted-foreground">—</span>
+          ),
+      },
       {
         accessorKey: 'name',
         header: 'Name',
@@ -61,6 +79,14 @@ export function SuperAdminSkillCommunitiesPage() {
           const hasCandidates = (r.candidateCount ?? 0) > 0;
           const items: ActionMenuItem[] = [
             { id: 'view', label: 'View Community' },
+            {
+              id: 'upload-icon',
+              label: 'Upload icon',
+              onSelect: () => {
+                setUploadIconCommunityId(r.id);
+                iconInputRef.current?.click();
+              },
+            },
             {
               id: 'activate',
               label: 'Activate',
@@ -162,12 +188,20 @@ export function SuperAdminSkillCommunitiesPage() {
                     slug: slug || name.toLowerCase().replace(/\s+/g, '-'),
                     description,
                   })
-                  .then(() => {
+                  .then(async (created) => {
+                    const communityId = Number((created as { id?: number }).id);
+                    if (iconFile && communityId) {
+                      await mutations.uploadSkillCommunityIcon.mutateAsync({
+                        id: communityId,
+                        file: iconFile,
+                      });
+                    }
                     show('Created');
                     setOpen(false);
                     setName('');
                     setSlug('');
                     setDescription('');
+                    setIconFile(null);
                   })
                   .catch((e) => showError(e instanceof Error ? e.message : 'Failed'))
               }
@@ -185,8 +219,39 @@ export function SuperAdminSkillCommunitiesPage() {
             value={description}
             onChange={(e) => setDescription(e.target.value)}
           />
+          <div className="space-y-2">
+            <span className="text-xs font-medium text-muted-foreground">Community icon</span>
+            <label className="flex cursor-pointer items-center gap-3 rounded-md border border-dashed border-border px-3 py-3 text-sm hover:bg-muted/30">
+              <Upload className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+              <span>{iconFile ? iconFile.name : 'Upload icon image (PNG, JPG, WebP)'}</span>
+              <input
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                className="hidden"
+                onChange={(e) => setIconFile(e.target.files?.[0] ?? null)}
+              />
+            </label>
+          </div>
         </div>
       </Dialog>
+      <input
+        ref={iconInputRef}
+        type="file"
+        accept="image/png,image/jpeg,image/webp"
+        className="hidden"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (!file || uploadIconCommunityId == null) return;
+          void mutations.uploadSkillCommunityIcon
+            .mutateAsync({ id: uploadIconCommunityId, file })
+            .then(() => show('Icon uploaded'))
+            .catch((err) => showError(err instanceof Error ? err.message : 'Upload failed'))
+            .finally(() => {
+              setUploadIconCommunityId(null);
+              if (iconInputRef.current) iconInputRef.current.value = '';
+            });
+        }}
+      />
     </>
   );
 }

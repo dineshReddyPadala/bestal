@@ -1,6 +1,6 @@
 import { cn, formatDate } from '@bestal/shared-utils';
 import { Badge, Button, StatusBadge } from '@bestal/ui';
-import { Download, FileText, Link2, Upload } from 'lucide-react';
+import { Eye, FileText, Link2, Upload } from 'lucide-react';
 import { useRef, type ReactNode } from 'react';
 import type { CandidateDocumentDto } from '../../lib/api/types';
 
@@ -131,7 +131,8 @@ export function DocumentAssetRow({
         ) : null}
         {doc && onDownload ? (
           <Button variant="ghost" size="sm" onClick={() => onDownload(doc)}>
-            <Download className="h-4 w-4" />
+            <Eye className="mr-1.5 h-3.5 w-3.5" />
+            Preview
           </Button>
         ) : null}
       </div>

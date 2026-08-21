@@ -75,7 +75,7 @@ export function mapEvaluationExtractionToForm(
     technicalScore: clampScore(extraction.technicalScore),
     communicationScore: clampScore(extraction.communicationScore),
     problemSolvingScore: clampScore(extraction.problemSolvingScore),
-    architectureScore: clampScore(extraction.architectureScore),
+    collaborationCulturalFitScore: clampScore(extraction.collaborationCulturalFitScore),
     clientReadinessScore: clampScore(extraction.clientReadinessScore),
     recommendation: normalizeRecommendation(extraction.recommendation),
     evaluatorComments: comments || undefined,

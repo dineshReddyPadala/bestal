@@ -238,7 +238,7 @@ export async function buildCandidateImportTemplate(
     technical_score: 88,
     communication_score: 90,
     problem_solving_score: 85,
-    architecture_score: 80,
+    collaboration_cultural_fit_score: 80,
     client_readiness_score: 87,
     recommendation: 'Hire',
     evaluation_summary: 'Strong technical depth and clear communication.',
@@ -460,7 +460,7 @@ export async function buildCandidateImportTemplate(
     'technical_score',
     'communication_score',
     'problem_solving_score',
-    'architecture_score',
+    'collaboration_cultural_fit_score',
     'client_readiness_score',
   ] as const;
   for (const column of evaluationScoreColumns) {

@@ -111,10 +111,14 @@ export const createClientEnquiryBodySchema = z
     companyWebsite: z
       .string()
       .trim()
-      .min(1)
       .max(500)
-      .transform((val) => (/^https?:\/\//i.test(val) ? val : `https://${val}`))
-      .pipe(z.string().url()),
+      .optional()
+      .transform((val) => {
+        const trimmed = (val ?? '').trim();
+        if (!trimmed) return '';
+        return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+      })
+      .pipe(z.union([z.literal(''), z.string().url()])),
     contactPersonName: z.string().trim().min(1).max(150),
     email: z.string().trim().email().max(255),
     phone: z.string().trim().min(7).max(30),
