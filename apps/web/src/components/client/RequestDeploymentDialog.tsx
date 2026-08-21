@@ -6,7 +6,7 @@ import { Label } from '../ui/label';
 
 export type DeploymentRequestFormValues = {
   roleTitle: string;
-  placementType: 'CONTRACT' | 'PERMANENT' | 'TEMP_TO_PERM' | 'FREELANCE';
+  placementType: 'CONTRACT' | 'FREELANCE';
   startDate: string;
   endDate: string;
   workLocation: string;
@@ -123,8 +123,6 @@ export function RequestDeploymentDialog({
               }
             >
               <option value="CONTRACT">Contract</option>
-              <option value="PERMANENT">Permanent</option>
-              <option value="TEMP_TO_PERM">Temp to perm</option>
               <option value="FREELANCE">Freelance</option>
             </Select>
           </div>

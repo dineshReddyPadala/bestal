@@ -1,7 +1,7 @@
 import type { ClientSearchRecord } from '@bestal/mock-data';
 import { cn, formatCurrency, initials } from '@bestal/shared-utils';
 import { Button } from '@bestal/ui';
-import { Ban, CheckCircle2, Loader2, Star } from 'lucide-react';
+import { CheckCircle2, Loader2, Star } from 'lucide-react';
 import { useEffect, useState, type ReactNode } from 'react';
 import { ForwardArrow } from '../ui/ForwardArrow';
 import { isBgvClear } from '../../lib/candidate-approval-gates';
@@ -189,6 +189,15 @@ export function ClientCandidateSearchCard({
               </div>
             ) : null}
 
+            {record.yearsExperience != null && record.yearsExperience > 0 ? (
+              <p className="text-xs text-muted-foreground">
+                Experience:{' '}
+                <span className="font-medium text-foreground">
+                  {record.yearsExperience} {record.yearsExperience === 1 ? 'year' : 'years'}
+                </span>
+              </p>
+            ) : null}
+
             <div className="space-y-1 pt-0.5">
             {bgvClear ? (
               <StatusRow
@@ -220,19 +229,6 @@ export function ClientCandidateSearchCard({
                 tone="muted"
                 icon={<Loader2 className="h-3 w-3 shrink-0" />}
                 label="Evaluation Pending"
-              />
-            )}
-            {record.trialEligible ? (
-              <StatusRow
-                tone="success"
-                icon={<CheckCircle2 className="h-3 w-3 shrink-0" />}
-                label="Trial Eligible"
-              />
-            ) : (
-              <StatusRow
-                tone="muted"
-                icon={<Ban className="h-3 w-3 shrink-0" />}
-                label="Not eligible"
               />
             )}
             </div>

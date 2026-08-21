@@ -9,6 +9,7 @@ import { useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ForwardArrow } from '../../components/ui/ForwardArrow';
 import { ClientDashboardTalentRow } from '../../components/client/ClientDashboardTalentRow';
+import { HiringPipelineDonut } from '../../components/client/HiringPipelineDonut';
 import { ClientPortalStatCard } from '../../components/client/ClientPortalStatCard';
 import { useCandidatesList } from '../../hooks/api/useCandidates';
 import { useDeploymentsList } from '../../hooks/api/useDeployments';
@@ -78,16 +79,9 @@ export function DashboardPage() {
       .slice(0, 6);
   }, [searchRecords]);
 
-  const pipeline = {
-    shortlisted: searchRecords.length,
-    inEvaluation: searchRecords.filter(
-      (r) => (r.evaluationStatus ?? '').toUpperCase() !== 'COMPLETED',
-    ).length,
-    trialRequested: trialRows.filter((t) => t.status === 'REQUESTED').length,
-    deployed: deploymentRows.filter((d) =>
-      ['ACTIVE', 'COMPLETED'].includes(d.status),
-    ).length,
-  };
+  const deployedCount = deploymentRows.filter((d) =>
+    ['ACTIVE', 'COMPLETED'].includes(d.status),
+  ).length;
 
   const recentActivity = useMemo(() => {
     const items: { id: string; label: string; time: string; tone: 'green' | 'amber' }[] = [];
@@ -219,33 +213,15 @@ export function DashboardPage() {
       <div className="grid gap-4 lg:grid-cols-3">
         <section className="rounded-xl border border-border/80 bg-card p-4 shadow-sm lg:col-span-1">
           <h2 className="text-sm font-semibold text-foreground">Hiring Pipeline</h2>
-          <p className="text-xs text-muted-foreground">This quarter</p>
-          <div className="mt-4 space-y-3">
-            {[
-              { label: 'Shortlisted', value: pipeline.shortlisted },
-              { label: 'In Evaluation', value: pipeline.inEvaluation },
-              { label: 'Trial Requested', value: pipeline.trialRequested },
-              { label: 'Deployed', value: pipeline.deployed },
-            ].map((item) => (
-              <div key={item.label}>
-                <div className="mb-1 flex justify-between text-xs">
-                  <span className="text-muted-foreground">{item.label}</span>
-                  <span className="font-semibold tabular-nums">{pad2(item.value)}</span>
-                </div>
-                <div className="h-1.5 overflow-hidden rounded-full bg-muted">
-                  <div
-                    className="h-full rounded-full bg-brand"
-                    style={{
-                      width: `${Math.min(100, (item.value / Math.max(pipeline.shortlisted, 1)) * 100)}%`,
-                    }}
-                  />
-                </div>
-              </div>
-            ))}
+          <p className="text-xs text-muted-foreground">Your active hiring stages</p>
+          <div className="mt-4">
+            <HiringPipelineDonut
+              stages={[
+                { label: 'Trials', value: activeTrials.length },
+                { label: 'Deployed', value: deployedCount },
+              ]}
+            />
           </div>
-          <p className="mt-4 text-xs text-muted-foreground">
-            Median time from shortlist to trial: 6 days
-          </p>
         </section>
 
         <section className="rounded-xl border border-border/80 bg-card p-4 shadow-sm">

@@ -94,6 +94,9 @@ export interface CandidateDto {
   technicalScore: number | null;
   communicationScore: number | null;
   collaborationCulturalFitScore?: number | null;
+  clientReadinessScore?: number | null;
+  aiEvaluationSummary?: string | null;
+  evaluationSummary?: string | null;
   evaluationRecommendation?: string | null;
   reliabilityScore: number | null;
   evaluationStatus: string | null;

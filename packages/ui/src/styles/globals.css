@@ -22,6 +22,12 @@
     --brand-hover: 180 77% 17%; /* #0A4F4F */
     --brand-light: 185 28% 92%; /* #E6F0F1 */
 
+    /* BesTal logo palette (from brand SVG wordmark + icon) */
+    --logo-teal: 174 82% 26%; /* #0B6E76 */
+    --logo-amber: 38 86% 57%; /* #F0AD34 — “Tal” accent */
+    --logo-ink: 200 42% 8%; /* #0B181D */
+    --logo-teal-tint: 174 33% 91%; /* #E2F0EF */
+
     --secondary: 180 20% 94%;
     --secondary-foreground: 200 6% 11%;
 

@@ -44,6 +44,8 @@ export type ClientCandidateProfile = {
     readonly technical: number | null;
     readonly communication: number | null;
     readonly collaborationCulturalFit: number | null;
+    readonly clientReadinessScore: number | null;
+    readonly summary: string | null;
     readonly recommendation: string | null;
     readonly status: string;
   };
@@ -133,6 +135,8 @@ export function getClientCandidateProfile(candidateId: number): ClientCandidateP
       technical: detail.evaluationDetail.technicalScore,
       communication: detail.evaluationDetail.communicationScore,
       collaborationCulturalFit: detail.evaluationDetail.collaborationCulturalFitScore,
+      clientReadinessScore: detail.evaluationDetail.clientReadinessScore,
+      summary: detail.evaluationDetail.aiEvaluationSummary?.trim() || null,
       recommendation: detail.evaluationDetail.recommendation,
       status: detail.overview.evaluationStatus,
     },

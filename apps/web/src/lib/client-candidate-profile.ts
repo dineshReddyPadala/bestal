@@ -55,7 +55,7 @@ export function mapCandidateDtoToClientProfile(
     billRate,
     currency: candidate.currency ?? 'USD',
     clientAiSummary:
-      candidate.clientProfileSummary ?? candidate.aiSummary ?? candidate.summary ?? '',
+      candidate.aiSummary ?? candidate.clientProfileSummary ?? candidate.summary ?? '',
     strengths: splitLines(candidate.strengths),
     industryExperience: [],
     projects: [],
@@ -65,6 +65,11 @@ export function mapCandidateDtoToClientProfile(
       technical: candidate.technicalScore ?? null,
       communication: candidate.communicationScore ?? null,
       collaborationCulturalFit: candidate.collaborationCulturalFitScore ?? null,
+      clientReadinessScore: candidate.clientReadinessScore ?? null,
+      summary:
+        candidate.aiEvaluationSummary?.trim() ||
+        candidate.evaluationSummary?.trim() ||
+        null,
       recommendation: candidate.evaluationRecommendation ?? null,
       status: evaluationStatus,
     },
