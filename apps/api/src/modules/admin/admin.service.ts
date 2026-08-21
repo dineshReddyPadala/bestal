@@ -331,6 +331,51 @@ export class AdminService {
     });
   }
 
+  private async sendClientActivationWelcomeEmails(organizationId: number, clientId: number) {
+    const client = await this.prisma.client.findFirst({
+      where: {
+        id: BigInt(clientId),
+        organizationId: BigInt(organizationId),
+        deletedAt: null,
+      },
+      select: { name: true },
+    });
+    if (!client) return;
+
+    const memberships = await this.prisma.membership.findMany({
+      where: {
+        organizationId: BigInt(organizationId),
+        clientId: BigInt(clientId),
+        role: 'CLIENT',
+        isActive: true,
+      },
+      select: {
+        user: {
+          select: {
+            email: true,
+            firstName: true,
+            deletedAt: true,
+            isActive: true,
+          },
+        },
+      },
+    });
+
+    const loginUrl = `${this.fastify.config.webAppUrl}${rolePortalLoginPath('CLIENT')}`;
+
+    for (const membership of memberships) {
+      const user = membership.user;
+      if (!user?.email || user.deletedAt || !user.isActive) continue;
+
+      void this.email.sendClientWelcomeEmail({
+        to: user.email,
+        firstName: user.firstName?.trim() || 'there',
+        companyName: client.name,
+        loginUrl,
+      });
+    }
+  }
+
   private async resolvePlatformRoleId(roleCode: string): Promise<number | null> {
     const row = await this.prisma.platformRole.findFirst({
       where: { code: roleCode.toUpperCase(), deletedAt: null, isActive: true },
@@ -416,7 +461,6 @@ export class AdminService {
       firstName: input.firstName,
       lastName: input.lastName,
       role: input.role as Role,
-      organizationName: organization.name,
       temporaryPassword,
       portalLoginUrl: `${this.fastify.config.webAppUrl}${portalPath}`,
     });
@@ -584,14 +628,12 @@ export class AdminService {
       data: { passwordHash: await argon2.hash(temporaryPassword) },
     });
 
-    const organization = await this.users.findOrganizationById(requireOrganization(authUser));
     const role = (user.role ?? ROLES.VIEWER) as Role;
     const emailResult = await this.email.sendInviteCredentials({
       to: user.email,
       firstName: user.firstName,
       lastName: user.lastName,
       role,
-      organizationName: organization?.name ?? 'BesTal',
       temporaryPassword,
       portalLoginUrl: `${this.fastify.config.webAppUrl}${rolePortalLoginPath(role)}`,
     });
@@ -718,9 +760,24 @@ export class AdminService {
     ctx?: { ipAddress?: string | null; userAgent?: string | null },
   ) {
     const organizationId = requireOrganization(authUser);
+    const existing = await this.prisma.client.findFirst({
+      where: {
+        id: BigInt(id),
+        organizationId: BigInt(organizationId),
+        deletedAt: null,
+      },
+      select: { status: true },
+    });
+    if (!existing) {
+      throw new NotFoundError('Client not found');
+    }
+
     const updated = await this.updateClient(authUser, id, { status }, ctx);
     if (status === 'ACTIVE') {
       await this.syncClientUsersOnClientActivation(organizationId, id);
+      if (existing.status !== 'ACTIVE') {
+        void this.sendClientActivationWelcomeEmails(organizationId, id);
+      }
     }
     return updated;
   }
