@@ -141,7 +141,7 @@ export function TanStackDataTable<TData>({
   const paginationBar = (
     <div
       className={cn(
-        'flex shrink-0 items-center justify-between border-t border-border bg-background text-muted-foreground',
+        'flex shrink-0 items-center justify-between border-t border-border bg-white text-muted-foreground',
         dense ? 'min-h-8 px-2 py-1 text-xs' : 'min-h-9 px-3 py-1.5 text-xs',
       )}
     >
@@ -244,12 +244,12 @@ export function TanStackDataTable<TData>({
       ) : (
         <div
           className={cn(
-            'min-h-[200px] min-w-0 w-full overflow-x-auto overflow-y-auto rounded-lg border border-border bg-background sm:min-h-0',
+            'min-h-[200px] min-w-0 w-full overflow-x-auto overflow-y-auto rounded-lg border border-border bg-white sm:min-h-0',
             fillHeight ? 'sm:flex-1' : undefined,
           )}
         >
           <table className={cn('w-full min-w-max caption-bottom text-sm', dense && 'text-[13px]')}>
-            <DataTableHeader className={cn(stickyHeader && 'sticky top-0 z-10 bg-muted/90 backdrop-blur')}>
+            <DataTableHeader className={cn(stickyHeader && 'sticky top-0 z-10 bg-[var(--shell-table-muted)] backdrop-blur')}>
               {table.getHeaderGroups().map((headerGroup) => (
                 <DataTableRow key={headerGroup.id}>
                   {headerGroup.headers.map((header) => {
@@ -291,7 +291,7 @@ export function TanStackDataTable<TData>({
               {rows.map((row) => (
                 <DataTableRow
                   key={row.id}
-                  className={cn(onRowClick && 'cursor-pointer hover:bg-muted/50')}
+                  className={cn(onRowClick && 'cursor-pointer')}
                   onClick={() => onRowClick?.(row.original)}
                   data-state={row.getIsSelected() ? 'selected' : undefined}
                 >

@@ -218,21 +218,25 @@ export function CandidateSearchPage() {
             className="min-h-0 flex-1"
           />
         ) : (
-          <div className="grid auto-rows-[252px] grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {filtered.map((record) => (
+          <div className="grid auto-rows-fr grid-cols-1 gap-4 sm:gap-5 md:grid-cols-2 xl:grid-cols-3">
+            {filtered.map((record) => {
+              const trialRequested =
+                canRequestTrialBase &&
+                hasBlockingTrialForCandidate(record.id, trials);
+
+              return (
               <ClientCandidateSearchCard
                 key={record.id}
                 record={record}
-                canRequestTrial={
-                  canRequestTrialBase &&
-                  !hasBlockingTrialForCandidate(record.id, trials)
-                }
+                canRequestTrial={canRequestTrialBase && !trialRequested}
+                trialRequested={trialRequested}
                 selected={selectedIds.has(record.id)}
                 onSelectedChange={(next) => toggleSelected(record.id, next)}
                 onView={() => navigate(`/client/candidates/${record.id}`)}
                 onRequestTrial={() => openTrialDialog([record])}
               />
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

@@ -59,9 +59,14 @@ export const PAGE_SEO = {
       'Enterprise-grade talent acquisition with dedicated strategists, MSAs, background verification, and transparent scorecards for every shortlisted profile.',
   },
   about: {
-    title: 'About BesTal',
+    title: 'About Us | BesTal',
     description:
-      'BesTal connects enterprises with proven technology specialists. Every profile includes external evaluation scorecards, BGV status, and transparent pricing before you interview.',
+      'BesTal helps organizations build and scale their technology workforce with pre-vetted specialists, external evaluation scorecards, and transparent pricing before you interview.',
+  },
+  faq: {
+    title: 'Frequently Asked Questions | BesTal',
+    description:
+      'Answers about BesTal — pre-vetted talent, team collaboration, onboarding, free trials, and engagement models. Can\'t find what you need? Email info@bestal.co.',
   },
   contact: {
     title: 'Reach out to us | BesTal',

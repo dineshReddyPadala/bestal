@@ -24,7 +24,10 @@ export function DataTableHeader({
 }: HTMLAttributes<HTMLTableSectionElement>) {
   return (
     <thead
-      className={cn('border-b border-border bg-muted/50', className)}
+      className={cn(
+        'border-b border-border bg-[var(--shell-table-muted)] [&_tr]:bg-[var(--shell-table-muted)] [&_tr:hover]:bg-[var(--shell-table-muted)]',
+        className,
+      )}
       {...props}
     />
   );
@@ -34,7 +37,15 @@ export function DataTableBody({
   className,
   ...props
 }: HTMLAttributes<HTMLTableSectionElement>) {
-  return <tbody className={cn('[&_tr:last-child]:border-0', className)} {...props} />;
+  return (
+    <tbody
+      className={cn(
+        '[&_tr:last-child]:border-0 [&_tr]:bg-white [&_tr:hover]:bg-[var(--shell-table-row-hover)]',
+        className,
+      )}
+      {...props}
+    />
+  );
 }
 
 export function DataTableRow({
@@ -43,10 +54,7 @@ export function DataTableRow({
 }: HTMLAttributes<HTMLTableRowElement>) {
   return (
     <tr
-      className={cn(
-        'border-b border-border transition-colors hover:bg-muted/30',
-        className,
-      )}
+      className={cn('border-b border-border bg-white transition-colors hover:bg-[var(--shell-table-row-hover)]', className)}
       {...props}
     />
   );
@@ -59,7 +67,7 @@ export function DataTableHead({
   return (
     <th
       className={cn(
-        'h-11 px-4 text-left align-middle text-xs font-medium uppercase tracking-wider text-muted-foreground',
+        'h-11 bg-[var(--shell-table-muted)] px-4 text-left align-middle text-xs font-medium uppercase tracking-wider text-muted-foreground',
         className,
       )}
       {...props}
@@ -73,7 +81,7 @@ export function DataTableCell({
 }: TdHTMLAttributes<HTMLTableCellElement>) {
   return (
     <td
-      className={cn('px-4 py-3 align-middle text-foreground', className)}
+      className={cn('bg-inherit px-4 py-3 align-middle text-foreground', className)}
       {...props}
     />
   );

@@ -6,12 +6,15 @@ export type ScoreRow = {
   tone: 'teal' | 'gold';
 };
 
+export type DemoEngineerGender = 'female' | 'male';
+
 export type DemoEngineer = {
   id: string;
   initials: string;
   name: string;
   role: string;
   discipline: string;
+  gender: DemoEngineerGender;
   experience: string;
   location: string;
   meta: string;
@@ -58,6 +61,7 @@ export const DEMO_ENGINEERS: DemoEngineer[] = [
     name: 'Ananya M.',
     role: 'Senior Backend Engineer',
     discipline: 'Full Stack & Engineering',
+    gender: 'female',
     experience: '9 years',
     location: 'Pune, India',
     rate: 23,
@@ -86,6 +90,7 @@ export const DEMO_ENGINEERS: DemoEngineer[] = [
     name: 'Priya.S',
     role: 'Senior Data Engineer',
     discipline: 'Data & AI',
+    gender: 'female',
     experience: '8 years',
     location: 'Hyderabad, India',
     rate: 23,
@@ -115,6 +120,7 @@ export const DEMO_ENGINEERS: DemoEngineer[] = [
     name: 'Sneha.P',
     role: 'SAP ABAP Consultant',
     discipline: 'SAP',
+    gender: 'female',
     experience: '11 years',
     location: 'Gurugram, India',
     rate: 23,
@@ -143,6 +149,7 @@ export const DEMO_ENGINEERS: DemoEngineer[] = [
     name: 'Rahul.K',
     role: 'ML Engineer',
     discipline: 'Data & AI',
+    gender: 'male',
     experience: '6 years',
     location: 'Bengaluru, India',
     rate: 23,
@@ -171,6 +178,7 @@ export const DEMO_ENGINEERS: DemoEngineer[] = [
     name: 'Arjun.T',
     role: 'Senior Frontend Engineer',
     discipline: 'Full Stack & Engineering',
+    gender: 'male',
     experience: '8 years',
     location: 'Kochi, India',
     rate: 23,
@@ -199,6 +207,7 @@ export const DEMO_ENGINEERS: DemoEngineer[] = [
     name: 'Vikram.R',
     role: 'QA Automation Engineer',
     discipline: 'Full Stack & Engineering',
+    gender: 'male',
     experience: '7 years',
     location: 'Chennai, India',
     rate: 23,
@@ -227,6 +236,7 @@ export const DEMO_ENGINEERS: DemoEngineer[] = [
     name: 'Karan.D',
     role: 'Senior Cloud Architect',
     discipline: 'Cloud & Platform',
+    gender: 'male',
     experience: '10 years',
     location: 'Bengaluru, India',
     rate: 23,
@@ -255,6 +265,7 @@ export const DEMO_ENGINEERS: DemoEngineer[] = [
     name: 'Meera N.',
     role: 'ServiceNow Developer',
     discipline: 'ServiceNow',
+    gender: 'female',
     experience: '7 years',
     location: 'Pune, India',
     rate: 23,
@@ -283,6 +294,7 @@ export const DEMO_ENGINEERS: DemoEngineer[] = [
     name: 'Lakshmi.V',
     role: 'Salesforce Developer',
     discipline: 'Salesforce',
+    gender: 'female',
     experience: '8 years',
     location: 'Hyderabad, India',
     rate: 23,
@@ -311,6 +323,7 @@ export const DEMO_ENGINEERS: DemoEngineer[] = [
     name: 'Aditya.C',
     role: 'Security Engineer',
     discipline: 'Cybersecurity',
+    gender: 'male',
     experience: '9 years',
     location: 'Mumbai, India',
     rate: 23,

@@ -39,7 +39,7 @@ export function ListingPageShell({
   useDashboardHeaderLeading(headerLeading);
 
   return (
-    <div className="flex h-[calc(100svh-var(--shell-header-h))] min-h-0 min-w-0 flex-col overflow-hidden bg-background">
+    <div className="flex h-[calc(100svh-var(--shell-header-h))] min-h-0 min-w-0 flex-col overflow-hidden bg-white">
       <ToastHost message={message ?? null} variant={messageVariant} onDismiss={onMessageDismiss} />
 
       {actions ? (

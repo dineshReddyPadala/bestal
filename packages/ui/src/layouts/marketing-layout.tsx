@@ -31,7 +31,7 @@ const defaultFooterColumns: MarketingFooterColumn[] = [
   {
     title: 'Platform',
     links: [
-      { label: 'Find Talent', href: '/sample-talent' },
+      { label: 'Pre-Vetted Talent', href: '/sample-talent' },
       { label: 'Skill Communities', href: '/communities' },
       { label: 'How It Works', href: '/how-it-works' },
       { label: 'Time Zone Overlap', href: '/#time-zone' },
@@ -42,6 +42,7 @@ const defaultFooterColumns: MarketingFooterColumn[] = [
     title: 'Company',
     links: [
       { label: 'About', href: '/about' },
+      { label: 'FAQ', href: '/faq' },
       { label: 'Our Evaluation Standard', href: '/evaluation-standard' },
       { label: 'Enterprise', href: '/enterprise' },
       { label: 'Contact', href: '/contact' },

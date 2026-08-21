@@ -1,92 +1,156 @@
-import { Container } from '../../components/Container';
+import { Link } from 'react-router-dom';
+import { cn } from '@bestal/shared-utils';
+import { MktShell } from '../../components/marketing/MktShell';
 import { PageMeta } from '../../components/PageMeta';
+import { ForwardArrow } from '../../components/ui/ForwardArrow';
+import { images } from '../../data/homeCopy';
+import { ABOUT_HERO_IMAGE_SRC } from '../../lib/brand';
+import {
+  ABOUT_CTA,
+  ABOUT_DIFFERENCE,
+  ABOUT_FEATURED,
+  ABOUT_HERO,
+  ABOUT_SPECIALISTS,
+  ABOUT_SPLIT,
+  type AboutDifferenceCard,
+} from '../../lib/marketing-copy';
 import { PAGE_SEO } from '../../lib/marketing-seo';
-import { Award, Heart, Target, TrendingUp } from 'lucide-react';
 
-const values = [
-  {
-    icon: Target,
-    title: 'Quality over quantity',
-    description:
-      'Every BesTal professional has proven expertise through rigorous technical evaluations, external scorecards, and background verification.',
-  },
-  {
-    icon: Heart,
-    title: 'People first',
-    description:
-      'We invest in our talent network with ongoing skill development, fair compensation, and long-term career support.',
-  },
-  {
-    icon: TrendingUp,
-    title: 'Outcomes driven',
-    description:
-      'Success is measured by deployment longevity and client satisfaction — not placement volume.',
-  },
-  {
-    icon: Award,
-    title: 'Transparency',
-    description:
-      'Clients see evaluation scores, interview recordings, and background check status through our portal — no black boxes.',
-  },
-];
+function AboutDifferenceTags({
+  tags,
+  variant = 'filled',
+}: {
+  tags: readonly string[];
+  variant?: AboutDifferenceCard['tagVariant'];
+}) {
+  return (
+    <div className="mkt-about-tags">
+      {tags.map((tag) => (
+        <span
+          key={tag}
+          className={cn('mkt-about-tag', variant === 'outline' && 'mkt-about-tag--outline')}
+        >
+          {tag}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+function AboutFeaturedCard({
+  num,
+  title,
+  body,
+  tags,
+  className,
+}: {
+  num?: string;
+  title: string;
+  body: string;
+  tags: readonly string[];
+  className?: string;
+}) {
+  return (
+    <article className={cn('mkt-about-featured', className)}>
+      <div className="mkt-about-featured-copy">
+        {num ? <span className="mkt-about-card-num">{num}</span> : null}
+        <h3 className="mkt-about-featured-title">{title}</h3>
+      </div>
+      <div className="mkt-about-featured-body">
+        <p className="howitworks-body-style">{body}</p>
+        <AboutDifferenceTags tags={tags} variant="filled" />
+      </div>
+    </article>
+  );
+}
 
 export function AboutPage() {
   return (
-    <>
+    <div className="mkt-about-page">
       <PageMeta title={PAGE_SEO.about.title} description={PAGE_SEO.about.description} />
-      <section className="border-b border-border bg-background py-16 lg:py-24">
-        <Container>
-          <div className="mx-auto max-w-3xl text-center">
-            <h1 className="text-4xl font-extrabold tracking-tight text-foreground sm:text-5xl">
-              About BesTal
-            </h1>
-            <p className="mt-4 text-lg text-muted-foreground">
-              We&apos;re on a mission to connect the world&apos;s best companies with proven
-              technology specialists.
-            </p>
+
+      <section className="mkt-white mkt-section mkt-about-hero">
+        <MktShell className="mkt-g2 mkt-about-hero-grid">
+          <div className="mkt-about-hero-copy">
+            <h1>{ABOUT_HERO.title}</h1>
+            <p className="mkt-about-hero-subtitle">{ABOUT_HERO.subtitle}</p>
+            <p className="mkt-lead howitworks-body-style">{ABOUT_HERO.body}</p>
+            <div className="mkt-actions">
+              <Link to="/how-it-works" className="mkt-btn mkt-btn-primary">
+                {ABOUT_HERO.primaryCta}
+                <ForwardArrow />
+              </Link>
+            </div>
           </div>
-        </Container>
+          <div className="mkt-about-hero-photo">
+            <img
+              src={ABOUT_HERO_IMAGE_SRC}
+              alt="Technology professionals collaborating in a modern office"
+            />
+          </div>
+        </MktShell>
       </section>
 
-      <section className="py-20 lg:py-28">
-        <Container size="narrow">
-          <div className="prose prose-lg mx-auto max-w-none text-muted-foreground">
-            <p className="text-xl leading-relaxed text-foreground">
-              BesTal was founded on a simple belief: hiring great talent shouldn&apos;t take six months.
-            </p>
-            <p className="mt-6 leading-relaxed">
-              Our multi-stage vetting process — technical assessments, external evaluator scorecards,
-              communication evaluations, and background verification — means you see the evidence
-              before you interview. Companies get pre-qualified candidates. Professionals get
-              meaningful opportunities.
-            </p>
-            <p className="mt-6 leading-relaxed">
-              Today, BesTal connects enterprise clients with vetted specialists across Data &amp; AI,
-              Cloud, SAP, ServiceNow, Salesforce, and security — with full scorecard and BGV
-              transparency in every profile.
-            </p>
-          </div>
-        </Container>
-      </section>
-
-      <section className="border-t border-border bg-muted/40 py-20 lg:py-28">
-        <Container>
-          <h2 className="text-center text-3xl font-bold text-foreground">Our values</h2>
-          <div className="mt-16 grid gap-8 md:grid-cols-2">
-            {values.map(({ icon: Icon, title, description }) => (
-              <div key={title} className="flex gap-5">
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-brand-light">
-                  <Icon className="h-6 w-6 text-brand" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-foreground">{title}</h3>
-                  <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{description}</p>
-                </div>
-              </div>
+      <section className="mkt-cream mkt-section mkt-about-intro">
+        <MktShell>
+          <div className="mkt-about-intro-inner">
+            {ABOUT_SPLIT.paragraphs.map((paragraph) => (
+              <p key={paragraph.slice(0, 32)} className="howitworks-body-style">
+                {paragraph}
+              </p>
             ))}
           </div>
-        </Container>
+        </MktShell>
       </section>
-    </>
+
+      <section className="mkt-white mkt-section mkt-about-diff-section">
+        <MktShell>
+          <h2 className="mkt-about-section-title">What makes us different</h2>
+
+          <AboutFeaturedCard
+            num={ABOUT_FEATURED.num}
+            title={ABOUT_FEATURED.title}
+            body={ABOUT_FEATURED.body}
+            tags={ABOUT_FEATURED.tags}
+          />
+
+          <div className="mkt-about-grid">
+            {ABOUT_DIFFERENCE.map((item) => (
+              <article key={item.title} className="mkt-about-card mkt-about-card--hover">
+                <span className="mkt-about-card-num">{item.num}</span>
+                <h3>{item.title}</h3>
+                <div className="mkt-about-card-reveal">
+                  <div className="mkt-about-card-reveal-inner">
+                    <p className="howitworks-body-style">{item.body}</p>
+                    {item.tags ? (
+                      <AboutDifferenceTags tags={item.tags} variant={item.tagVariant} />
+                    ) : null}
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
+
+          <AboutFeaturedCard
+            title={ABOUT_SPECIALISTS.title}
+            body={ABOUT_SPECIALISTS.body}
+            tags={ABOUT_SPECIALISTS.tags}
+            className="mkt-about-featured--specialists"
+          />
+        </MktShell>
+      </section>
+
+      <section className="mkt-cream mkt-section-tight">
+        <MktShell className="mkt-g2 mkt-about-closing">
+          <div className="mkt-about-closing-copy">
+            <h2>{ABOUT_CTA.title}</h2>
+            <p className="howitworks-body-style">{ABOUT_CTA.body}</p>
+          </div>
+          <div className="mkt-about-cta-photo mkt-about-closing-photo">
+            <img src={images.cta} alt="Professional working at a desk with multiple monitors" />
+          </div>
+        </MktShell>
+      </section>
+    </div>
   );
 }

@@ -5,6 +5,11 @@ import { Ban, CheckCircle2, Loader2, Star } from 'lucide-react';
 import { useEffect, useState, type ReactNode } from 'react';
 import { ForwardArrow } from '../ui/ForwardArrow';
 import { isBgvClear } from '../../lib/candidate-approval-gates';
+import {
+  availabilityStatusClasses,
+  formatAvailabilityLabel,
+  isImmediatelyAvailable,
+} from '../../lib/availability-display';
 
 export type ClientCandidateSearchCardProps = {
   record: ClientSearchRecord;
@@ -13,6 +18,7 @@ export type ClientCandidateSearchCardProps = {
   onView: () => void;
   onRequestTrial?: () => void;
   canRequestTrial?: boolean;
+  trialRequested?: boolean;
   className?: string;
 };
 
@@ -58,7 +64,7 @@ function ProfilePhoto({
   }, [imageSrc]);
 
   return (
-    <div className="relative h-[72px] w-[72px] shrink-0">
+    <div className="relative h-[80px] w-[80px] shrink-0 sm:h-[84px] sm:w-[84px]">
       <div className="h-full w-full overflow-hidden rounded-lg bg-muted">
         {showImage ? (
           <img
@@ -95,6 +101,7 @@ export function ClientCandidateSearchCard({
   onView,
   onRequestTrial,
   canRequestTrial = true,
+  trialRequested = false,
   className,
 }: ClientCandidateSearchCardProps) {
   const bgvClear = isBgvClear(record.bgvStatus);
@@ -106,15 +113,13 @@ export function ClientCandidateSearchCard({
     (record.evaluationStatus ?? '').toUpperCase() === 'COMPLETED';
   const primarySkill =
     record.primarySkillCommunityName.trim() || record.community.trim();
-  const availableNow =
-    record.availabilityCategory === 'IMMEDIATE' ||
-    record.availability.toLowerCase().includes('immediate') ||
-    record.availability.toLowerCase().includes('available');
+  const availableNow = isImmediatelyAvailable(record);
+  const availabilityClasses = availabilityStatusClasses(availableNow);
 
   return (
     <article
       className={cn(
-        'relative flex h-full min-h-[252px] flex-col overflow-hidden rounded-xl border border-border/70 bg-white p-3.5 shadow-sm transition-shadow hover:shadow-md',
+        'relative flex h-full min-h-[300px] flex-col overflow-hidden rounded-xl border border-border/70 bg-white p-4 shadow-sm transition-shadow hover:shadow-md sm:min-h-[320px] sm:p-5',
         selected && 'border-brand/40 ring-1 ring-brand/25',
         className,
       )}
@@ -129,54 +134,62 @@ export function ClientCandidateSearchCard({
         />
       ) : null}
 
-      <div className="flex min-h-0 flex-1 gap-3 pr-5">
-        <div className="flex w-[84px] shrink-0 flex-col items-center gap-2">
+      <div className="flex min-h-0 flex-1 items-start gap-3.5 pr-5 sm:gap-4">
+        <div className="flex w-[88px] shrink-0 flex-col items-center gap-2.5 sm:w-[92px] sm:gap-3">
           <ProfilePhoto
             name={record.fullName}
             src={record.photoUrl}
             verified={bgvClear && evaluationDone}
           />
-          <div className="w-full space-y-1.5 text-center">
-            <p className="flex items-center justify-center gap-0.5 text-[11px] font-medium text-foreground">
+          <div className="w-full space-y-1.5 text-left">
+          <p className="text-[10px] leading-tight text-muted-foreground">BesTal Score</p>
+            <p className="flex items-center justify-left gap-0.5 text-[11px] font-medium text-foreground">
               <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
               <span className="tabular-nums">{record.bestalScore}</span>
             </p>
-            <p className="text-[10px] leading-tight text-muted-foreground">BesTal Score</p>
-            <p className="flex items-center justify-center gap-1 text-[10px] text-emerald-700">
+            <p
+              className={cn(
+                'flex items-center justify-left gap-1 text-[10px]',
+                availabilityClasses.text,
+              )}
+            >
               <span
                 className={cn(
-                  'inline-block h-1.5 w-1.5 rounded-full',
-                  availableNow ? 'bg-emerald-500' : 'bg-amber-400',
+                  'inline-block h-2 w-2 rounded-full',
+                  availabilityClasses.dot,
                 )}
               />
-              {availableNow ? 'Available Now' : record.availability}
+              {availableNow ? 'Available Now' : formatAvailabilityLabel(record.availability)}
             </p>
-            <p className="text-xs font-bold tabular-nums text-foreground">
+            <p className="text-xs font-bold tabular-nums text-foreground fontsize">
               {formatCurrency(record.hourlyRate, record.currency)}
               <span className="text-[10px] font-normal text-muted-foreground">/hr</span>
             </p>
           </div>
         </div>
 
-        <div className="min-w-0 flex-1 space-y-1.5">
-          <h3 className="truncate text-sm font-semibold text-brand">{record.fullName}</h3>
+        <div className="flex min-w-0 flex-1 flex-col justify-between space-y-2 sm:space-y-2.5">
+          <div className="space-y-1.5">
+            <h3 className="truncate text-sm font-semibold text-brand sm:text-base">{record.fullName}</h3>
 
-          {record.headline ? (
-            <p className="line-clamp-2 text-xs text-muted-foreground">{record.headline}</p>
-          ) : null}
-
-          {primarySkill ? (
-            <div>
-              <p className="text-[9px] font-medium uppercase tracking-wide text-muted-foreground">
-                Expertise
+            {record.headline ? (
+              <p className="line-clamp-2 text-xs leading-relaxed text-muted-foreground sm:text-[13px]">
+                {record.headline}
               </p>
-              <span className="mt-0.5 inline-flex rounded-md bg-amber-50 px-1.5 py-0.5 text-[10px] font-medium text-amber-900 ring-1 ring-amber-200/80">
-                {primarySkill}
-              </span>
-            </div>
-          ) : null}
+            ) : null}
 
-          <div className="space-y-1 pt-0.5">
+            {primarySkill ? (
+              <div>
+                <p className="text-[9px] font-medium uppercase tracking-wide text-muted-foreground">
+                  Expertise
+                </p>
+                <span className="mt-0.5 inline-flex rounded-md bg-amber-50 px-1.5 py-0.5 text-[10px] font-medium text-amber-900 ring-1 ring-amber-200/80 sm:text-[11px]">
+                  {primarySkill}
+                </span>
+              </div>
+            ) : null}
+
+            <div className="space-y-1 pt-0.5">
             {bgvClear ? (
               <StatusRow
                 tone="success"
@@ -222,9 +235,10 @@ export function ClientCandidateSearchCard({
                 label="Not eligible"
               />
             )}
+            </div>
           </div>
 
-          <div className="pt-1">
+          <div className="pb-0.5 pt-1">
             <p className="text-[9px] font-medium uppercase tracking-wide text-muted-foreground">
               Previously worked at
             </p>
@@ -240,25 +254,30 @@ export function ClientCandidateSearchCard({
         </div>
       </div>
 
-      <div className="mt-2 flex shrink-0 gap-2 border-t border-border/50 pt-2.5">
+      <div className="mt-auto flex shrink-0 gap-2 border-t border-border/50 pt-3.5 sm:gap-2.5 sm:pt-4">
         <Button
           type="button"
-          variant="primary"
+          variant={trialRequested ? 'outline' : 'primary'}
           size="sm"
-          className="h-8 flex-1 text-xs"
-          disabled={!canRequestTrial || !record.trialEligible}
+          className={cn(
+            'h-9 flex-1 text-xs sm:h-10 sm:text-sm',
+            trialRequested &&
+              'border-border/70 bg-muted/40 text-muted-foreground disabled:opacity-100 disabled:cursor-default',
+          )}
+          disabled={trialRequested || !canRequestTrial || !record.trialEligible}
           onClick={(event) => {
+            if (trialRequested) return;
             event.stopPropagation();
             onRequestTrial?.();
           }}
         >
-          Request Trial
+          {trialRequested ? 'Trial requested' : 'Request Trial'}
         </Button>
         <Button
           type="button"
           variant="outline"
           size="sm"
-          className="h-8 flex-1 gap-1.5 text-xs"
+          className="h-9 flex-1 gap-1.5 border-brand/25 text-xs transition-colors hover:border-brand hover:bg-brand hover:text-white sm:h-10 sm:text-sm"
           onClick={(event) => {
             event.stopPropagation();
             onView();

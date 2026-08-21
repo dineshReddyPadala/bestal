@@ -1,4 +1,4 @@
-import type { CommunityProfileSlide, DemoEngineer, ScoreRow } from './demo-engineers';
+import type { CommunityProfileSlide, DemoEngineer, DemoEngineerGender, ScoreRow } from './demo-engineers';
 
 export type PublicFeaturedEvaluation = {
   technicalScore: number | null;
@@ -222,6 +222,7 @@ export function mapFeaturedCandidateToDemoEngineer(
     name: formatDisplayName(candidate.firstName, candidate.lastName),
     role: candidate.primaryRole ?? candidate.headline ?? 'Technology Consultant',
     discipline: candidate.primarySkillCommunityName ?? 'Technology',
+    gender: (candidate.id % 2 === 0 ? 'female' : 'male') satisfies DemoEngineerGender,
     experience,
     location,
     meta: `${experience} · ${location}`,
@@ -230,6 +231,7 @@ export function mapFeaturedCandidateToDemoEngineer(
     zoneLabel,
     zoneHours,
     timezone,
+    timezoneDetail: zoneHours,
     score: candidate.bestalScore ?? 0,
     dimensions,
     quote,

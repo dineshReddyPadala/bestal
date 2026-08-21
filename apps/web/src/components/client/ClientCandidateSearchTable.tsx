@@ -4,6 +4,11 @@ import { Avatar, Button } from '@bestal/ui';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useEffect, useMemo, useState, type KeyboardEvent } from 'react';
 import { BesTalScoreStars } from './BesTalScoreStars';
+import {
+  availabilityStatusClasses,
+  formatAvailabilityLabel,
+  isImmediatelyAvailable,
+} from '../../lib/availability-display';
 
 const DEFAULT_PAGE_SIZE = 10;
 
@@ -17,14 +22,11 @@ export type ClientCandidateSearchTableProps = {
   className?: string;
 };
 
-function availabilityLabel(record: ClientSearchRecord): { label: string; available: boolean } {
-  const availableNow =
-    record.availabilityCategory === 'IMMEDIATE' ||
-    record.availability.toLowerCase().includes('immediate') ||
-    record.availability.toLowerCase().includes('available');
+function availabilityMeta(record: ClientSearchRecord) {
+  const immediate = isImmediatelyAvailable(record);
   return {
-    label: availableNow ? 'Available' : record.availability,
-    available: availableNow,
+    label: immediate ? 'Available' : formatAvailabilityLabel(record.availability),
+    classes: availabilityStatusClasses(immediate),
   };
 }
 
@@ -47,7 +49,7 @@ function ClientCandidateSearchTableRow({
   onSelectedChange,
   onView,
 }: TableRowProps) {
-  const availability = availabilityLabel(record);
+  const availability = availabilityMeta(record);
   const tags = skillTags(record);
   const designation = record.currentTitle?.trim() || record.role;
 
@@ -64,7 +66,7 @@ function ClientCandidateSearchTableRow({
       tabIndex={0}
       onClick={onView}
       onKeyDown={handleRowKeyDown}
-      className="cursor-pointer border-b border-border/60 bg-background transition-colors last:border-b-0 hover:bg-muted/20"
+      className="cursor-pointer border-b border-border/60 bg-white transition-colors last:border-b-0 hover:bg-[var(--shell-table-row-hover)]"
       aria-label={`View profile for ${record.fullName}`}
     >
       <td className="w-10 px-3 py-3" onClick={(event) => event.stopPropagation()}>
@@ -120,14 +122,11 @@ function ClientCandidateSearchTableRow({
         <span
           className={cn(
             'inline-flex items-center gap-1.5 text-xs',
-            availability.available ? 'text-emerald-700' : 'text-muted-foreground',
+            availability.classes.text,
           )}
         >
           <span
-            className={cn(
-              'inline-block h-1.5 w-1.5 rounded-full',
-              availability.available ? 'bg-emerald-500' : 'bg-muted-foreground/50',
-            )}
+            className={cn('inline-block h-2 w-2 rounded-full', availability.classes.dot)}
           />
           {availability.label}
         </span>
@@ -166,14 +165,14 @@ export function ClientCandidateSearchTable({
   return (
     <div
       className={cn(
-        'flex flex-col overflow-hidden rounded-lg border border-border/70 bg-background shadow-sm',
+        'flex flex-col overflow-hidden rounded-lg border border-border/70 bg-white shadow-sm',
         fillHeight && 'h-full min-h-0',
         className,
       )}
     >
       <div className="min-h-0 flex-1 overflow-auto">
         <table className="w-full min-w-[720px] border-collapse text-left">
-          <thead className="sticky top-0 z-10 bg-muted/90 backdrop-blur">
+          <thead className="sticky top-0 z-10 bg-[var(--shell-table-muted)] backdrop-blur">
             <tr className="border-b border-border/70">
               <th className="w-10 px-3 py-2.5" scope="col">
                 <span className="sr-only">Select</span>

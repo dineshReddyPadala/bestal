@@ -7,7 +7,7 @@ import {
 } from '../../lib/demo-engineers';
 import { DemoEngineerCard } from './DemoEngineerCard';
 
-const AUTOPLAY_MS = 4500;
+const AUTOPLAY_MS = 6500;
 
 type CommunityProfileSliderProps = {
   className?: string;
@@ -23,6 +23,7 @@ export function CommunityProfileSlider({
   onSlideChange,
 }: CommunityProfileSliderProps) {
   const [active, setActive] = useState(0);
+  const [paused, setPaused] = useState(false);
 
   useEffect(() => {
     setActive(0);
@@ -30,48 +31,65 @@ export function CommunityProfileSlider({
 
   useEffect(() => {
     if (slides.length === 0) return;
-    onSlideChange?.(slides[active]);
+    onSlideChange?.(slides[active] ?? slides[0]);
   }, [active, onSlideChange, slides]);
 
   useEffect(() => {
-    if (slides.length <= 1) return;
+    if (paused || slides.length <= 1) return undefined;
+
     const id = window.setInterval(() => {
       setActive((current) => (current + 1) % slides.length);
     }, AUTOPLAY_MS);
+
     return () => window.clearInterval(id);
-  }, [slides.length]);
+  }, [paused, slides.length]);
 
   if (slides.length === 0) {
     return null;
   }
 
   const activeSlide = slides[active] ?? slides[0];
+  const genderClass =
+    activeSlide.engineer.gender === 'female' ? 'mkt-prof--female' : 'mkt-prof--male';
 
   return (
-    <div className={cn('mkt-community-slider', className)}>
-      <div
-        className="mkt-community-slider-track"
-        aria-live="polite"
-        aria-atomic="true"
-        aria-label={`${activeSlide.community} profile`}
-      >
-        {slides.map((slide, index) => {
-          const isActive = index === active;
-          return (
-            <div
-              key={slide.engineer.id}
-              className={cn('mkt-community-slider-panel', isActive && 'is-active')}
-              aria-hidden={!isActive}
-            >
-              <DemoEngineerCard
-                engineer={slide.engineer}
-                hideScorecard={hideScorecard}
-                communityLabel={slide.community}
-              />
-            </div>
-          );
-        })}
-      </div>
+    <div
+      className={cn('mkt-community-slider', className)}
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+      onFocusCapture={() => setPaused(true)}
+      onBlurCapture={() => setPaused(false)}
+    >
+      <article className={cn('mkt-prof mkt-community-slider-card', genderClass)}>
+        <div className="mkt-dtag mkt-community-slider-dtag">{activeSlide.community}</div>
+
+        <div
+          className="mkt-community-slider-viewport"
+          aria-live="polite"
+          aria-atomic="true"
+          aria-label={`${activeSlide.community} profile`}
+        >
+          <div
+            className="mkt-community-slider-track"
+            style={{ transform: `translate3d(-${active * 100}%, 0, 0)` }}
+          >
+            {slides.map((slide, index) => (
+              <div
+                key={slide.engineer.id}
+                className={cn('mkt-community-slider-panel', index === active && 'is-active')}
+                aria-hidden={index !== active}
+              >
+                <DemoEngineerCard
+                  engineer={slide.engineer}
+                  hideScorecard={hideScorecard}
+                  hideSecondaryActions
+                  shellless
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+      </article>
     </div>
   );
 }

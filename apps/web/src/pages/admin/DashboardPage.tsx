@@ -72,7 +72,7 @@ export function DashboardPage() {
     bgv.isLoading;
 
   return (
-    <div className="min-h-full bg-muted/10">
+    <div className="min-h-full bg-white">
       <PageHeader title="Admin Dashboard" />
 
       <div className="space-y-8 p-4 sm:p-6">

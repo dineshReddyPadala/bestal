@@ -49,6 +49,9 @@
     --shell-header-h: 3.5rem;
     --shell-sidebar-w: 14rem;
     --shell-sidebar-rail: 3.25rem;
+    --shell-table-muted: #fafafa;
+    --shell-table-row-hover: #f3f4f6;
+    --shell-button-active: #0b5c63;
 
     /* Legacy navy tokens remapped to deep teal */
     --navy: 180 76% 21%;
@@ -139,5 +142,65 @@
 
   .shell-fill-below-header {
     min-height: calc(100svh - var(--shell-header-h));
+  }
+
+  /* Admin dashboard: keep button backgrounds unchanged on hover */
+  [data-dashboard-shell] button.hover\:bg-brand-hover:hover,
+  [data-dashboard-shell] a.hover\:bg-brand-hover:hover {
+    background-color: hsl(var(--brand)) !important;
+  }
+
+  [data-dashboard-shell] button.hover\:bg-secondary\/80:hover,
+  [data-dashboard-shell] a.hover\:bg-secondary\/80:hover {
+    background-color: hsl(var(--secondary)) !important;
+  }
+
+  [data-dashboard-shell] button.hover\:bg-red-700:hover,
+  [data-dashboard-shell] a.hover\:bg-red-700:hover {
+    background-color: rgb(220 38 38) !important;
+  }
+
+  [data-dashboard-shell] button.bg-background.hover\:bg-accent:hover,
+  [data-dashboard-shell] a.bg-background.hover\:bg-accent:hover {
+    background-color: hsl(var(--background)) !important;
+  }
+
+  [data-dashboard-shell] button[class*='hover:bg-muted']:hover,
+  [data-dashboard-shell] button.hover\:bg-accent:hover,
+  [data-dashboard-shell] button.hover\:bg-red-50:hover,
+  [data-dashboard-shell] button.hover\:bg-background\/60:hover,
+  [data-dashboard-shell] a[class*='hover:bg-muted']:hover,
+  [data-dashboard-shell] a.hover\:bg-accent:hover,
+  [data-dashboard-shell] a.hover\:bg-red-50:hover,
+  [data-dashboard-shell] a.hover\:bg-background\/60:hover {
+    background-color: transparent !important;
+  }
+
+  [data-dashboard-shell] button[class*='hover:bg-muted']:not(:disabled):not([class*='bg-red']):hover,
+  [data-dashboard-shell] button.rounded-md.p-2:not(:disabled):not([class*='bg-red']):hover {
+    box-shadow: 0 2px 8px rgba(11, 92, 99, 0.14);
+    outline: 1px solid rgba(11, 92, 99, 0.28);
+    outline-offset: 0;
+  }
+
+  [data-dashboard-shell] button:not(:disabled):not([class*='bg-red']):not([class*='text-red']):not(.shell-no-press-bg):active,
+  [data-dashboard-shell] a.inline-flex:not([class*='bg-red']):not([class*='text-red']):not(.shell-no-press-bg):active {
+    background-color: var(--shell-button-active) !important;
+    color: #fff !important;
+    box-shadow: none !important;
+    outline: none !important;
+  }
+
+  /* Admin dashboard: table body row hover */
+  [data-dashboard-shell] table tbody tr {
+    transition: background-color 150ms ease;
+  }
+
+  [data-dashboard-shell] table tbody tr:hover {
+    background-color: var(--shell-table-row-hover) !important;
+  }
+
+  [data-dashboard-shell] table tbody tr:hover > td {
+    background-color: inherit !important;
   }
 }

@@ -1,126 +1,311 @@
 import { Link } from 'react-router-dom';
+import { cn } from '@bestal/shared-utils';
+import {
+  ArrowRight,
+  ArrowRightLeft,
+  Ban,
+  Box,
+  FileText,
+  ShieldCheck,
+  Timer,
+  UserCheck,
+  Users,
+} from 'lucide-react';
 import { PageMeta } from '../../components/PageMeta';
 import { MktShell } from '../../components/marketing/MktShell';
-import {
-  CONTROL_TABLE,
-  ENGAGEMENT_STEPS,
-  ONBOARDING_STEPS,
-} from '../../lib/marketing-copy';
+import { ForwardArrow } from '../../components/ui/ForwardArrow';
+import { images } from '../../data/homeCopy';
+import { HIW_CLIENT, HIW_HERO, HIW_SEEKER } from '../../lib/marketing-copy';
 import { PAGE_SEO } from '../../lib/marketing-seo';
-import { ForwardArrow } from '@/components/ui/ForwardArrow';
+
+type StageItem = {
+  num: string;
+  title: string;
+  body: string;
+  showArrow: boolean;
+};
+
+function HiWSectionHeader({
+  partLabel,
+  stepCount,
+  title,
+  intro,
+  badgeClass,
+}: {
+  partLabel: string;
+  stepCount: string;
+  title: string;
+  intro: string;
+  badgeClass: string;
+}) {
+  return (
+    <div className="mkt-hiw-v3-section-hd">
+      <div className="mkt-hiw-v3-section-meta">
+        <span className={cn('mkt-hiw-v3-part-badge', badgeClass)}>{partLabel}</span>
+        <span className="mkt-hiw-v3-step-count">{stepCount}</span>
+      </div>
+      <div className="mkt-hiw-v3-section-title-row">
+        <h2>{title}</h2>
+        <p className="howitworks-body-style">{intro}</p>
+      </div>
+    </div>
+  );
+}
+
+function HiWStagesGrid({
+  label,
+  stages,
+  columns,
+}: {
+  label: string;
+  stages: readonly StageItem[];
+  columns: 3 | 4;
+}) {
+  return (
+    <div className="mkt-hiw-v3-stages-block">
+      <div className="mkt-hiw-v3-stages-label">
+        <span>{label}</span>
+        <span className="mkt-hiw-v3-stages-line" aria-hidden="true" />
+      </div>
+      <div
+        className={cn(
+          'mkt-hiw-v3-stages-grid',
+          columns === 4 && 'mkt-hiw-v3-stages-grid--4',
+        )}
+      >
+        {stages.map((stage) => (
+          <article key={stage.num} className="mkt-hiw-v3-stage">
+            <div className="mkt-hiw-v3-stage-track">
+              <span className="mkt-hiw-v3-stage-num">{stage.num}</span>
+              {stage.showArrow ? (
+                <span className="mkt-hiw-v3-stage-arrow" aria-hidden="true">
+                  <ArrowRight className="h-3.5 w-3.5" />
+                </span>
+              ) : (
+                <span className="mkt-hiw-v3-stage-arrow is-empty" aria-hidden="true" />
+              )}
+            </div>
+            <h3>{stage.title}</h3>
+            <p>{stage.body}</p>
+          </article>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+const trialIcons = [ArrowRight, ArrowRightLeft, Ban] as const;
+
+const processCardIcons = {
+  peach: FileText,
+  blue: Users,
+  green: Timer,
+} as const;
+
+function HiWProcessFlow() {
+  return (
+    <div className="mkt-hiw-v3-flow">
+      <div className="mkt-hiw-v3-flow-ribbon">
+        <span>{HIW_CLIENT.flowRibbon.left}</span>
+        <span>{HIW_CLIENT.flowRibbon.right}</span>
+      </div>
+      <div className="mkt-hiw-v3-flow-row">
+        {HIW_CLIENT.processCards.map((card, index) => {
+          const Icon = processCardIcons[card.tone];
+          return (
+            <div key={card.title} className="mkt-hiw-v3-flow-wrap">
+              <article className={cn('mkt-hiw-v3-flow-card', `is-${card.tone}`)}>
+                <div className="mkt-hiw-v3-flow-card-hd">
+                  <Icon className="mkt-hiw-v3-flow-card-icon" aria-hidden="true" />
+                  <span className="mkt-hiw-v3-flow-card-stage">{card.stage}</span>
+                </div>
+                <h3>{card.title}</h3>
+                {'tags' in card && card.tags ? (
+                  <div className="mkt-hiw-v3-flow-tags">
+                    {card.tags.map((tag) => (
+                      <span key={tag} className="mkt-hiw-v3-flow-tag">
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                ) : null}
+                {'matchRows' in card && card.matchRows ? (
+                  <div className="mkt-hiw-v3-flow-matches">
+                    {card.matchRows.map((row) => (
+                      <div key={row.num} className="mkt-hiw-v3-flow-match-row">
+                        <span className="mkt-hiw-v3-flow-match-num">{row.num}</span>
+                        <div className="mkt-hiw-v3-flow-match-bar-wrap">
+                          <span
+                            className="mkt-hiw-v3-flow-match-bar"
+                            style={{ width: `${row.fill}%` }}
+                          />
+                        </div>
+                        <span className="mkt-hiw-v3-flow-match-score">8/8</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
+                {'trialHours' in card && card.trialHours ? (
+                  <div className="mkt-hiw-v3-flow-hours" aria-hidden="true">
+                    {Array.from({ length: card.trialHours }, (_, i) => (
+                      <span key={i} className="mkt-hiw-v3-flow-hour" />
+                    ))}
+                  </div>
+                ) : null}
+                <p>{card.body}</p>
+              </article>
+              {index < HIW_CLIENT.processCards.length - 1 ? (
+                <span className="mkt-hiw-v3-flow-arrow" aria-hidden="true">
+                  →
+                </span>
+              ) : null}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
 export function HowItWorksPage() {
   return (
-    <div className="mkt-hiw-page">
+    <div className="mkt-hiw-page mkt-hiw-v3-page">
       <PageMeta title={PAGE_SEO.howItWorks.title} description={PAGE_SEO.howItWorks.description} />
+
       <section className="mkt-hiw-hero-band">
-        <MktShell className="mkt-page-hd mkt-hiw-hero">
-          <div className="mkt-hiw-label">Process</div>
-          <h1>How BesTal works</h1>
-          <p className="mkt-lead howitworks-body-style">
-            Two processes run in parallel. One builds the engineering communities. One serves your requirement. You should be able to audit the first before you trust the second.
-          </p>
-          <div className="mkt-actions">
-            <Link to="/sample-talent" className="mkt-btn mkt-btn-primary">
-              Browse Pre-Vetted Talent <ForwardArrow />
-            </Link>
-            <Link to="/evaluation-standard" className="mkt-btn mkt-btn-secondary">
-              See how we test
-            </Link>
+        <MktShell className="mkt-hiw-hero mkt-hiw-v3-hero">
+          <div className="mkt-hiw-label">{HIW_HERO.label}</div>
+          <h1>{HIW_HERO.title}</h1>
+          <div className="mkt-hiw-hero-copy">
+            <p className="mkt-lead howitworks-body-style">{HIW_HERO.body}</p>
           </div>
         </MktShell>
       </section>
 
-      <section className="mkt-section mkt-hiw-part">
-        <MktShell className="mkt-hiw-grid">
-          <div className="mkt-hiw-sticky">
-            <h2>
-              Part 1 — How
-              <br />
-              an engineer
-              <br />
-              gets onto BesTal
-            </h2>
+      <section className="mkt-section mkt-hiw-v3-section">
+        <MktShell>
+          <HiWSectionHeader
+            partLabel={HIW_CLIENT.partLabel}
+            stepCount={HIW_CLIENT.stepCount}
+            title={HIW_CLIENT.title}
+            intro={HIW_CLIENT.intro}
+            badgeClass="is-client"
+          />
+
+          <HiWProcessFlow />
+
+          <div className="mkt-hiw-v3-trial-panel">
+            <div className="mkt-hiw-v3-trial-hd">
+              <h3>{HIW_CLIENT.trialOutcome.title}</h3>
+              <span className="mkt-hiw-v3-stage-pill">{HIW_CLIENT.trialOutcome.stageTag}</span>
+            </div>
+            <div className="mkt-hiw-v3-trial-grid">
+              {HIW_CLIENT.trialOutcome.options.map((option, index) => {
+                const Icon = trialIcons[index] ?? ArrowRight;
+                return (
+                  <article key={option.title} className="mkt-hiw-v3-trial-card">
+                    <Icon className="mkt-hiw-v3-trial-icon" aria-hidden="true" />
+                    <h4>{option.title}</h4>
+                    <p>{option.body}</p>
+                    {'footerLabel' in option && option.footerLabel ? (
+                      <div className="mkt-hiw-v3-trial-footer">
+                        <Box className="h-3.5 w-3.5 shrink-0 text-emerald-700" aria-hidden="true" />
+                        <span className="mkt-hiw-v3-trial-footer-label">{option.footerLabel}</span>
+                        <span className="mkt-hiw-v3-stage-pill is-small">
+                          {option.footerStage}
+                        </span>
+                      </div>
+                    ) : null}
+                  </article>
+                );
+              })}
+            </div>
+            <p className="mkt-hiw-v3-trial-footnote">{HIW_CLIENT.trialOutcome.footnote}</p>
           </div>
-          <div>
-            <div className="mkt-hiw-card">
-              <div className="mkt-steps">
-                {ONBOARDING_STEPS.map((item) => (
-                  <div key={item.step} className="mkt-step">
-                    <div className="mkt-step-n">{item.step}</div>
-                    <div>
-                      <h3>{item.title}</h3>
-                      <p>{item.body}</p>
-                      {/* {'fact' in item && item.fact && (
-                        <div className="mkt-fact mt-3">{item.fact}</div>
-                      )} */}
+
+          <HiWStagesGrid
+            label={HIW_CLIENT.stagesLabel}
+            stages={HIW_CLIENT.stages}
+            columns={3}
+          />
+        </MktShell>
+      </section>
+
+      <section className="mkt-white mkt-section-tight">
+        <MktShell>
+          <div className="mkt-cta-banner">
+            <div className="mkt-cta-copy">
+              <h2>Start with the evidence.</h2>
+              <p>
+                Browse the Skill Communities, or tell us what you need and we&apos;ll match against
+                it.
+              </p>
+              <div className="mkt-actions">
+                <Link to="/sample-talent" className="mkt-btn mkt-btn-dark mkt-btn-lg">
+                  Browse Pre-Vetted Talent
+                  <ForwardArrow />
+                </Link>
+                <Link to="/contact" className="mkt-btn mkt-btn-outline mkt-btn-lg">
+                  Tell us what you need
+                </Link>
+              </div>
+            </div>
+            <div className="mkt-cta-photo">
+              <img src={images.cta} alt="Team reviewing engineer evidence together" />
+            </div>
+          </div>
+        </MktShell>
+      </section>
+
+      <section className="mkt-section mkt-hiw-v3-section mkt-hiw-v3-section--seeker">
+        <MktShell>
+          <HiWSectionHeader
+            partLabel={HIW_SEEKER.partLabel}
+            stepCount={HIW_SEEKER.stepCount}
+            title={HIW_SEEKER.title}
+            intro={HIW_SEEKER.intro}
+            badgeClass="is-seeker"
+          />
+
+          <div className="mkt-hiw-v3-seeker-layout">
+            <div className="mkt-hiw-v3-funnel-wrap">
+              <p className="mkt-hiw-v3-funnel-label">{HIW_SEEKER.funnelLabel}</p>
+              <div className="mkt-hiw-v3-funnel">
+                {HIW_SEEKER.funnel.map((step) => (
+                  <div key={step.range} className="mkt-hiw-v3-funnel-step">
+                    <span className="mkt-hiw-v3-funnel-range">{step.range}</span>
+                    <div
+                      className={cn('mkt-hiw-v3-funnel-bar', `is-${step.tone}`)}
+                      style={{ width: `${step.width}%` }}
+                    >
+                      {step.label}
                     </div>
                   </div>
                 ))}
               </div>
+              <p className="mkt-hiw-v3-funnel-note">{HIW_SEEKER.funnelNote}</p>
             </div>
-            {/* <div className="mkt-hiw-note mt-9">
-              <h3>Why the tester is external</h3>
-              <p className="mt-[10px] text-base">
-                A recruiter measured on placements should not be the person grading the engineer.
-                Separating testing from sourcing is the only way a score means anything.
-              </p>
-            </div> */}
-          </div>
-        </MktShell>
-      </section>
 
-      <section className="mkt-white mkt-section">
-        <MktShell className="mkt-hiw-grid">
-          <div className="mkt-hiw-sticky">
-            <h2>
-              Part 2 — How
-              <br />
-              your requirement
-              <br />
-              gets served
-            </h2>
-          </div>
-          <div className="mkt-hiw-card">
-            <div className="mkt-steps">
-              {ENGAGEMENT_STEPS.map((item) => (
-                <div key={item.step} className="mkt-step">
-                  <div className="mkt-step-n">{item.step}</div>
-                  <div>
-                    <h3>{item.title}</h3>
-                    <p>{item.body}</p>
-                    {/* {'fact' in item && item.fact && (
-                      <div className="mkt-fact mt-3">{item.fact}</div>
-                    )} */}
-                  </div>
-                </div>
-              ))}
+            <div className="mkt-hiw-v3-stat-cards">
+              {HIW_SEEKER.stats.map((stat, index) => {
+                const Icon = index === 0 ? ShieldCheck : UserCheck;
+                return (
+                  <article key={stat.label} className="mkt-hiw-v3-stat-card">
+                    <Icon className="mkt-hiw-v3-stat-icon" aria-hidden="true" />
+                    <p className="mkt-hiw-v3-stat-label">{stat.label}</p>
+                    <p className="mkt-hiw-v3-stat-value">{stat.value}</p>
+                    <p className="mkt-hiw-v3-stat-note">{stat.note}</p>
+                  </article>
+                );
+              })}
             </div>
           </div>
-        </MktShell>
-      </section>
 
-      <section className="mkt-section mkt-control">
-        <MktShell>
-          <h2>What you control</h2>
-          <div className="mkt-table-wrap mkt-control-table mt-[30px]">
-            <table className="mkt-ct">
-              <thead>
-                <tr>
-                  <th>You control</th>
-                  <th>We handle</th>
-                </tr>
-              </thead>
-              <tbody>
-                {CONTROL_TABLE.youControl.map((you, index) => (
-                  <tr key={you}>
-                    <td>{you}</td>
-                    <td>{CONTROL_TABLE.weHandle[index]}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <HiWStagesGrid
+            label={HIW_SEEKER.stagesLabel}
+            stages={HIW_SEEKER.stages}
+            columns={4}
+          />
         </MktShell>
       </section>
     </div>
