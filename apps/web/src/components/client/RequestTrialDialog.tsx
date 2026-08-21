@@ -3,7 +3,11 @@ import { useEffect, useState } from 'react';
 import { TrialRequestForm } from '../forms/TrialRequestForm';
 import type { TrialRequestFormValues } from '../../lib/entity-field-metadata';
 import { getApiErrorMessage } from '../../lib/api/errors';
+import { apiRequest } from '../../lib/api/client';
+import type { ApiDataResponse } from '../../lib/api/types';
 import { FreeTrialTermsPanel } from './FreeTrialTermsPanel';
+
+const DEFAULT_FREE_TRIAL_HOURS = 20;
 
 type RequestTrialDialogProps = {
   open: boolean;
@@ -24,6 +28,7 @@ export function RequestTrialDialog({
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [freeTrialHours, setFreeTrialHours] = useState(DEFAULT_FREE_TRIAL_HOURS);
 
   useEffect(() => {
     if (!open) return;
@@ -31,6 +36,16 @@ export function RequestTrialDialog({
     setTermsAccepted(false);
     setSubmitting(false);
     setError(null);
+
+    void apiRequest<ApiDataResponse<{ freeTrialHours: number }>>('/settings/trial-policy')
+      .then((response) => {
+        if (response.data.freeTrialHours > 0) {
+          setFreeTrialHours(response.data.freeTrialHours);
+        }
+      })
+      .catch(() => {
+        setFreeTrialHours(DEFAULT_FREE_TRIAL_HOURS);
+      });
   }, [open]);
 
   function handleClose() {
@@ -60,7 +75,7 @@ export function RequestTrialDialog({
         open={open}
         onClose={handleClose}
         title="Terms & Conditions"
-        description="Please read and accept the terms and conditions to continue."
+        description={`Please read and accept the terms for a ${freeTrialHours}-hour free trial.`}
         className="max-w-2xl"
         footer={
           <div className="flex w-full items-center justify-between gap-3">
@@ -73,7 +88,11 @@ export function RequestTrialDialog({
           </div>
         }
       >
-        <FreeTrialTermsPanel accepted={termsAccepted} onAcceptedChange={setTermsAccepted} />
+        <FreeTrialTermsPanel
+          accepted={termsAccepted}
+          onAcceptedChange={setTermsAccepted}
+          freeTrialHours={freeTrialHours}
+        />
       </Dialog>
     );
   }
@@ -83,6 +102,7 @@ export function RequestTrialDialog({
       open={open}
       onClose={handleClose}
       title={`Request free trial — ${candidateName}`}
+      description={`Includes up to ${freeTrialHours} hours at no charge.`}
       className="max-w-2xl"
       scrollable
       footer={
@@ -104,6 +124,11 @@ export function RequestTrialDialog({
         </p>
       ) : (
         <div className="space-y-3">
+          <p className="rounded-lg border border-brand/20 bg-brand/5 px-3 py-2 text-sm text-muted-foreground">
+            This trial request includes up to{' '}
+            <span className="font-semibold text-foreground">{freeTrialHours} hours</span> for{' '}
+            {candidateName}.
+          </p>
           {error ? (
             <p className="rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">
               {error}

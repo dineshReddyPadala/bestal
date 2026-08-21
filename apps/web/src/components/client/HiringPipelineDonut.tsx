@@ -3,7 +3,7 @@ import { cn } from '@bestal/shared-utils';
 export type PipelineStage = {
   label: string;
   value: number;
-  color: string;
+  color?: string;
 };
 
 type HiringPipelineDonutProps = {

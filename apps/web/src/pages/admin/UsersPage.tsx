@@ -20,7 +20,7 @@ export function UsersPage() {
   const { searchInput, setSearchInput, search, searchParam } = useDebouncedSearch();
   const { data, isLoading, isError, error } = useUsersList({
     limit: 100,
-    sort: '-createdAt',
+    sort: '-updatedAt',
     ...searchParam,
   });
   const { invite, inviteBulk } = useUserMutations();

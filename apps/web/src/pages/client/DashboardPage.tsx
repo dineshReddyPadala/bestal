@@ -45,8 +45,8 @@ export function DashboardPage() {
   );
 
   const candidates = useCandidatesList({ limit: 50, sort: '-bestalScore' });
-  const trials = useTrialsList({ clientId, limit: 50, sort: '-createdAt' });
-  const deployments = useDeploymentsList({ clientId, limit: 50, sort: '-createdAt' });
+  const trials = useTrialsList({ clientId, limit: 50, sort: '-updatedAt' });
+  const deployments = useDeploymentsList({ clientId, limit: 50, sort: '-updatedAt' });
 
   const candidateRows = candidates.data?.data ?? [];
   const trialRows = (trials.data?.data ?? []).map((item) => toTrialRow(item));

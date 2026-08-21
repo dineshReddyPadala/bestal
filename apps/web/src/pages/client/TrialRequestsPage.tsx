@@ -46,7 +46,7 @@ export function TrialRequestsPage() {
   const { message, variant, show, showError, dismiss } = useDemoToast();
   const { user } = useAuth();
   const clientId = user?.clientId ?? undefined;
-  const { data, isLoading } = useTrialsList({ clientId, limit: 100, sort: '-createdAt' });
+  const { data, isLoading } = useTrialsList({ clientId, limit: 100, sort: '-updatedAt' });
   const { addRequest } = useClientTrialRequests();
   const { submitFeedback } = useTrialMutations();
   const deploymentMutations = useDeploymentMutations();

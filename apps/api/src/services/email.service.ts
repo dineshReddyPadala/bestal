@@ -46,6 +46,20 @@ export type ClientWelcomeEmailPayload = {
   loginUrl: string;
 };
 
+export type ClientSignupOtpEmailPayload = {
+  to: string;
+  contactName: string;
+  otp: string;
+  expiresInMinutes: number;
+};
+
+export type ClientLoginOtpEmailPayload = {
+  to: string;
+  firstName: string;
+  otp: string;
+  expiresInMinutes: number;
+};
+
 type OutboundEmail = {
   to: string;
   subject: string;
@@ -465,6 +479,84 @@ export class EmailService {
         to: payload.to,
         companyName: payload.companyName,
         loginUrl: payload.loginUrl,
+      });
+      return { sent: false };
+    }
+
+    return this.sendOutboundEmail({ to: payload.to, subject, text, html });
+  }
+
+  async sendClientSignupOtpEmail(
+    payload: ClientSignupOtpEmailPayload,
+  ): Promise<{ sent: boolean }> {
+    const subject = 'Verify your BesTal client signup';
+    const text = [
+      `Hi ${payload.contactName},`,
+      '',
+      'Use this verification code to complete your BesTal client registration:',
+      '',
+      payload.otp,
+      '',
+      `This code expires in ${payload.expiresInMinutes} minutes.`,
+      '',
+      'If you did not request this, you can safely ignore this email.',
+      '',
+      EMAIL_SIGNATURE,
+    ].join('\n');
+
+    const html = `
+      <p>Hi ${escapeHtml(payload.contactName)},</p>
+      <p>Use this verification code to complete your BesTal client registration:</p>
+      <p style="font-size:24px;font-weight:700;letter-spacing:0.2em;">${escapeHtml(payload.otp)}</p>
+      <p>This code expires in ${payload.expiresInMinutes} minutes.</p>
+      <p>If you did not request this, you can safely ignore this email.</p>
+      <p>${escapeHtml(EMAIL_SIGNATURE)}</p>
+    `;
+
+    const runtime = await this.ensureReady();
+    if (runtime.transport.mode === 'none') {
+      console.info('[email] Mail not configured — client signup OTP (dev):', {
+        to: payload.to,
+        otp: payload.otp,
+      });
+      return { sent: false };
+    }
+
+    return this.sendOutboundEmail({ to: payload.to, subject, text, html });
+  }
+
+  async sendClientLoginOtpEmail(
+    payload: ClientLoginOtpEmailPayload,
+  ): Promise<{ sent: boolean }> {
+    const subject = 'Your BesTal client portal sign-in code';
+    const text = [
+      `Hi ${payload.firstName},`,
+      '',
+      'Use this verification code to sign in to the BesTal Client Portal:',
+      '',
+      payload.otp,
+      '',
+      `This code expires in ${payload.expiresInMinutes} minutes.`,
+      '',
+      'If you did not request this, you can safely ignore this email.',
+      '',
+      EMAIL_SIGNATURE,
+    ].join('\n');
+
+    const html = `
+      <p>Hi ${escapeHtml(payload.firstName)},</p>
+      <p>Use this verification code to sign in to the BesTal Client Portal:</p>
+      <p style="font-size:24px;font-weight:700;letter-spacing:0.2em;">${escapeHtml(payload.otp)}</p>
+      <p>This code expires in ${payload.expiresInMinutes} minutes.</p>
+      <p>If you did not request this, you can safely ignore this email.</p>
+      <p>${escapeHtml(EMAIL_SIGNATURE)}</p>
+    `;
+
+    const runtime = await this.ensureReady();
+    if (runtime.transport.mode === 'none') {
+      console.info('[email] Mail not configured — client login OTP (dev):', {
+        to: payload.to,
+        otp: payload.otp,
       });
       return { sent: false };
     }

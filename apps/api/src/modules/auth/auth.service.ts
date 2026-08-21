@@ -1,4 +1,5 @@
 import argon2 from 'argon2';
+import crypto from 'node:crypto';
 import type { FastifyInstance } from 'fastify';
 import {
   PORTAL_ALLOWED_ROLES,
@@ -28,14 +29,19 @@ import type {
 } from './auth.types.js';
 import type {
   ChangePasswordBody,
+  ClientLoginRequestOtpBody,
+  ClientLoginVerifyOtpBody,
   ForgotPasswordBody,
   LoginBody,
   ResetPasswordBody,
 } from './auth.validator.js';
-import { AuthRepository, type UserWithMemberships } from './auth.repository.js';
+import { AuthRepository, type UserWithMemberships, type UserWithMembershipsForLogin } from './auth.repository.js';
 
 const FORGOT_PASSWORD_MESSAGE =
   'If an account with that email exists, a password reset link has been sent.';
+
+const LOGIN_OTP_EXPIRY_MINUTES = 10;
+const MAX_LOGIN_OTP_ATTEMPTS = 5;
 
 const PORTAL_RESET_PATH: Record<
   | typeof PORTALS.ADMIN
@@ -96,24 +102,7 @@ export class AuthService {
     }
 
     if (input.portal === PORTALS.CLIENT) {
-      if (!credentialUser.isActive) {
-        throw new AuthenticationError('Your account is pending activation');
-      }
-
-      const allowedRoles = PORTAL_ALLOWED_ROLES[PORTALS.CLIENT];
-      const clientMembership = credentialUser.memberships.find((membership) =>
-        allowedRoles.includes(membership.role as (typeof allowedRoles)[number]),
-      );
-
-      if (!clientMembership || !clientMembership.isActive) {
-        throw new AuthenticationError('Your account is pending activation');
-      }
-
-      if (clientMembership.client?.status !== 'ACTIVE') {
-        throw new AuthenticationError(
-          'Your client account is not active. Contact BesTal support.',
-        );
-      }
+      this.assertClientPortalLoginAllowed(credentialUser);
     }
 
     const user = await this.authRepository.findUserByEmail(input.email);
@@ -124,6 +113,112 @@ export class AuthService {
 
     const session = this.resolveSession(user, input.portal, input.organizationId);
 
+    await this.authRepository.updateLastLogin(session.id);
+
+    return this.issueTokenPair(session);
+  }
+
+  async requestClientLoginOtp(
+    input: ClientLoginRequestOtpBody,
+  ): Promise<{ message: string; expiresInMinutes: number }> {
+    const email = input.email.toLowerCase().trim();
+    const credentialUser = await this.authRepository.findUserByEmailForCredentialCheck(email);
+
+    if (!credentialUser) {
+      throw new AuthenticationError('No active client account found for this email');
+    }
+
+    this.assertClientPortalLoginAllowed(credentialUser);
+
+    const loginOtp = this.getLoginOtpDelegate();
+    const otp = String(crypto.randomInt(100_000, 1_000_000));
+    const otpHash = await hashToken(otp);
+    const expiresAt = new Date(Date.now() + LOGIN_OTP_EXPIRY_MINUTES * 60_000);
+
+    await loginOtp.updateMany({
+      where: { email, portal: PORTALS.CLIENT, usedAt: null },
+      data: { usedAt: new Date() },
+    });
+
+    await loginOtp.create({
+      data: {
+        email,
+        portal: PORTALS.CLIENT,
+        otpHash,
+        expiresAt,
+      },
+    });
+
+    await this.emailService.sendClientLoginOtpEmail({
+      to: email,
+      firstName: credentialUser.firstName,
+      otp,
+      expiresInMinutes: LOGIN_OTP_EXPIRY_MINUTES,
+    });
+
+    if (this.fastify.config.isDevelopment) {
+      this.fastify.log.debug({ email, otp }, 'Dev client login OTP');
+    }
+
+    return {
+      message: 'Verification code sent to your email.',
+      expiresInMinutes: LOGIN_OTP_EXPIRY_MINUTES,
+    };
+  }
+
+  async verifyClientLoginOtp(input: ClientLoginVerifyOtpBody): Promise<AuthTokenResponse> {
+    const email = input.email.toLowerCase().trim();
+    const loginOtp = this.getLoginOtpDelegate();
+
+    const record = await loginOtp.findFirst({
+      where: {
+        email,
+        portal: PORTALS.CLIENT,
+        usedAt: null,
+        expiresAt: { gt: new Date() },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    if (!record) {
+      throw new BadRequestError(
+        'Verification code expired or not found. Please request a new code.',
+      );
+    }
+
+    if (record.attempts >= MAX_LOGIN_OTP_ATTEMPTS) {
+      throw new BadRequestError('Too many failed attempts. Please request a new verification code.');
+    }
+
+    const otpHash = await hashToken(input.otp.trim());
+    const valid = otpHash === record.otpHash;
+
+    if (!valid) {
+      await loginOtp.update({
+        where: { id: record.id },
+        data: { attempts: { increment: 1 } },
+      });
+      throw new BadRequestError('Invalid verification code. Please try again.');
+    }
+
+    await loginOtp.update({
+      where: { id: record.id },
+      data: { usedAt: new Date() },
+    });
+
+    const credentialUser = await this.authRepository.findUserByEmailForCredentialCheck(email);
+    if (!credentialUser) {
+      throw new AuthenticationError('No active client account found for this email');
+    }
+
+    this.assertClientPortalLoginAllowed(credentialUser);
+
+    const user = await this.authRepository.findUserByEmail(email);
+    if (!user) {
+      throw new AuthenticationError('No active client account found for this email');
+    }
+
+    const session = this.resolveSession(user, PORTALS.CLIENT);
     await this.authRepository.updateLastLogin(session.id);
 
     return this.issueTokenPair(session);
@@ -351,6 +446,48 @@ export class AuthService {
 
   getPermissionsForRole(role: Role): Permission[] {
     return [...staticPermissionsForRole(role)];
+  }
+
+  private getLoginOtpDelegate() {
+    type LoginOtpDelegate = {
+      updateMany: (args: unknown) => Promise<unknown>;
+      create: (args: unknown) => Promise<unknown>;
+      findFirst: (args: unknown) => Promise<{
+        id: bigint;
+        otpHash: string;
+        attempts: number;
+      } | null>;
+      update: (args: unknown) => Promise<unknown>;
+    };
+
+    const delegate = (this.fastify.prisma as unknown as { loginOtp?: LoginOtpDelegate }).loginOtp;
+    if (!delegate) {
+      throw new BadRequestError(
+        'Login verification is temporarily unavailable. Please restart the API server and try again.',
+      );
+    }
+    return delegate;
+  }
+
+  private assertClientPortalLoginAllowed(credentialUser: UserWithMembershipsForLogin): void {
+    if (!credentialUser.isActive) {
+      throw new AuthenticationError('Your account is pending activation');
+    }
+
+    const allowedRoles = PORTAL_ALLOWED_ROLES[PORTALS.CLIENT];
+    const clientMembership = credentialUser.memberships.find((membership) =>
+      allowedRoles.includes(membership.role as (typeof allowedRoles)[number]),
+    );
+
+    if (!clientMembership || !clientMembership.isActive) {
+      throw new AuthenticationError('Your account is pending activation');
+    }
+
+    if (clientMembership.client?.status !== 'ACTIVE') {
+      throw new AuthenticationError(
+        'Your client account is not active. Contact BesTal support.',
+      );
+    }
   }
 
   private resolveSession(

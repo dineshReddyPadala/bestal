@@ -119,8 +119,8 @@ export function AddCandidatePage() {
     void (async () => {
       try {
         const [evalListRes, bgvRes] = await Promise.all([
-          evaluationsApi.list({ candidateId, limit: 1, sort: '-createdAt' }),
-          backgroundChecksApi.list({ candidateId, limit: 1, sort: '-createdAt' }),
+          evaluationsApi.list({ candidateId, limit: 1, sort: '-updatedAt' }),
+          backgroundChecksApi.list({ candidateId, limit: 1, sort: '-updatedAt' }),
         ]);
         const evalDetail =
           evalListRes.data[0] != null

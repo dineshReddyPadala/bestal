@@ -439,6 +439,36 @@ model PasswordResetToken {
   @@map("password_reset_tokens")
 }
 
+model ClientSignupOtp {
+  id        BigInt    @id @default(autoincrement())
+  email     String    @db.VarChar(255)
+  otpHash   String    @map("otp_hash") @db.VarChar(128)
+  payload   Json
+  attempts  Int       @default(0)
+  expiresAt DateTime  @map("expires_at")
+  usedAt    DateTime? @map("used_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  @@index([email, usedAt])
+  @@index([expiresAt])
+  @@map("client_signup_otps")
+}
+
+model LoginOtp {
+  id        BigInt    @id @default(autoincrement())
+  email     String    @db.VarChar(255)
+  portal    Portal
+  otpHash   String    @map("otp_hash") @db.VarChar(128)
+  attempts  Int       @default(0)
+  expiresAt DateTime  @map("expires_at")
+  usedAt    DateTime? @map("used_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  @@index([email, portal, usedAt])
+  @@index([expiresAt])
+  @@map("login_otps")
+}
+
 // ---------------------------------------------------------------------------
 // Clients
 // ---------------------------------------------------------------------------
@@ -455,6 +485,7 @@ model Client {
   website          String?      @db.VarChar(255)
   headquarters     String?      @db.VarChar(255)
   contactName      String?      @map("primary_contact_name") @db.VarChar(150)
+  contactDesignation String?    @map("contact_designation") @db.VarChar(150)
   contactEmail     String?      @map("contact_email") @db.VarChar(255)
   contactPhone     String?      @map("contact_phone") @db.VarChar(30)
   paymentTerms     String?      @map("payment_terms") @db.VarChar(100)

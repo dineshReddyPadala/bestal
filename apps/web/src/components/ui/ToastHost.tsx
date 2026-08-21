@@ -18,7 +18,7 @@ export function ToastHost({ message, variant = 'success', onDismiss }: ToastHost
 
   return createPortal(
     <div
-      className="pointer-events-none fixed inset-x-4 bottom-6 z-[200] flex justify-center sm:inset-x-auto sm:right-6 sm:justify-end"
+      className="pointer-events-none fixed inset-x-4 top-6 z-[200] flex justify-center sm:inset-x-auto sm:right-6 sm:justify-end"
       role="status"
       aria-live="polite"
     >

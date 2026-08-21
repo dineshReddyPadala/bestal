@@ -68,7 +68,7 @@ export function EvaluationManagementView({
   const { searchInput, setSearchInput, search } = useDebouncedSearch();
   const { data, isLoading, isError, error } = useEvaluationsList({
     limit: 100,
-    sort: '-createdAt',
+    sort: '-updatedAt',
   });
   const { data: candidatesData } = useCandidatesList({ limit: 100 });
   const mutations = useEvaluationMutations();

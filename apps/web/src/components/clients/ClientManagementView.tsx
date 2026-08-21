@@ -141,7 +141,7 @@ export function ClientManagementView({
   const listParams = useMemo(
     () => ({
       limit: 100,
-      sort: '-createdAt',
+      sort: '-updatedAt',
       status: filters.status === 'all' ? undefined : filters.status,
       accountManagerId:
         filters.accountManager !== 'all' && filters.accountManager !== 'none'

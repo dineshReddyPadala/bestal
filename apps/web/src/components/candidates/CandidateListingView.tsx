@@ -217,7 +217,7 @@ export function CandidateListingView({
   const listParams = useMemo(
     () => ({
       limit: 100,
-      sort: '-createdAt',
+      sort: '-updatedAt',
       ...searchParam,
       archived: listTab === 'archived',
       status: filters.status === 'all' ? undefined : filters.status,
