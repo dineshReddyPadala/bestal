@@ -1,6 +1,7 @@
 import type { Prisma, PrismaClient } from '@prisma/client';
 import { BaseRepository } from '../../repositories/base.repository.js';
 import type {
+  CreateClientEnquiryInput,
   CreatePublicJobRequestInput,
   JobRequestListFilters,
   UpdateJobRequestInput,
@@ -27,6 +28,7 @@ export class JobRequestRepository extends BaseRepository {
     return this.prisma.jobRequest.create({
       data: {
         organizationId: BigInt(organizationId),
+        referenceCode: data.referenceCode,
         jobTitle: data.jobTitle,
         jobDescription: data.jobDescription,
         requiredSkills: data.requiredSkills,
@@ -42,6 +44,61 @@ export class JobRequestRepository extends BaseRepository {
       },
       include: jobRequestInclude,
     });
+  }
+
+  createClientEnquiry(
+    organizationId: number,
+    data: CreateClientEnquiryInput,
+  ): Promise<JobRequestRecord> {
+    return this.prisma.jobRequest.create({
+      data: {
+        organizationId: BigInt(organizationId),
+        referenceCode: data.referenceCode,
+        jobTitle: data.jobTitle,
+        jobDescription: data.jobDescription,
+        requiredSkills: data.requiredSkills,
+        experienceRequired: data.experienceRequired,
+        numberOfResources: data.numberOfResources,
+        companyName: data.companyName,
+        companyDomain: data.companyDomain,
+        location: data.location,
+        timezone: data.timezone,
+        website: data.website,
+        contactName: data.contactName,
+        contactEmail: data.contactEmail.toLowerCase(),
+        contactPhone: data.contactPhone,
+        additionalRequirements: data.additionalRequirements,
+        jobs: data.jobs as unknown as Prisma.InputJsonValue,
+        attachments: data.attachments as unknown as Prisma.InputJsonValue,
+        status: 'SUBMITTED',
+        source: 'WEBSITE',
+      },
+      include: jobRequestInclude,
+    });
+  }
+
+  updateAttachments(
+    organizationId: number,
+    id: number,
+    attachments: Prisma.InputJsonValue,
+  ): Promise<JobRequestRecord> {
+    return this.prisma.jobRequest.update({
+      where: {
+        id: BigInt(id),
+        organizationId: BigInt(organizationId),
+      },
+      data: { attachments },
+      include: jobRequestInclude,
+    });
+  }
+
+  referenceCodeExists(referenceCode: string): Promise<boolean> {
+    return this.prisma.jobRequest
+      .findFirst({
+        where: { referenceCode },
+        select: { id: true },
+      })
+      .then(Boolean);
   }
 
   findById(organizationId: number, id: number): Promise<JobRequestRecord | null> {
@@ -130,6 +187,7 @@ export class JobRequestRepository extends BaseRepository {
     if (filters.search?.trim()) {
       const q = filters.search.trim();
       where.OR = [
+        { referenceCode: { contains: q, mode: 'insensitive' } },
         { jobTitle: { contains: q, mode: 'insensitive' } },
         { companyName: { contains: q, mode: 'insensitive' } },
         { contactName: { contains: q, mode: 'insensitive' } },

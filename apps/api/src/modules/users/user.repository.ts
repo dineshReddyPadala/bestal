@@ -5,7 +5,6 @@ import type { CreateUserInput, UserListFilters } from './user.types.js';
 
 const userInclude = {
   memberships: {
-    where: { isActive: true },
     include: {
       organization: { select: { id: true, name: true } },
       client: { select: { id: true, name: true } },
@@ -112,7 +111,6 @@ export class UserRepository extends BaseRepository {
       memberships: {
         some: {
           organizationId: BigInt(filters.organizationId),
-          isActive: true,
           ...(filters.role ? { role: filters.role } : {}),
         },
       },

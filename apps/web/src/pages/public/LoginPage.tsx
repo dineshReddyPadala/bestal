@@ -1,15 +1,21 @@
-import { Building2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { ForwardArrow } from '../../components/ui/ForwardArrow';
-import { TOP_LEVEL_PORTALS } from '../../lib/login-portals';
+import { getStaffTeamPortals } from '../../lib/login-portals';
+import type { LucideIcon } from 'lucide-react';
 
 type PortalOption = {
   id: string;
   name: string;
   description: string;
   href: string;
-  icon: typeof Building2;
+  icon: LucideIcon;
   color: string;
+};
+
+const COLOR_CLASS_MAP: Record<string, string> = {
+  'is-violet': 'bg-violet-100 text-violet-700',
+  'is-amber': 'bg-amber-100 text-amber-700',
+  'is-teal': 'bg-teal-100 text-teal-700',
 };
 
 function PortalOptionList({ portals }: { portals: PortalOption[] }) {
@@ -40,19 +46,18 @@ function PortalOptionList({ portals }: { portals: PortalOption[] }) {
   );
 }
 
-/** Top level: Dashboard Overview + Login — centered AuthLayout (Image 3). */
+/** @deprecated Use StaffPortalLoginPage at /login/portal */
 export function PortalSelectorPage() {
-  const portals: PortalOption[] = TOP_LEVEL_PORTALS.map((portal) => ({
-    id: portal.id,
-    name: portal.name,
-    description: portal.description,
-    href: portal.id === 'login' ? '/login/engineers' : portal.href,
-    icon: portal.icon,
-    color:
-      portal.colorClass === 'is-violet'
-        ? 'bg-violet-100 text-violet-700'
-        : 'bg-emerald-100 text-emerald-700',
-  }));
+  const portals: PortalOption[] = getStaffTeamPortals({ adminHref: '/admin/login' }).map(
+    (portal) => ({
+      id: portal.id,
+      name: portal.name,
+      description: portal.description,
+      href: portal.href,
+      icon: portal.icon,
+      color: COLOR_CLASS_MAP[portal.colorClass] ?? 'bg-gray-100 text-gray-700',
+    }),
+  );
 
   return <PortalOptionList portals={portals} />;
 }
@@ -62,7 +67,7 @@ export function PortalLoginPage() {
   return <PortalSelectorPage />;
 }
 
-/** @deprecated Use SplitTeamPortalsPage */
+/** @deprecated Use SplitPortalSelectorPage */
 export function AdminPortalSelectorPage() {
   return <PortalSelectorPage />;
 }

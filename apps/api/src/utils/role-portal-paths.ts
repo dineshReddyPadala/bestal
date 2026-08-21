@@ -7,7 +7,7 @@ export function rolePortalLoginPath(role: Role | string | null | undefined): str
     case ROLES.SALES:
       return '/sales/login';
     case ROLES.CLIENT:
-      return '/client/login';
+      return '/login/client';
     case ROLES.SUPER_ADMIN:
     case ROLES.ADMIN:
     case ROLES.VIEWER:

@@ -1,6 +1,6 @@
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { AuthorizationError } from '../utils/index.js';
-import { resolvePermissionsForMembership } from '../modules/admin/admin-roles.service.js';
+import { resolvePermissionsForAuthUser } from '../modules/admin/admin-roles.service.js';
 import type { Permission } from '../modules/auth/auth.permissions.js';
 
 export function requirePermission(...permissions: Permission[]) {
@@ -13,10 +13,9 @@ export function requirePermission(...permissions: Permission[]) {
       return;
     }
 
-    const effective = await resolvePermissionsForMembership(
+    const effective = await resolvePermissionsForAuthUser(
       request.server.prisma,
-      request.authUser.role,
-      null,
+      request.authUser,
     );
     const missing = permissions.filter((p) => !effective.includes(p));
     if (missing.length > 0) {
@@ -37,10 +36,9 @@ export function requireAnyPermission(...permissions: Permission[]) {
       return;
     }
 
-    const effective = await resolvePermissionsForMembership(
+    const effective = await resolvePermissionsForAuthUser(
       request.server.prisma,
-      request.authUser.role,
-      null,
+      request.authUser,
     );
     if (!permissions.some((p) => effective.includes(p))) {
       throw new AuthorizationError(

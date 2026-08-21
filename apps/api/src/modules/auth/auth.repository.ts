@@ -16,6 +16,15 @@ export interface UserWithMemberships extends User {
   >;
 }
 
+export interface UserWithMembershipsForLogin extends User {
+  memberships: Array<
+    Membership & {
+      organization: { id: bigint; name: string; slug: string };
+      client: { id: bigint; name: string; status: string } | null;
+    }
+  >;
+}
+
 export class AuthRepository extends BaseRepository {
   constructor(prisma: PrismaClient) {
     super(prisma);
@@ -64,6 +73,29 @@ export class AuthRepository extends BaseRepository {
       where: {
         email: email.toLowerCase(),
         deletedAt: null,
+      },
+    });
+  }
+
+  findUserByEmailForCredentialCheck(
+    email: string,
+  ): Promise<UserWithMembershipsForLogin | null> {
+    return this.prisma.user.findFirst({
+      where: {
+        email: email.toLowerCase(),
+        deletedAt: null,
+      },
+      include: {
+        memberships: {
+          include: {
+            organization: {
+              select: { id: true, name: true, slug: true },
+            },
+            client: {
+              select: { id: true, name: true, status: true },
+            },
+          },
+        },
       },
     });
   }

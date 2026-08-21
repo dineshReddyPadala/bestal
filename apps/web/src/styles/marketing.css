@@ -476,6 +476,17 @@
   line-height: 1.45;
 }
 
+.marketing-site .mkt-reach-out-form-error {
+  margin: 0 0 1rem;
+  padding: 0.75rem 0.875rem;
+  border-radius: 0.5rem;
+  border: 1px solid #fecaca;
+  background: #fef2f2;
+  font-size: 0.8125rem;
+  color: #b91c1c;
+  line-height: 1.5;
+}
+
 .marketing-site .mkt-reach-out-job-block {
   display: flex;
   flex-direction: column;
@@ -4881,7 +4892,7 @@
   }
 }
 
-/* Portal picker (/login/portals) — taller hero image, full head visible */
+/* Portal picker (/login/portal) — taller hero image, full head visible */
 .marketing-site .mkt-login-hero--portals {
   align-self: stretch;
 }
@@ -4989,9 +5000,24 @@
   }
 }
 
-.marketing-site .mkt-login-card {
+.marketing-site .mkt-login-panel-stack {
   width: 100%;
   max-width: 420px;
+}
+
+.marketing-site .mkt-login-panel-stack--wide {
+  max-width: 480px;
+}
+
+.marketing-site .mkt-login-back-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 0.75rem;
+}
+
+.marketing-site .mkt-login-card {
+  width: 100%;
+  max-width: none;
   background: #fff;
   border: 1px solid #e5e7eb;
   border-radius: 0.875rem;
@@ -4999,10 +5025,30 @@
   box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
 }
 
+.marketing-site .mkt-login-back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.8125rem;
+  padding: 0.375rem 0.5rem;
+}
+
 .marketing-site .mkt-login-brand {
   display: flex;
   justify-content: center;
   margin-bottom: 1.75rem;
+}
+
+.marketing-site .mkt-login-brand-link {
+  display: inline-flex;
+  text-decoration: none;
+  color: inherit;
+  border-radius: 0.375rem;
+  transition: opacity 0.15s ease;
+}
+
+.marketing-site .mkt-login-brand-link:hover {
+  opacity: 0.85;
 }
 
 .marketing-site .mkt-login-portal-title {
@@ -5039,6 +5085,40 @@
   font-size: 0.8125rem;
   font-weight: 600;
   color: var(--mkt-ink);
+}
+
+.marketing-site .mkt-login-required {
+  margin-left: 0.125rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #dc2626;
+}
+
+.marketing-site .mkt-login-field-error {
+  font-size: 0.75rem;
+  color: #b91c1c;
+}
+
+.marketing-site .mkt-signup-form .mkt-signup-signin-prompt {
+  margin: 0.5rem 0 0;
+  text-align: center;
+}
+
+.marketing-site .mkt-signup-form .mkt-signup-signin-text {
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+.marketing-site .mkt-signup-form .mkt-signup-signin-link {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--mkt-teal);
+  text-decoration: none;
+}
+
+.marketing-site .mkt-signup-form .mkt-signup-signin-link:hover {
+  color: var(--mkt-teal-d);
+  text-decoration: underline;
 }
 
 .marketing-site .mkt-login-input {
@@ -5156,6 +5236,125 @@
   font-size: 0.875rem;
 }
 
+/* Staff portal picker (/login/portal) — fit hero image, no page scroll */
+.marketing-site .mkt-login-page--staff-portal .mkt-login-hero {
+  overflow: hidden;
+}
+
+.marketing-site .mkt-login-page--staff-portal .mkt-login-hero-img--portals {
+  height: 100%;
+  width: 100%;
+  object-fit: cover;
+  object-position: center top;
+}
+
+.marketing-site.mkt-split-login-site:has(.mkt-login-page--staff-portal) {
+  height: 100svh;
+  max-height: 100svh;
+  overflow: hidden;
+}
+
+.marketing-site.mkt-split-login-site .mkt-login-page--staff-portal {
+  height: 100svh;
+  max-height: 100svh;
+  overflow: hidden;
+  min-height: 0;
+}
+
+@media (min-width: 1024px) {
+  .marketing-site.mkt-split-login-site .mkt-login-page--staff-portal {
+    grid-template-columns: 1.15fr 1fr;
+    align-items: stretch;
+  }
+
+  .marketing-site.mkt-split-login-site .mkt-login-page--staff-portal .mkt-login-hero,
+  .marketing-site.mkt-split-login-site .mkt-login-page--staff-portal .mkt-login-panel {
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+  }
+}
+
+/* Client signup — lock page height; scroll inside card if fields overflow */
+.marketing-site.mkt-split-login-site:has(.mkt-login-page--scroll-panel) {
+  height: 100svh;
+  max-height: 100svh;
+  overflow: hidden;
+}
+
+.marketing-site.mkt-split-login-site .mkt-login-page--scroll-panel {
+  height: 100svh;
+  max-height: 100svh;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.marketing-site .mkt-login-page--scroll-panel .mkt-login-hero {
+  overflow: hidden;
+}
+
+.marketing-site .mkt-login-page--scroll-panel .mkt-login-panel-stack {
+  width: 100%;
+  max-height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.marketing-site .mkt-login-page--scroll-panel .mkt-login-card {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: 100%;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (min-width: 1024px) {
+  .marketing-site.mkt-split-login-site .mkt-login-page--scroll-panel {
+    grid-template-columns: 1.15fr 1fr;
+    align-items: stretch;
+  }
+
+  .marketing-site.mkt-split-login-site .mkt-login-page--scroll-panel .mkt-login-hero,
+  .marketing-site.mkt-split-login-site .mkt-login-page--scroll-panel .mkt-login-panel {
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .marketing-site.mkt-split-login-site .mkt-login-page--scroll-panel .mkt-login-panel {
+    padding-top: 1.5rem;
+    padding-bottom: 1.5rem;
+  }
+}
+
+@media (max-width: 1023px) {
+  .marketing-site.mkt-split-login-site .mkt-login-page--scroll-panel {
+    grid-template-rows: auto minmax(0, 1fr);
+    height: 100svh;
+    max-height: 100svh;
+    overflow: hidden;
+  }
+
+  .marketing-site .mkt-login-page--scroll-panel .mkt-login-hero {
+    max-height: 240px;
+    min-height: 0;
+  }
+
+  .marketing-site .mkt-login-page--scroll-panel .mkt-login-panel {
+    min-height: 0;
+    overflow: hidden;
+    align-items: stretch;
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+  }
+
+  .marketing-site .mkt-login-page--scroll-panel .mkt-login-panel-stack {
+    height: 100%;
+  }
+}
+
 .marketing-site .mkt-login-card-wide {
   max-width: 480px;
 }
@@ -5240,9 +5439,10 @@
 }
 
 .marketing-site .mkt-portal-select-desc {
-  font-size: 0.8125rem;
-  line-height: 1.45;
+  display: block;
+  font-size: 0.75rem;
   color: var(--mkt-ink-f);
+  line-height: 1.45;
 }
 
 .marketing-site .mkt-portal-select-arrow {
@@ -5260,6 +5460,216 @@
     line-height: 1.4 !important;
     font-family: inter !important;
   color: var(--mkt-ink-d) !important;
+}
+
+/* Client registration success modal */
+.marketing-site .mkt-signup-success-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem;
+  background: rgba(18, 20, 23, 0.42);
+  backdrop-filter: blur(2px);
+}
+
+.marketing-site .mkt-signup-success-card {
+  position: relative;
+  width: 100%;
+  max-width: 28rem;
+  overflow: hidden;
+  border: 1px solid #e8e6df;
+  border-radius: 1rem;
+  background: #fff;
+  box-shadow: 0 24px 64px rgba(18, 20, 23, 0.14);
+}
+
+.marketing-site .mkt-signup-success-close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border: none;
+  border-radius: 999px;
+  color: #6b7280;
+  background: rgba(255, 255, 255, 0.92);
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s;
+}
+
+.marketing-site .mkt-signup-success-close:hover {
+  color: #121417;
+  background: #fff;
+}
+
+.marketing-site .mkt-signup-success-hero {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 8.5rem;
+  overflow: hidden;
+  background: linear-gradient(180deg, #eef9f9 0%, #f7fbfb 55%, #fff 100%);
+}
+
+.marketing-site .mkt-signup-success-spark {
+  position: absolute;
+  z-index: 2;
+  color: #0e6e76;
+  font-size: 0.875rem;
+  opacity: 0.55;
+}
+
+.marketing-site .mkt-signup-success-spark--1 {
+  top: 1.75rem;
+  left: calc(50% - 5.5rem);
+}
+
+.marketing-site .mkt-signup-success-spark--2 {
+  top: 2.25rem;
+  left: calc(50% + 4.25rem);
+  font-size: 0.625rem;
+}
+
+.marketing-site .mkt-signup-success-hero-badge {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 5.5rem;
+  height: 5.5rem;
+  border-radius: 999px;
+  background: rgba(224, 242, 241, 0.85);
+  box-shadow: inset 0 0 0 1px rgba(14, 110, 118, 0.08);
+}
+
+.marketing-site .mkt-signup-success-doc-icon {
+  width: 2.25rem;
+  height: 2.25rem;
+  color: #0e6e76;
+}
+
+.marketing-site .mkt-signup-success-check-badge {
+  position: absolute;
+  right: 0.875rem;
+  bottom: 0.875rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.625rem;
+  height: 1.625rem;
+  border-radius: 999px;
+  color: #fff;
+  background: #047857;
+  box-shadow: 0 4px 10px rgba(4, 120, 87, 0.28);
+}
+
+.marketing-site .mkt-signup-success-body {
+  padding: 0 1.75rem 1.75rem;
+  text-align: center;
+}
+
+.marketing-site .mkt-signup-success-body h1 {
+  margin: 0;
+  font-family: var(--mkt-display);
+  font-size: 1.625rem;
+  line-height: 1.25;
+  font-weight: 800;
+  color: #121417;
+}
+
+.marketing-site .mkt-signup-success-rule {
+  width: 2.75rem;
+  height: 0.1875rem;
+  margin: 0.75rem auto 1.25rem;
+  border-radius: 999px;
+  background: #0e6e76;
+}
+
+.marketing-site .mkt-signup-success-items {
+  text-align: left;
+}
+
+.marketing-site .mkt-signup-success-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.875rem;
+}
+
+.marketing-site .mkt-signup-success-item-icon {
+  position: relative;
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 999px;
+  color: #0e6e76;
+  background: #e2f0ef;
+}
+
+.marketing-site .mkt-signup-success-item-icon--shield .mkt-signup-success-item-icon-user {
+  position: absolute;
+  width: 0.875rem;
+  height: 0.875rem;
+}
+
+.marketing-site .mkt-signup-success-item p {
+  margin: 0.375rem 0 0;
+  font-size: 0.875rem;
+  line-height: 1.55;
+  color: #4b5563;
+}
+
+.marketing-site .mkt-signup-success-divider {
+  display: flex;
+  align-items: center;
+  margin: 1rem 0;
+  padding-left: 1.375rem;
+}
+
+.marketing-site .mkt-signup-success-divider span {
+  display: block;
+  width: 100%;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    rgba(14, 110, 118, 0.35) 0%,
+    rgba(14, 110, 118, 0.12) 50%,
+    rgba(14, 110, 118, 0) 100%
+  );
+}
+
+.marketing-site .mkt-signup-success-privacy {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  margin: 1.5rem 0 0;
+  font-size: 0.75rem;
+  color: #9ca3af;
+}
+
+@media (max-width: 640px) {
+  .marketing-site .mkt-signup-success-modal {
+    padding: 0.75rem;
+  }
+
+  .marketing-site .mkt-signup-success-body {
+    padding: 0 1.25rem 1.5rem;
+  }
+
+  .marketing-site .mkt-signup-success-body h1 {
+    font-size: 1.375rem;
+  }
 }
 
 /* Talent unlock dialog */

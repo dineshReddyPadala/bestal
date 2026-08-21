@@ -89,6 +89,8 @@ const SYSTEM_ROLE_SEED: Array<{
       PERMISSIONS.SHORTLISTS_READ,
       PERMISSIONS.TRIALS_READ,
       PERMISSIONS.TRIALS_WRITE,
+      PERMISSIONS.JOB_REQUESTS_READ,
+      PERMISSIONS.JOB_REQUESTS_WRITE,
       PERMISSIONS.DEPLOYMENTS_READ,
       PERMISSIONS.DEPLOYMENTS_WRITE,
       PERMISSIONS.SALES_PIPELINE_READ,
@@ -786,18 +788,63 @@ function withClientDeployRequestPermission(
   return [...permissions, PERMISSIONS.DEPLOYMENTS_REQUEST];
 }
 
+/** Resolve effective permissions for the authenticated user (membership + platform role). */
+export async function resolvePermissionsForAuthUser(
+  prisma: FastifyInstance['prisma'],
+  authUser: { id: number; organizationId: number | null; role: AppRole },
+): Promise<string[]> {
+  if (authUser.organizationId == null) {
+    return resolvePermissionsForMembership(prisma, authUser.role, null);
+  }
+
+  const membership = await prisma.membership.findFirst({
+    where: {
+      userId: BigInt(authUser.id),
+      organizationId: BigInt(authUser.organizationId),
+      isActive: true,
+    },
+    select: { role: true, platformRoleId: true },
+  });
+
+  if (!membership) {
+    return resolvePermissionsForMembership(prisma, authUser.role, null);
+  }
+
+  return resolvePermissionsForMembership(
+    prisma,
+    membership.role as AppRole,
+    membership.platformRoleId ? Number(membership.platformRoleId) : null,
+  );
+}
+
 /** Resolve effective permissions for a membership role / platform role override. */
 export async function resolvePermissionsForMembership(
   prisma: FastifyInstance['prisma'],
   role: AppRole,
   platformRoleId?: number | null,
 ): Promise<string[]> {
+  const { getPermissionsForRole } = await import('../auth/auth.permissions.js');
+
+  const mergeSystemPermissions = (
+    platformRole: { isSystem: boolean; baseRole: Role; permissions: Prisma.JsonValue },
+  ): string[] => {
+    const fromDb = sanitizePermissions(platformRole.permissions);
+    if (!platformRole.isSystem) {
+      return fromDb;
+    }
+    const staticPerms = [...getPermissionsForRole(platformRole.baseRole as AppRole)];
+    return [...new Set([...fromDb, ...staticPerms])];
+  };
+
   if (platformRoleId) {
     const custom = await prisma.platformRole.findFirst({
       where: { id: BigInt(platformRoleId), deletedAt: null, isActive: true },
     });
     if (custom) {
-      return withClientDeployRequestPermission(role, sanitizePermissions(custom.permissions));
+      return withClientDeployRequestPermission(
+        role,
+        mergeSystemPermissions(custom),
+      );
     }
   }
 
@@ -805,10 +852,9 @@ export async function resolvePermissionsForMembership(
     where: { code: role, deletedAt: null, isActive: true },
   });
   if (byCode) {
-    return withClientDeployRequestPermission(role, sanitizePermissions(byCode.permissions));
+    return withClientDeployRequestPermission(role, mergeSystemPermissions(byCode));
   }
 
   // Fallback to static map until seed runs
-  const { getPermissionsForRole } = await import('../auth/auth.permissions.js');
   return withClientDeployRequestPermission(role, [...getPermissionsForRole(role)]);
 }

@@ -22,7 +22,6 @@ import { TrialsPage } from '../pages/admin/TrialsPage';
 import { CandidateDetailPage as ClientCandidateDetailPage } from '../pages/client/CandidateDetailPage';
 import { CandidateSearchPage } from '../pages/client/CandidateSearchPage';
 import { DashboardPage as ClientDashboardPage } from '../pages/client/DashboardPage';
-import { LoginPage as ClientLoginPage } from '../pages/client/LoginPage';
 import { TrialRequestsPage } from '../pages/client/TrialRequestsPage';
 import { DeploymentsPage as ClientDeploymentsPage } from '../pages/client/DeploymentsPage';
 import { AboutPage } from '../pages/public/AboutPage';
@@ -35,9 +34,9 @@ import { HomePage } from '../pages/public/HomePage';
 import { HowItWorksPage } from '../pages/public/HowItWorksPage';
 import { JobDetailPage } from '../pages/public/JobDetailPage';
 import { JobsPage } from '../pages/public/JobsPage';
+import { ClientSignupPage, ClientSignupSuccessPage } from '../pages/public/ClientSignupPage';
 import { MarketingLoginPage } from '../pages/public/MarketingLoginPage';
-import { SplitPortalSelectorPage } from '../pages/public/SplitPortalSelectorPage';
-import { SplitTeamPortalsPage } from '../pages/public/SplitTeamPortalsPage';
+import { StaffPortalLoginPage } from '../pages/public/StaffPortalLoginPage';
 import { RatesPage } from '../pages/public/RatesPage';
 import { SampleTalentPage } from '../pages/public/SampleTalentPage';
 import { TalentPage } from '../pages/public/TalentPage';
@@ -64,6 +63,7 @@ import { LoginPage as SalesLoginPage } from '../pages/sales/LoginPage';
 import { MarginReportPage as SalesMarginReportPage } from '../pages/sales/MarginReportPage';
 import { TrialsPage as SalesTrialsPage } from '../pages/sales/TrialsPage';
 import { ProtectedRoute } from '../components/auth/ProtectedRoute';
+import { PermissionGate } from '../components/auth/PermissionGate';
 import { PortalAuthShell } from '../components/auth/PortalAuthShell';
 import { ScrollToTop } from '../components/ScrollToTop';
 import { PORTAL_AUTH_CONFIG } from '../lib/auth-portal-config';
@@ -76,6 +76,8 @@ import { SuperAdminUserFormPage } from '../pages/super-admin/UserFormPage';
 import { SuperAdminRolesPage } from '../pages/super-admin/RolesPage';
 import { SuperAdminRoleDetailPage } from '../pages/super-admin/RoleDetailPage';
 import { SuperAdminClientsPage } from '../pages/super-admin/ClientsPage';
+import { SuperAdminClientEnquiriesPage } from '../pages/super-admin/ClientEnquiriesPage';
+import { SuperAdminClientEnquiryDetailPage } from '../pages/super-admin/ClientEnquiryDetailPage';
 import { SuperAdminClientFormPage } from '../pages/super-admin/ClientFormPage';
 import {
   SuperAdminCandidatesPage,
@@ -93,7 +95,23 @@ import { SuperAdminAuditLogsPage } from '../pages/super-admin/AuditLogsPage';
 import { SuperAdminSettingsPage } from '../pages/super-admin/SettingsPage';
 import { useAuth } from '../contexts/AuthContext';
 import { usePermissions } from '../hooks/usePermissions';
-import { LOGIN_PORTAL_PICKER_PATH } from '../lib/login-portals';
+import { CLIENT_LOGIN_PATH, LOGIN_PORTAL_CHOOSER_PATH } from '../lib/login-portals';
+
+function ClientEnquiriesRoute({ redirectTo }: { redirectTo: string }) {
+  return (
+    <PermissionGate permission="job-requests:read" redirectTo={redirectTo}>
+      <SuperAdminClientEnquiriesPage />
+    </PermissionGate>
+  );
+}
+
+function ClientEnquiryDetailRoute({ redirectTo }: { redirectTo: string }) {
+  return (
+    <PermissionGate permission="job-requests:read" redirectTo={redirectTo}>
+      <SuperAdminClientEnquiryDetailPage />
+    </PermissionGate>
+  );
+}
 
 function ProtectedAdminShell() {
   return (
@@ -161,13 +179,13 @@ function useMarketingAuthLayoutProps() {
     try {
       await logout();
     } finally {
-      navigate(LOGIN_PORTAL_PICKER_PATH, { replace: true });
+      navigate(LOGIN_PORTAL_CHOOSER_PATH, { replace: true });
     }
   }
 
   return {
     isAuthenticated,
-    loginHref: LOGIN_PORTAL_PICKER_PATH,
+    loginHref: CLIENT_LOGIN_PATH,
     onLogout: handleLogout,
   };
 }
@@ -191,21 +209,11 @@ function MarketingShell() {
   );
 }
 
-function MarketingLoginShell() {
-  const authLayoutProps = useMarketingAuthLayoutProps();
-
+function PortalLoginShell() {
   return (
-    <div data-prerender-ready="">
-      <MarketingLayout
-        navItems={[...marketingNav]}
-        ctaLabel="Reach out to us"
-        ctaHref="/contact"
-        brandLogoSrc={BESTAL_LOGO_SRC}
-        layoutClassName="mkt-login-layout"
-        {...authLayoutProps}
-      >
-        <Outlet />
-      </MarketingLayout>
+    <div className="marketing-site mkt-split-login-site" data-prerender-ready="">
+      <ScrollToTop />
+      <Outlet />
     </div>
   );
 }
@@ -219,36 +227,17 @@ function LoginRoutesLayout() {
   );
 }
 
-function AdminAuthShell() {
-  const authLayoutProps = useMarketingAuthLayoutProps();
-
+function StaffAuthShell() {
   return (
-    <div data-prerender-ready="">
+    <div className="marketing-site mkt-split-login-site" data-prerender-ready="">
       <ScrollToTop />
-      <MarketingLayout
-        navItems={[...marketingNav]}
-        ctaLabel="Reach out to us"
-        ctaHref="/contact"
-        brandLogoSrc={BESTAL_LOGO_SRC}
-        layoutClassName="mkt-login-layout"
-        {...authLayoutProps}
-      >
-        <Outlet />
-      </MarketingLayout>
+      <Outlet />
     </div>
   );
 }
 
-function RecruiterAuthShell() {
-  return <PortalAuthShell config={PORTAL_AUTH_CONFIG.RECRUITER} />;
-}
-
 function ClientAuthShell() {
   return <PortalAuthShell config={PORTAL_AUTH_CONFIG.CLIENT} />;
-}
-
-function SalesAuthShell() {
-  return <PortalAuthShell config={PORTAL_AUTH_CONFIG.SALES} />;
 }
 
 const router = createBrowserRouter([
@@ -277,23 +266,26 @@ const router = createBrowserRouter([
     element: <LoginRoutesLayout />,
     children: [
       {
-        element: <MarketingLoginShell />,
+        element: <PortalLoginShell />,
         children: [
-          { index: true, element: <MarketingLoginPage /> },
-          { path: 'portals/admin', element: <SplitTeamPortalsPage /> },
-          { path: 'portals/team', element: <SplitTeamPortalsPage /> },
-          { path: 'portals', element: <SplitPortalSelectorPage /> },
-          { path: 'engineers', element: <MarketingLoginPage variant="client" /> },
+          { index: true, element: <Navigate to="/login/portal" replace /> },
+          { path: 'portals', element: <Navigate to="/login/portal" replace /> },
+          { path: 'portals/admin', element: <Navigate to="/login/portal" replace /> },
+          { path: 'portals/team', element: <Navigate to="/login/portal" replace /> },
+          { path: 'portal', element: <StaffPortalLoginPage /> },
+          { path: 'engineers', element: <Navigate to="/login/client" replace /> },
+          { path: 'client', element: <MarketingLoginPage variant="client" /> },
+          { path: 'client/signup', element: <ClientSignupPage /> },
+          { path: 'client/signup/success', element: <ClientSignupSuccessPage /> },
         ],
       },
-      { path: 'client', element: <Navigate to="/login/engineers" replace /> },
     ],
   },
   {
     path: 'admin',
     children: [
       {
-        element: <AdminAuthShell />,
+        element: <StaffAuthShell />,
         children: [
           { path: 'login', element: <AdminLoginPage /> },
           { path: 'forgot-password', element: <AdminForgotPasswordPage /> },
@@ -312,6 +304,14 @@ const router = createBrowserRouter([
           { path: 'candidate-approvals', element: <CandidateApprovalsPage /> },
           { path: 'clients', element: <AdminClientsPage /> },
           { path: 'clients/:id', element: <AdminClientDetailPage /> },
+          {
+            path: 'client-enquiries',
+            element: <ClientEnquiriesRoute redirectTo="/admin" />,
+          },
+          {
+            path: 'client-enquiries/:id',
+            element: <ClientEnquiryDetailRoute redirectTo="/admin" />,
+          },
           { path: 'deployments', element: <AdminDeploymentsPage /> },
           { path: 'trials', element: <TrialsPage /> },
           { path: 'evaluations', element: <AdminEvaluationsPage /> },
@@ -354,6 +354,8 @@ const router = createBrowserRouter([
       { path: 'clients/new', element: <SuperAdminClientFormPage /> },
       { path: 'clients/:id/edit', element: <SuperAdminClientFormPage /> },
       { path: 'clients/:id', element: <SuperAdminClientFormPage /> },
+      { path: 'client-enquiries', element: <ClientEnquiriesRoute redirectTo="/super-admin/dashboard" /> },
+      { path: 'client-enquiries/:id', element: <ClientEnquiryDetailRoute redirectTo="/super-admin/dashboard" /> },
       { path: 'candidates', element: <SuperAdminCandidatesPage /> },
       { path: 'candidates/pending', element: <SuperAdminPendingCandidatesPage /> },
       { path: 'candidates/import', element: <SuperAdminCandidateCsvImportPage /> },
@@ -381,7 +383,7 @@ const router = createBrowserRouter([
     path: 'recruiter',
     children: [
       {
-        element: <RecruiterAuthShell />,
+        element: <StaffAuthShell />,
         children: [
           { path: 'login', element: <RecruiterLoginPage /> },
           { path: 'forgot-password', element: <PortalForgotPasswordPage portal="RECRUITER" /> },
@@ -412,7 +414,7 @@ const router = createBrowserRouter([
       {
         element: <ClientAuthShell />,
         children: [
-          { path: 'login', element: <ClientLoginPage /> },
+          { path: 'login', element: <Navigate to="/login/client" replace /> },
           { path: 'forgot-password', element: <PortalForgotPasswordPage portal="CLIENT" /> },
           { path: 'reset-password', element: <PortalResetPasswordPage portal="CLIENT" /> },
         ],
@@ -433,7 +435,7 @@ const router = createBrowserRouter([
     path: 'sales',
     children: [
       {
-        element: <SalesAuthShell />,
+        element: <StaffAuthShell />,
         children: [
           { path: 'login', element: <SalesLoginPage /> },
           { path: 'forgot-password', element: <PortalForgotPasswordPage portal="SALES" /> },
@@ -446,6 +448,14 @@ const router = createBrowserRouter([
           { index: true, element: <SalesDashboardPage /> },
           { path: 'clients', element: <SalesClientsPage /> },
           { path: 'candidates', element: <SalesCandidatesPage /> },
+          {
+            path: 'client-enquiries',
+            element: <ClientEnquiriesRoute redirectTo="/sales" />,
+          },
+          {
+            path: 'client-enquiries/:id',
+            element: <ClientEnquiryDetailRoute redirectTo="/sales" />,
+          },
           { path: 'clients/:id', element: <SalesClientDetailPage /> },
           { path: 'trials', element: <SalesTrialsPage /> },
           { path: 'deployments', element: <SalesDeploymentsPage /> },

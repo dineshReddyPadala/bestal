@@ -48,12 +48,12 @@ export function HomePage() {
               Ready to Perform.
             </h1>
             <p className="mkt-lead mt-[26px] max-w-[540px]">
-              Pre vetted Talents who work your hours. See their test results, their rate and their start
+              Pre-vetted Talents who work your hours. See their test results, their rate and their start
               date up front — Try them free before commit.
             </p>
             <div className="mkt-actions mt-9">
               <Link to="/sample-talent" className="mkt-btn mkt-btn-primary mkt-btn-lg">
-              Browse Pre Vetted Talent
+              Browse Pre-Vetted Talent
                <ForwardArrow />
               </Link>
               <Link to="/evaluation-standard" className="mkt-btn mkt-btn-white mkt-btn-lg">
@@ -265,7 +265,7 @@ export function HomePage() {
             <div className="flex flex-wrap items-center justify-between gap-4">
               <h2 className="mb-0">Engineers, organised by discipline</h2>
               <Link to="/sample-talent" className="mkt-btn mkt-btn-primary mkt-btn-lg shrink-0">
-                Browse Pre Vetted Talent
+                Browse Pre-Vetted Talent
                 <ForwardArrow />
               </Link>
             </div>
@@ -331,7 +331,7 @@ export function HomePage() {
               </p>
               <div className="mkt-actions">
                 <Link to="/sample-talent" className="mkt-btn mkt-btn-dark mkt-btn-lg">
-                  Browse Pre Vetted Talent
+                  Browse Pre-Vetted Talent
                   <ForwardArrow />
                 </Link>
                 <Link to="/contact" className="mkt-btn mkt-btn-outline mkt-btn-lg">

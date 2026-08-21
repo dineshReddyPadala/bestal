@@ -52,6 +52,11 @@ export const queryKeys = {
       ['admin', 'roles', code, 'users', params] as const,
     roleCatalog: ['admin', 'roles', 'catalog'] as const,
   },
+  clientEnquiries: {
+    all: ['client-enquiries'] as const,
+    list: (params?: Record<string, unknown>) => ['client-enquiries', 'list', params] as const,
+    detail: (id: number) => ['client-enquiries', id] as const,
+  },
   evaluations: {
     all: ['evaluations'] as const,
     list: (params?: Record<string, unknown>) => ['evaluations', 'list', params] as const,

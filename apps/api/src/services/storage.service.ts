@@ -8,6 +8,7 @@ import { createStorageAdapter } from './storage/storage.factory.js';
 import {
   buildBackgroundCheckAssetKey,
   buildCandidateAssetKey,
+  buildClientEnquiryAssetKey,
   buildEvaluationAssetKey,
   buildStorageKey,
 } from './storage/upload.utils.js';
@@ -161,6 +162,14 @@ export class StorageService {
       backgroundCheckId,
       originalName,
     );
+  }
+
+  buildClientEnquiryAssetKey(
+    organizationId: number,
+    enquiryId: number,
+    originalName: string,
+  ): string {
+    return buildClientEnquiryAssetKey(organizationId, enquiryId, originalName);
   }
 
   buildStorageKey(params: Parameters<typeof buildStorageKey>[0]): string {

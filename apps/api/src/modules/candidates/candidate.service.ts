@@ -1136,9 +1136,9 @@ export class CandidateService {
     return this.toDto(updated, authUser);
   }
 
-  /** Approve and publish — visible on the client portal (matches candidates:approve permission). */
+  /** Admin sign-off only — does not publish to the client portal. */
   async approve(authUser: AuthenticatedUser, id: number): Promise<CandidateDto> {
-    return this.approveAndPublish(authUser, id);
+    return this.approveInternal(authUser, id);
   }
 
   async reject(

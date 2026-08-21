@@ -190,7 +190,7 @@ export class AdminController {
     const data = await this.admin.approveCandidate(
       request.authUser!,
       id,
-      'publish',
+      'internal',
       this.ctx(request),
     );
     return reply.send({ data });

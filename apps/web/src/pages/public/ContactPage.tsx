@@ -128,10 +128,10 @@ export function ContactPage() {
             <div className="mkt-card">
               <h4>Just want to look first?</h4>
               <p className="mt-[7px] text-[15px]">
-                Browse pre vetted talents with full test results and rates. No account needed.
+                Browse pre-vetted talents with full test results and rates. No account needed.
               </p>
               <Link to="/login/portals" className="mkt-btn mkt-btn-ghost mt-[10px] pl-0">
-                Browse Pre Vetted Talents
+                Browse Pre-Vetted Talents
                 <ForwardArrow />
               </Link>
             </div>

@@ -1,5 +1,5 @@
 import { ForgotPasswordForm } from '../../components/auth/ForgotPasswordForm';
-import { AdminAuthPageShell } from '../../components/auth/AdminAuthPageShell';
+import { StaffAuthPageShell } from '../../components/auth/AdminAuthPageShell';
 import { PageMeta } from '../../components/PageMeta';
 
 export function ForgotPasswordPage() {
@@ -10,7 +10,7 @@ export function ForgotPasswordPage() {
         description="Reset your admin portal password."
         noIndex
       />
-      <AdminAuthPageShell
+      <StaffAuthPageShell
         title="Admin Portal"
         subtitle="Enter your email and we will send you a password reset link"
       >
@@ -19,7 +19,7 @@ export function ForgotPasswordPage() {
           loginPath="/admin/login"
           defaultEmail="admin@bestal.com"
         />
-      </AdminAuthPageShell>
+      </StaffAuthPageShell>
     </>
   );
 }

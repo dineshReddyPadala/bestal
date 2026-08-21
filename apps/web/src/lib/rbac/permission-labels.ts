@@ -33,6 +33,8 @@ export const PERMISSION_LABELS: Record<string, string> = {
   'shortlists:write': 'Manage shortlists',
   'trials:read': 'View trials',
   'trials:write': 'Manage trials',
+  'job-requests:read': 'View client enquiries',
+  'job-requests:write': 'Manage client enquiries',
   'deployments:read': 'View deployments',
   'deployments:write': 'Manage deployments',
   'deployments:request': 'Request deployments',

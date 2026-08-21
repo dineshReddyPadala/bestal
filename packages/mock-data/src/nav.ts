@@ -3,8 +3,9 @@ import type { NavItem } from './types.js';
 export const salesNav = [
   { id: 'dashboard', label: 'Dashboard', href: '/sales', icon: 'layout-dashboard' },
   { id: 'clients', label: 'Clients', href: '/sales/clients', icon: 'briefcase' },
+  { id: 'client-enquiries', label: 'Client Enquiry', href: '/sales/client-enquiries', icon: 'mail' },
   { id: 'candidates', label: 'Candidates', href: '/sales/candidates', icon: 'users' },
-  { id: 'trials', label: 'Trial Requests', href: '/sales/trials', icon: 'flask-conical', badge: 3 },
+  { id: 'trials', label: 'Trial Requests', href: '/sales/trials', icon: 'flask-conical' },
   { id: 'deployments', label: 'Deployments', href: '/sales/deployments', icon: 'rocket' },
   { id: 'margin', label: 'Margin Report', href: '/sales/margin', icon: 'trending-up' },
 ] as const satisfies readonly NavItem[];
@@ -14,17 +15,18 @@ export const adminNav = [
   { id: 'dashboard', label: 'Dashboard', href: '/admin', icon: 'layout-dashboard' },
   { id: 'candidates', label: 'Candidates', href: '/admin/candidates', icon: 'user-check' },
   { id: 'candidate-approvals', label: 'Approvals & Publish', href: '/admin/candidate-approvals', icon: 'check-square' },
-  { id: 'evaluations', label: 'Evaluations', href: '/admin/evaluations', icon: 'clipboard-check', badge: 2 },
-  { id: 'background-checks', label: 'Background Checks', href: '/admin/background-checks', icon: 'shield-check', badge: 3 },
+  { id: 'evaluations', label: 'Evaluations', href: '/admin/evaluations', icon: 'clipboard-check' },
+  { id: 'background-checks', label: 'Background Checks', href: '/admin/background-checks', icon: 'shield-check' },
   { id: 'clients', label: 'Clients', href: '/admin/clients', icon: 'briefcase' },
-  { id: 'trials', label: 'Trial Requests', href: '/admin/trials', icon: 'flask-conical', badge: 4 },
+  { id: 'client-enquiries', label: 'Client Enquiry', href: '/admin/client-enquiries', icon: 'mail' },
+  { id: 'trials', label: 'Trial Requests', href: '/admin/trials', icon: 'flask-conical' },
   { id: 'deployments', label: 'Deployments', href: '/admin/deployments', icon: 'rocket' },
 ] as const satisfies readonly NavItem[];
 
 export const recruiterNav = [
   { id: 'dashboard', label: 'Dashboard', href: '/recruiter', icon: 'layout-dashboard' },
-  { id: 'candidates', label: 'Candidates', href: '/recruiter/candidates', icon: 'user-check', badge: 3 },
-  { id: 'evaluations', label: 'Evaluations', href: '/recruiter/evaluations', icon: 'clipboard-check', badge: 2 },
+  { id: 'candidates', label: 'Candidates', href: '/recruiter/candidates', icon: 'user-check' },
+  { id: 'evaluations', label: 'Evaluations', href: '/recruiter/evaluations', icon: 'clipboard-check' },
   { id: 'background-checks', label: 'Background Checks', href: '/recruiter/background-checks', icon: 'shield-check' },
   { id: 'clients', label: 'Clients', href: '/recruiter/clients', icon: 'briefcase' },
   { id: 'trials', label: 'Trials', href: '/recruiter/trials', icon: 'flask-conical' },
@@ -34,7 +36,7 @@ export const recruiterNav = [
 export const clientNav = [
   { id: 'dashboard', label: 'Dashboard', href: '/client', icon: 'layout-dashboard' },
   { id: 'search', label: 'Candidate Search', href: '/client/search', icon: 'search' },
-  { id: 'trials', label: 'Trial Requests', href: '/client/trials', icon: 'flask-conical', badge: 1 },
+  { id: 'trials', label: 'Trial Requests', href: '/client/trials', icon: 'flask-conical' },
   { id: 'deployments', label: 'Deployments', href: '/client/deployments', icon: 'rocket' },
 ] as const satisfies readonly NavItem[];
 
@@ -44,6 +46,7 @@ export const superAdminNav = [
   { id: 'users', label: 'User Management', href: '/super-admin/users', icon: 'users' },
   { id: 'roles', label: 'Role Management', href: '/super-admin/roles', icon: 'shield' },
   { id: 'clients', label: 'Clients', href: '/super-admin/clients', icon: 'briefcase' },
+  { id: 'client-enquiries', label: 'Client Enquiry', href: '/super-admin/client-enquiries', icon: 'mail' },
   { id: 'candidates', label: 'Candidates', href: '/super-admin/candidates', icon: 'user-check' },
   { id: 'pending', label: 'Pending Approvals', href: '/super-admin/candidates/pending', icon: 'check-square' },
   { id: 'evaluations', label: 'Evaluations', href: '/super-admin/evaluations', icon: 'clipboard-check' },
@@ -58,7 +61,7 @@ export const superAdminNav = [
 export const publicNav = [
   { id: 'how-it-works', label: 'How it works', href: '/how-it-works' },
   { id: 'how-we-test', label: 'How we test', href: '/evaluation-standard' },
-  { id: 'engineers', label: 'Pre Vetted Talent', href: '/sample-talent' },
+  { id: 'engineers', label: 'Pre-Vetted Talent', href: '/sample-talent' },
   { id: 'trial', label: 'Free Trial', href: '/try-for-a-week' },
   { id: 'rates', label: 'Pricing', href: '/rates' },
   { id: 'trust', label: 'Trust', href: '/trust' },

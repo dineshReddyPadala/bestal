@@ -3,18 +3,16 @@ import { MarketingPortalOptionList } from '../../components/marketing/MarketingP
 import { SplitLoginLayout } from '../../components/marketing/SplitLoginLayout';
 import { SplitLoginPanel } from '../../components/marketing/SplitLoginPanel';
 import { useAuth } from '../../contexts/AuthContext';
-import { getTeamPortals } from '../../lib/login-portals';
+import { getStaffTeamPortals } from '../../lib/login-portals';
 
-/** Split-screen team portal picker (Image 1 — Admin, Sales, Recruiter, Client). */
-export function SplitTeamPortalsPage() {
+/** Staff portal picker at /login/portal — Admin, Sales, Recruiter. */
+export function StaffPortalLoginPage() {
   const { user } = useAuth();
 
   const adminHref =
     user && (user.portal === 'ADMIN' || user.role === 'SUPER_ADMIN') ? '/admin' : '/admin/login';
 
-  const clientHref = user && user.portal === 'CLIENT' ? '/client' : '/client/login';
-
-  const portals = getTeamPortals({ adminHref, clientHref });
+  const portals = getStaffTeamPortals({ adminHref });
 
   return (
     <>

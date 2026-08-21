@@ -7,6 +7,7 @@ import { PERMISSIONS } from '../auth/auth.permissions.js';
 import { JobRequestController } from './job-request.controller.js';
 import { JobRequestService } from './job-request.service.js';
 import {
+  clientEnquirySubmitResponseSchema,
   createPublicJobRequestBodySchema,
   jobRequestIdParamSchema,
   jobRequestListResponseSchema,
@@ -27,7 +28,7 @@ export async function jobRequestRoutes(fastify: FastifyInstance): Promise<void> 
       preHandler: [authenticate, requirePermission(PERMISSIONS.JOB_REQUESTS_READ)],
       schema: {
         tags: ['Job Requests'],
-        summary: 'List job requests with pagination and filtering',
+        summary: 'List client enquiries with pagination and filtering',
         security: [{ bearerAuth: [] }],
         querystring: listJobRequestsQuerySchema,
         response: {
@@ -46,7 +47,7 @@ export async function jobRequestRoutes(fastify: FastifyInstance): Promise<void> 
       preHandler: [authenticate, requirePermission(PERMISSIONS.JOB_REQUESTS_READ)],
       schema: {
         tags: ['Job Requests'],
-        summary: 'Get job request details by ID',
+        summary: 'Get client enquiry details by ID',
         security: [{ bearerAuth: [] }],
         params: jobRequestIdParamSchema,
         response: {
@@ -66,7 +67,7 @@ export async function jobRequestRoutes(fastify: FastifyInstance): Promise<void> 
       preHandler: [authenticate, requirePermission(PERMISSIONS.JOB_REQUESTS_WRITE)],
       schema: {
         tags: ['Job Requests'],
-        summary: 'Update job request status, assignee, or internal notes',
+        summary: 'Update client enquiry status, assignee, or internal notes',
         security: [{ bearerAuth: [] }],
         params: jobRequestIdParamSchema,
         body: updateJobRequestBodySchema,
@@ -101,5 +102,27 @@ export async function jobRequestPublicRoutes(fastify: FastifyInstance): Promise<
       },
     },
     jobRequestController.submitPublic,
+  );
+}
+
+export async function clientEnquiryPublicRoutes(fastify: FastifyInstance): Promise<void> {
+  const jobRequestService = new JobRequestService(fastify);
+  const jobRequestController = new JobRequestController(jobRequestService);
+  const app = fastify.withTypeProvider<ZodTypeProvider>();
+
+  app.post(
+    '/',
+    {
+      schema: {
+        tags: ['Public'],
+        summary: 'Submit a client enquiry from the Reach Out form',
+        consumes: ['multipart/form-data'],
+        response: {
+          201: clientEnquirySubmitResponseSchema,
+          422: errorResponses[422],
+        },
+      },
+    },
+    jobRequestController.submitClientEnquiry,
   );
 }

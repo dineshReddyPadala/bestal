@@ -22,7 +22,7 @@ export function HowItWorksPage() {
           </p>
           <div className="mkt-actions">
             <Link to="/sample-talent" className="mkt-btn mkt-btn-primary">
-              Browse Pre Vetted Talent <ForwardArrow />
+              Browse Pre-Vetted Talent <ForwardArrow />
             </Link>
             <Link to="/evaluation-standard" className="mkt-btn mkt-btn-secondary">
               See how we test

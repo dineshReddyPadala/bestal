@@ -49,13 +49,13 @@ export function SuperAdminCandidateDetailPage() {
     if (!data) return [];
     return [
       {
-        id: 'approve-internal',
-        label: 'Approve Internal Only',
+        id: 'approve',
+        label: 'Approve',
         hidden: !isPending,
         onSelect: () =>
           void run(
-            () => mutations.approveCandidateInternal.mutateAsync(candidateId),
-            'Approved (internal)',
+            () => mutations.approveCandidate.mutateAsync(candidateId),
+            'Approved — ready to publish',
           ),
       },
       {
@@ -197,11 +197,11 @@ export function SuperAdminCandidateDetailPage() {
                 onClick={() =>
                   void run(
                     () => mutations.approveCandidate.mutateAsync(candidateId),
-                    'Approved & published',
+                    'Approved — ready to publish',
                   )
                 }
               >
-                Approve & Publish
+                Approve
               </Button>
             ) : null}
             <ActionMenu items={menuItems} label={`Actions for ${name}`} />

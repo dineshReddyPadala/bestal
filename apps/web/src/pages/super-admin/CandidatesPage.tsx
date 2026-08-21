@@ -17,7 +17,6 @@ import {
   useAdminPendingCandidates,
 } from '../../hooks/api/useAdmin';
 import { useDebouncedSearch } from '../../hooks/useDebouncedSearch';
-import { getApiErrorMessage } from '../../lib/api/errors';
 import { useDemoToast } from '../../lib/use-demo-toast';
 
 type Row = {
@@ -133,28 +132,19 @@ function buildCandidateActions(
       view,
       edit,
       {
-        id: 'approve-publish',
-        label: 'Approve & Publish',
+        id: 'approve',
+        label: 'Approve',
         onSelect: () =>
           requestConfirm({
-            title: 'Approve & Publish?',
-            description: `${r.name} will be approved and made visible to clients.`,
-            confirmLabel: 'Approve & Publish',
+            title: 'Approve candidate?',
+            description: `${r.name} will be approved internally. Publish separately when ready for clients.`,
+            confirmLabel: 'Approve',
             onConfirm: async () => {
               await mutations.approveCandidate.mutateAsync(r.id);
-              show('Approved & published');
+              show('Approved — ready to publish');
             },
             onError: showError,
           }),
-      },
-      {
-        id: 'approve-internal',
-        label: 'Approve Internal Only',
-        onSelect: () =>
-          void mutations.approveCandidateInternal
-            .mutateAsync(r.id)
-            .then(() => show('Approved (internal)'))
-            .catch((e) => showError(getApiErrorMessage(e, 'Approve failed'))),
       },
       {
         id: 'return',

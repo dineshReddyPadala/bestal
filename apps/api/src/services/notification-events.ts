@@ -124,11 +124,11 @@ export async function notifyJobRequestSubmitted(
   await safeNotify('job-request-submitted', () =>
     notifyWithEmailFlag(prisma, config, {
       organizationId: input.organizationId,
-      roles: ['ADMIN', 'SALES'],
+      roles: ['ADMIN', 'SALES', 'SUPER_ADMIN'],
       type: 'GENERAL',
-      title: 'New job request submitted',
-      body: `${input.companyName} submitted a job request for ${input.jobTitle}.`,
-      actionUrl: webUrl(config, `/admin/job-requests/${input.jobRequestId}`),
+      title: 'New client enquiry',
+      body: `${input.companyName} submitted a client enquiry for ${input.jobTitle}.`,
+      actionUrl: webUrl(config, `/super-admin/client-enquiries/${input.jobRequestId}`),
       metadata: { jobRequestId: input.jobRequestId, event: 'job_request_submitted' },
     }),
   );
@@ -425,19 +425,24 @@ export async function notifyClientOnboarded(
     clientName: string;
     kind: 'created' | 'user_linked';
     userEmail?: string;
+    title?: string;
+    body?: string;
   },
 ): Promise<void> {
+  const defaultTitle =
+    input.kind === 'created' ? 'New client onboarded' : 'Client user linked';
+  const defaultBody =
+    input.kind === 'created'
+      ? `${input.clientName} was created.`
+      : `${input.userEmail ?? 'A user'} was linked to ${input.clientName}.`;
+
   await safeNotify('client-onboard', () =>
     notifyWithEmailFlag(prisma, config, {
       organizationId: input.organizationId,
       roles: ['SUPER_ADMIN', 'ADMIN', 'SALES'],
       type: 'SYSTEM',
-      title:
-        input.kind === 'created' ? 'New client onboarded' : 'Client user linked',
-      body:
-        input.kind === 'created'
-          ? `${input.clientName} was created.`
-          : `${input.userEmail ?? 'A user'} was linked to ${input.clientName}.`,
+      title: input.title ?? defaultTitle,
+      body: input.body ?? defaultBody,
       actionUrl: webUrl(config, `/super-admin/clients/${input.clientId}`),
       metadata: {
         clientId: input.clientId,
