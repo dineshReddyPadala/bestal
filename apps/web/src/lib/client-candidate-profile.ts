@@ -64,8 +64,8 @@ export function mapCandidateDtoToClientProfile(
     evaluation: {
       technical: candidate.technicalScore ?? null,
       communication: candidate.communicationScore ?? null,
-      architecture: null,
-      recommendation: null,
+      collaborationCulturalFit: candidate.collaborationCulturalFitScore ?? null,
+      recommendation: candidate.evaluationRecommendation ?? null,
       status: evaluationStatus,
     },
     bgv: {

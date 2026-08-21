@@ -880,7 +880,6 @@ export class CandidateImportService {
       sourceCandidateId: payload.sourceCandidateId,
       headline: payload.headline,
       primaryRole: payload.primaryRole,
-      summary: payload.summary,
       location: payload.location,
       country: payload.country,
       timezone: payload.timezone,
@@ -990,7 +989,7 @@ export class CandidateImportService {
           technicalScore: evaluation.technicalScore,
           communicationScore: evaluation.communicationScore,
           problemSolvingScore: evaluation.problemSolvingScore,
-          architectureScore: evaluation.architectureScore,
+          collaborationCulturalFitScore: evaluation.collaborationCulturalFitScore,
           clientReadinessScore: evaluation.clientReadinessScore,
           recommendation: evaluation.recommendation,
           evaluationSummary: evaluation.evaluationSummary,
@@ -1005,11 +1004,8 @@ export class CandidateImportService {
       const bgv = payload.bgv;
       const checkFields = {
         idCheckStatus: bgv.idCheckStatus,
-        addressCheckStatus: bgv.addressCheckStatus,
         employmentCheckStatus: bgv.employmentCheckStatus,
-        educationCheckStatus: bgv.educationCheckStatus,
         criminalCheckStatus: bgv.criminalCheckStatus,
-        referenceCheckStatus: bgv.referenceCheckStatus,
       };
       const resultSummary = resolveBgvResultSummaryForImport(bgv.bgvSummary, checkFields);
       const vendor = bgv.vendor?.trim() || null;
@@ -1026,11 +1022,8 @@ export class CandidateImportService {
           resultSummary,
           reviewNotes: bgv.concernNotes,
           idCheckStatus: bgv.idCheckStatus,
-          addressCheckStatus: bgv.addressCheckStatus,
           employmentCheckStatus: bgv.employmentCheckStatus,
-          educationCheckStatus: bgv.educationCheckStatus,
           criminalCheckStatus: bgv.criminalCheckStatus,
-          referenceCheckStatus: bgv.referenceCheckStatus,
           consentConfirmedAt: vendor ? now : undefined,
           vendorAssignedAt: vendor ? now : undefined,
           initiatedAt: bgv.initiatedDate
@@ -1055,7 +1048,7 @@ export class CandidateImportService {
           technicalScore: null,
           communicationScore: null,
           problemSolvingScore: null,
-          architectureScore: null,
+          collaborationCulturalFitScore: null,
           reliabilityScore: score.reliabilityScore,
           clientReadinessScore: null,
           scoreSource: score.scoreSource,

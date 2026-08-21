@@ -14,12 +14,12 @@ export const STATIC_EVALUATION_EXTRACTION: EvaluationExtractionResponse = {
   technicalScore: 88,
   communicationScore: 92,
   problemSolvingScore: 85,
-  architectureScore: 90,
+  collaborationCulturalFitScore: 90,
   clientReadinessScore: 87,
   recommendation: 'Hire',
   evaluatorComments:
-    'Candidate demonstrated strong ownership, clear communication, and solid architecture reasoning under time pressure.',
+    'Candidate demonstrated strong ownership, clear communication, and solid collaboration under time pressure.',
   aiEvaluationSummary:
-    'Strong hire profile: excellent communication and architecture skills with consistent technical depth. Recommended for client-facing senior engineering roles after minor platform onboarding.',
+    'Strong hire profile: excellent communication and collaboration skills with consistent technical depth. Recommended for client-facing senior engineering roles after minor platform onboarding.',
   warnings: ['Evaluator name inferred from document header — verify before saving.'],
 };

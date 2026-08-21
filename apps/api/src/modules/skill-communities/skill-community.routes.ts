@@ -30,3 +30,23 @@ export async function skillCommunityRoutes(fastify: FastifyInstance): Promise<vo
     controller.list,
   );
 }
+
+export async function skillCommunityPublicRoutes(fastify: FastifyInstance): Promise<void> {
+  const service = new SkillCommunityService(fastify);
+  const controller = new SkillCommunityController(service);
+  const app = fastify.withTypeProvider<ZodTypeProvider>();
+
+  app.get(
+    '/',
+    {
+      schema: {
+        tags: ['Skill Communities'],
+        summary: 'List active skill communities (public marketing)',
+        response: {
+          200: skillCommunityListResponseSchema,
+        },
+      },
+    },
+    controller.list,
+  );
+}

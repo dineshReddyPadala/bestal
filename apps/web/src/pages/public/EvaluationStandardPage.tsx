@@ -6,7 +6,7 @@ import { PAGE_SEO } from '../../lib/marketing-seo';
 const SCORE_LABELS = [
   { num: '01', title: 'Technical depth' },
   { num: '02', title: 'Problem solving' },
-  { num: '03', title: 'Architecture' },
+  { num: '03', title: 'Collaboration & Cultural Fit' },
   { num: '04', title: 'Code quality' },
   { num: '05', title: 'Communication' },
 ] as const;
@@ -28,7 +28,7 @@ export function EvaluationStandardPage() {
         </h1>
         <p className="mkt-lead howitworks-body-style">
           A qualified specialist — not a BesTal recruiter — tests the engineer against role-specific
-          criteria and scores technical depth, problem solving, architecture, code quality and
+          criteria and scores technical depth, problem solving, collaboration and cultural fit, code quality and
           communication separately.
         </p>
       </MktShell>

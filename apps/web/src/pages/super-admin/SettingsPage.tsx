@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState, type TextareaHTMLAttributes } fro
 import { useQuery } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
 import { ActionMenu, type ActionMenuItem } from '../../components/super-admin/ActionMenu';
+import { IconSelectField } from '../../components/super-admin/IconSelectField';
 import { useConfirmAction } from '../../components/super-admin/useConfirmAction';
 import {
   useAdminMutations,
@@ -16,6 +17,89 @@ import { useDemoToast } from '../../lib/use-demo-toast';
 import { ToastHost } from '../../components/ui/ToastHost';
 import { getApiErrorMessage } from '../../lib/api/errors';
 
+type EmailProvider = 'gmail' | 'microsoft365';
+
+type GmailSmtpForm = {
+  host: string;
+  port: string;
+  user: string;
+  password: string;
+  fromAddress: string;
+  fromName: string;
+  secure: boolean;
+};
+
+type Microsoft365GraphForm = {
+  tenantId: string;
+  clientId: string;
+  clientSecret: string;
+  fromAddress: string;
+  fromName: string;
+};
+
+const GMAIL_SMTP_DEFAULTS: GmailSmtpForm = {
+  host: 'smtp.gmail.com',
+  port: '587',
+  user: '',
+  password: '',
+  fromAddress: '',
+  fromName: 'BesTal',
+  secure: false,
+};
+
+const MICROSOFT365_GRAPH_DEFAULTS: Microsoft365GraphForm = {
+  tenantId: '',
+  clientId: '',
+  clientSecret: '',
+  fromAddress: '',
+  fromName: 'BesTal',
+};
+
+function gmailSmtpFromApi(value: unknown, defaults: GmailSmtpForm): GmailSmtpForm {
+  const obj = asObj(value);
+  return {
+    host: String(obj.host ?? defaults.host),
+    port: String(obj.port ?? defaults.port),
+    user: String(obj.user ?? ''),
+    password: String(obj.password ?? ''),
+    fromAddress: String(obj.fromAddress ?? ''),
+    fromName: String(obj.fromName ?? defaults.fromName),
+    secure: Boolean(obj.secure),
+  };
+}
+
+function microsoft365GraphFromApi(value: unknown, defaults: Microsoft365GraphForm): Microsoft365GraphForm {
+  const obj = asObj(value);
+  return {
+    tenantId: String(obj.tenantId ?? ''),
+    clientId: String(obj.clientId ?? ''),
+    clientSecret: String(obj.clientSecret ?? ''),
+    fromAddress: String(obj.fromAddress ?? ''),
+    fromName: String(obj.fromName ?? defaults.fromName),
+  };
+}
+
+function gmailSmtpToPayload(form: GmailSmtpForm) {
+  return {
+    host: form.host.trim(),
+    port: Number(form.port) || 587,
+    user: form.user.trim() || null,
+    password: form.password.trim() || null,
+    fromAddress: form.fromAddress.trim() || null,
+    fromName: form.fromName.trim() || null,
+    secure: form.secure,
+  };
+}
+
+function microsoft365GraphToPayload(form: Microsoft365GraphForm) {
+  return {
+    tenantId: form.tenantId.trim() || null,
+    clientId: form.clientId.trim() || null,
+    clientSecret: form.clientSecret.trim() || null,
+    fromAddress: form.fromAddress.trim() || null,
+    fromName: form.fromName.trim() || null,
+  };
+}
 function workflowsFromApi(w: Record<string, unknown>) {
   return {
     enabled: Boolean(w.enabled),
@@ -91,13 +175,9 @@ export function SuperAdminPlatformSettingsPage() {
   });
   const [email, setEmail] = useState({
     enabled: false,
-    host: 'smtp.gmail.com',
-    port: '587',
-    user: '',
-    password: '',
-    fromAddress: '',
-    fromName: 'BesTal',
-    secure: false,
+    provider: 'gmail' as EmailProvider,
+    gmail: { ...GMAIL_SMTP_DEFAULTS },
+    microsoft365: { ...MICROSOFT365_GRAPH_DEFAULTS },
   });
   const [localization, setLocalization] = useState({
     dateFormat: 'MMM d, yyyy',
@@ -185,13 +265,15 @@ export function SuperAdminPlatformSettingsPage() {
     });
     setEmail({
       enabled: Boolean(em.enabled),
-      host: String(em.host ?? 'smtp.gmail.com'),
-      port: String(em.port ?? '587'),
-      user: String(em.user ?? ''),
-      password: String(em.password ?? ''),
-      fromAddress: String(em.fromAddress ?? ''),
-      fromName: String(em.fromName ?? 'BesTal'),
-      secure: Boolean(em.secure),
+      provider: em.provider === 'microsoft365' ? 'microsoft365' : 'gmail',
+      gmail: gmailSmtpFromApi(
+        em.gmail ??
+          (em.host || em.fromAddress || em.password || em.user
+            ? em
+            : undefined),
+        GMAIL_SMTP_DEFAULTS,
+      ),
+      microsoft365: microsoft365GraphFromApi(em.microsoft365, MICROSOFT365_GRAPH_DEFAULTS),
     });
     setLocalization({
       dateFormat: String(loc.dateFormat ?? 'MMM d, yyyy'),
@@ -964,13 +1046,9 @@ export function SuperAdminPlatformSettingsPage() {
                         'email',
                         {
                           enabled: email.enabled,
-                          host: email.host.trim(),
-                          port: Number(email.port) || 587,
-                          user: email.user.trim() || null,
-                          password: email.password.trim() || null,
-                          fromAddress: email.fromAddress.trim() || null,
-                          fromName: email.fromName.trim() || null,
-                          secure: email.secure,
+                          provider: email.provider,
+                          gmail: gmailSmtpToPayload(email.gmail),
+                          microsoft365: microsoft365GraphToPayload(email.microsoft365),
                         },
                         'Email settings',
                       )
@@ -984,53 +1062,34 @@ export function SuperAdminPlatformSettingsPage() {
                       />
                       Use platform SMTP settings (falls back to server env when disabled)
                     </label>
-                    <Field label="SMTP host">
-                      <Input
-                        value={email.host}
-                        onChange={(e) => setEmail((p) => ({ ...p, host: e.target.value }))}
-                      />
+                    <Field label="Active email provider" className="sm:col-span-2">
+                      <Select
+                        value={email.provider}
+                        onChange={(e) =>
+                          setEmail((p) => ({
+                            ...p,
+                            provider: e.target.value === 'microsoft365' ? 'microsoft365' : 'gmail',
+                          }))
+                        }
+                      >
+                        <option value="gmail">Gmail (SMTP)</option>
+                        <option value="microsoft365">Microsoft 365 (Microsoft Graph API)</option>
+                      </Select>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        Choose which provider BesTal uses to send email. Configure both below; only
+                        the active provider is used. Microsoft 365 uses Graph API (recommended).
+                      </p>
                     </Field>
-                    <Field label="SMTP port">
-                      <Input
-                        type="number"
-                        value={email.port}
-                        onChange={(e) => setEmail((p) => ({ ...p, port: e.target.value }))}
-                      />
-                    </Field>
-                    <Field label="SMTP user">
-                      <Input
-                        value={email.user}
-                        onChange={(e) => setEmail((p) => ({ ...p, user: e.target.value }))}
-                      />
-                    </Field>
-                    <Field label="SMTP password">
-                      <Input
-                        type="password"
-                        value={email.password}
-                        onChange={(e) => setEmail((p) => ({ ...p, password: e.target.value }))}
-                        placeholder="Leave as ******** to keep existing"
-                      />
-                    </Field>
-                    <Field label="From address">
-                      <Input
-                        value={email.fromAddress}
-                        onChange={(e) => setEmail((p) => ({ ...p, fromAddress: e.target.value }))}
-                      />
-                    </Field>
-                    <Field label="From name">
-                      <Input
-                        value={email.fromName}
-                        onChange={(e) => setEmail((p) => ({ ...p, fromName: e.target.value }))}
-                      />
-                    </Field>
-                    <label className="flex items-center gap-2 text-sm sm:col-span-2">
-                      <input
-                        type="checkbox"
-                        checked={email.secure}
-                        onChange={(e) => setEmail((p) => ({ ...p, secure: e.target.checked }))}
-                      />
-                      Use TLS/SSL (port 465)
-                    </label>
+                    <GmailSmtpSection
+                      active={email.provider === 'gmail'}
+                      config={email.gmail}
+                      onChange={(next) => setEmail((p) => ({ ...p, gmail: next }))}
+                    />
+                    <Microsoft365GraphSection
+                      active={email.provider === 'microsoft365'}
+                      config={email.microsoft365}
+                      onChange={(next) => setEmail((p) => ({ ...p, microsoft365: next }))}
+                    />
                     <div className="sm:col-span-2">
                       <EmailTestButton />
                     </div>
@@ -1265,6 +1324,140 @@ export function SuperAdminPlatformSettingsPage() {
 /** @deprecated Use SuperAdminPlatformSettingsPage */
 export const SuperAdminSettingsPage = SuperAdminPlatformSettingsPage;
 
+function GmailSmtpSection({
+  active,
+  config,
+  onChange,
+}: {
+  active: boolean;
+  config: GmailSmtpForm;
+  onChange: (next: GmailSmtpForm) => void;
+}) {
+  return (
+    <div
+      className={`space-y-4 rounded-lg border p-4 sm:col-span-2 ${active ? 'border-primary/40 bg-primary/5' : 'border-border'}`}
+    >
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <h4 className="text-sm font-medium">Gmail (SMTP)</h4>
+          <p className="text-xs text-muted-foreground">
+            Use a Gmail app password with smtp.gmail.com on port 587.
+          </p>
+        </div>
+        {active ? <StatusBadge status="ACTIVE" /> : null}
+      </div>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Field label="SMTP host">
+          <Input value={config.host} onChange={(e) => onChange({ ...config, host: e.target.value })} />
+        </Field>
+        <Field label="SMTP port">
+          <Input
+            type="number"
+            value={config.port}
+            onChange={(e) => onChange({ ...config, port: e.target.value })}
+          />
+        </Field>
+        <Field label="SMTP user">
+          <Input value={config.user} onChange={(e) => onChange({ ...config, user: e.target.value })} />
+        </Field>
+        <Field label="SMTP password">
+          <Input
+            type="password"
+            value={config.password}
+            onChange={(e) => onChange({ ...config, password: e.target.value })}
+            placeholder="Leave as ******** to keep existing"
+          />
+        </Field>
+        <Field label="From address">
+          <Input
+            value={config.fromAddress}
+            onChange={(e) => onChange({ ...config, fromAddress: e.target.value })}
+          />
+        </Field>
+        <Field label="From name">
+          <Input
+            value={config.fromName}
+            onChange={(e) => onChange({ ...config, fromName: e.target.value })}
+          />
+        </Field>
+        <label className="flex items-center gap-2 text-sm sm:col-span-2">
+          <input
+            type="checkbox"
+            checked={config.secure}
+            onChange={(e) => onChange({ ...config, secure: e.target.checked })}
+          />
+          Use TLS/SSL (port 465)
+        </label>
+      </div>
+    </div>
+  );
+}
+
+function Microsoft365GraphSection({
+  active,
+  config,
+  onChange,
+}: {
+  active: boolean;
+  config: Microsoft365GraphForm;
+  onChange: (next: Microsoft365GraphForm) => void;
+}) {
+  return (
+    <div
+      className={`space-y-4 rounded-lg border p-4 sm:col-span-2 ${active ? 'border-primary/40 bg-primary/5' : 'border-border'}`}
+    >
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <h4 className="text-sm font-medium">Microsoft 365 (Microsoft Graph API)</h4>
+          <p className="text-xs text-muted-foreground">
+            Recommended and secure. Register an Azure app with application permission{' '}
+            <code className="text-[11px]">Mail.Send</code>, grant admin consent, then enter the
+            credentials below.
+          </p>
+        </div>
+        {active ? <StatusBadge status="ACTIVE" /> : null}
+      </div>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Field label="Tenant ID">
+          <Input
+            value={config.tenantId}
+            onChange={(e) => onChange({ ...config, tenantId: e.target.value })}
+            placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+          />
+        </Field>
+        <Field label="Application (client) ID">
+          <Input
+            value={config.clientId}
+            onChange={(e) => onChange({ ...config, clientId: e.target.value })}
+            placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+          />
+        </Field>
+        <Field label="Client secret" className="sm:col-span-2">
+          <Input
+            type="password"
+            value={config.clientSecret}
+            onChange={(e) => onChange({ ...config, clientSecret: e.target.value })}
+            placeholder="Leave as ******** to keep existing"
+          />
+        </Field>
+        <Field label="From mailbox (UPN)">
+          <Input
+            value={config.fromAddress}
+            onChange={(e) => onChange({ ...config, fromAddress: e.target.value })}
+            placeholder="noreply@yourcompany.com"
+          />
+        </Field>
+        <Field label="From name">
+          <Input
+            value={config.fromName}
+            onChange={(e) => onChange({ ...config, fromName: e.target.value })}
+          />
+        </Field>
+      </div>
+    </div>
+  );
+}
+
 function EmailTestButton() {
   const { show, showError } = useDemoToast();
   const [to, setTo] = useState('');
@@ -1288,7 +1481,7 @@ function EmailTestButton() {
           void adminApi
             .sendTestEmail(to.trim())
             .then((result) => {
-              show(result.sent ? 'Test email sent' : 'SMTP not configured — check settings');
+              show(result.sent ? 'Test email sent' : 'Email not configured — check settings');
             })
             .catch((err) => showError(getApiErrorMessage(err, 'Test email failed')))
             .finally(() => setBusy(false));
@@ -1386,16 +1579,57 @@ function SkillCommunitiesPanel() {
     name: string;
     slug: string;
     description: string | null;
+    iconId?: number | null;
+    iconUrl?: string | null;
     isActive: boolean;
     candidateCount?: number;
   }>;
-  const [open, setOpen] = useState(false);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
   const [name, setName] = useState('');
   const [slug, setSlug] = useState('');
   const [description, setDescription] = useState('');
+  const [iconId, setIconId] = useState('');
+
+  function resetForm() {
+    setName('');
+    setSlug('');
+    setDescription('');
+    setIconId('');
+    setEditingId(null);
+  }
+
+  function openCreate() {
+    resetForm();
+    setCreateOpen(true);
+  }
+
+  function openEdit(row: (typeof rows)[number]) {
+    setEditingId(row.id);
+    setName(row.name);
+    setSlug(row.slug);
+    setDescription(row.description ?? '');
+    setIconId(row.iconId != null ? String(row.iconId) : '');
+    setEditOpen(true);
+  }
 
   const columns = useMemo<ColumnDef<(typeof rows)[number]>[]>(
     () => [
+      {
+        id: 'icon',
+        header: 'Icon',
+        cell: ({ row }) =>
+          row.original.iconUrl ? (
+            <img
+              src={row.original.iconUrl}
+              alt=""
+              className="h-8 w-8 rounded-md object-cover ring-1 ring-border/60"
+            />
+          ) : (
+            <span className="text-xs text-muted-foreground">—</span>
+          ),
+      },
       {
         accessorKey: 'name',
         header: 'Name',
@@ -1421,7 +1655,11 @@ function SkillCommunitiesPanel() {
           const r = row.original;
           const hasCandidates = (r.candidateCount ?? 0) > 0;
           const items: ActionMenuItem[] = [
-            { id: 'view', label: 'View Community' },
+            {
+              id: 'edit',
+              label: 'Edit Community',
+              onSelect: () => openEdit(r),
+            },
             {
               id: 'activate',
               label: 'Activate',
@@ -1476,6 +1714,19 @@ function SkillCommunitiesPanel() {
     [mutations, requestConfirm, show, showError],
   );
 
+  const communityFormFields = (
+    <div className="space-y-3">
+      <Input placeholder="Name" value={name} onChange={(e) => setName(e.target.value)} />
+      <Input placeholder="Slug" value={slug} onChange={(e) => setSlug(e.target.value)} />
+      <Input
+        placeholder="Description"
+        value={description}
+        onChange={(e) => setDescription(e.target.value)}
+      />
+      <IconSelectField value={iconId} onChange={setIconId} />
+    </div>
+  );
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-2">
@@ -1483,7 +1734,7 @@ function SkillCommunitiesPanel() {
           <h3 className="text-sm font-semibold">Configure Skill Communities</h3>
           <p className="text-xs text-muted-foreground">Create and manage talent communities</p>
         </div>
-        <Button size="sm" onClick={() => setOpen(true)}>
+        <Button size="sm" onClick={openCreate}>
           <Plus className="mr-1.5 h-3.5 w-3.5" />
           Add
         </Button>
@@ -1507,12 +1758,12 @@ function SkillCommunitiesPanel() {
       )}
       {confirmDialog}
       <Dialog
-        open={open}
-        onClose={() => setOpen(false)}
+        open={createOpen}
+        onClose={() => setCreateOpen(false)}
         title="Create skill community"
         footer={
           <>
-            <Button variant="outline" onClick={() => setOpen(false)}>
+            <Button variant="outline" onClick={() => setCreateOpen(false)}>
               Cancel
             </Button>
             <Button
@@ -1522,13 +1773,12 @@ function SkillCommunitiesPanel() {
                     name,
                     slug: slug || name.toLowerCase().replace(/\s+/g, '-'),
                     description,
+                    iconId: iconId ? Number(iconId) : null,
                   })
                   .then(() => {
                     show('Created');
-                    setOpen(false);
-                    setName('');
-                    setSlug('');
-                    setDescription('');
+                    setCreateOpen(false);
+                    resetForm();
                   })
                   .catch((e) => showError(e instanceof Error ? e.message : 'Failed'))
               }
@@ -1538,15 +1788,45 @@ function SkillCommunitiesPanel() {
           </>
         }
       >
-        <div className="space-y-3">
-          <Input placeholder="Name" value={name} onChange={(e) => setName(e.target.value)} />
-          <Input placeholder="Slug" value={slug} onChange={(e) => setSlug(e.target.value)} />
-          <Input
-            placeholder="Description"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-          />
-        </div>
+        {communityFormFields}
+      </Dialog>
+      <Dialog
+        open={editOpen}
+        onClose={() => setEditOpen(false)}
+        title="Edit skill community"
+        footer={
+          <>
+            <Button variant="outline" onClick={() => setEditOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              disabled={editingId == null}
+              onClick={() => {
+                if (editingId == null) return;
+                void mutations.updateSkillCommunity
+                  .mutateAsync({
+                    id: editingId,
+                    body: {
+                      name,
+                      slug: slug || name.toLowerCase().replace(/\s+/g, '-'),
+                      description,
+                      iconId: iconId ? Number(iconId) : null,
+                    },
+                  })
+                  .then(() => {
+                    show('Community updated');
+                    setEditOpen(false);
+                    resetForm();
+                  })
+                  .catch((e) => showError(e instanceof Error ? e.message : 'Failed'));
+              }}
+            >
+              Save
+            </Button>
+          </>
+        }
+      >
+        {communityFormFields}
       </Dialog>
     </div>
   );

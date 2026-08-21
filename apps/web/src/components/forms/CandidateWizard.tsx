@@ -794,8 +794,8 @@ function EvaluationTab({
     if (patch.problemSolvingScore != null) {
       setValue('problemSolvingScore', patch.problemSolvingScore, { shouldDirty: true });
     }
-    if (patch.architectureScore != null) {
-      setValue('architectureScore', patch.architectureScore, { shouldDirty: true });
+    if (patch.collaborationCulturalFitScore != null) {
+      setValue('collaborationCulturalFitScore', patch.collaborationCulturalFitScore, { shouldDirty: true });
     }
     if (patch.clientReadinessScore != null) {
       setValue('clientReadinessScore', patch.clientReadinessScore, { shouldDirty: true });
@@ -993,13 +993,13 @@ function EvaluationTab({
               {...register('problemSolvingScore', { valueAsNumber: true })}
             />
           </FormField>
-          <FormField label="Architecture score" name="architectureScore">
+          <FormField label="Collaboration & Cultural Fit score" name="collaborationCulturalFitScore">
             <Input
-              id="architectureScore"
+              id="collaborationCulturalFitScore"
               type="number"
               min={0}
               max={100}
-              {...register('architectureScore', { valueAsNumber: true })}
+              {...register('collaborationCulturalFitScore', { valueAsNumber: true })}
             />
           </FormField>
           <FormField label="Client readiness score" name="clientReadinessScore">
@@ -1070,9 +1070,6 @@ function BackgroundCheckTab({
     if (!checkType) return;
     const checks = getBgvChecksForType(checkType);
     setValue('bgvEmployment', checks.employment);
-    setValue('bgvEducation', checks.education);
-    setValue('bgvReference', checks.reference);
-    setValue('bgvAddress', checks.address);
     setValue('bgvCriminal', checks.criminal);
   }, [checkType, setValue, allowAiAnalysis]);
 
@@ -1308,14 +1305,11 @@ function BackgroundCheckTab({
       </SectionCard>
 
       <SectionCard title="Checks to run">
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {(
             [
               ['bgvIdCheck', 'Identity'],
               ['bgvEmployment', 'Employment'],
-              ['bgvEducation', 'Education'],
-              ['bgvReference', 'Reference'],
-              ['bgvAddress', 'Address'],
               ['bgvCriminal', 'Criminal'],
             ] as const
           ).map(([name, label]) => (

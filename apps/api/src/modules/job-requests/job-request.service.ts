@@ -103,15 +103,19 @@ export class JobRequestService {
     const jobs = this.normalizeClientEnquiryJobs(input.jobs);
     const primaryJob = jobs[0];
 
+    const website =
+      input.companyWebsite?.trim() ||
+      `https://${deriveCompanyDomain(input.email, input.companyWebsite ?? '')}`;
+
     const record = await this.jobRequestRepository.createClientEnquiry(organizationId, {
       referenceCode,
       companyName: input.companyName,
       companyDomain:
         input.companyDomain?.trim() ||
-        deriveCompanyDomain(input.email, input.companyWebsite),
+        deriveCompanyDomain(input.email, input.companyWebsite ?? ''),
       location: input.location,
       timezone: input.timezone,
-      website: input.companyWebsite,
+      website,
       contactName: input.contactPersonName,
       contactEmail: input.email,
       contactPhone: input.phone,

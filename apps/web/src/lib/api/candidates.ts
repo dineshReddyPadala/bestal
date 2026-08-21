@@ -1,5 +1,6 @@
 import { apiAction, apiCreate, apiDelete, apiGet, apiList, apiRequest, apiUpdate, type ListQuery } from './client';
 import { downloadAuthenticatedBlob } from './download-blob';
+import type { PublicFeaturedCandidate } from '../landing-featured-candidates';
 import type { CandidateDto, CandidateListItem } from './types';
 import type { ResumeExtractionResponse } from './ai/resume-extraction.types';
 import { waitForAutomationJob } from './automation';
@@ -445,5 +446,16 @@ export async function uploadCandidateFile(
     method: 'POST',
     body: form,
   });
+  return json.data;
+}
+
+/** Public marketing endpoint — top CLIENT_VISIBLE candidates by BesTal score. */
+export async function listPublicFeaturedCandidates(
+  limit = 5,
+): Promise<PublicFeaturedCandidate[]> {
+  const json = await apiRequest<{ data: PublicFeaturedCandidate[] }>(
+    `/public/candidates/featured?limit=${limit}`,
+    { auth: false },
+  );
   return json.data;
 }

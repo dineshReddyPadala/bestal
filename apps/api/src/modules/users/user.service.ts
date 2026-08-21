@@ -117,7 +117,6 @@ export class UserService {
       firstName: input.firstName,
       lastName: input.lastName,
       role: input.role as Role,
-      organizationName: organization.name,
       temporaryPassword,
       portalLoginUrl,
     });

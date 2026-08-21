@@ -12,32 +12,43 @@ const AUTOPLAY_MS = 6500;
 type CommunityProfileSliderProps = {
   className?: string;
   hideScorecard?: boolean;
+  slides?: CommunityProfileSlide[];
   onSlideChange?: (slide: CommunityProfileSlide) => void;
 };
 
 export function CommunityProfileSlider({
   className,
   hideScorecard = false,
+  slides = COMMUNITY_PROFILE_SLIDES,
   onSlideChange,
 }: CommunityProfileSliderProps) {
   const [active, setActive] = useState(0);
   const [paused, setPaused] = useState(false);
 
   useEffect(() => {
-    onSlideChange?.(COMMUNITY_PROFILE_SLIDES[active]);
-  }, [active, onSlideChange]);
+    setActive(0);
+  }, [slides]);
 
   useEffect(() => {
-    if (paused) return undefined;
+    if (slides.length === 0) return;
+    onSlideChange?.(slides[active] ?? slides[0]);
+  }, [active, onSlideChange, slides]);
+
+  useEffect(() => {
+    if (paused || slides.length <= 1) return undefined;
 
     const id = window.setInterval(() => {
-      setActive((current) => (current + 1) % COMMUNITY_PROFILE_SLIDES.length);
+      setActive((current) => (current + 1) % slides.length);
     }, AUTOPLAY_MS);
 
     return () => window.clearInterval(id);
-  }, [paused]);
+  }, [paused, slides.length]);
 
-  const activeSlide = COMMUNITY_PROFILE_SLIDES[active];
+  if (slides.length === 0) {
+    return null;
+  }
+
+  const activeSlide = slides[active] ?? slides[0];
   const genderClass =
     activeSlide.engineer.gender === 'female' ? 'mkt-prof--female' : 'mkt-prof--male';
 
@@ -62,10 +73,11 @@ export function CommunityProfileSlider({
             className="mkt-community-slider-track"
             style={{ transform: `translate3d(-${active * 100}%, 0, 0)` }}
           >
-            {COMMUNITY_PROFILE_SLIDES.map((slide, index) => (
+            {slides.map((slide, index) => (
               <div
-                key={slide.community}
+                key={slide.engineer.id}
                 className={cn('mkt-community-slider-panel', index === active && 'is-active')}
+                aria-hidden={index !== active}
               >
                 <DemoEngineerCard
                   engineer={slide.engineer}

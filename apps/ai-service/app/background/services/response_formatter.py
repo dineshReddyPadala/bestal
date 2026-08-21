@@ -46,20 +46,11 @@ class ResponseFormatter:
             "id_check_status": self._status(
                 payload.get("id_check_status") or payload.get("idCheckStatus")
             ),
-            "address_check_status": self._status(
-                payload.get("address_check_status") or payload.get("addressCheckStatus")
-            ),
             "employment_check_status": self._status(
                 payload.get("employment_check_status") or payload.get("employmentCheckStatus")
             ),
-            "education_check_status": self._status(
-                payload.get("education_check_status") or payload.get("educationCheckStatus")
-            ),
             "criminal_check_status": self._status(
                 payload.get("criminal_check_status") or payload.get("criminalCheckStatus")
-            ),
-            "reference_check_status": self._status(
-                payload.get("reference_check_status") or payload.get("referenceCheckStatus")
             ),
             "report_url": self._optional_url(payload.get("report_url") or payload.get("reportUrl")),
             "ai_bgv_summary": (

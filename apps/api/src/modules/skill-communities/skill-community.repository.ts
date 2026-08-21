@@ -18,6 +18,8 @@ export class SkillCommunityRepository extends BaseRepository {
         name: true,
         slug: true,
         description: true,
+        iconUrl: true,
+        icon: { select: { url: true, deletedAt: true } },
       },
     });
   }

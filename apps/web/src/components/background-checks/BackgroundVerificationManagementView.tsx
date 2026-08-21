@@ -61,19 +61,13 @@ const BGV_CHECK_STATUS_OPTIONS = ['', ...BGV_PER_CHECK_STATUS_OPTIONS] as const;
 
 type EditCheckField =
   | 'editIdCheckStatus'
-  | 'editAddressCheckStatus'
   | 'editEmploymentCheckStatus'
-  | 'editEducationCheckStatus'
-  | 'editCriminalCheckStatus'
-  | 'editReferenceCheckStatus';
+  | 'editCriminalCheckStatus';
 
 const EDIT_CHECK_FIELDS: Array<{ key: EditCheckField; label: string }> = [
   { key: 'editIdCheckStatus', label: 'Identity' },
-  { key: 'editAddressCheckStatus', label: 'Address' },
   { key: 'editEmploymentCheckStatus', label: 'Employment' },
-  { key: 'editEducationCheckStatus', label: 'Education' },
   { key: 'editCriminalCheckStatus', label: 'Criminal' },
-  { key: 'editReferenceCheckStatus', label: 'Reference' },
 ];
 
 function toDateInputValue(iso: string | null | undefined): string {
@@ -159,11 +153,8 @@ export function BackgroundVerificationManagementView({
   const [editConcernNotes, setEditConcernNotes] = useState('');
   const [editResultSummary, setEditResultSummary] = useState('');
   const [editIdCheckStatus, setEditIdCheckStatus] = useState('');
-  const [editAddressCheckStatus, setEditAddressCheckStatus] = useState('');
   const [editEmploymentCheckStatus, setEditEmploymentCheckStatus] = useState('');
-  const [editEducationCheckStatus, setEditEducationCheckStatus] = useState('');
   const [editCriminalCheckStatus, setEditCriminalCheckStatus] = useState('');
-  const [editReferenceCheckStatus, setEditReferenceCheckStatus] = useState('');
   const [editInitiatedDate, setEditInitiatedDate] = useState('');
   const [editCompletedDate, setEditCompletedDate] = useState('');
   const [editExternalReferenceId, setEditExternalReferenceId] = useState('');
@@ -319,11 +310,8 @@ export function BackgroundVerificationManagementView({
     setEditConcernNotes('');
     setEditResultSummary('');
     setEditIdCheckStatus('');
-    setEditAddressCheckStatus('');
     setEditEmploymentCheckStatus('');
-    setEditEducationCheckStatus('');
     setEditCriminalCheckStatus('');
-    setEditReferenceCheckStatus('');
     setEditInitiatedDate('');
     setEditCompletedDate('');
     setEditExternalReferenceId('');
@@ -334,20 +322,14 @@ export function BackgroundVerificationManagementView({
   const syncEditResultSummary = useCallback(
     (fields: {
       idCheckStatus: string;
-      addressCheckStatus: string;
       employmentCheckStatus: string;
-      educationCheckStatus: string;
       criminalCheckStatus: string;
-      referenceCheckStatus: string;
     }) => {
       setEditResultSummary(
         formatBgvCheckStatusesSummary({
           idCheckStatus: fields.idCheckStatus || null,
-          addressCheckStatus: fields.addressCheckStatus || null,
           employmentCheckStatus: fields.employmentCheckStatus || null,
-          educationCheckStatus: fields.educationCheckStatus || null,
           criminalCheckStatus: fields.criminalCheckStatus || null,
-          referenceCheckStatus: fields.referenceCheckStatus || null,
         }),
       );
     },
@@ -358,51 +340,33 @@ export function BackgroundVerificationManagementView({
     (field: EditCheckField, value: string) => {
       const next = {
         editIdCheckStatus,
-        editAddressCheckStatus,
         editEmploymentCheckStatus,
-        editEducationCheckStatus,
         editCriminalCheckStatus,
-        editReferenceCheckStatus,
         [field]: value,
       };
       switch (field) {
         case 'editIdCheckStatus':
           setEditIdCheckStatus(value);
           break;
-        case 'editAddressCheckStatus':
-          setEditAddressCheckStatus(value);
-          break;
         case 'editEmploymentCheckStatus':
           setEditEmploymentCheckStatus(value);
           break;
-        case 'editEducationCheckStatus':
-          setEditEducationCheckStatus(value);
-          break;
         case 'editCriminalCheckStatus':
           setEditCriminalCheckStatus(value);
-          break;
-        case 'editReferenceCheckStatus':
-          setEditReferenceCheckStatus(value);
           break;
         default:
           break;
       }
       syncEditResultSummary({
         idCheckStatus: next.editIdCheckStatus,
-        addressCheckStatus: next.editAddressCheckStatus,
         employmentCheckStatus: next.editEmploymentCheckStatus,
-        educationCheckStatus: next.editEducationCheckStatus,
         criminalCheckStatus: next.editCriminalCheckStatus,
-        referenceCheckStatus: next.editReferenceCheckStatus,
       });
     },
     [
-      editAddressCheckStatus,
       editCriminalCheckStatus,
-      editEducationCheckStatus,
       editEmploymentCheckStatus,
       editIdCheckStatus,
-      editReferenceCheckStatus,
       syncEditResultSummary,
     ],
   );
@@ -422,11 +386,8 @@ export function BackgroundVerificationManagementView({
         setEditAiBgvSummary(full.aiSummary ?? '');
         setEditConcernNotes(full.reviewNotes ?? '');
         setEditIdCheckStatus(full.idCheckStatus ?? '');
-        setEditAddressCheckStatus(full.addressCheckStatus ?? '');
         setEditEmploymentCheckStatus(full.employmentCheckStatus ?? '');
-        setEditEducationCheckStatus(full.educationCheckStatus ?? '');
         setEditCriminalCheckStatus(full.criminalCheckStatus ?? '');
-        setEditReferenceCheckStatus(full.referenceCheckStatus ?? '');
         setEditInitiatedDate(toDateInputValue(full.initiatedAt));
         setEditCompletedDate(toDateInputValue(full.completedAt));
         setEditExternalReferenceId(full.externalReferenceId ?? '');
@@ -446,11 +407,8 @@ export function BackgroundVerificationManagementView({
     if (editingBgvId == null) return;
     const checkFields = {
       idCheckStatus: editIdCheckStatus.trim() || null,
-      addressCheckStatus: editAddressCheckStatus.trim() || null,
       employmentCheckStatus: editEmploymentCheckStatus.trim() || null,
-      educationCheckStatus: editEducationCheckStatus.trim() || null,
       criminalCheckStatus: editCriminalCheckStatus.trim() || null,
-      referenceCheckStatus: editReferenceCheckStatus.trim() || null,
     };
     const computedSummary = formatBgvCheckStatusesSummary(checkFields);
     try {
@@ -464,11 +422,8 @@ export function BackgroundVerificationManagementView({
           reviewNotes: editConcernNotes.trim() || null,
           resultSummary: computedSummary || editResultSummary.trim() || null,
           idCheckStatus: checkFields.idCheckStatus,
-          addressCheckStatus: checkFields.addressCheckStatus,
           employmentCheckStatus: checkFields.employmentCheckStatus,
-          educationCheckStatus: checkFields.educationCheckStatus,
           criminalCheckStatus: checkFields.criminalCheckStatus,
-          referenceCheckStatus: checkFields.referenceCheckStatus,
           initiatedAt: dateInputToIso(editInitiatedDate),
           completedAt: dateInputToIso(editCompletedDate),
           externalReferenceId: editExternalReferenceId.trim() || null,
@@ -490,11 +445,9 @@ export function BackgroundVerificationManagementView({
     editCandidateName,
     editConcernNotes,
     editCriminalCheckStatus,
-    editEducationCheckStatus,
     editEmploymentCheckStatus,
-    editAddressCheckStatus,
     editIdCheckStatus,
-    editReferenceCheckStatus,
+    editCriminalCheckStatus,
     editInitiatedDate,
     editCompletedDate,
     editExternalReferenceId,
@@ -1150,15 +1103,9 @@ export function BackgroundVerificationManagementView({
                   const value =
                     key === 'editIdCheckStatus'
                       ? editIdCheckStatus
-                      : key === 'editAddressCheckStatus'
-                        ? editAddressCheckStatus
-                        : key === 'editEmploymentCheckStatus'
-                          ? editEmploymentCheckStatus
-                          : key === 'editEducationCheckStatus'
-                            ? editEducationCheckStatus
-                            : key === 'editCriminalCheckStatus'
-                              ? editCriminalCheckStatus
-                              : editReferenceCheckStatus;
+                      : key === 'editEmploymentCheckStatus'
+                        ? editEmploymentCheckStatus
+                        : editCriminalCheckStatus;
                   return (
                     <div key={key} className="space-y-2">
                       <label htmlFor={`bgv-edit-${key}`} className="text-sm font-medium">

@@ -10,6 +10,7 @@ import {
   FileUp,
   FlaskConical,
   Home,
+  Image,
   Layers,
   LayoutDashboard,
   ListChecks,
@@ -31,6 +32,7 @@ import {
 
 const ICON_MAP: Record<string, LucideIcon> = {
   home: Home,
+  image: Image,
   'layout-dashboard': LayoutDashboard,
   'building-2': Building2,
   users: Users,

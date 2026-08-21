@@ -15,6 +15,9 @@ import {
 } from '../../utils/index.js';
 import { rolePasswordResetPath, rolePortalEmailLabel, rolePortalLoginPath } from '../../utils/role-portal-paths.js';
 import { EmailService } from '../../services/email.service.js';
+import { StorageService } from '../../services/storage.service.js';
+import { UPLOAD_CATEGORIES } from '../../services/storage/storage.constants.js';
+import { buildS3ObjectReference } from '../../services/storage/upload.utils.js';
 import { notifyCandidateApproved, notifyCandidateSentBack } from '../../services/notification-events.js';
 import { buildPaginationMeta } from '../../validators/common.validator.js';
 import { AuthRepository } from '../auth/auth.repository.js';
@@ -44,6 +47,7 @@ export class AdminService {
   private readonly email: EmailService;
   private readonly candidates: CandidateService;
   private readonly clients: ClientService;
+  private readonly storageService: StorageService;
 
   constructor(private readonly fastify: FastifyInstance) {
     this.prisma = fastify.prisma;
@@ -52,6 +56,7 @@ export class AdminService {
     this.email = new EmailService(fastify.config, fastify.prisma);
     this.candidates = new CandidateService(fastify);
     this.clients = new ClientService(fastify);
+    this.storageService = new StorageService(fastify.config, fastify.prisma);
   }
 
   private async auditWrite(
@@ -326,6 +331,51 @@ export class AdminService {
     });
   }
 
+  private async sendClientActivationWelcomeEmails(organizationId: number, clientId: number) {
+    const client = await this.prisma.client.findFirst({
+      where: {
+        id: BigInt(clientId),
+        organizationId: BigInt(organizationId),
+        deletedAt: null,
+      },
+      select: { name: true },
+    });
+    if (!client) return;
+
+    const memberships = await this.prisma.membership.findMany({
+      where: {
+        organizationId: BigInt(organizationId),
+        clientId: BigInt(clientId),
+        role: 'CLIENT',
+        isActive: true,
+      },
+      select: {
+        user: {
+          select: {
+            email: true,
+            firstName: true,
+            deletedAt: true,
+            isActive: true,
+          },
+        },
+      },
+    });
+
+    const loginUrl = `${this.fastify.config.webAppUrl}${rolePortalLoginPath('CLIENT')}`;
+
+    for (const membership of memberships) {
+      const user = membership.user;
+      if (!user?.email || user.deletedAt || !user.isActive) continue;
+
+      void this.email.sendClientWelcomeEmail({
+        to: user.email,
+        firstName: user.firstName?.trim() || 'there',
+        companyName: client.name,
+        loginUrl,
+      });
+    }
+  }
+
   private async resolvePlatformRoleId(roleCode: string): Promise<number | null> {
     const row = await this.prisma.platformRole.findFirst({
       where: { code: roleCode.toUpperCase(), deletedAt: null, isActive: true },
@@ -411,7 +461,6 @@ export class AdminService {
       firstName: input.firstName,
       lastName: input.lastName,
       role: input.role as Role,
-      organizationName: organization.name,
       temporaryPassword,
       portalLoginUrl: `${this.fastify.config.webAppUrl}${portalPath}`,
     });
@@ -579,14 +628,12 @@ export class AdminService {
       data: { passwordHash: await argon2.hash(temporaryPassword) },
     });
 
-    const organization = await this.users.findOrganizationById(requireOrganization(authUser));
     const role = (user.role ?? ROLES.VIEWER) as Role;
     const emailResult = await this.email.sendInviteCredentials({
       to: user.email,
       firstName: user.firstName,
       lastName: user.lastName,
       role,
-      organizationName: organization?.name ?? 'BesTal',
       temporaryPassword,
       portalLoginUrl: `${this.fastify.config.webAppUrl}${rolePortalLoginPath(role)}`,
     });
@@ -713,9 +760,24 @@ export class AdminService {
     ctx?: { ipAddress?: string | null; userAgent?: string | null },
   ) {
     const organizationId = requireOrganization(authUser);
+    const existing = await this.prisma.client.findFirst({
+      where: {
+        id: BigInt(id),
+        organizationId: BigInt(organizationId),
+        deletedAt: null,
+      },
+      select: { status: true },
+    });
+    if (!existing) {
+      throw new NotFoundError('Client not found');
+    }
+
     const updated = await this.updateClient(authUser, id, { status }, ctx);
     if (status === 'ACTIVE') {
       await this.syncClientUsersOnClientActivation(organizationId, id);
+      if (existing.status !== 'ACTIVE') {
+        void this.sendClientActivationWelcomeEmails(organizationId, id);
+      }
     }
     return updated;
   }
@@ -933,13 +995,17 @@ export class AdminService {
         type: b.type,
         createdAt: b.createdAt.toISOString(),
       })),
-      documents: documents.map((d) => ({
-        id: bigintToNumber(d.id),
-        originalName: d.originalName,
-        kind: d.kind,
-        mimeType: d.mimeType,
-        createdAt: d.createdAt.toISOString(),
-      })),
+      documents: await Promise.all(
+        documents.map(async (d) => ({
+          id: bigintToNumber(d.id),
+          originalName: d.originalName,
+          kind: d.kind,
+          mimeType: d.mimeType,
+          createdAt: d.createdAt.toISOString(),
+          downloadUrl:
+            (await this.storageService.resolveFileUrl(d.s3Key, d.s3Bucket, d.mimeType)) ?? null,
+        })),
+      ),
       activityTimeline: activity.map((a) => ({
         id: bigintToNumber(a.id),
         action: a.action,
@@ -1132,6 +1198,53 @@ export class AdminService {
 
   // ── Skill communities ────────────────────────────────────────────────────
 
+  private skillCommunityIconInclude = {
+    icon: { select: { id: true, name: true, url: true } },
+  } as const;
+
+  private mapSkillCommunityRow(
+    s: {
+      id: bigint;
+      name: string;
+      slug: string;
+      description: string | null;
+      iconId: bigint | null;
+      iconUrl: string | null;
+      isActive: boolean;
+      createdAt: Date;
+      updatedAt: Date;
+      icon?: { id: bigint; name: string; url: string } | null;
+    },
+    candidateCount?: number,
+  ) {
+    return {
+      id: bigintToNumber(s.id),
+      name: s.name,
+      slug: s.slug,
+      description: s.description,
+      iconId: s.iconId ? bigintToNumber(s.iconId) : null,
+      iconUrl: s.icon?.url ?? s.iconUrl,
+      iconName: s.icon?.name ?? null,
+      isActive: s.isActive,
+      candidateCount,
+      createdAt: s.createdAt.toISOString(),
+      updatedAt: s.updatedAt.toISOString(),
+    };
+  }
+
+  private async resolveSkillCommunityIcon(iconId?: number | null) {
+    if (iconId == null) {
+      return { iconId: null as bigint | null, iconUrl: null as string | null };
+    }
+    const icon = await this.prisma.icon.findFirst({
+      where: { id: BigInt(iconId), deletedAt: null, isActive: true },
+    });
+    if (!icon) {
+      throw new BadRequestError('Selected icon not found or inactive');
+    }
+    return { iconId: icon.id, iconUrl: icon.url };
+  }
+
   async listSkillCommunities(query: { page?: number | string; limit?: number | string; search?: string }) {
     const page = Number(query.page ?? 1);
     const limit = Number(query.limit ?? 50);
@@ -1150,37 +1263,51 @@ export class AdminService {
       this.prisma.skillCommunity.count({ where }),
       this.prisma.skillCommunity.findMany({
         where,
+        include: this.skillCommunityIconInclude,
         orderBy: { name: 'asc' },
         skip: (page - 1) * limit,
         take: limit,
       }),
     ]);
+    const counts = await Promise.all(
+      items.map((item) =>
+        this.prisma.candidate.count({
+          where: {
+            primarySkillCommunityId: item.id,
+            deletedAt: null,
+            status: { not: 'INACTIVE' },
+          },
+        }),
+      ),
+    );
     return {
-      data: items.map((s) => ({
-        id: bigintToNumber(s.id),
-        name: s.name,
-        slug: s.slug,
-        description: s.description,
-        isActive: s.isActive,
-        createdAt: s.createdAt.toISOString(),
-        updatedAt: s.updatedAt.toISOString(),
-      })),
+      data: items.map((s, index) => this.mapSkillCommunityRow(s, counts[index])),
       meta: buildPaginationMeta(page, limit, total),
     };
   }
 
   async createSkillCommunity(
     authUser: AuthenticatedUser,
-    input: { name: string; slug: string; description?: string; isActive?: boolean },
+    input: {
+      name: string;
+      slug: string;
+      description?: string;
+      isActive?: boolean;
+      iconId?: number | null;
+    },
     ctx?: { ipAddress?: string | null; userAgent?: string | null },
   ) {
+    const iconLink = await this.resolveSkillCommunityIcon(input.iconId);
     const created = await this.prisma.skillCommunity.create({
       data: {
         name: input.name.trim(),
         slug: input.slug.trim().toLowerCase(),
         description: input.description ?? null,
         isActive: input.isActive ?? true,
+        iconId: iconLink.iconId,
+        iconUrl: iconLink.iconUrl,
       },
+      include: this.skillCommunityIconInclude,
     });
     await this.auditWrite(
       authUser,
@@ -1191,25 +1318,98 @@ export class AdminService {
       undefined,
       ctx,
     );
+    return this.mapSkillCommunityRow(created);
+  }
+
+  async uploadSkillCommunityIcon(
+    authUser: AuthenticatedUser,
+    id: number,
+    file: { filename: string; mimetype: string; buffer: Buffer },
+    ctx?: { ipAddress?: string | null; userAgent?: string | null },
+  ) {
+    const organizationId = requireOrganization(authUser);
+    const existing = await this.prisma.skillCommunity.findFirst({
+      where: { id: BigInt(id), deletedAt: null },
+    });
+    if (!existing) throw new NotFoundError('Skill community not found');
+
+    this.storageService.validateFile(UPLOAD_CATEGORIES.CANDIDATE_PHOTO, {
+      mimeType: file.mimetype,
+      size: file.buffer.length,
+      originalName: file.filename,
+    });
+
+    const bucket = await this.storageService.getBucket();
+    const storageKey = this.storageService.buildStorageKey({
+      organizationId,
+      entityFolder: 'skill-communities',
+      entityId: id,
+      category: UPLOAD_CATEGORIES.CANDIDATE_PHOTO,
+      originalName: file.filename,
+    });
+
+    await this.storageService.upload(
+      storageKey,
+      {
+        buffer: file.buffer,
+        mimeType: file.mimetype,
+        size: file.buffer.length,
+        originalName: file.filename,
+      },
+      {
+        category: UPLOAD_CATEGORIES.CANDIDATE_PHOTO,
+        organizationId,
+        entityId: id,
+      },
+    );
+
+    const iconUrl =
+      (await this.storageService.resolveFileUrl(storageKey, bucket, file.mimetype)) ??
+      buildS3ObjectReference(bucket, storageKey);
+
+    const updated = await this.prisma.skillCommunity.update({
+      where: { id: BigInt(id) },
+      data: { iconUrl, iconId: null },
+    });
+
+    await this.auditWrite(
+      authUser,
+      'UPDATE',
+      'SkillCommunity',
+      id,
+      `Uploaded icon for ${updated.name}`,
+      undefined,
+      ctx,
+    );
+
     return {
-      id: bigintToNumber(created.id),
-      name: created.name,
-      slug: created.slug,
-      description: created.description,
-      isActive: created.isActive,
+      id: bigintToNumber(updated.id),
+      iconUrl: updated.iconUrl,
     };
   }
 
   async updateSkillCommunity(
     authUser: AuthenticatedUser,
     id: number,
-    input: { name?: string; slug?: string; description?: string | null; isActive?: boolean },
+    input: {
+      name?: string;
+      slug?: string;
+      description?: string | null;
+      isActive?: boolean;
+      iconId?: number | null;
+    },
     ctx?: { ipAddress?: string | null; userAgent?: string | null },
   ) {
     const existing = await this.prisma.skillCommunity.findFirst({
       where: { id: BigInt(id), deletedAt: null },
     });
     if (!existing) throw new NotFoundError('Skill community not found');
+
+    let iconPatch: { iconId?: bigint | null; iconUrl?: string | null } = {};
+    if (input.iconId !== undefined) {
+      iconPatch = await this.resolveSkillCommunityIcon(input.iconId);
+    }
+
     const updated = await this.prisma.skillCommunity.update({
       where: { id: BigInt(id) },
       data: {
@@ -1217,16 +1417,14 @@ export class AdminService {
         ...(input.slug !== undefined ? { slug: input.slug.toLowerCase() } : {}),
         ...(input.description !== undefined ? { description: input.description } : {}),
         ...(input.isActive !== undefined ? { isActive: input.isActive } : {}),
+        ...(input.iconId !== undefined
+          ? { iconId: iconPatch.iconId, iconUrl: iconPatch.iconUrl }
+          : {}),
       },
+      include: this.skillCommunityIconInclude,
     });
     await this.auditWrite(authUser, 'UPDATE', 'SkillCommunity', id, `Updated ${updated.name}`, undefined, ctx);
-    return {
-      id: bigintToNumber(updated.id),
-      name: updated.name,
-      slug: updated.slug,
-      description: updated.description,
-      isActive: updated.isActive,
-    };
+    return this.mapSkillCommunityRow(updated);
   }
 
   async setSkillCommunityStatus(
@@ -1259,5 +1457,252 @@ export class AdminService {
     });
     await this.auditWrite(authUser, 'DELETE', 'SkillCommunity', id, 'Deleted skill community', undefined, ctx);
     return { message: 'Skill community deleted' };
+  }
+
+  // ── Icons ────────────────────────────────────────────────────────────────
+
+  private mapIconRow(
+    icon: {
+      id: bigint;
+      name: string;
+      url: string;
+      isActive: boolean;
+      createdAt: Date;
+      updatedAt: Date;
+    },
+    usageCount?: number,
+  ) {
+    return {
+      id: bigintToNumber(icon.id),
+      name: icon.name,
+      url: icon.url,
+      isActive: icon.isActive,
+      usageCount: usageCount ?? 0,
+      createdAt: icon.createdAt.toISOString(),
+      updatedAt: icon.updatedAt.toISOString(),
+    };
+  }
+
+  async listIcons(query: { page?: number | string; limit?: number | string; search?: string }) {
+    const page = Number(query.page ?? 1);
+    const limit = Number(query.limit ?? 50);
+    const where: Prisma.IconWhereInput = {
+      deletedAt: null,
+      ...(query.search
+        ? {
+            OR: [
+              { name: { contains: query.search, mode: 'insensitive' as const } },
+              { url: { contains: query.search, mode: 'insensitive' as const } },
+            ],
+          }
+        : {}),
+    };
+    const [total, items] = await Promise.all([
+      this.prisma.icon.count({ where }),
+      this.prisma.icon.findMany({
+        where,
+        orderBy: { name: 'asc' },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+    ]);
+    const usageCounts = await Promise.all(
+      items.map((icon) =>
+        this.prisma.skillCommunity.count({
+          where: { iconId: icon.id, deletedAt: null },
+        }),
+      ),
+    );
+    return {
+      data: items.map((icon, index) => this.mapIconRow(icon, usageCounts[index])),
+      meta: buildPaginationMeta(page, limit, total),
+    };
+  }
+
+  async getIcon(id: number) {
+    const icon = await this.prisma.icon.findFirst({
+      where: { id: BigInt(id), deletedAt: null },
+    });
+    if (!icon) throw new NotFoundError('Icon not found');
+    const usageCount = await this.prisma.skillCommunity.count({
+      where: { iconId: icon.id, deletedAt: null },
+    });
+    return this.mapIconRow(icon, usageCount);
+  }
+
+  async createIcon(
+    authUser: AuthenticatedUser,
+    input: { name: string; file: { filename: string; mimetype: string; buffer: Buffer } },
+    ctx?: { ipAddress?: string | null; userAgent?: string | null },
+  ) {
+    const name = input.name.trim();
+    if (!name) throw new BadRequestError('Icon name is required');
+
+    const organizationId = requireOrganization(authUser);
+    const created = await this.prisma.icon.create({
+      data: { name, url: 'pending', isActive: true },
+    });
+    const iconId = bigintToNumber(created.id);
+
+    try {
+      const url = await this.storeIconFile(organizationId, iconId, input.file);
+      const updated = await this.prisma.icon.update({
+        where: { id: created.id },
+        data: { url },
+      });
+      await this.auditWrite(
+        authUser,
+        'CREATE',
+        'Icon',
+        iconId,
+        `Created icon ${updated.name}`,
+        undefined,
+        ctx,
+      );
+      return this.mapIconRow(updated, 0);
+    } catch (error) {
+      await this.prisma.icon.delete({ where: { id: created.id } }).catch(() => undefined);
+      throw error;
+    }
+  }
+
+  async uploadIconFile(
+    authUser: AuthenticatedUser,
+    id: number,
+    file: { filename: string; mimetype: string; buffer: Buffer },
+    ctx?: { ipAddress?: string | null; userAgent?: string | null },
+  ) {
+    const existing = await this.prisma.icon.findFirst({
+      where: { id: BigInt(id), deletedAt: null },
+    });
+    if (!existing) throw new NotFoundError('Icon not found');
+
+    const organizationId = requireOrganization(authUser);
+    const url = await this.storeIconFile(organizationId, id, file);
+    const updated = await this.prisma.icon.update({
+      where: { id: BigInt(id) },
+      data: { url },
+    });
+
+    await this.syncIconUrlToCommunities(id, url);
+
+    const usageCount = await this.prisma.skillCommunity.count({
+      where: { iconId: updated.id, deletedAt: null },
+    });
+
+    await this.auditWrite(
+      authUser,
+      'UPDATE',
+      'Icon',
+      id,
+      `Uploaded icon image for ${updated.name}`,
+      undefined,
+      ctx,
+    );
+    return this.mapIconRow(updated, usageCount);
+  }
+
+  private async storeIconFile(
+    organizationId: number,
+    iconId: number,
+    file: { filename: string; mimetype: string; buffer: Buffer },
+  ): Promise<string> {
+    this.storageService.validateFile(UPLOAD_CATEGORIES.CANDIDATE_PHOTO, {
+      mimeType: file.mimetype,
+      size: file.buffer.length,
+      originalName: file.filename,
+    });
+
+    const bucket = await this.storageService.getBucket();
+    const storageKey = this.storageService.buildStorageKey({
+      organizationId,
+      entityFolder: 'icons',
+      entityId: iconId,
+      category: UPLOAD_CATEGORIES.CANDIDATE_PHOTO,
+      originalName: file.filename,
+    });
+
+    await this.storageService.upload(
+      storageKey,
+      {
+        buffer: file.buffer,
+        mimeType: file.mimetype,
+        size: file.buffer.length,
+        originalName: file.filename,
+      },
+      {
+        category: UPLOAD_CATEGORIES.CANDIDATE_PHOTO,
+        organizationId,
+        entityId: iconId,
+      },
+    );
+
+    return (
+      (await this.storageService.resolveFileUrl(storageKey, bucket, file.mimetype)) ??
+      buildS3ObjectReference(bucket, storageKey)
+    );
+  }
+
+  private async syncIconUrlToCommunities(iconId: number, url: string): Promise<void> {
+    await this.prisma.skillCommunity.updateMany({
+      where: { iconId: BigInt(iconId), deletedAt: null },
+      data: { iconUrl: url },
+    });
+  }
+
+  async updateIcon(
+    authUser: AuthenticatedUser,
+    id: number,
+    input: { name?: string; isActive?: boolean },
+    ctx?: { ipAddress?: string | null; userAgent?: string | null },
+  ) {
+    const existing = await this.prisma.icon.findFirst({
+      where: { id: BigInt(id), deletedAt: null },
+    });
+    if (!existing) throw new NotFoundError('Icon not found');
+
+    const name = input.name !== undefined ? input.name.trim() : undefined;
+    if (name !== undefined && !name) throw new BadRequestError('Icon name is required');
+
+    const updated = await this.prisma.icon.update({
+      where: { id: BigInt(id) },
+      data: {
+        ...(name !== undefined ? { name } : {}),
+        ...(input.isActive !== undefined ? { isActive: input.isActive } : {}),
+      },
+    });
+
+    const usageCount = await this.prisma.skillCommunity.count({
+      where: { iconId: updated.id, deletedAt: null },
+    });
+
+    await this.auditWrite(authUser, 'UPDATE', 'Icon', id, `Updated icon ${updated.name}`, undefined, ctx);
+    return this.mapIconRow(updated, usageCount);
+  }
+
+  async deleteIcon(
+    authUser: AuthenticatedUser,
+    id: number,
+    ctx?: { ipAddress?: string | null; userAgent?: string | null },
+  ) {
+    const usageCount = await this.prisma.skillCommunity.count({
+      where: { iconId: BigInt(id), deletedAt: null },
+    });
+    if (usageCount > 0) {
+      throw new BadRequestError(
+        'Cannot delete this icon because it is assigned to one or more skill communities',
+      );
+    }
+    const existing = await this.prisma.icon.findFirst({
+      where: { id: BigInt(id), deletedAt: null },
+    });
+    if (!existing) throw new NotFoundError('Icon not found');
+
+    await this.prisma.icon.update({
+      where: { id: BigInt(id) },
+      data: { deletedAt: new Date(), isActive: false },
+    });
+    await this.auditWrite(authUser, 'DELETE', 'Icon', id, `Deleted icon ${existing.name}`, undefined, ctx);
+    return { message: 'Icon deleted' };
   }
 }

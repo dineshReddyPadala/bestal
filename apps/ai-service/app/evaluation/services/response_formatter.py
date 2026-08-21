@@ -48,7 +48,9 @@ class ResponseFormatter:
             "technical_score": self._normalize_score(payload.get("technical_score")),
             "communication_score": self._normalize_score(payload.get("communication_score")),
             "problem_solving_score": self._normalize_score(payload.get("problem_solving_score")),
-            "architecture_score": self._normalize_score(payload.get("architecture_score")),
+            "collaboration_cultural_fit_score": self._normalize_score(
+                payload.get("collaboration_cultural_fit_score") or payload.get("architecture_score")
+            ),
             "client_readiness_score": self._normalize_score(payload.get("client_readiness_score")),
             "recommendation": (payload.get("recommendation") or "").strip(),
             "evaluator_comments": (payload.get("evaluator_comments") or "").strip(),

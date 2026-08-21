@@ -14,6 +14,8 @@ import {
   createCandidateBodySchema,
   listCandidatesQuerySchema,
   messageResponseSchema,
+  publicFeaturedCandidatesQuerySchema,
+  publicFeaturedCandidatesResponseSchema,
   rejectCandidateBodySchema,
   sendBackCandidateBodySchema,
   runAiScreeningBodySchema,
@@ -505,5 +507,30 @@ export async function candidateRoutes(fastify: FastifyInstance): Promise<void> {
       },
     },
     candidateController.submitForApproval,
+  );
+}
+
+export async function candidatePublicRoutes(fastify: FastifyInstance): Promise<void> {
+  const candidateService = new CandidateService(fastify);
+  const candidateImportService = new CandidateImportService(fastify);
+  const candidateController = new CandidateController(
+    candidateService,
+    candidateImportService,
+  );
+  const app = fastify.withTypeProvider<ZodTypeProvider>();
+
+  app.get(
+    '/featured',
+    {
+      schema: {
+        tags: ['Candidates'],
+        summary: 'Top client-visible candidates for public marketing (sorted by BesTal score)',
+        querystring: publicFeaturedCandidatesQuerySchema,
+        response: {
+          200: publicFeaturedCandidatesResponseSchema,
+        },
+      },
+    },
+    candidateController.listPublicFeatured,
   );
 }

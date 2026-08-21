@@ -6,7 +6,7 @@ type ScoreFields = Pick<
   | 'technicalScore'
   | 'communicationScore'
   | 'problemSolvingScore'
-  | 'architectureScore'
+  | 'collaborationCulturalFitScore'
   | 'clientReadinessScore'
   | 'recommendation'
   | 'aiEvaluationSummary'
@@ -17,7 +17,7 @@ function averageDimensionScores(evaluation: ScoreFields): number | null {
     evaluation.technicalScore,
     evaluation.communicationScore,
     evaluation.problemSolvingScore,
-    evaluation.architectureScore,
+    evaluation.collaborationCulturalFitScore,
     evaluation.clientReadinessScore,
   ].filter((score): score is number => score != null);
 

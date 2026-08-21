@@ -487,21 +487,41 @@ model Client {
 // Skill Communities & Candidates
 // ---------------------------------------------------------------------------
 
+model Icon {
+  id        BigInt    @id @default(autoincrement())
+  name      String    @db.VarChar(150)
+  url       String    @db.VarChar(500)
+  isActive  Boolean   @default(true) @map("is_active")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  skillCommunities SkillCommunity[]
+
+  @@index([isActive, deletedAt])
+  @@index([name])
+  @@map("icons")
+}
+
 model SkillCommunity {
   id          BigInt    @id @default(autoincrement())
   name        String    @db.VarChar(150)
   slug        String    @unique @db.VarChar(100)
   description String?   @db.Text
+  iconId      BigInt?   @map("icon_id")
+  iconUrl     String?   @map("icon_url") @db.VarChar(500)
   isActive    Boolean   @default(true) @map("is_active")
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime  @updatedAt @map("updated_at")
   deletedAt   DateTime? @map("deleted_at")
 
+  icon              Icon?            @relation(fields: [iconId], references: [id], onDelete: SetNull)
   candidateSkills   CandidateSkill[]
   primaryCandidates Candidate[]      @relation("CandidatePrimaryCommunity")
 
   @@index([isActive, deletedAt])
   @@index([name])
+  @@index([iconId])
   @@map("skill_communities")
 }
 
@@ -645,7 +665,7 @@ model Evaluation {
   technicalScore       Int?      @map("technical_score")
   communicationScore   Int?      @map("communication_score")
   problemSolvingScore  Int?      @map("problem_solving_score")
-  architectureScore    Int?      @map("architecture_score")
+  collaborationCulturalFitScore Int? @map("collaboration_cultural_fit_score")
   clientReadinessScore Int?      @map("client_readiness_score")
   recommendation       String?   @db.Text
   evaluationSummary    String?   @map("evaluation_summary") @db.Text
@@ -722,7 +742,7 @@ model CandidateScore {
   technicalScore       Int?                 @map("technical_score")
   communicationScore   Int?                 @map("communication_score")
   problemSolvingScore  Int?                 @map("problem_solving_score")
-  architectureScore    Int?                 @map("architecture_score")
+  collaborationCulturalFitScore Int?        @map("collaboration_cultural_fit_score")
   reliabilityScore     Int?                 @map("reliability_score")
   clientReadinessScore Int?                 @map("client_readiness_score")
   scoreSource          CandidateScoreSource @map("score_source")

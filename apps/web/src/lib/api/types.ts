@@ -87,6 +87,7 @@ export type SkillCommunityListItem = {
   name: string;
   slug: string;
   description: string | null;
+  iconUrl: string | null;
 };
 
 // ─── Trial ────────────────────────────────────────────────────────────────────
@@ -387,6 +388,8 @@ export type CandidateDto = CandidateListItem & {
   bestalScore?: number | null;
   technicalScore?: number | null;
   communicationScore?: number | null;
+  collaborationCulturalFitScore?: number | null;
+  evaluationRecommendation?: string | null;
   reliabilityScore?: number | null;
   deploymentStatus?: string | null;
   bgvVerified?: boolean;
@@ -461,7 +464,7 @@ export type EvaluationListItem = {
   documentId?: number | null;
   communicationScore?: number | null;
   problemSolvingScore?: number | null;
-  architectureScore?: number | null;
+  collaborationCulturalFitScore?: number | null;
   clientReadinessScore?: number | null;
   evaluatorComments?: string | null;
   aiEvaluationSummary?: string | null;
@@ -499,11 +502,8 @@ export type BackgroundCheckDto = BackgroundCheckListItem & {
   resultSummary?: string | null;
   reviewNotes?: string | null;
   idCheckStatus?: string | null;
-  addressCheckStatus?: string | null;
   employmentCheckStatus?: string | null;
-  educationCheckStatus?: string | null;
   criminalCheckStatus?: string | null;
-  referenceCheckStatus?: string | null;
   vendorAssignedAt?: string | null;
   reviewedAt?: string | null;
   reviewedByName?: string | null;

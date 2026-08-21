@@ -24,7 +24,7 @@ const evaluationFormSchema = z.object({
   evaluatedDate: z.string().min(1, 'Date is required'),
   technicalScore: optionalScore,
   communicationScore: optionalScore,
-  architectureScore: optionalScore,
+  collaborationCulturalFitScore: optionalScore,
   problemSolvingScore: optionalScore,
   clientReadinessScore: optionalScore,
   recommendation: z.enum(EVALUATION_RECOMMENDATIONS).optional(),
@@ -168,14 +168,14 @@ export function EvaluationForm({
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="architectureScore">Architecture</Label>
+              <Label htmlFor="collaborationCulturalFitScore">Collaboration & Cultural Fit</Label>
               <Input
-                id="architectureScore"
+                id="collaborationCulturalFitScore"
                 type="number"
                 min={0}
                 max={100}
                 placeholder="0–100"
-                {...register('architectureScore', { valueAsNumber: true })}
+                {...register('collaborationCulturalFitScore', { valueAsNumber: true })}
               />
             </div>
             <div className="space-y-2">

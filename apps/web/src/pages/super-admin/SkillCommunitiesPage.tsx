@@ -4,6 +4,7 @@ import { Plus } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { ListingPageShell } from '../../components/layout/ListingPageShell';
 import { ActionMenu, type ActionMenuItem } from '../../components/super-admin/ActionMenu';
+import { IconSelectField } from '../../components/super-admin/IconSelectField';
 import { useConfirmAction } from '../../components/super-admin/useConfirmAction';
 import { useAdminMutations, useAdminSkillCommunities } from '../../hooks/api/useAdmin';
 import { useDebouncedSearch } from '../../hooks/useDebouncedSearch';
@@ -14,6 +15,8 @@ type Row = {
   name: string;
   slug: string;
   description: string | null;
+  iconId?: number | null;
+  iconUrl?: string | null;
   isActive: boolean;
   candidateCount?: number;
 };
@@ -28,13 +31,52 @@ export function SuperAdminSkillCommunitiesPage() {
   });
   const mutations = useAdminMutations();
   const rows = (data?.data ?? []) as unknown as Row[];
-  const [open, setOpen] = useState(false);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
   const [name, setName] = useState('');
   const [slug, setSlug] = useState('');
   const [description, setDescription] = useState('');
+  const [iconId, setIconId] = useState('');
+
+  function resetForm() {
+    setName('');
+    setSlug('');
+    setDescription('');
+    setIconId('');
+    setEditingId(null);
+  }
+
+  function openCreate() {
+    resetForm();
+    setCreateOpen(true);
+  }
+
+  function openEdit(row: Row) {
+    setEditingId(row.id);
+    setName(row.name);
+    setSlug(row.slug);
+    setDescription(row.description ?? '');
+    setIconId(row.iconId != null ? String(row.iconId) : '');
+    setEditOpen(true);
+  }
 
   const columns = useMemo<ColumnDef<Row>[]>(
     () => [
+      {
+        id: 'icon',
+        header: 'Icon',
+        cell: ({ row }) =>
+          row.original.iconUrl ? (
+            <img
+              src={row.original.iconUrl}
+              alt=""
+              className="h-8 w-8 rounded-md object-cover ring-1 ring-border/60"
+            />
+          ) : (
+            <span className="text-xs text-muted-foreground">—</span>
+          ),
+      },
       {
         accessorKey: 'name',
         header: 'Name',
@@ -60,7 +102,11 @@ export function SuperAdminSkillCommunitiesPage() {
           const r = row.original;
           const hasCandidates = (r.candidateCount ?? 0) > 0;
           const items: ActionMenuItem[] = [
-            { id: 'view', label: 'View Community' },
+            {
+              id: 'edit',
+              label: 'Edit Community',
+              onSelect: () => openEdit(r),
+            },
             {
               id: 'activate',
               label: 'Activate',
@@ -115,6 +161,19 @@ export function SuperAdminSkillCommunitiesPage() {
     [mutations, requestConfirm, show, showError],
   );
 
+  const communityFormFields = (
+    <div className="space-y-3">
+      <Input placeholder="Name" value={name} onChange={(e) => setName(e.target.value)} />
+      <Input placeholder="Slug" value={slug} onChange={(e) => setSlug(e.target.value)} />
+      <Input
+        placeholder="Description"
+        value={description}
+        onChange={(e) => setDescription(e.target.value)}
+      />
+      <IconSelectField value={iconId} onChange={setIconId} />
+    </div>
+  );
+
   return (
     <>
       <ListingPageShell
@@ -124,7 +183,7 @@ export function SuperAdminSkillCommunitiesPage() {
         loading={isLoading}
         loadingLabel="Loading…"
         actions={
-          <Button size="sm" onClick={() => setOpen(true)}>
+          <Button size="sm" onClick={openCreate}>
             <Plus className="mr-1.5 h-3.5 w-3.5" />
             Add
           </Button>
@@ -146,12 +205,12 @@ export function SuperAdminSkillCommunitiesPage() {
       </ListingPageShell>
       {confirmDialog}
       <Dialog
-        open={open}
-        onClose={() => setOpen(false)}
+        open={createOpen}
+        onClose={() => setCreateOpen(false)}
         title="Create skill community"
         footer={
           <>
-            <Button variant="outline" onClick={() => setOpen(false)}>
+            <Button variant="outline" onClick={() => setCreateOpen(false)}>
               Cancel
             </Button>
             <Button
@@ -161,13 +220,12 @@ export function SuperAdminSkillCommunitiesPage() {
                     name,
                     slug: slug || name.toLowerCase().replace(/\s+/g, '-'),
                     description,
+                    iconId: iconId ? Number(iconId) : null,
                   })
                   .then(() => {
                     show('Created');
-                    setOpen(false);
-                    setName('');
-                    setSlug('');
-                    setDescription('');
+                    setCreateOpen(false);
+                    resetForm();
                   })
                   .catch((e) => showError(e instanceof Error ? e.message : 'Failed'))
               }
@@ -177,15 +235,45 @@ export function SuperAdminSkillCommunitiesPage() {
           </>
         }
       >
-        <div className="space-y-3">
-          <Input placeholder="Name" value={name} onChange={(e) => setName(e.target.value)} />
-          <Input placeholder="Slug" value={slug} onChange={(e) => setSlug(e.target.value)} />
-          <Input
-            placeholder="Description"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-          />
-        </div>
+        {communityFormFields}
+      </Dialog>
+      <Dialog
+        open={editOpen}
+        onClose={() => setEditOpen(false)}
+        title="Edit skill community"
+        footer={
+          <>
+            <Button variant="outline" onClick={() => setEditOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              disabled={editingId == null}
+              onClick={() => {
+                if (editingId == null) return;
+                void mutations.updateSkillCommunity
+                  .mutateAsync({
+                    id: editingId,
+                    body: {
+                      name,
+                      slug: slug || name.toLowerCase().replace(/\s+/g, '-'),
+                      description,
+                      iconId: iconId ? Number(iconId) : null,
+                    },
+                  })
+                  .then(() => {
+                    show('Updated');
+                    setEditOpen(false);
+                    resetForm();
+                  })
+                  .catch((e) => showError(e instanceof Error ? e.message : 'Failed'));
+              }}
+            >
+              Save
+            </Button>
+          </>
+        }
+      >
+        {communityFormFields}
       </Dialog>
     </>
   );

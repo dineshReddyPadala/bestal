@@ -1,5 +1,5 @@
 import type { ClientCandidateProfile, ClientGroupedSkill } from '@bestal/mock-data';
-import { cn, formatCurrency, initials } from '@bestal/shared-utils';
+import { COLLABORATION_CULTURAL_FIT_LABEL, cn, formatCurrency, initials } from '@bestal/shared-utils';
 import { Button, Tabs } from '@bestal/ui';
 import {
   BadgeCheck,
@@ -153,6 +153,35 @@ export function ClientCandidateProfileView({
     return [...tags].slice(0, 8);
   }, [profile.industryExperience, profile.primarySkills, profile.secondarySkills]);
 
+  const evaluationScoreCards = useMemo(
+    () => [
+      { label: 'Technical', value: scoreOrDash(profile.evaluation.technical) },
+      { label: 'Communication', value: scoreOrDash(profile.evaluation.communication) },
+      {
+        label: COLLABORATION_CULTURAL_FIT_LABEL,
+        value: scoreOrDash(profile.evaluation.collaborationCulturalFit),
+      },
+      { label: 'BesTal Score', value: String(profile.bestalScore) },
+    ],
+    [profile.bestalScore, profile.evaluation],
+  );
+
+  const evaluationScoreGrid = (
+    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      {evaluationScoreCards.map((item) => (
+        <div
+          key={item.label}
+          className="rounded-xl border border-border/60 bg-muted/20 px-4 py-3 text-center"
+        >
+          <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+            {item.label}
+          </p>
+          <p className="mt-1 text-lg font-semibold tabular-nums text-foreground">{item.value}</p>
+        </div>
+      ))}
+    </div>
+  );
+
   const summaryTab = (
     <div className="space-y-8">
       <section>
@@ -160,6 +189,11 @@ export function ClientCandidateProfileView({
         <p className="text-sm leading-relaxed text-muted-foreground">
           {profile.clientAiSummary.trim() || 'Summary is not available yet.'}
         </p>
+      </section>
+
+      <section>
+        <h3 className="mb-3 text-sm font-semibold text-foreground">Evaluation scores</h3>
+        {evaluationScoreGrid}
       </section>
 
       {rankedSkills.length > 0 ? (
@@ -209,24 +243,7 @@ export function ClientCandidateProfileView({
         <StatusPill>{clientEvaluationStatusText(profile.evaluation.status)}</StatusPill>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        {[
-          { label: 'Technical', value: scoreOrDash(profile.evaluation.technical) },
-          { label: 'Communication', value: scoreOrDash(profile.evaluation.communication) },
-          { label: 'Architecture', value: scoreOrDash(profile.evaluation.architecture) },
-          { label: 'BesTal Score', value: String(profile.bestalScore) },
-        ].map((item) => (
-          <div
-            key={item.label}
-            className="rounded-xl border border-border/60 bg-muted/20 px-4 py-3 text-center"
-          >
-            <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-              {item.label}
-            </p>
-            <p className="mt-1 text-lg font-semibold tabular-nums text-foreground">{item.value}</p>
-          </div>
-        ))}
-      </div>
+      {evaluationScoreGrid}
 
       <section>
         <h3 className="mb-2 text-sm font-semibold text-foreground">Recommendation</h3>

@@ -89,7 +89,7 @@ export type EvaluationFormValues = {
   evaluatedDate: string;
   technicalScore?: number;
   communicationScore?: number;
-  architectureScore?: number;
+  collaborationCulturalFitScore?: number;
   problemSolvingScore?: number;
   clientReadinessScore?: number;
   recommendation?: EvaluationRecommendationValue;
@@ -294,9 +294,6 @@ export type BgvRequestFormValues = {
   requestedByName: string;
   checkType: BgvCheckType;
   employment: BgvCheckRequestStatus;
-  education: BgvCheckRequestStatus;
-  reference: BgvCheckRequestStatus;
-  address: BgvCheckRequestStatus;
   criminal: BgvCheckRequestStatus;
   notes?: string;
   consentFileName?: string;
@@ -311,9 +308,6 @@ export type BgvPayload = BgvRequestFormValues & {
   requestedByName: string;
   status: 'NOT_STARTED' | 'PENDING' | 'IN_PROGRESS' | 'CLEAR' | 'CONSIDER' | 'FAILED';
   employment: string;
-  education: string;
-  reference: string;
-  address: string;
   criminal: string;
   completedAt: string | null;
   hasReport: boolean;
@@ -326,16 +320,10 @@ export type BgvPayload = BgvRequestFormValues & {
 function initialCheckStatuses(checkType: BgvCheckType): {
   status: BgvPayload['status'];
   employment: string;
-  education: string;
-  reference: string;
-  address: string;
   criminal: string;
 } {
   const base = {
     employment: 'NOT_STARTED',
-    education: 'NOT_STARTED',
-    reference: 'NOT_STARTED',
-    address: 'NOT_STARTED',
     criminal: 'NOT_STARTED',
   } as const;
 
@@ -344,9 +332,6 @@ function initialCheckStatuses(checkType: BgvCheckType): {
       return {
         status: 'PENDING',
         employment: 'PENDING',
-        education: 'PENDING',
-        reference: 'NOT_STARTED',
-        address: 'NOT_STARTED',
         criminal: 'PENDING',
       };
     case 'CRIMINAL':
@@ -354,13 +339,10 @@ function initialCheckStatuses(checkType: BgvCheckType): {
     case 'EMPLOYMENT':
       return { status: 'PENDING', ...base, employment: 'PENDING' };
     case 'EDUCATION':
-      return { status: 'PENDING', ...base, education: 'PENDING' };
     case 'REFERENCE':
-      return { status: 'PENDING', ...base, reference: 'PENDING' };
     case 'IDENTITY':
-      return { status: 'PENDING', ...base, address: 'PENDING' };
     case 'CREDIT':
-      return { status: 'PENDING', ...base, address: 'PENDING' };
+      return { status: 'PENDING', ...base };
     default:
       return { status: 'PENDING', ...base };
   }
@@ -368,25 +350,18 @@ function initialCheckStatuses(checkType: BgvCheckType): {
 
 export function getBgvChecksForType(
   checkType: BgvCheckType,
-): Pick<
-  BgvRequestFormValues,
-  'employment' | 'education' | 'reference' | 'address' | 'criminal'
-> {
+): Pick<BgvRequestFormValues, 'employment' | 'criminal'> {
   const checks = initialCheckStatuses(checkType);
   return {
     employment: checks.employment as BgvCheckRequestStatus,
-    education: checks.education as BgvCheckRequestStatus,
-    reference: checks.reference as BgvCheckRequestStatus,
-    address: checks.address as BgvCheckRequestStatus,
     criminal: checks.criminal as BgvCheckRequestStatus,
   };
 }
 
-function deriveOverallStatus(form: Pick<
-  BgvRequestFormValues,
-  'employment' | 'education' | 'reference' | 'address' | 'criminal'
->): BgvPayload['status'] {
-  const vals = [form.employment, form.education, form.reference, form.address, form.criminal];
+function deriveOverallStatus(
+  form: Pick<BgvRequestFormValues, 'employment' | 'criminal'>,
+): BgvPayload['status'] {
+  const vals = [form.employment, form.criminal];
   if (vals.every((v) => v === 'NOT_STARTED')) return 'NOT_STARTED';
   return 'PENDING';
 }
@@ -401,17 +376,11 @@ export function buildBgvPayload(
     ? {
         status: existing.status,
         employment: existing.employment ?? 'NOT_STARTED',
-        education: existing.education ?? 'NOT_STARTED',
-        reference: existing.reference ?? 'NOT_STARTED',
-        address: existing.address ?? 'NOT_STARTED',
         criminal: existing.criminal ?? 'NOT_STARTED',
       }
     : {
         status: deriveOverallStatus(form),
         employment: form.employment,
-        education: form.education,
-        reference: form.reference,
-        address: form.address,
         criminal: form.criminal,
       };
 

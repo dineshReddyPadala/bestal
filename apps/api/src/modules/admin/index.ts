@@ -63,9 +63,18 @@ export async function adminRoutes(fastify: FastifyInstance): Promise<void> {
   // Skill communities
   app.get('/skill-communities', { ...secure, schema: { tags: ['Admin'], security: [{ bearerAuth: [] }] } }, controller.listSkillCommunities);
   app.post('/skill-communities', { ...secure, schema: { tags: ['Admin'], security: [{ bearerAuth: [] }] } }, controller.createSkillCommunity);
+  app.post('/skill-communities/:id/icon', { ...secure, schema: { tags: ['Admin'], params: adminIdParamSchema, security: [{ bearerAuth: [] }], consumes: ['multipart/form-data'] } }, controller.uploadSkillCommunityIcon);
   app.put('/skill-communities/:id', { ...secure, schema: { tags: ['Admin'], params: adminIdParamSchema, security: [{ bearerAuth: [] }] } }, controller.updateSkillCommunity);
   app.patch('/skill-communities/:id/status', { ...secure, schema: { tags: ['Admin'], params: adminIdParamSchema, security: [{ bearerAuth: [] }] } }, controller.setSkillCommunityStatus);
   app.delete('/skill-communities/:id', { ...secure, schema: { tags: ['Admin'], params: adminIdParamSchema, security: [{ bearerAuth: [] }] } }, controller.deleteSkillCommunity);
+
+  // Icons
+  app.get('/icons', { ...secure, schema: { tags: ['Admin'], querystring: adminListQuerySchema, security: [{ bearerAuth: [] }] } }, controller.listIcons);
+  app.get('/icons/:id', { ...secure, schema: { tags: ['Admin'], params: adminIdParamSchema, security: [{ bearerAuth: [] }] } }, controller.getIcon);
+  app.post('/icons', { ...secure, schema: { tags: ['Admin'], security: [{ bearerAuth: [] }], consumes: ['multipart/form-data'] } }, controller.createIcon);
+  app.post('/icons/:id/file', { ...secure, schema: { tags: ['Admin'], params: adminIdParamSchema, security: [{ bearerAuth: [] }], consumes: ['multipart/form-data'] } }, controller.uploadIconFile);
+  app.put('/icons/:id', { ...secure, schema: { tags: ['Admin'], params: adminIdParamSchema, security: [{ bearerAuth: [] }] } }, controller.updateIcon);
+  app.delete('/icons/:id', { ...secure, schema: { tags: ['Admin'], params: adminIdParamSchema, security: [{ bearerAuth: [] }] } }, controller.deleteIcon);
 
   // Trials
   app.get('/trials', { ...secure, schema: { tags: ['Admin'], security: [{ bearerAuth: [] }] } }, controller.listTrials);

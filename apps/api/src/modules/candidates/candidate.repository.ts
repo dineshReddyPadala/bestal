@@ -155,6 +155,19 @@ export class CandidateRepository extends BaseRepository {
     return { items, total };
   }
 
+  /** Top client-visible candidates for public marketing (all organizations). */
+  findPublicFeatured(limit: number): Promise<CandidateRecord[]> {
+    return this.prisma.candidate.findMany({
+      where: {
+        deletedAt: null,
+        visibility: 'CLIENT_VISIBLE',
+      },
+      orderBy: [{ bestalScore: { sort: 'desc', nulls: 'last' } }, { publishedAt: 'desc' }],
+      take: limit,
+      include: candidateInclude,
+    });
+  }
+
   publish(organizationId: number, id: number): Promise<CandidateRecord> {
     return this.prisma.candidate.update({
       where: { id: BigInt(id), organizationId: BigInt(organizationId) },

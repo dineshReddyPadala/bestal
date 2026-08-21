@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { candidatesApi } from '../../lib/api';
+import { candidatesApi, listPublicFeaturedCandidates } from '../../lib/api';
 import type { ListQuery } from '../../lib/api/client';
 import { queryKeys } from './query-keys';
 
@@ -7,6 +7,14 @@ export function useCandidatesList(params?: ListQuery) {
   return useQuery({
     queryKey: queryKeys.candidates.list(params),
     queryFn: () => candidatesApi.list(params),
+  });
+}
+
+export function usePublicFeaturedCandidates(limit = 5) {
+  return useQuery({
+    queryKey: [...queryKeys.candidates.publicFeatured, limit],
+    queryFn: () => listPublicFeaturedCandidates(limit),
+    staleTime: 5 * 60_000,
   });
 }
 

@@ -21,6 +21,7 @@ export const queryKeys = {
     all: ['candidates'] as const,
     list: (params?: Record<string, unknown>) => ['candidates', 'list', params] as const,
     detail: (id: number) => ['candidates', id] as const,
+    publicFeatured: ['candidates', 'public-featured'] as const,
   },
   shortlists: {
     all: ['shortlists'] as const,
@@ -38,6 +39,8 @@ export const queryKeys = {
     candidate: (id: number) => ['admin', 'candidates', id] as const,
     skillCommunities: (params?: Record<string, unknown>) =>
       ['admin', 'skill-communities', params] as const,
+    icons: (params?: Record<string, unknown>) => ['admin', 'icons', params] as const,
+    icon: (id: number) => ['admin', 'icons', id] as const,
     trials: (params?: Record<string, unknown>) => ['admin', 'trials', params] as const,
     deployments: (params?: Record<string, unknown>) => ['admin', 'deployments', params] as const,
     oorwinHistory: (params?: Record<string, unknown>) =>
@@ -78,5 +81,6 @@ export const queryKeys = {
   },
   skillCommunities: {
     all: ['skill-communities'] as const,
+    public: ['skill-communities', 'public'] as const,
   },
 };

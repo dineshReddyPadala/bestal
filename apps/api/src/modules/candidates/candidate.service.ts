@@ -54,6 +54,7 @@ import { buildPaginationMeta } from '../../validators/common.validator.js';
 import {
   mapCandidateToDtoAsync,
   mapCandidateToListItemAsync,
+  mapPublicFeaturedEvaluation,
 } from './candidate.mapper.js';
 import { CandidateRepository } from './candidate.repository.js';
 import { AuditService } from '../admin/audit.service.js';
@@ -61,6 +62,7 @@ import type {
   CandidateAssetKind,
   CandidateDto,
   CandidateListItemDto,
+  PublicFeaturedCandidateDto,
   CompleteRecruiterReviewInput,
   CreateCandidateInput,
   CreateCandidateSkillInput,
@@ -924,6 +926,54 @@ export class CandidateService {
     };
   }
 
+  async listPublicFeatured(limit = 5): Promise<{ data: PublicFeaturedCandidateDto[] }> {
+    const items = await this.candidateRepository.findPublicFeatured(limit);
+    const resolveUrl = (key: string, bucket: string, mimeType?: string) =>
+      this.storageService.resolveFileUrl(key, bucket, mimeType);
+
+    const evaluations = items.length
+      ? await this.prisma.evaluation.findMany({
+          where: {
+            candidateId: { in: items.map((item) => item.id) },
+            deletedAt: null,
+          },
+          orderBy: [{ evaluationDate: 'desc' }, { createdAt: 'desc' }],
+        })
+      : [];
+
+    const latestEvaluationByCandidate = new Map<bigint, (typeof evaluations)[number]>();
+    for (const evaluation of evaluations) {
+      if (!latestEvaluationByCandidate.has(evaluation.candidateId)) {
+        latestEvaluationByCandidate.set(evaluation.candidateId, evaluation);
+      }
+    }
+
+    const data = await Promise.all(
+      items.map(async (candidate) => {
+        const listItem = await mapCandidateToListItemAsync(candidate, resolveUrl);
+        const skillNames = [
+          ...new Set(
+            candidate.skills
+              .map((skill) => skill.skillName?.trim() || skill.skillCommunity?.name?.trim())
+              .filter((name): name is string => Boolean(name)),
+          ),
+        ].slice(0, 5);
+
+        const { email: _email, ...publicItem } = listItem;
+        const latestEvaluation = latestEvaluationByCandidate.get(candidate.id);
+
+        return {
+          ...publicItem,
+          skillNames,
+          publishedAt: candidate.publishedAt?.toISOString() ?? null,
+          evaluation: mapPublicFeaturedEvaluation(candidate, latestEvaluation),
+        };
+      }),
+    );
+
+    return { data };
+  }
+
   async getById(authUser: AuthenticatedUser, id: number): Promise<CandidateDto> {
     const organizationId = this.requireOrganization(authUser);
     const candidate = await this.getCandidateOrThrow(organizationId, id);
@@ -1420,6 +1470,23 @@ export class CandidateService {
     } else {
       dto.bgvCompletedAt = null;
       dto.bgvSummary = null;
+    }
+
+    const latestEvaluation = await this.prisma.evaluation.findFirst({
+      where: {
+        organizationId: candidate.organizationId,
+        candidateId: candidate.id,
+        deletedAt: null,
+      },
+      orderBy: [{ evaluationDate: 'desc' }, { createdAt: 'desc' }],
+      select: {
+        collaborationCulturalFitScore: true,
+        recommendation: true,
+      },
+    });
+    dto.collaborationCulturalFitScore = latestEvaluation?.collaborationCulturalFitScore ?? null;
+    if (latestEvaluation?.recommendation) {
+      dto.evaluationRecommendation = latestEvaluation.recommendation;
     }
 
     // Clients never receive document assets beyond public profile media already on DTO.

@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { CommunityProfileSlider } from '../../components/marketing/CommunityProfileSlider';
 import { ProfileTabs } from '../../components/marketing/ProfileTabs';
 import { MktShell } from '../../components/marketing/MktShell';
@@ -13,6 +13,8 @@ import {
   TIMEZONE_BLOCKS,
 } from '../../lib/marketing-copy';
 import { COMMUNITY_PROFILE_SLIDES, type CommunityProfileSlide } from '../../lib/demo-engineers';
+import { mapFeaturedCandidateToProfileSlide } from '../../lib/landing-featured-candidates';
+import { usePublicFeaturedCandidates } from '../../hooks/api/useCandidates';
 import { images } from '../../data/homeCopy';
 import { PAGE_SEO } from '../../lib/marketing-seo';
 import { cn } from '@bestal/shared-utils';
@@ -27,7 +29,18 @@ const TIMEZONE_CHIPS = [
 
 export function HomePage() {
   const [openFaq, setOpenFaq] = useState(0);
-  const [heroSlide, setHeroSlide] = useState<CommunityProfileSlide>(COMMUNITY_PROFILE_SLIDES[0]);
+  const { data: featuredCandidates = [] } = usePublicFeaturedCandidates(5);
+
+  const profileSlides = useMemo(() => {
+    if (featuredCandidates.length === 0) return COMMUNITY_PROFILE_SLIDES;
+    return featuredCandidates.map(mapFeaturedCandidateToProfileSlide);
+  }, [featuredCandidates]);
+
+  const [heroSlide, setHeroSlide] = useState<CommunityProfileSlide>(profileSlides[0]);
+
+  useEffect(() => {
+    setHeroSlide(profileSlides[0]);
+  }, [profileSlides]);
 
   const handleHeroSlideChange = useCallback((slide: CommunityProfileSlide) => {
     setHeroSlide(slide);
@@ -64,7 +77,11 @@ export function HomePage() {
               No recruiter calls. No sourcing cycle. No commitment for the free trial.
             </p>
           </div>
-          <CommunityProfileSlider hideScorecard onSlideChange={handleHeroSlideChange} />
+          <CommunityProfileSlider
+            hideScorecard
+            slides={profileSlides}
+            onSlideChange={handleHeroSlideChange}
+          />
         </MktShell>
       </section>
 
@@ -132,18 +149,24 @@ export function HomePage() {
                 <span>/100</span>
               </strong>
             </div>
-            {heroEngineer.dimensions.map((dim) => (
-              <div key={dim.label} className="mkt-scr">
-                <span className="mkt-scr-n">{dim.label}</span>
-                <span className="mkt-tr">
-                  <span
-                    className={cn('mkt-fl', dim.tone === 'gold' && 'mkt-fl-amber')}
-                    style={{ width: `${dim.value * 10}%` }}
-                  />
-                </span>
-                <span className="mkt-scr-v">{dim.value}</span>
-              </div>
-            ))}
+            {heroEngineer.dimensions.length > 0 ? (
+              heroEngineer.dimensions.map((dim) => (
+                <div key={dim.label} className="mkt-scr">
+                  <span className="mkt-scr-n">{dim.label}</span>
+                  <span className="mkt-tr">
+                    <span
+                      className={cn('mkt-fl', dim.tone === 'gold' && 'mkt-fl-amber')}
+                      style={{ width: `${dim.value * 10}%` }}
+                    />
+                  </span>
+                  <span className="mkt-scr-v">{dim.value}</span>
+                </div>
+              ))
+            ) : (
+              <p className="mkt-dark-p mt-4">
+                Full dimensional scorecard available on the candidate profile.
+              </p>
+            )}
             <p className="mkt-evl">
               {heroEngineer.quoteIsPlaceholder ? (
                 <span className="italic">{heroEngineer.quote}</span>

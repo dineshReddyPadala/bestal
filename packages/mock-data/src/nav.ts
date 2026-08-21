@@ -55,6 +55,7 @@ export const superAdminNav = [
   { id: 'deployments', label: 'Deployments', href: '/super-admin/deployments', icon: 'rocket' },
   { id: 'reports', label: 'Reports', href: '/super-admin/reports', icon: 'trending-up' },
   { id: 'audit-logs', label: 'Audit Logs', href: '/super-admin/audit-logs', icon: 'scroll-text' },
+  { id: 'icons', label: 'Icons', href: '/super-admin/icons', icon: 'image' },
   { id: 'platform-settings', label: 'Platform Settings', href: '/super-admin/platform-settings', icon: 'settings' },
 ] as const satisfies readonly NavItem[];
 

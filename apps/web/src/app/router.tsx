@@ -74,6 +74,7 @@ import { SuperAdminShell } from '../layouts/SuperAdminShell';
 import { SuperAdminDashboardPage } from '../pages/super-admin/DashboardPage';
 import { SuperAdminUsersPage } from '../pages/super-admin/UsersPage';
 import { SuperAdminUserFormPage } from '../pages/super-admin/UserFormPage';
+import { SuperAdminIconsPage } from '../pages/super-admin/IconsPage';
 import { SuperAdminRolesPage } from '../pages/super-admin/RolesPage';
 import { SuperAdminRoleDetailPage } from '../pages/super-admin/RoleDetailPage';
 import { SuperAdminClientsPage } from '../pages/super-admin/ClientsPage';
@@ -377,6 +378,7 @@ const router = createBrowserRouter([
       { path: 'reports', element: <SuperAdminReportsPage /> },
       { path: 'margin', element: <Navigate to="/super-admin/reports?tab=margin" replace /> },
       { path: 'audit-logs', element: <SuperAdminAuditLogsPage /> },
+      { path: 'icons', element: <SuperAdminIconsPage /> },
       { path: 'platform-settings', element: <SuperAdminSettingsPage /> },
       { path: 'settings', element: <Navigate to="/super-admin/platform-settings" replace /> },
     ],

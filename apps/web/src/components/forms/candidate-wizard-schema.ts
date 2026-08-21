@@ -101,7 +101,7 @@ export const candidateWizardFormSchema = z.object({
   technicalScore: optionalNumber,
   communicationScore: optionalNumber,
   problemSolvingScore: optionalNumber,
-  architectureScore: optionalNumber,
+  collaborationCulturalFitScore: optionalNumber,
   clientReadinessScore: optionalNumber,
   evaluatorName: z.string().max(200).optional().nullable(),
   evaluatorCompany: z.string().max(200).optional().nullable(),
@@ -127,9 +127,6 @@ export const candidateWizardFormSchema = z.object({
     .optional()
     .nullable(),
   bgvEmployment: z.string().max(50).optional().nullable(),
-  bgvEducation: z.string().max(50).optional().nullable(),
-  bgvReference: z.string().max(50).optional().nullable(),
-  bgvAddress: z.string().max(50).optional().nullable(),
   bgvCriminal: z.string().max(50).optional().nullable(),
   bgvIdCheck: z.string().max(50).optional().nullable(),
   bgvNotes: z.string().max(2000).optional().nullable(),
@@ -260,7 +257,7 @@ export const candidateWizardDefaults: CandidateWizardFormValues = {
   technicalScore: undefined,
   communicationScore: undefined,
   problemSolvingScore: undefined,
-  architectureScore: undefined,
+  collaborationCulturalFitScore: undefined,
   clientReadinessScore: undefined,
   evaluatorName: '',
   evaluatorCompany: '',
@@ -275,9 +272,6 @@ export const candidateWizardDefaults: CandidateWizardFormValues = {
   bgvRequestedByName: '',
   bgvCheckType: 'COMPREHENSIVE',
   bgvEmployment: 'PENDING',
-  bgvEducation: 'PENDING',
-  bgvReference: 'PENDING',
-  bgvAddress: 'PENDING',
   bgvCriminal: 'PENDING',
   bgvIdCheck: 'PENDING',
   bgvNotes: '',
@@ -591,7 +585,7 @@ export const USER_FIELD_LABELS: Record<keyof CandidateWizardFormValues, string> 
   technicalScore: 'Technical Score',
   communicationScore: 'Communication',
   problemSolvingScore: 'Problem Solving',
-  architectureScore: 'Architecture',
+  collaborationCulturalFitScore: 'Collaboration & Cultural Fit',
   clientReadinessScore: 'Client Readiness',
   evaluatorName: 'Evaluator Name',
   evaluatorCompany: 'Evaluator Company',
@@ -606,9 +600,6 @@ export const USER_FIELD_LABELS: Record<keyof CandidateWizardFormValues, string> 
   bgvRequestedByName: 'BGV Requested By',
   bgvCheckType: 'BGV Package Type',
   bgvEmployment: 'Employment Check',
-  bgvEducation: 'Education Check',
-  bgvReference: 'Reference Check',
-  bgvAddress: 'Address Check',
   bgvCriminal: 'Criminal Check',
   bgvIdCheck: 'Identity Check',
   bgvNotes: 'BGV Notes',
@@ -832,8 +823,8 @@ export function mapWizardToEvaluationUpdateBody(
   const problemSolvingScore = finiteNumberOrUndefined(form.problemSolvingScore);
   if (problemSolvingScore !== undefined) body.problemSolvingScore = problemSolvingScore;
 
-  const architectureScore = finiteNumberOrUndefined(form.architectureScore);
-  if (architectureScore !== undefined) body.architectureScore = architectureScore;
+  const collaborationCulturalFitScore = finiteNumberOrUndefined(form.collaborationCulturalFitScore);
+  if (collaborationCulturalFitScore !== undefined) body.collaborationCulturalFitScore = collaborationCulturalFitScore;
 
   const clientReadinessScore = finiteNumberOrUndefined(form.clientReadinessScore);
   if (clientReadinessScore !== undefined) body.clientReadinessScore = clientReadinessScore;
@@ -882,11 +873,8 @@ export function mapWizardToBgvUpdateBody(
 ): Record<string, unknown> {
   const checkFields = {
     idCheckStatus: form.bgvIdCheck ?? null,
-    addressCheckStatus: form.bgvAddress ?? null,
     employmentCheckStatus: form.bgvEmployment ?? null,
-    educationCheckStatus: form.bgvEducation ?? null,
     criminalCheckStatus: form.bgvCriminal ?? null,
-    referenceCheckStatus: form.bgvReference ?? null,
   };
   const body: Record<string, unknown> = {};
   const status = mapWizardBgvStatusToApi(emptyToUndefined(form.bgvStatus));
@@ -900,11 +888,8 @@ export function mapWizardToBgvUpdateBody(
     (hasAnyBgvCheckStatus(checkFields) ? formatBgvCheckStatusesSummary(checkFields) : null);
   if (form.bgvCheckType) body.type = form.bgvCheckType;
   body.idCheckStatus = emptyToUndefined(form.bgvIdCheck) ?? null;
-  body.addressCheckStatus = emptyToUndefined(form.bgvAddress) ?? null;
   body.employmentCheckStatus = emptyToUndefined(form.bgvEmployment) ?? null;
-  body.educationCheckStatus = emptyToUndefined(form.bgvEducation) ?? null;
   body.criminalCheckStatus = emptyToUndefined(form.bgvCriminal) ?? null;
-  body.referenceCheckStatus = emptyToUndefined(form.bgvReference) ?? null;
   const initiatedDate = emptyToUndefined(form.bgvInitiatedDate);
   if (initiatedDate) body.initiatedAt = `${initiatedDate}T00:00:00.000Z`;
   const completedDate = emptyToUndefined(form.bgvCompletedDate);
@@ -997,7 +982,7 @@ export function mapCandidateDtoToWizardForm(
       technicalScore?: number | null;
       communicationScore?: number | null;
       problemSolvingScore?: number | null;
-      architectureScore?: number | null;
+      collaborationCulturalFitScore?: number | null;
       clientReadinessScore?: number | null;
       evaluatorComments?: string | null;
       aiEvaluationSummary?: string | null;
@@ -1013,9 +998,6 @@ export function mapCandidateDtoToWizardForm(
       type?: string | null;
       idCheckStatus?: string | null;
       employmentCheckStatus?: string | null;
-      educationCheckStatus?: string | null;
-      referenceCheckStatus?: string | null;
-      addressCheckStatus?: string | null;
       criminalCheckStatus?: string | null;
       initiatedAt?: string | null;
       completedAt?: string | null;
@@ -1112,8 +1094,8 @@ export function mapCandidateDtoToWizardForm(
     if (evaluation.problemSolvingScore != null) {
       base.problemSolvingScore = evaluation.problemSolvingScore;
     }
-    if (evaluation.architectureScore != null) {
-      base.architectureScore = evaluation.architectureScore;
+    if (evaluation.collaborationCulturalFitScore != null) {
+      base.collaborationCulturalFitScore = evaluation.collaborationCulturalFitScore;
     }
     if (evaluation.clientReadinessScore != null) {
       base.clientReadinessScore = evaluation.clientReadinessScore;
@@ -1124,11 +1106,8 @@ export function mapCandidateDtoToWizardForm(
     const bgv = linked.bgv;
     const checkFields = {
       idCheckStatus: bgv.idCheckStatus,
-      addressCheckStatus: bgv.addressCheckStatus,
       employmentCheckStatus: bgv.employmentCheckStatus,
-      educationCheckStatus: bgv.educationCheckStatus,
       criminalCheckStatus: bgv.criminalCheckStatus,
-      referenceCheckStatus: bgv.referenceCheckStatus,
     };
     base.bgvBackgroundCheckId = bgv.id;
     base.bgvStatus = mapWizardBgvStatusFromApi(bgv.status);
@@ -1140,9 +1119,6 @@ export function mapCandidateDtoToWizardForm(
       base.bgvCheckType = bgv.type as CandidateWizardFormValues['bgvCheckType'];
     }
     base.bgvEmployment = bgv.employmentCheckStatus ?? '';
-    base.bgvEducation = bgv.educationCheckStatus ?? '';
-    base.bgvReference = bgv.referenceCheckStatus ?? '';
-    base.bgvAddress = bgv.addressCheckStatus ?? '';
     base.bgvCriminal = bgv.criminalCheckStatus ?? '';
     base.bgvIdCheck = bgv.idCheckStatus ?? '';
     base.bgvInitiatedDate = bgv.initiatedAt ? bgv.initiatedAt.slice(0, 10) : '';

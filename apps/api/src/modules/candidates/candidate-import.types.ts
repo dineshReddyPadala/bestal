@@ -33,7 +33,7 @@ export type NormalizedEvaluationRow = {
   technicalScore: number | null;
   communicationScore: number | null;
   problemSolvingScore: number | null;
-  architectureScore: number | null;
+  collaborationCulturalFitScore: number | null;
   clientReadinessScore: number | null;
   recommendation: string | null;
   evaluationSummary: string | null;
@@ -46,11 +46,8 @@ export type NormalizedBgvRow = {
   packageType: string;
   vendor: string | null;
   idCheckStatus: string | null;
-  addressCheckStatus: string | null;
   employmentCheckStatus: string | null;
-  educationCheckStatus: string | null;
   criminalCheckStatus: string | null;
-  referenceCheckStatus: string | null;
   initiatedDate: string | null;
   completedDate: string | null;
   bgvSummary: string | null;
@@ -77,7 +74,6 @@ export type NormalizedCandidateImport = {
   yearsExperience: number;
   primaryRole: string;
   skillCommunity: string | null;
-  summary: string | null;
   aiSummary: string | null;
   strengths: string | null;
   weaknesses: string | null;

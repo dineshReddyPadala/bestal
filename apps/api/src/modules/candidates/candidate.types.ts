@@ -93,6 +93,8 @@ export interface CandidateDto {
   bestalScore: number | null;
   technicalScore: number | null;
   communicationScore: number | null;
+  collaborationCulturalFitScore?: number | null;
+  evaluationRecommendation?: string | null;
   reliabilityScore: number | null;
   evaluationStatus: string | null;
   bgvStatus: string | null;
@@ -141,6 +143,26 @@ export interface CandidateListItemDto {
   hasCommercials: boolean;
   createdAt: string;
   updatedAt: string;
+}
+
+/** Marketing-safe evaluation summary for the landing page scorecard. */
+export interface PublicFeaturedEvaluationDto {
+  technicalScore: number | null;
+  problemSolvingScore: number | null;
+  collaborationCulturalFitScore: number | null;
+  clientReadinessScore: number | null;
+  communicationScore: number | null;
+  evaluationSummary: string | null;
+  recommendation: string | null;
+  evaluatorComments: string | null;
+  evaluationDate: string | null;
+}
+
+/** Marketing-safe candidate row for the public landing page slider. */
+export interface PublicFeaturedCandidateDto extends Omit<CandidateListItemDto, 'email'> {
+  skillNames: string[];
+  publishedAt: string | null;
+  evaluation: PublicFeaturedEvaluationDto | null;
 }
 
 export interface CandidateListFilters {

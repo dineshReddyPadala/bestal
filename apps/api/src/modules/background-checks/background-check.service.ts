@@ -118,11 +118,8 @@ function deriveBgvWorkflowStatusFromAiOutput(output: BgvAnalysisOutput): string 
 
   const checks = [
     output.idCheckStatus,
-    output.addressCheckStatus,
     output.employmentCheckStatus,
-    output.educationCheckStatus,
     output.criminalCheckStatus,
-    output.referenceCheckStatus,
   ].filter(Boolean);
 
   if (checks.some((c) => c === 'CONSIDER' || c === 'FAILED')) {
@@ -279,15 +276,10 @@ export class BackgroundCheckService {
           provider: output.vendorName?.trim() || existing.provider,
           type: normalizeBgvCheckType(output.checkType) ?? existing.type,
           idCheckStatus: output.idCheckStatus ?? existing.idCheckStatus,
-          addressCheckStatus: output.addressCheckStatus ?? existing.addressCheckStatus,
           employmentCheckStatus:
             output.employmentCheckStatus ?? existing.employmentCheckStatus,
-          educationCheckStatus:
-            output.educationCheckStatus ?? existing.educationCheckStatus,
           criminalCheckStatus:
             output.criminalCheckStatus ?? existing.criminalCheckStatus,
-          referenceCheckStatus:
-            output.referenceCheckStatus ?? existing.referenceCheckStatus,
           aiSummary,
           resultSummary,
           reviewNotes,
@@ -892,11 +884,8 @@ export class BackgroundCheckService {
       patch.resultSummary !== undefined ||
       patch.reviewNotes !== undefined ||
       patch.idCheckStatus !== undefined ||
-      patch.addressCheckStatus !== undefined ||
       patch.employmentCheckStatus !== undefined ||
-      patch.educationCheckStatus !== undefined ||
       patch.criminalCheckStatus !== undefined ||
-      patch.referenceCheckStatus !== undefined ||
       patch.initiatedAt !== undefined ||
       patch.completedAt !== undefined
     );
@@ -909,21 +898,15 @@ export class BackgroundCheckService {
     const patch: UpdateBackgroundCheckInput = { ...input };
     const checkFieldsUpdated =
       patch.idCheckStatus !== undefined ||
-      patch.addressCheckStatus !== undefined ||
       patch.employmentCheckStatus !== undefined ||
-      patch.educationCheckStatus !== undefined ||
-      patch.criminalCheckStatus !== undefined ||
-      patch.referenceCheckStatus !== undefined;
+      patch.criminalCheckStatus !== undefined;
 
     if (checkFieldsUpdated && patch.resultSummary === undefined) {
       patch.resultSummary = formatBgvCheckFieldsSummary({
         idCheckStatus: patch.idCheckStatus ?? existing.idCheckStatus,
-        addressCheckStatus: patch.addressCheckStatus ?? existing.addressCheckStatus,
         employmentCheckStatus:
           patch.employmentCheckStatus ?? existing.employmentCheckStatus,
-        educationCheckStatus: patch.educationCheckStatus ?? existing.educationCheckStatus,
         criminalCheckStatus: patch.criminalCheckStatus ?? existing.criminalCheckStatus,
-        referenceCheckStatus: patch.referenceCheckStatus ?? existing.referenceCheckStatus,
       });
     }
 
@@ -1320,11 +1303,8 @@ function bgvOutputToExtraction(output: BgvAnalysisOutput): BgvExtractionResponse
     status: output.overallStatus ?? output.status,
     vendorName: output.vendorName,
     idCheckStatus: output.idCheckStatus,
-    addressCheckStatus: output.addressCheckStatus,
     employmentCheckStatus: output.employmentCheckStatus,
-    educationCheckStatus: output.educationCheckStatus,
     criminalCheckStatus: output.criminalCheckStatus,
-    referenceCheckStatus: output.referenceCheckStatus,
     aiBgvSummary: output.aiBgvSummary,
     concernNotes: output.concernNotes,
     checkType: output.checkType,

@@ -70,6 +70,21 @@ export function useAdminSkillCommunities(params?: ListQuery) {
   });
 }
 
+export function useAdminIcons(params?: ListQuery) {
+  return useQuery({
+    queryKey: queryKeys.admin.icons(params),
+    queryFn: () => adminApi.listIcons(params),
+  });
+}
+
+export function useAdminIcon(id: number) {
+  return useQuery({
+    queryKey: queryKeys.admin.icon(id),
+    queryFn: () => adminApi.getIcon(id),
+    enabled: id > 0,
+  });
+}
+
 export function useAdminTrials(params?: ListQuery) {
   return useQuery({
     queryKey: queryKeys.admin.trials(params),
@@ -281,6 +296,30 @@ export function useAdminMutations() {
     }),
     deleteSkillCommunity: useMutation({
       mutationFn: (id: number) => adminApi.deleteSkillCommunity(id),
+      onSuccess: invalidate,
+    }),
+    uploadSkillCommunityIcon: useMutation({
+      mutationFn: ({ id, file }: { id: number; file: File }) =>
+        adminApi.uploadSkillCommunityIcon(id, file),
+      onSuccess: invalidate,
+    }),
+    createIcon: useMutation({
+      mutationFn: ({ name, file }: { name: string; file: File }) =>
+        adminApi.createIcon(name, file),
+      onSuccess: invalidate,
+    }),
+    uploadIconFile: useMutation({
+      mutationFn: ({ id, file }: { id: number; file: File }) =>
+        adminApi.uploadIconFile(id, file),
+      onSuccess: invalidate,
+    }),
+    updateIcon: useMutation({
+      mutationFn: ({ id, body }: { id: number; body: Record<string, unknown> }) =>
+        adminApi.updateIcon(id, body),
+      onSuccess: invalidate,
+    }),
+    deleteIcon: useMutation({
+      mutationFn: (id: number) => adminApi.deleteIcon(id),
       onSuccess: invalidate,
     }),
     approveTrial: useMutation({

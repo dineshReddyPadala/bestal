@@ -37,9 +37,6 @@ const bgvRequestFormSchema = z.object({
     'CREDIT',
   ]),
   employment: checkStatusSchema,
-  education: checkStatusSchema,
-  reference: checkStatusSchema,
-  address: checkStatusSchema,
   criminal: checkStatusSchema,
   notes: z.string().max(2000).optional(),
   consentFileName: z.string().optional(),
@@ -84,9 +81,6 @@ export function BgvRequestForm({
   useEffect(() => {
     const checks = getBgvChecksForType(checkType);
     setValue('employment', checks.employment);
-    setValue('education', checks.education);
-    setValue('reference', checks.reference);
-    setValue('address', checks.address);
     setValue('criminal', checks.criminal);
   }, [checkType, setValue]);
 
@@ -143,13 +137,10 @@ export function BgvRequestForm({
 
       <div>
         <p className="mb-3 text-sm font-medium">Checks to run</p>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-2">
           {(
             [
               ['employment', 'Employment'],
-              ['education', 'Education'],
-              ['reference', 'Reference'],
-              ['address', 'Address'],
               ['criminal', 'Criminal'],
             ] as const
           ).map(([key, label]) => (

@@ -73,7 +73,7 @@ export const DEMO_ENGINEERS: DemoEngineer[] = [
     dimensions: [
       { label: 'Technical depth', value: 9.5, tone: 'teal' },
       { label: 'Problem solving', value: 9.2, tone: 'teal' },
-      { label: 'Architecture', value: 9.4, tone: 'teal' },
+      { label: 'Collaboration & Cultural Fit', value: 9.4, tone: 'teal' },
       { label: 'Code quality', value: 9.1, tone: 'teal' },
       { label: 'Communication', value: 8.9, tone: 'teal' },
     ],
@@ -102,7 +102,7 @@ export const DEMO_ENGINEERS: DemoEngineer[] = [
     dimensions: [
       { label: 'Technical depth', value: 9.4, tone: 'teal' },
       { label: 'Problem solving', value: 9, tone: 'teal' },
-      { label: 'Architecture', value: 9.2, tone: 'teal' },
+      { label: 'Collaboration & Cultural Fit', value: 9.2, tone: 'teal' },
       { label: 'Code quality', value: 8.9, tone: 'gold' },
       { label: 'Communication', value: 8.8, tone: 'gold' },
     ],
@@ -132,7 +132,7 @@ export const DEMO_ENGINEERS: DemoEngineer[] = [
     dimensions: [
       { label: 'Technical depth', value: 9.3, tone: 'teal' },
       { label: 'Problem solving', value: 8.8, tone: 'gold' },
-      { label: 'Architecture', value: 9, tone: 'teal' },
+      { label: 'Collaboration & Cultural Fit', value: 9, tone: 'teal' },
       { label: 'Code quality', value: 8.7, tone: 'gold' },
       { label: 'Communication', value: 9.1, tone: 'teal' },
     ],
@@ -161,7 +161,7 @@ export const DEMO_ENGINEERS: DemoEngineer[] = [
     dimensions: [
       { label: 'Technical depth', value: 9.1, tone: 'teal' },
       { label: 'Problem solving', value: 9.3, tone: 'teal' },
-      { label: 'Architecture', value: 8.6, tone: 'gold' },
+      { label: 'Collaboration & Cultural Fit', value: 8.6, tone: 'gold' },
       { label: 'Code quality', value: 8.8, tone: 'gold' },
       { label: 'Communication', value: 8.7, tone: 'gold' },
     ],
@@ -190,7 +190,7 @@ export const DEMO_ENGINEERS: DemoEngineer[] = [
     dimensions: [
       { label: 'Technical depth', value: 8.9, tone: 'teal' },
       { label: 'Problem solving', value: 8.7, tone: 'gold' },
-      { label: 'Architecture', value: 8.8, tone: 'gold' },
+      { label: 'Collaboration & Cultural Fit', value: 8.8, tone: 'gold' },
       { label: 'Code quality', value: 9, tone: 'teal' },
       { label: 'Communication', value: 8.8, tone: 'gold' },
     ],
@@ -219,7 +219,7 @@ export const DEMO_ENGINEERS: DemoEngineer[] = [
     dimensions: [
       { label: 'Technical depth', value: 8.7, tone: 'gold' },
       { label: 'Problem solving', value: 8.5, tone: 'gold' },
-      { label: 'Architecture', value: 8.2, tone: 'gold' },
+      { label: 'Collaboration & Cultural Fit', value: 8.2, tone: 'gold' },
       { label: 'Code quality', value: 8.9, tone: 'teal' },
       { label: 'Communication', value: 8.6, tone: 'gold' },
     ],
@@ -248,7 +248,7 @@ export const DEMO_ENGINEERS: DemoEngineer[] = [
     dimensions: [
       { label: 'Technical depth', value: 9.3, tone: 'teal' },
       { label: 'Problem solving', value: 9.1, tone: 'teal' },
-      { label: 'Architecture', value: 9.5, tone: 'teal' },
+      { label: 'Collaboration & Cultural Fit', value: 9.5, tone: 'teal' },
       { label: 'Code quality', value: 8.8, tone: 'gold' },
       { label: 'Communication', value: 9, tone: 'teal' },
     ],
@@ -277,7 +277,7 @@ export const DEMO_ENGINEERS: DemoEngineer[] = [
     dimensions: [
       { label: 'Technical depth', value: 9.2, tone: 'teal' },
       { label: 'Problem solving', value: 8.9, tone: 'teal' },
-      { label: 'Architecture', value: 8.8, tone: 'gold' },
+      { label: 'Collaboration & Cultural Fit', value: 8.8, tone: 'gold' },
       { label: 'Code quality', value: 8.7, tone: 'gold' },
       { label: 'Communication', value: 9, tone: 'teal' },
     ],
@@ -306,7 +306,7 @@ export const DEMO_ENGINEERS: DemoEngineer[] = [
     dimensions: [
       { label: 'Technical depth', value: 9, tone: 'teal' },
       { label: 'Problem solving', value: 8.8, tone: 'gold' },
-      { label: 'Architecture', value: 8.7, tone: 'gold' },
+      { label: 'Collaboration & Cultural Fit', value: 8.7, tone: 'gold' },
       { label: 'Code quality', value: 8.9, tone: 'teal' },
       { label: 'Communication', value: 9.1, tone: 'teal' },
     ],
@@ -335,7 +335,7 @@ export const DEMO_ENGINEERS: DemoEngineer[] = [
     dimensions: [
       { label: 'Technical depth', value: 9.4, tone: 'teal' },
       { label: 'Problem solving', value: 9.2, tone: 'teal' },
-      { label: 'Architecture', value: 9, tone: 'teal' },
+      { label: 'Collaboration & Cultural Fit', value: 9, tone: 'teal' },
       { label: 'Code quality', value: 8.8, tone: 'gold' },
       { label: 'Communication', value: 8.9, tone: 'teal' },
     ],
