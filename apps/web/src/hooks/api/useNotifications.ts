@@ -11,7 +11,7 @@ export function useNotificationsList(params?: {
     queryFn: () =>
       notificationsApi.list({
         limit: params?.limit ?? 20,
-        sort: '-createdAt',
+        sort: '-updatedAt',
         unreadOnly: params?.unreadOnly,
       }),
     refetchInterval: 30_000,

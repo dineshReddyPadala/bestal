@@ -163,7 +163,7 @@ export function parseSortParam(
   sort: string | undefined,
 ): import('@prisma/client').Prisma.CandidateOrderByWithRelationInput[] {
   if (!sort) {
-    return [{ createdAt: 'desc' }];
+    return [{ updatedAt: 'desc' }];
   }
 
   return sort.split(',').map((field) => {
@@ -185,7 +185,7 @@ export function parseSortParam(
       case 'updatedAt':
         return { [key]: direction };
       default:
-        return { createdAt: 'desc' as const };
+        return { updatedAt: 'desc' as const };
     }
   });
 }

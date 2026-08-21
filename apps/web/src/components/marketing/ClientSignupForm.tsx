@@ -3,10 +3,12 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link } from 'react-router-dom';
 import { ForwardArrow } from '../ui/ForwardArrow';
-import { registerClient } from '../../lib/api/clients';
+import { requestClientSignupOtp, verifyClientSignupOtp } from '../../lib/api/clients';
 import {
-  clientSignupFormSchema,
-  type ClientSignupFormValues,
+  clientSignupDetailsSchema,
+  clientSignupOtpSchema,
+  type ClientSignupDetailsValues,
+  type ClientSignupOtpValues,
 } from '../../lib/schemas/client-signup';
 import { CLIENT_LOGIN_PATH } from '../../lib/login-portals';
 
@@ -32,42 +34,130 @@ export function ClientSignupForm({
   onSuccess,
   compact = false,
 }: ClientSignupFormProps) {
+  const [step, setStep] = useState<'details' | 'otp'>('details');
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const {
-    register,
-    handleSubmit,
-    formState: { errors, isSubmitting },
-  } = useForm<ClientSignupFormValues>({
-    resolver: zodResolver(clientSignupFormSchema),
+  const [otpExpiresInMinutes, setOtpExpiresInMinutes] = useState(10);
+  const [pendingDetails, setPendingDetails] = useState<ClientSignupDetailsValues | null>(null);
+
+  const detailsForm = useForm<ClientSignupDetailsValues>({
+    resolver: zodResolver(clientSignupDetailsSchema),
     defaultValues: {
       companyName: '',
       contactName: '',
       contactEmail: '',
       contactPhone: '',
-      password: '',
-      confirmPassword: '',
+      contactDesignation: '',
+      website: '',
     },
   });
 
-  async function onSubmit(values: ClientSignupFormValues) {
-    setSubmitError(null);
-    try {
-      await registerClient(values);
-      onSuccess();
-    } catch (err) {
-      setSubmitError(err instanceof Error ? err.message : 'Registration failed. Please try again.');
-    }
-  }
+  const otpForm = useForm<ClientSignupOtpValues>({
+    resolver: zodResolver(clientSignupOtpSchema),
+    defaultValues: { otp: '' },
+  });
 
   const loginHref =
     discipline != null && discipline !== ''
       ? `${CLIENT_LOGIN_PATH}?discipline=${encodeURIComponent(discipline)}`
       : CLIENT_LOGIN_PATH;
 
+  async function onVerifyDetails(values: ClientSignupDetailsValues) {
+    setSubmitError(null);
+    try {
+      const result = await requestClientSignupOtp(values);
+      setPendingDetails(values);
+      setOtpExpiresInMinutes(result.expiresInMinutes);
+      setStep('otp');
+      otpForm.reset({ otp: '' });
+    } catch (err) {
+      setSubmitError(err instanceof Error ? err.message : 'Could not send verification code.');
+    }
+  }
+
+  async function onVerifyAndCreate(values: ClientSignupOtpValues) {
+    if (!pendingDetails) {
+      setSubmitError('Please complete your details first.');
+      setStep('details');
+      return;
+    }
+    setSubmitError(null);
+    try {
+      await verifyClientSignupOtp({
+        contactEmail: pendingDetails.contactEmail,
+        otp: values.otp,
+      });
+      onSuccess();
+    } catch (err) {
+      setSubmitError(err instanceof Error ? err.message : 'Verification failed. Please try again.');
+    }
+  }
+
+  if (step === 'otp' && pendingDetails) {
+    return (
+      <form
+        className={compact ? 'mkt-login-form' : 'mkt-login-form mkt-signup-form'}
+        onSubmit={otpForm.handleSubmit(onVerifyAndCreate)}
+      >
+        {submitError && <div className="mkt-login-error">{submitError}</div>}
+
+        <p className="mkt-login-hint">
+          Enter the verification code sent to{' '}
+          <span className="mkt-login-hint-strong">{pendingDetails.contactEmail}</span>. It expires
+          in {otpExpiresInMinutes} minutes.
+        </p>
+
+        <label className="mkt-login-field">
+          <RequiredLabel>Verification code</RequiredLabel>
+          <input
+            type="text"
+            inputMode="numeric"
+            autoComplete="one-time-code"
+            maxLength={6}
+            required
+            className="mkt-login-input tracking-[0.3em]"
+            placeholder="000000"
+            {...otpForm.register('otp')}
+          />
+          {otpForm.formState.errors.otp && (
+            <span className="mkt-login-field-error">{otpForm.formState.errors.otp.message}</span>
+          )}
+        </label>
+
+        <button
+          type="submit"
+          className="mkt-btn mkt-btn-primary mkt-login-submit"
+          disabled={otpForm.formState.isSubmitting}
+        >
+          {otpForm.formState.isSubmitting ? 'Creating account…' : 'Verify and create'}
+          {!otpForm.formState.isSubmitting && <ForwardArrow className="h-4 w-4" />}
+        </button>
+
+        <button
+          type="button"
+          className="mkt-btn mkt-btn-ghost w-full text-sm"
+          disabled={otpForm.formState.isSubmitting}
+          onClick={() => {
+            setStep('details');
+            setSubmitError(null);
+          }}
+        >
+          Back to details
+        </button>
+
+        <p className="mkt-signup-signin-prompt">
+          <span className="mkt-signup-signin-text">Already have an account?</span>{' '}
+          <Link to={loginHref} className="mkt-signup-signin-link">
+            Sign in
+          </Link>
+        </p>
+      </form>
+    );
+  }
+
   return (
     <form
       className={compact ? 'mkt-login-form' : 'mkt-login-form mkt-signup-form'}
-      onSubmit={handleSubmit(onSubmit)}
+      onSubmit={detailsForm.handleSubmit(onVerifyDetails)}
     >
       {submitError && <div className="mkt-login-error">{submitError}</div>}
 
@@ -78,10 +168,12 @@ export function ClientSignupForm({
           autoComplete="organization"
           required
           className="mkt-login-input"
-          {...register('companyName')}
+          {...detailsForm.register('companyName')}
         />
-        {errors.companyName && (
-          <span className="mkt-login-field-error">{errors.companyName.message}</span>
+        {detailsForm.formState.errors.companyName && (
+          <span className="mkt-login-field-error">
+            {detailsForm.formState.errors.companyName.message}
+          </span>
         )}
       </label>
 
@@ -92,10 +184,46 @@ export function ClientSignupForm({
           autoComplete="name"
           required
           className="mkt-login-input"
-          {...register('contactName')}
+          {...detailsForm.register('contactName')}
         />
-        {errors.contactName && (
-          <span className="mkt-login-field-error">{errors.contactName.message}</span>
+        {detailsForm.formState.errors.contactName && (
+          <span className="mkt-login-field-error">
+            {detailsForm.formState.errors.contactName.message}
+          </span>
+        )}
+      </label>
+
+      <label className="mkt-login-field">
+        <RequiredLabel>Designation</RequiredLabel>
+        <input
+          type="text"
+          autoComplete="organization-title"
+          required
+          className="mkt-login-input"
+          placeholder="e.g. VP Engineering, Talent Lead"
+          {...detailsForm.register('contactDesignation')}
+        />
+        {detailsForm.formState.errors.contactDesignation && (
+          <span className="mkt-login-field-error">
+            {detailsForm.formState.errors.contactDesignation.message}
+          </span>
+        )}
+      </label>
+
+      <label className="mkt-login-field">
+        <span className="mkt-login-label">Website</span>
+        <input
+          type="text"
+          autoComplete="url"
+          inputMode="url"
+          className="mkt-login-input"
+          placeholder="company.com"
+          {...detailsForm.register('website')}
+        />
+        {detailsForm.formState.errors.website && (
+          <span className="mkt-login-field-error">
+            {detailsForm.formState.errors.website.message}
+          </span>
         )}
       </label>
 
@@ -106,10 +234,12 @@ export function ClientSignupForm({
           autoComplete="email"
           required
           className="mkt-login-input"
-          {...register('contactEmail')}
+          {...detailsForm.register('contactEmail')}
         />
-        {errors.contactEmail && (
-          <span className="mkt-login-field-error">{errors.contactEmail.message}</span>
+        {detailsForm.formState.errors.contactEmail && (
+          <span className="mkt-login-field-error">
+            {detailsForm.formState.errors.contactEmail.message}
+          </span>
         )}
       </label>
 
@@ -120,48 +250,22 @@ export function ClientSignupForm({
           autoComplete="tel"
           required
           className="mkt-login-input"
-          {...register('contactPhone')}
+          {...detailsForm.register('contactPhone')}
         />
-        {errors.contactPhone && (
-          <span className="mkt-login-field-error">{errors.contactPhone.message}</span>
-        )}
-      </label>
-
-      <label className="mkt-login-field">
-        <RequiredLabel>Password</RequiredLabel>
-        <input
-          type="password"
-          autoComplete="new-password"
-          required
-          className="mkt-login-input"
-          {...register('password')}
-        />
-        {errors.password && (
-          <span className="mkt-login-field-error">{errors.password.message}</span>
-        )}
-      </label>
-
-      <label className="mkt-login-field">
-        <RequiredLabel>Re-enter password</RequiredLabel>
-        <input
-          type="password"
-          autoComplete="new-password"
-          required
-          className="mkt-login-input"
-          {...register('confirmPassword')}
-        />
-        {errors.confirmPassword && (
-          <span className="mkt-login-field-error">{errors.confirmPassword.message}</span>
+        {detailsForm.formState.errors.contactPhone && (
+          <span className="mkt-login-field-error">
+            {detailsForm.formState.errors.contactPhone.message}
+          </span>
         )}
       </label>
 
       <button
         type="submit"
         className="mkt-btn mkt-btn-primary mkt-login-submit"
-        disabled={isSubmitting}
+        disabled={detailsForm.formState.isSubmitting}
       >
-        {isSubmitting ? 'Submitting…' : 'Create account'}
-        {!isSubmitting && <ForwardArrow className="h-4 w-4" />}
+        {detailsForm.formState.isSubmitting ? 'Sending code…' : 'Verify'}
+        {!detailsForm.formState.isSubmitting && <ForwardArrow className="h-4 w-4" />}
       </button>
 
       <p className="mkt-signup-signin-prompt">

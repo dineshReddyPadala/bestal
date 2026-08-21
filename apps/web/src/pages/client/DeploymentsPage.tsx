@@ -54,7 +54,7 @@ export function DeploymentsPage() {
 
   const { data, isLoading } = useDeploymentsList({
     limit: 100,
-    sort: '-createdAt',
+    sort: '-updatedAt',
     ...(clientId ? { clientId } : {}),
   });
   const mutations = useDeploymentMutations();

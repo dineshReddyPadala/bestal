@@ -277,6 +277,16 @@ export async function notifyCandidatePendingApproval(
       metadata: { candidateId: input.candidateId, event: 'candidate_pending_approval' },
       sendEmail: settings.emailEnabled,
     });
+    await notifyOrgRoles(prisma, config, {
+      organizationId: input.organizationId,
+      roles: ['RECRUITER'],
+      type: 'SYSTEM',
+      title: 'Candidate submitted for approval',
+      body: `${input.candidateName} was submitted for approval.`,
+      actionUrl: webUrl(config, `/recruiter/candidates/${input.candidateId}`),
+      metadata: { candidateId: input.candidateId, event: 'candidate_pending_approval_recruiter' },
+      sendEmail: settings.emailEnabled,
+    });
     if (input.submittedById) {
       await notifyUsers(prisma, config, {
         organizationId: input.organizationId,

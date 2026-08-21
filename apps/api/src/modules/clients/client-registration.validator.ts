@@ -1,11 +1,57 @@
 import { z } from 'zod';
+import { validateCompanyContactEmail } from '../../utils/work-email.js';
 
+const WEBSITE_PATTERN = /^(https?:\/\/)?([\w-]+\.)+[\w-]{2,}(\/.*)?$/i;
+
+function isValidWebsite(value: string | undefined): boolean {
+  if (!value?.trim()) return true;
+  return WEBSITE_PATTERN.test(value.trim());
+}
+
+const signupDetailsFields = {
+  companyName: z.string().trim().min(1, 'Company name is required').max(255),
+  contactName: z.string().trim().min(1, 'Primary contact name is required').max(150),
+  contactEmail: z.string().trim().email('Valid primary contact email is required').max(255),
+  contactPhone: z.string().trim().min(1, 'Primary contact phone is required').max(30),
+  contactDesignation: z.string().trim().min(1, 'Designation is required').max(150),
+  website: z
+    .string()
+    .trim()
+    .max(255)
+    .optional()
+    .or(z.literal(''))
+    .refine(isValidWebsite, { message: 'Enter a valid website (e.g. company.com)' }),
+};
+
+export const clientSignupRequestOtpBodySchema = z
+  .object(signupDetailsFields)
+  .superRefine((data, ctx) => {
+    const result = validateCompanyContactEmail(
+      data.contactEmail,
+      data.companyName,
+      data.website,
+    );
+    if (!result.valid) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: result.message ?? 'Invalid company email',
+        path: ['contactEmail'],
+      });
+    }
+  });
+
+export const clientSignupVerifyBodySchema = z.object({
+  contactEmail: z.string().trim().email('Valid email is required').max(255),
+  otp: z
+    .string()
+    .trim()
+    .regex(/^\d{6}$/, 'Enter the 6-digit verification code'),
+});
+
+/** @deprecated Password-based registration — use OTP signup flow instead */
 export const publicClientRegistrationBodySchema = z
   .object({
-    companyName: z.string().trim().min(1, 'Company name is required').max(255),
-    contactName: z.string().trim().min(1, 'Primary contact name is required').max(150),
-    contactEmail: z.string().trim().email('Valid primary contact email is required').max(255),
-    contactPhone: z.string().trim().min(1, 'Primary contact phone is required').max(30),
+    ...signupDetailsFields,
     password: z
       .string()
       .min(8, 'Password must be at least 8 characters')
@@ -15,11 +61,34 @@ export const publicClientRegistrationBodySchema = z
   .refine((data) => data.password === data.confirmPassword, {
     message: 'Passwords do not match',
     path: ['confirmPassword'],
+  })
+  .superRefine((data, ctx) => {
+    const result = validateCompanyContactEmail(
+      data.contactEmail,
+      data.companyName,
+      data.website,
+    );
+    if (!result.valid) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: result.message ?? 'Invalid company email',
+        path: ['contactEmail'],
+      });
+    }
   });
 
+export type ClientSignupRequestOtpBody = z.infer<typeof clientSignupRequestOtpBodySchema>;
+export type ClientSignupVerifyBody = z.infer<typeof clientSignupVerifyBodySchema>;
 export type PublicClientRegistrationBody = z.infer<
   typeof publicClientRegistrationBodySchema
 >;
+
+export const clientSignupRequestOtpResponseSchema = z.object({
+  data: z.object({
+    message: z.string(),
+    expiresInMinutes: z.number(),
+  }),
+});
 
 export const publicClientRegistrationResponseSchema = z.object({
   data: z.object({

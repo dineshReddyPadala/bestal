@@ -1,6 +1,6 @@
 import { apiCreate, apiDelete, apiGet, apiList, apiRequest, apiUpdate, type ListQuery } from './client';
 import type { ApiDataResponse, ClientDto, ClientListItem } from './types';
-import type { ClientSignupFormValues } from '../schemas/client-signup';
+import type { ClientSignupDetailsValues } from '../schemas/client-signup';
 
 export type AccountManagerOption = {
   id: number;
@@ -16,8 +16,41 @@ export type ClientRegistrationResponse = {
   clientId: number;
 };
 
+export type ClientSignupRequestOtpResponse = {
+  message: string;
+  expiresInMinutes: number;
+};
+
+export async function requestClientSignupOtp(
+  body: ClientSignupDetailsValues,
+): Promise<ClientSignupRequestOtpResponse> {
+  return apiRequest<ApiDataResponse<ClientSignupRequestOtpResponse>>(
+    '/public/clients/signup/request-otp',
+    {
+      method: 'POST',
+      body,
+      auth: false,
+    },
+  ).then((json) => json.data);
+}
+
+export async function verifyClientSignupOtp(body: {
+  contactEmail: string;
+  otp: string;
+}): Promise<ClientRegistrationResponse> {
+  return apiRequest<ApiDataResponse<ClientRegistrationResponse>>(
+    '/public/clients/signup/verify-and-create',
+    {
+      method: 'POST',
+      body,
+      auth: false,
+    },
+  ).then((json) => json.data);
+}
+
+/** @deprecated Use OTP signup flow */
 export async function registerClient(
-  body: ClientSignupFormValues,
+  body: ClientSignupDetailsValues & { password: string; confirmPassword: string },
 ): Promise<ClientRegistrationResponse> {
   return apiRequest<ApiDataResponse<ClientRegistrationResponse>>('/public/clients/register', {
     method: 'POST',

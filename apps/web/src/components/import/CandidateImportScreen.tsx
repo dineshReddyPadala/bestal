@@ -280,6 +280,7 @@ export function CandidateImportScreen({
   const [detailLoading, setDetailLoading] = useState(false);
   const [importing, setImporting] = useState(false);
   const [importSuccess, setImportSuccess] = useState<string | null>(null);
+  const [importError, setImportError] = useState<string | null>(null);
   const [importProgress, setImportProgress] = useState<{ processed: number; total: number } | null>(
     null,
   );
@@ -375,13 +376,17 @@ export function CandidateImportScreen({
   const handleFile = useCallback(
     async (file: File) => {
       if (!file.name.toLowerCase().endsWith('.xlsx')) {
-        showError('Please upload a .xlsx workbook using the BesTal standard template.');
+        const message = 'Please upload a .xlsx workbook using the BesTal standard template.';
+        setImportSuccess(null);
+        setImportError(message);
+        showError(message);
         return;
       }
       setBusy(true);
       setImporting(true);
       setImportProgress(null);
       setImportSuccess(null);
+      setImportError(null);
       setFileName(file.name);
       try {
         const data = await candidatesApi.enqueueImport(file);
@@ -389,16 +394,28 @@ export function CandidateImportScreen({
         await loadHistory(1);
         if (batch.status === 'COMPLETED') {
           const summary = `Import completed — ${batch.created} created, ${batch.updated} updated, ${batch.failed} failed.`;
-          setImportSuccess(summary);
-          show(summary, batch.failed > 0 ? 'error' : 'success');
+          if (batch.failed > 0) {
+            setImportSuccess(null);
+            setImportError(summary);
+            show(summary, 'error');
+          } else {
+            setImportError(null);
+            setImportSuccess(summary);
+            show(summary);
+          }
         } else {
-          showError(
+          const message =
             batch.errorSummary ??
-              `Import finished with status ${batch.status}. Review Import History for details.`,
-          );
+            `Import finished with status ${batch.status}. Review Import History for details.`;
+          setImportSuccess(null);
+          setImportError(message);
+          showError(message);
         }
       } catch (err) {
-        showError(getApiErrorMessage(err, 'Import failed'));
+        const message = getApiErrorMessage(err, 'Import failed');
+        setImportSuccess(null);
+        setImportError(message);
+        showError(message);
       } finally {
         setBusy(false);
         setImporting(false);
@@ -515,6 +532,12 @@ export function CandidateImportScreen({
                 <p className="mt-1">{importSuccess}</p>
               </div>
             ) : null}
+            {importError ? (
+              <div className="mb-4 rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+                <p className="font-medium">Import failed</p>
+                <p className="mt-1">{importError}</p>
+              </div>
+            ) : null}
             <div
               className={cn(
                 'flex flex-col items-center justify-center rounded-xl border-2 border-dashed px-6 py-12 text-center transition-colors',
@@ -610,17 +633,35 @@ export function CandidateImportScreen({
                           className={cn(
                             'cursor-pointer',
                             selectedBatchId === item.batchId && 'bg-muted/50',
+                            (item.status === 'FAILED' ||
+                              item.status === 'EXPIRED' ||
+                              item.failed > 0) &&
+                              'bg-destructive/5',
                           )}
                           onClick={() => openBatchDetail(item.batchId)}
                         >
-                          <DataTableCell className="max-w-0 truncate font-medium" title={item.fileName}>
+                          <DataTableCell
+                            className={cn(
+                              'max-w-0 truncate font-medium',
+                              (item.status === 'FAILED' || item.status === 'EXPIRED') &&
+                                'text-destructive',
+                            )}
+                            title={item.fileName}
+                          >
                             {item.fileName}
                           </DataTableCell>
                           <DataTableCell>
                             <Badge variant={statusBadgeVariant(item.status)}>{item.status}</Badge>
                           </DataTableCell>
                           <DataTableCell className="text-right tabular-nums">{item.created}</DataTableCell>
-                          <DataTableCell className="text-right tabular-nums">{item.failed}</DataTableCell>
+                          <DataTableCell
+                            className={cn(
+                              'text-right tabular-nums',
+                              item.failed > 0 && 'font-semibold text-destructive',
+                            )}
+                          >
+                            {item.failed}
+                          </DataTableCell>
                           <DataTableCell className="whitespace-nowrap text-xs text-muted-foreground">
                             <span className="block truncate">{formatWhen(item.createdAt)}</span>
                             <span className="block truncate text-[11px]">{item.uploadedBy || '—'}</span>

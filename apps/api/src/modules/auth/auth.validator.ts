@@ -56,6 +56,29 @@ export const changePasswordBodySchema = z.object({
 });
 
 export type LoginBody = z.infer<typeof loginBodySchema>;
+
+export const clientLoginRequestOtpBodySchema = z.object({
+  email: z.string().trim().email('Valid email is required').max(255),
+});
+
+export const clientLoginVerifyOtpBodySchema = z.object({
+  email: z.string().trim().email('Valid email is required').max(255),
+  otp: z
+    .string()
+    .trim()
+    .regex(/^\d{6}$/, 'Enter the 6-digit verification code'),
+});
+
+export type ClientLoginRequestOtpBody = z.infer<typeof clientLoginRequestOtpBodySchema>;
+export type ClientLoginVerifyOtpBody = z.infer<typeof clientLoginVerifyOtpBodySchema>;
+
+export const clientLoginRequestOtpResponseSchema = z.object({
+  data: z.object({
+    message: z.string(),
+    expiresInMinutes: z.number(),
+  }),
+});
+
 export type RefreshTokenBody = z.infer<typeof refreshTokenBodySchema>;
 export type LogoutBody = z.infer<typeof logoutBodySchema>;
 export type ForgotPasswordBody = z.infer<typeof forgotPasswordBodySchema>;

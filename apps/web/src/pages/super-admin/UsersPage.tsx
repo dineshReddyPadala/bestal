@@ -40,7 +40,7 @@ export function SuperAdminUsersPage() {
   const { searchInput, setSearchInput, search, searchParam } = useDebouncedSearch();
   const { data, isLoading, isError, error } = useAdminUsers({
     limit: 100,
-    sort: '-createdAt',
+    sort: '-updatedAt',
     ...(roleFilter && isPlatformRole(roleFilter) ? { role: roleFilter } : {}),
     ...searchParam,
   });

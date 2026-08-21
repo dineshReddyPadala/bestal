@@ -25,7 +25,7 @@ import { useBackgroundChecksList, useEvaluationsList } from '../../hooks/api/use
 import { useTrialsList } from '../../hooks/api/useTrials';
 
 export function DashboardPage() {
-  const candidates = useCandidatesList({ limit: 100, sort: '-createdAt' });
+  const candidates = useCandidatesList({ limit: 100, sort: '-updatedAt' });
   const clients = useClientsList({ limit: 100 });
   const deployments = useDeploymentsList({ limit: 100 });
   const trials = useTrialsList({ limit: 100 });

@@ -14,8 +14,8 @@ import { useCandidatesList } from '../../hooks/api/useCandidates';
 import { useTrialsList } from '../../hooks/api/useTrials';
 
 export function DashboardPage() {
-  const candidates = useCandidatesList({ limit: 100, sort: '-createdAt' });
-  const trials = useTrialsList({ limit: 100, sort: '-createdAt' });
+  const candidates = useCandidatesList({ limit: 100, sort: '-updatedAt' });
+  const trials = useTrialsList({ limit: 100, sort: '-updatedAt' });
 
   const candidateRows = candidates.data?.data ?? [];
   const trialRows = trials.data?.data ?? [];
