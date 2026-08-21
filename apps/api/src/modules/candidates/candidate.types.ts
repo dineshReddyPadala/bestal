@@ -93,6 +93,8 @@ export interface CandidateDto {
   bestalScore: number | null;
   technicalScore: number | null;
   communicationScore: number | null;
+  collaborationCulturalFitScore?: number | null;
+  evaluationRecommendation?: string | null;
   reliabilityScore: number | null;
   evaluationStatus: string | null;
   bgvStatus: string | null;

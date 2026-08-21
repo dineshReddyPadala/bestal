@@ -158,3 +158,4 @@ export {
   FOR_CLIENTS_BENEFITS,
   FOR_TALENT_BENEFITS,
 } from './public-content.js';
+export { COLLABORATION_CULTURAL_FIT_LABEL } from './evaluation-labels.js';

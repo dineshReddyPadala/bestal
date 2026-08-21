@@ -63,6 +63,7 @@ export async function adminRoutes(fastify: FastifyInstance): Promise<void> {
   // Skill communities
   app.get('/skill-communities', { ...secure, schema: { tags: ['Admin'], security: [{ bearerAuth: [] }] } }, controller.listSkillCommunities);
   app.post('/skill-communities', { ...secure, schema: { tags: ['Admin'], security: [{ bearerAuth: [] }] } }, controller.createSkillCommunity);
+  app.post('/skill-communities/:id/icon', { ...secure, schema: { tags: ['Admin'], params: adminIdParamSchema, security: [{ bearerAuth: [] }], consumes: ['multipart/form-data'] } }, controller.uploadSkillCommunityIcon);
   app.put('/skill-communities/:id', { ...secure, schema: { tags: ['Admin'], params: adminIdParamSchema, security: [{ bearerAuth: [] }] } }, controller.updateSkillCommunity);
   app.patch('/skill-communities/:id/status', { ...secure, schema: { tags: ['Admin'], params: adminIdParamSchema, security: [{ bearerAuth: [] }] } }, controller.setSkillCommunityStatus);
   app.delete('/skill-communities/:id', { ...secure, schema: { tags: ['Admin'], params: adminIdParamSchema, security: [{ bearerAuth: [] }] } }, controller.deleteSkillCommunity);

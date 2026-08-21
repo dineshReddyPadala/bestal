@@ -162,6 +162,15 @@ export const adminApi = {
     apiRequest<{ data: { message: string } }>(`/admin/skill-communities/${id}`, {
       method: 'DELETE',
     }),
+  uploadSkillCommunityIcon: async (id: number, file: File) => {
+    const form = new FormData();
+    form.append('file', file, file.name);
+    const json = await apiRequest<{ data: Record<string, unknown> }>(
+      `/admin/skill-communities/${id}/icon`,
+      { method: 'POST', body: form },
+    );
+    return json.data;
+  },
 
   listTrials: (query?: ListQuery) => apiList<Record<string, unknown>>('/admin/trials', query),
   getTrial: (id: number) => apiGet<Record<string, unknown>>(`/admin/trials/${id}`),

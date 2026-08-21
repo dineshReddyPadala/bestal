@@ -122,7 +122,7 @@ function outputToExtraction(
     technicalScore: num('technicalScore') ?? evaluation?.technicalScore ?? undefined,
     communicationScore: num('communicationScore'),
     problemSolvingScore: num('problemSolvingScore'),
-    architectureScore: num('architectureScore'),
+    collaborationCulturalFitScore: num('collaborationCulturalFitScore'),
     clientReadinessScore: num('clientReadinessScore'),
     recommendation: str('recommendation') ?? evaluation?.recommendation ?? undefined,
     evaluatorComments: str('evaluatorComments'),

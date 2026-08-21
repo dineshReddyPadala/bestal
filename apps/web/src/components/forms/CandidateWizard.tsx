@@ -794,8 +794,8 @@ function EvaluationTab({
     if (patch.problemSolvingScore != null) {
       setValue('problemSolvingScore', patch.problemSolvingScore, { shouldDirty: true });
     }
-    if (patch.architectureScore != null) {
-      setValue('architectureScore', patch.architectureScore, { shouldDirty: true });
+    if (patch.collaborationCulturalFitScore != null) {
+      setValue('collaborationCulturalFitScore', patch.collaborationCulturalFitScore, { shouldDirty: true });
     }
     if (patch.clientReadinessScore != null) {
       setValue('clientReadinessScore', patch.clientReadinessScore, { shouldDirty: true });
@@ -993,13 +993,13 @@ function EvaluationTab({
               {...register('problemSolvingScore', { valueAsNumber: true })}
             />
           </FormField>
-          <FormField label="Architecture score" name="architectureScore">
+          <FormField label="Collaboration & Cultural Fit score" name="collaborationCulturalFitScore">
             <Input
-              id="architectureScore"
+              id="collaborationCulturalFitScore"
               type="number"
               min={0}
               max={100}
-              {...register('architectureScore', { valueAsNumber: true })}
+              {...register('collaborationCulturalFitScore', { valueAsNumber: true })}
             />
           </FormField>
           <FormField label="Client readiness score" name="clientReadinessScore">

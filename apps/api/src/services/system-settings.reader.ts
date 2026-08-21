@@ -73,8 +73,9 @@ export type LocalizationSettings = {
   locale: string;
 };
 
-export type EmailSettings = {
-  enabled: boolean;
+export type EmailProvider = 'gmail' | 'microsoft365';
+
+export type GmailSmtpConfig = {
   host: string;
   port: number;
   user: string | null;
@@ -82,6 +83,40 @@ export type EmailSettings = {
   fromAddress: string | null;
   fromName: string | null;
   secure: boolean;
+};
+
+/** Microsoft 365 outbound mail via Microsoft Graph API (client credentials). */
+export type Microsoft365GraphConfig = {
+  tenantId: string | null;
+  clientId: string | null;
+  clientSecret: string | null;
+  fromAddress: string | null;
+  fromName: string | null;
+};
+
+export type EmailSettings = {
+  enabled: boolean;
+  provider: EmailProvider;
+  gmail: GmailSmtpConfig;
+  microsoft365: Microsoft365GraphConfig;
+};
+
+export const GMAIL_SMTP_DEFAULTS: GmailSmtpConfig = {
+  host: 'smtp.gmail.com',
+  port: 587,
+  user: null,
+  password: null,
+  fromAddress: null,
+  fromName: null,
+  secure: false,
+};
+
+export const MICROSOFT365_GRAPH_DEFAULTS: Microsoft365GraphConfig = {
+  tenantId: null,
+  clientId: null,
+  clientSecret: null,
+  fromAddress: null,
+  fromName: null,
 };
 
 export type IntegrationsSettings = {
@@ -117,13 +152,9 @@ const DEFAULT_LOCALIZATION: LocalizationSettings = {
 
 const DEFAULT_EMAIL: EmailSettings = {
   enabled: false,
-  host: 'smtp.gmail.com',
-  port: 587,
-  user: null,
-  password: null,
-  fromAddress: null,
-  fromName: null,
-  secure: false,
+  provider: 'gmail',
+  gmail: { ...GMAIL_SMTP_DEFAULTS },
+  microsoft365: { ...MICROSOFT365_GRAPH_DEFAULTS },
 };
 
 const DEFAULT_INTEGRATIONS: IntegrationsSettings = {
@@ -382,19 +413,72 @@ export async function readOrgDisplaySettings(prisma: PrismaClient): Promise<OrgD
   };
 }
 
-function parseEmailFromStorage(value: unknown): EmailSettings {
+function parseGmailSmtpConfig(value: unknown, defaults: GmailSmtpConfig): GmailSmtpConfig {
   const obj = asObj(value);
   const port = Number(obj.port);
   return {
-    enabled: obj.enabled === undefined ? DEFAULT_EMAIL.enabled : Boolean(obj.enabled),
-    host: trimOrNull(obj.host) ?? DEFAULT_EMAIL.host,
-    port: Number.isFinite(port) && port > 0 ? Math.floor(port) : DEFAULT_EMAIL.port,
+    host: trimOrNull(obj.host) ?? defaults.host,
+    port: Number.isFinite(port) && port > 0 ? Math.floor(port) : defaults.port,
     user: trimOrNull(obj.user),
     password: trimOrNull(obj.password),
     fromAddress: trimOrNull(obj.fromAddress),
     fromName: trimOrNull(obj.fromName),
-    secure: obj.secure === undefined ? DEFAULT_EMAIL.secure : Boolean(obj.secure),
+    secure: obj.secure === undefined ? defaults.secure : Boolean(obj.secure),
   };
+}
+
+function parseMicrosoft365GraphConfig(value: unknown): Microsoft365GraphConfig {
+  const obj = asObj(value);
+  return {
+    tenantId: trimOrNull(obj.tenantId),
+    clientId: trimOrNull(obj.clientId),
+    clientSecret: trimOrNull(obj.clientSecret),
+    fromAddress: trimOrNull(obj.fromAddress),
+    fromName: trimOrNull(obj.fromName),
+  };
+}
+
+function parseEmailProvider(value: unknown): EmailProvider {
+  const raw = trimOrNull(value);
+  return raw === 'microsoft365' ? 'microsoft365' : 'gmail';
+}
+
+function parseEmailFromStorage(value: unknown): EmailSettings {
+  const obj = asObj(value);
+
+  // Migrate legacy flat SMTP settings into the Gmail provider block.
+  if (!obj.gmail && !obj.microsoft365 && (obj.host || obj.fromAddress || obj.password || obj.user)) {
+    return {
+      enabled: obj.enabled === undefined ? DEFAULT_EMAIL.enabled : Boolean(obj.enabled),
+      provider: parseEmailProvider(obj.provider),
+      gmail: parseGmailSmtpConfig(obj, GMAIL_SMTP_DEFAULTS),
+      microsoft365: { ...MICROSOFT365_GRAPH_DEFAULTS },
+    };
+  }
+
+  return {
+    enabled: obj.enabled === undefined ? DEFAULT_EMAIL.enabled : Boolean(obj.enabled),
+    provider: parseEmailProvider(obj.provider),
+    gmail: parseGmailSmtpConfig(obj.gmail, GMAIL_SMTP_DEFAULTS),
+    microsoft365: parseMicrosoft365GraphConfig(obj.microsoft365),
+  };
+}
+
+export function isGmailSmtpConfigured(config: GmailSmtpConfig): boolean {
+  return Boolean(config.fromAddress && config.password);
+}
+
+export function isMicrosoft365GraphConfigured(config: Microsoft365GraphConfig): boolean {
+  return Boolean(
+    config.tenantId && config.clientId && config.clientSecret && config.fromAddress,
+  );
+}
+
+export function isActiveEmailProviderConfigured(settings: EmailSettings): boolean {
+  if (settings.provider === 'microsoft365') {
+    return isMicrosoft365GraphConfigured(settings.microsoft365);
+  }
+  return isGmailSmtpConfigured(settings.gmail);
 }
 
 export async function readEmailSettings(prisma: PrismaClient): Promise<EmailSettings> {
@@ -402,21 +486,58 @@ export async function readEmailSettings(prisma: PrismaClient): Promise<EmailSett
   return parseEmailFromStorage(row?.value);
 }
 
+function maskGmailSmtpConfig(config: GmailSmtpConfig): Record<string, unknown> {
+  return {
+    ...config,
+    password: config.password ? MASKED_SECRET : null,
+  };
+}
+
+function maskMicrosoft365GraphConfig(config: Microsoft365GraphConfig): Record<string, unknown> {
+  return {
+    ...config,
+    clientSecret: config.clientSecret ? MASKED_SECRET : null,
+  };
+}
+
 export function maskEmailSettingsForAdmin(value: unknown): Record<string, unknown> {
   const settings = parseEmailFromStorage(value);
   return {
-    ...settings,
-    password: settings.password ? MASKED_SECRET : null,
+    enabled: settings.enabled,
+    provider: settings.provider,
+    gmail: maskGmailSmtpConfig(settings.gmail),
+    microsoft365: maskMicrosoft365GraphConfig(settings.microsoft365),
   };
+}
+
+function mergeGmailPassword(
+  incoming: unknown,
+  next: GmailSmtpConfig,
+  prev: GmailSmtpConfig,
+): void {
+  const password = trimOrNull(asObj(incoming).password);
+  if (!password || password === MASKED_SECRET) {
+    next.password = prev.password;
+  }
+}
+
+function mergeMicrosoft365ClientSecret(
+  incoming: unknown,
+  next: Microsoft365GraphConfig,
+  prev: Microsoft365GraphConfig,
+): void {
+  const clientSecret = trimOrNull(asObj(incoming).clientSecret);
+  if (!clientSecret || clientSecret === MASKED_SECRET) {
+    next.clientSecret = prev.clientSecret;
+  }
 }
 
 export function mergeEmailSettingsUpdate(incoming: unknown, existing: unknown): EmailSettings {
   const next = parseEmailFromStorage(incoming);
   const prev = parseEmailFromStorage(existing);
-  const password = trimOrNull(asObj(incoming).password);
-  if (!password || password === MASKED_SECRET) {
-    next.password = prev.password;
-  }
+  const incomingObj = asObj(incoming);
+  mergeGmailPassword(incomingObj.gmail, next.gmail, prev.gmail);
+  mergeMicrosoft365ClientSecret(incomingObj.microsoft365, next.microsoft365, prev.microsoft365);
   return next;
 }
 

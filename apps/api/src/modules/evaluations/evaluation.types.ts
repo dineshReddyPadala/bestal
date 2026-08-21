@@ -10,7 +10,7 @@ export interface EvaluationDto {
   technicalScore: number | null;
   communicationScore: number | null;
   problemSolvingScore: number | null;
-  architectureScore: number | null;
+  collaborationCulturalFitScore: number | null;
   clientReadinessScore: number | null;
   recommendation: string | null;
   evaluatorComments: string | null;
@@ -33,7 +33,7 @@ export interface EvaluationListItemDto {
   technicalScore: number | null;
   communicationScore: number | null;
   problemSolvingScore: number | null;
-  architectureScore: number | null;
+  collaborationCulturalFitScore: number | null;
   clientReadinessScore: number | null;
   evaluatorComments: string | null;
   aiEvaluationSummary: string | null;
@@ -62,7 +62,7 @@ export interface CreateEvaluationInput {
   technicalScore?: number;
   communicationScore?: number;
   problemSolvingScore?: number;
-  architectureScore?: number;
+  collaborationCulturalFitScore?: number;
   clientReadinessScore?: number;
   recommendation?: string;
   evaluationSummary?: string;
@@ -80,7 +80,7 @@ export interface UpdateEvaluationInput {
   technicalScore?: number | null;
   communicationScore?: number | null;
   problemSolvingScore?: number | null;
-  architectureScore?: number | null;
+  collaborationCulturalFitScore?: number | null;
   clientReadinessScore?: number | null;
   recommendation?: string | null;
   evaluationSummary?: string | null;

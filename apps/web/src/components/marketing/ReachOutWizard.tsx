@@ -541,14 +541,11 @@ export function ReachOutWizard() {
               </label>
 
               <label className="mkt-reach-out-field">
-                <span className="mkt-reach-out-label">
-                  Company website <span className="mkt-reach-out-req">*</span>
-                </span>
+                <span className="mkt-reach-out-label">Company website</span>
                 <input
-                  type="url"
-                  required
+                  type="text"
                   value={form.companyWebsite}
-                  placeholder="https://www.company.com"
+                  placeholder="www.company.com"
                   onChange={(e) => update({ companyWebsite: e.target.value })}
                   className="mkt-reach-out-input"
                 />

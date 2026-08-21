@@ -90,10 +90,8 @@ export function validateReachOutStep1(form: ReachOutFormValues): Record<string, 
   if (!form.timezone) {
     errors.timezone = 'Time zone is required';
   }
-  if (!form.companyWebsite.trim()) {
-    errors.companyWebsite = 'Company website is required';
-  } else if (!isValidWebsite(form.companyWebsite.trim())) {
-    errors.companyWebsite = 'Enter a valid company website URL';
+  if (form.companyWebsite.trim() && !isValidWebsite(form.companyWebsite.trim())) {
+    errors.companyWebsite = 'Enter a valid company website';
   }
   if (!form.contactPersonName.trim()) {
     errors.contactPersonName = 'Contact person name is required';

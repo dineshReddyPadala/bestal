@@ -88,16 +88,6 @@ export function ClientTrialDetailDialog({ trialId, onClose }: ClientTrialDetailD
             <dt className="text-xs text-muted-foreground">Start date</dt>
             <dd className="mt-0.5 text-sm font-medium">{formatDate(trial.startDate)}</dd>
           </div>
-          <div>
-            <dt className="text-xs text-muted-foreground">End date</dt>
-            <dd className="mt-0.5 text-sm font-medium">{formatDate(trial.endDate)}</dd>
-          </div>
-          <div>
-            <dt className="text-xs text-muted-foreground">Duration</dt>
-            <dd className="mt-0.5 text-sm font-medium">
-              {trial.durationDays != null ? `${trial.durationDays} days` : '—'}
-            </dd>
-          </div>
           {trial.taskDescription ? (
             <div className="sm:col-span-2">
               <dt className="text-xs text-muted-foreground">Task description</dt>

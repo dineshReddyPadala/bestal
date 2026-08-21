@@ -335,6 +335,24 @@ export class AdminController {
     return reply.send({ data });
   };
 
+  uploadSkillCommunityIcon = async (request: FastifyRequest, reply: FastifyReply) => {
+    const { id } = request.params as { id: number };
+    const file = await request.file();
+    if (!file) throw new BadRequestError('Icon image is required');
+    const buffer = await file.toBuffer();
+    const data = await this.admin.uploadSkillCommunityIcon(
+      request.authUser!,
+      id,
+      {
+        filename: file.filename,
+        mimetype: file.mimetype,
+        buffer,
+      },
+      this.ctx(request),
+    );
+    return reply.send({ data });
+  };
+
   listTrials = async (request: FastifyRequest, reply: FastifyReply) => {
     const result = await this.ops.listTrials(
       request.authUser!,

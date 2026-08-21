@@ -21,7 +21,7 @@ export type EvaluationManagementRecord = {
   readonly evaluationType: EvaluationType;
   readonly technicalScore: number | null;
   readonly communicationScore: number | null;
-  readonly architectureScore: number | null;
+  readonly collaborationCulturalFitScore: number | null;
   readonly problemSolvingScore: number | null;
   readonly recommendation: string | null;
   readonly status: EvaluationManagementStatus;
@@ -36,7 +36,7 @@ function mapEvaluationType(skillCommunity: string): EvaluationType {
   return 'Coding Test';
 }
 
-function deriveArchitectureScore(ev: MockEvaluation): number | null {
+function deriveCollaborationCulturalFitScore(ev: MockEvaluation): number | null {
   if (ev.technicalScore == null) return null;
   return Math.min(100, Math.round(ev.technicalScore * 1.02));
 }
@@ -57,7 +57,7 @@ function fromEvaluation(ev: MockEvaluation, evaluatedDate: string | null): Evalu
     evaluationType: mapEvaluationType(ev.skillCommunity),
     technicalScore: ev.technicalScore,
     communicationScore: ev.communicationScore,
-    architectureScore: deriveArchitectureScore(ev),
+    collaborationCulturalFitScore: deriveCollaborationCulturalFitScore(ev),
     problemSolvingScore: deriveProblemSolvingScore(ev),
     recommendation: ev.recommendation,
     status: ev.status,
@@ -85,7 +85,7 @@ const supplementalRecords: EvaluationManagementRecord[] = [
     evaluationType: 'Communication',
     technicalScore: 82,
     communicationScore: 94,
-    architectureScore: 78,
+    collaborationCulturalFitScore: 78,
     problemSolvingScore: 80,
     recommendation: 'Hire',
     status: 'COMPLETED',
@@ -101,7 +101,7 @@ const supplementalRecords: EvaluationManagementRecord[] = [
     evaluationType: 'Coding Test',
     technicalScore: 72,
     communicationScore: 78,
-    architectureScore: 70,
+    collaborationCulturalFitScore: 70,
     problemSolvingScore: 74,
     recommendation: 'Reject',
     status: 'ARCHIVED',
@@ -117,7 +117,7 @@ const supplementalRecords: EvaluationManagementRecord[] = [
     evaluationType: 'System Design',
     technicalScore: null,
     communicationScore: null,
-    architectureScore: null,
+    collaborationCulturalFitScore: null,
     problemSolvingScore: null,
     recommendation: null,
     status: 'DRAFT',

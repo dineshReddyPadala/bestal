@@ -70,7 +70,7 @@ export type CandidateDetailProfile = {
     readonly technicalScore: number | null;
     readonly communicationScore: number | null;
     readonly problemSolvingScore: number | null;
-    readonly architectureScore: number | null;
+    readonly collaborationCulturalFitScore: number | null;
     readonly clientReadinessScore: number | null;
     readonly recommendation: string | null;
     readonly evaluatorComments: string;
@@ -256,7 +256,7 @@ function buildProfile(id: number): CandidateDetailProfile {
       technicalScore: ev?.technicalScore ?? null,
       communicationScore: ev?.communicationScore ?? null,
       problemSolvingScore: ev ? Math.round((ev.technicalScore ?? 80) * 0.98) : null,
-      architectureScore: ev ? Math.round((ev.technicalScore ?? 80) * 1.02) : null,
+      collaborationCulturalFitScore: ev ? Math.round((ev.technicalScore ?? 80) * 1.02) : null,
       clientReadinessScore: ev ? Math.round((ev.overallScore ?? 80) * 0.97) : null,
       recommendation: ev?.recommendation ?? null,
       evaluatorComments: ev?.notes ?? 'Evaluation pending or not started.',

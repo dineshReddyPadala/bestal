@@ -84,7 +84,7 @@ export function EvaluationManagementView({
   const [technicalScore, setTechnicalScore] = useState('');
   const [communicationScore, setCommunicationScore] = useState('');
   const [problemSolvingScore, setProblemSolvingScore] = useState('');
-  const [architectureScore, setArchitectureScore] = useState('');
+  const [collaborationCulturalFitScore, setCollaborationCulturalFitScore] = useState('');
   const [clientReadinessScore, setClientReadinessScore] = useState('');
   const [recommendation, setRecommendation] = useState('');
   const [evaluatorComments, setEvaluatorComments] = useState('');
@@ -204,7 +204,7 @@ export function EvaluationManagementView({
     setTechnicalScore('');
     setCommunicationScore('');
     setProblemSolvingScore('');
-    setArchitectureScore('');
+    setCollaborationCulturalFitScore('');
     setClientReadinessScore('');
     setRecommendation('');
     setEvaluatorComments('');
@@ -233,8 +233,8 @@ export function EvaluationManagementView({
     setProblemSolvingScore(
       record.problemSolvingScore != null ? String(record.problemSolvingScore) : '',
     );
-    setArchitectureScore(
-      record.architectureScore != null ? String(record.architectureScore) : '',
+    setCollaborationCulturalFitScore(
+      record.collaborationCulturalFitScore != null ? String(record.collaborationCulturalFitScore) : '',
     );
     setClientReadinessScore(
       record.clientReadinessScore != null ? String(record.clientReadinessScore) : '',
@@ -277,7 +277,7 @@ export function EvaluationManagementView({
       if (patch.problemSolvingScore != null) {
         setProblemSolvingScore(String(patch.problemSolvingScore));
       }
-      if (patch.architectureScore != null) setArchitectureScore(String(patch.architectureScore));
+      if (patch.collaborationCulturalFitScore != null) setCollaborationCulturalFitScore(String(patch.collaborationCulturalFitScore));
       if (patch.clientReadinessScore != null) {
         setClientReadinessScore(String(patch.clientReadinessScore));
       }
@@ -391,7 +391,7 @@ export function EvaluationManagementView({
         technicalScore: parseOptionalScore(technicalScore),
         communicationScore: parseOptionalScore(communicationScore),
         problemSolvingScore: parseOptionalScore(problemSolvingScore),
-        architectureScore: parseOptionalScore(architectureScore),
+        collaborationCulturalFitScore: parseOptionalScore(collaborationCulturalFitScore),
         clientReadinessScore: parseOptionalScore(clientReadinessScore),
         recommendation: recommendation.trim() || undefined,
         evaluatorComments: evaluatorComments.trim() || undefined,
@@ -436,7 +436,7 @@ export function EvaluationManagementView({
   }, [
     aiEvaluationSummary,
     evaluationFileUrl,
-    architectureScore,
+    collaborationCulturalFitScore,
     canCreateEvaluation,
     candidateOptions,
     clientReadinessScore,
@@ -890,7 +890,7 @@ export function EvaluationManagementView({
                   ['eval-technical-score', 'Technical score', technicalScore, setTechnicalScore],
                   ['eval-communication-score', 'Communication score', communicationScore, setCommunicationScore],
                   ['eval-problem-solving-score', 'Problem solving score', problemSolvingScore, setProblemSolvingScore],
-                  ['eval-architecture-score', 'Architecture score', architectureScore, setArchitectureScore],
+                  ['eval-collaboration-cultural-fit-score', 'Collaboration & Cultural Fit score', collaborationCulturalFitScore, setCollaborationCulturalFitScore],
                   ['eval-client-readiness-score', 'Client readiness score', clientReadinessScore, setClientReadinessScore],
                 ] as const
               ).map(([id, label, value, setter]) => (
