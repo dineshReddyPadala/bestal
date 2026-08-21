@@ -364,7 +364,7 @@ export function AddCandidatePage() {
   }
 
   return (
-    <div className="flex h-[calc(100svh-var(--shell-header-h))] min-h-0 flex-col overflow-hidden bg-background">
+    <div className="flex h-[calc(100svh-var(--shell-header-h))] min-h-0 flex-col overflow-hidden bg-white">
       <ToastHost message={message} variant={variant} onDismiss={dismiss} />
 
       <div className="flex min-h-0 flex-1 flex-col px-5 py-3 sm:px-6 sm:py-4">

@@ -2,10 +2,13 @@
 export const BESTAL_LOGO_SRC = '/New logo (1).svg';
 
 /** Client login split-layout hero */
-export const CLIENT_LOGIN_HERO_IMAGE_SRC = '/login-image-AI.png';
+export const CLIENT_LOGIN_HERO_IMAGE_SRC = '/login_updated_img.png';
 
 /** Staff portal login split-layout hero */
-export const STAFF_LOGIN_HERO_IMAGE_SRC = '/login-image.png';
+export const STAFF_LOGIN_HERO_IMAGE_SRC = '/login_updated_img.png';
+
+/** About us page hero banner */
+export const ABOUT_HERO_IMAGE_SRC = '/about_us_banner_img.png';
 
 /** @deprecated Use CLIENT_LOGIN_HERO_IMAGE_SRC */
 export const LOGIN_HERO_IMAGE_SRC = CLIENT_LOGIN_HERO_IMAGE_SRC;

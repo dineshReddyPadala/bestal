@@ -113,7 +113,7 @@ function HistoryPagination({
   const rangeEnd = Math.min(page * limit, total);
 
   return (
-    <div className="flex shrink-0 items-center justify-between border-t border-border bg-background px-3 py-1.5 text-xs text-muted-foreground">
+    <div className="flex shrink-0 items-center justify-between border-t border-border bg-white px-3 py-1.5 text-xs text-muted-foreground">
       <span className="tabular-nums">
         {total === 0
           ? '0 of 0'

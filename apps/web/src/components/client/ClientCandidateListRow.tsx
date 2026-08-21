@@ -3,7 +3,11 @@ import { cn, formatCurrency, initials } from '@bestal/shared-utils';
 import { Avatar, Button } from '@bestal/ui';
 import { Star } from 'lucide-react';
 import { isBgvClear } from '../../lib/candidate-approval-gates';
-
+import {
+  availabilityStatusClasses,
+  formatAvailabilityLabel,
+  isImmediatelyAvailable,
+} from '../../lib/availability-display';
 export type ClientCandidateListRowProps = {
   record: ClientSearchRecord;
   selected?: boolean;
@@ -11,6 +15,7 @@ export type ClientCandidateListRowProps = {
   onView: () => void;
   onRequestTrial?: () => void;
   canRequestTrial?: boolean;
+  trialRequested?: boolean;
   className?: string;
 };
 
@@ -21,17 +26,15 @@ export function ClientCandidateListRow({
   onView,
   onRequestTrial,
   canRequestTrial = true,
+  trialRequested = false,
   className,
 }: ClientCandidateListRowProps) {
   const bgvClear = isBgvClear(record.bgvStatus);
   const evaluationDone = (record.evaluationStatus ?? '').toUpperCase() === 'COMPLETED';
   const primarySkill =
     record.primarySkillCommunityName.trim() || record.community.trim();
-  const availableNow =
-    record.availabilityCategory === 'IMMEDIATE' ||
-    record.availability.toLowerCase().includes('immediate') ||
-    record.availability.toLowerCase().includes('available');
-
+  const availableNow = isImmediatelyAvailable(record);
+  const availabilityClasses = availabilityStatusClasses(availableNow);
   return (
     <article
       className={cn(
@@ -74,23 +77,19 @@ export function ClientCandidateListRow({
         <span className="font-medium tabular-nums">{record.bestalScore}</span>
       </div>
 
-      <div className="hidden shrink-0 text-xs text-muted-foreground lg:block">
+      <div className="hidden shrink-0 text-xs lg:block">
         <span
           className={cn(
             'inline-flex items-center gap-1',
-            availableNow ? 'text-emerald-700' : 'text-amber-700',
+            availabilityClasses.text,
           )}
         >
           <span
-            className={cn(
-              'inline-block h-1.5 w-1.5 rounded-full',
-              availableNow ? 'bg-emerald-500' : 'bg-amber-400',
-            )}
+            className={cn('inline-block h-2 w-2 rounded-full', availabilityClasses.dot)}
           />
-          {availableNow ? 'Available now' : record.availability}
+          {availableNow ? 'Available now' : formatAvailabilityLabel(record.availability)}
         </span>
       </div>
-
       <div className="shrink-0 text-sm font-semibold tabular-nums">
         {formatCurrency(record.hourlyRate, record.currency)}
         <span className="text-xs font-normal text-muted-foreground">/hr</span>
@@ -109,9 +108,19 @@ export function ClientCandidateListRow({
             {initials(record.fullName)}
           </span>
         )}
-        {canRequestTrial && record.trialEligible && onRequestTrial ? (
-          <Button variant="outline" size="sm" className="h-8 text-xs" onClick={onRequestTrial}>
-            Trial
+        {record.trialEligible && (trialRequested || (canRequestTrial && onRequestTrial)) ? (
+          <Button
+            variant="outline"
+            size="sm"
+            className={cn(
+              'h-8 text-xs',
+              trialRequested &&
+                'border-border/70 bg-muted/40 text-muted-foreground disabled:opacity-100 disabled:cursor-default',
+            )}
+            disabled={trialRequested}
+            onClick={trialRequested ? undefined : onRequestTrial}
+          >
+            {trialRequested ? 'Trial requested' : 'Trial'}
           </Button>
         ) : null}
         <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={onView}>

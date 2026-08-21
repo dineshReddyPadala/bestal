@@ -14,6 +14,7 @@ import { Link } from 'react-router-dom';
 import { Avatar } from '../components/avatar.js';
 import { Badge } from '../components/badge.js';
 import { BesTalBrand } from '../components/bestal-brand.js';
+import { DashboardShellContext } from '../contexts/dashboard-shell-context.js';
 import { resolveIcon } from '../lib/icons.js';
 
 export type DashboardNavItem = {
@@ -121,7 +122,7 @@ function NavLink({
         'flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-[13px] font-medium transition-colors',
         collapsed && 'lg:justify-center lg:px-2',
         isActive
-          ? 'bg-brand-light text-brand'
+          ? 'bg-[var(--shell-button-active)] text-white'
           : 'text-muted-foreground hover:bg-muted hover:text-foreground',
       )}
     >
@@ -194,7 +195,7 @@ function ProfileMenu({
       <button
         type="button"
         onClick={() => setOpen((value) => !value)}
-        className="flex items-center gap-2 rounded-md px-2 py-1.5 text-left transition-colors hover:bg-muted/60"
+        className="shell-no-press-bg flex items-center gap-2 rounded-md px-2 py-1.5 text-left transition-colors hover:bg-transparent focus-visible:bg-transparent active:bg-transparent"
         aria-expanded={open}
         aria-haspopup="menu"
         aria-label="Open profile menu"
@@ -230,7 +231,7 @@ function ProfileMenu({
               role="menuitem"
               onClick={handleLogout}
               disabled={loggingOut}
-              className="flex w-full items-center gap-2 px-3 py-2 text-sm text-foreground transition-colors hover:bg-muted disabled:opacity-50"
+              className="flex w-full items-center gap-2 px-3 py-2 text-sm text-foreground transition-colors disabled:opacity-50"
             >
               <LogOut className="h-4 w-4" />
               {loggingOut ? 'Signing out…' : 'Log out'}
@@ -273,7 +274,8 @@ export function DashboardLayout({
 
   return (
     <DashboardChromeContext.Provider value={chromeValue}>
-      <div className="flex h-svh overflow-hidden bg-background">
+      <DashboardShellContext.Provider value={true}>
+      <div className="flex h-svh overflow-hidden bg-background" data-dashboard-shell>
         {sidebarOpen && (
           <div
             className="fixed inset-0 z-40 bg-black/40 lg:hidden"
@@ -284,7 +286,7 @@ export function DashboardLayout({
 
         <aside
           className={cn(
-            'fixed inset-y-0 left-0 z-50 flex h-svh shrink-0 flex-col overflow-hidden border-r border-border bg-card transition-[width,transform] duration-200 lg:static lg:translate-x-0',
+            'fixed inset-y-0 left-0 z-50 flex h-svh shrink-0 flex-col overflow-hidden border-r border-border bg-[#fafafa] transition-[width,transform] duration-200 lg:static lg:translate-x-0',
             desktopCollapsed ? 'lg:w-[var(--shell-sidebar-rail)]' : 'lg:w-[var(--shell-sidebar-w)]',
             'w-[var(--shell-sidebar-w)]',
             sidebarOpen ? 'translate-x-0' : '-translate-x-full',
@@ -302,7 +304,7 @@ export function DashboardLayout({
             {desktopCollapsed ? (
               <button
                 type="button"
-                className="hidden flex-col items-center gap-0.5 rounded-md px-1 py-1 text-muted-foreground hover:bg-muted hover:text-foreground lg:flex"
+                className="hidden flex-col items-center gap-0.5 rounded-md px-1 py-1 text-muted-foreground hover:text-foreground lg:flex"
                 onClick={toggleCollapsed}
                 aria-label="Expand sidebar"
                 title="Expand sidebar"
@@ -313,7 +315,7 @@ export function DashboardLayout({
             ) : collapsible ? (
               <button
                 type="button"
-                className="hidden rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground lg:inline-flex"
+                className="hidden rounded-md p-1.5 text-muted-foreground hover:text-foreground lg:inline-flex"
                 onClick={toggleCollapsed}
                 aria-label="Collapse sidebar"
                 title="Collapse sidebar"
@@ -346,7 +348,7 @@ export function DashboardLayout({
         </aside>
 
         <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-          <header className="shell-header-h z-30 flex shrink-0 items-center gap-2 border-b border-border bg-card px-3 sm:px-5">
+          <header className="shell-header-h z-30 flex shrink-0 items-center gap-2 border-b border-border bg-[#fafafa] px-3 sm:px-5">
             <button
               type="button"
               className="shrink-0 text-muted-foreground hover:text-foreground lg:hidden"
@@ -364,11 +366,12 @@ export function DashboardLayout({
             </div>
           </header>
 
-          <main className="scrollbar-thin min-h-0 min-w-0 flex-1 overflow-y-auto overflow-x-hidden bg-background">
+          <main className="scrollbar-thin min-h-0 min-w-0 flex-1 overflow-y-auto overflow-x-hidden bg-white">
             {children}
           </main>
         </div>
       </div>
+      </DashboardShellContext.Provider>
     </DashboardChromeContext.Provider>
   );
 }

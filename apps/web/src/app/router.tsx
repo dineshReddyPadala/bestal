@@ -25,6 +25,7 @@ import { DashboardPage as ClientDashboardPage } from '../pages/client/DashboardP
 import { TrialRequestsPage } from '../pages/client/TrialRequestsPage';
 import { DeploymentsPage as ClientDeploymentsPage } from '../pages/client/DeploymentsPage';
 import { AboutPage } from '../pages/public/AboutPage';
+import { FaqPage } from '../pages/public/FaqPage';
 import { CommunitiesPage } from '../pages/public/CommunitiesPage';
 import { ContactPage } from '../pages/public/ContactPage';
 import { EnterprisePage } from '../pages/public/EnterprisePage';
@@ -257,6 +258,7 @@ const router = createBrowserRouter([
       { path: 'communities', element: <CommunitiesPage /> },
       { path: 'enterprise', element: <EnterprisePage /> },
       { path: 'about', element: <AboutPage /> },
+      { path: 'faq', element: <FaqPage /> },
       { path: 'for-engineers', element: <ForEngineersPage /> },
       { path: 'contact', element: <ContactPage /> },
     ],

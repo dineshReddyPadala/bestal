@@ -13,7 +13,8 @@ export const SearchInput = forwardRef<HTMLInputElement, SearchInputProps>(
       <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
       <Input
         ref={ref}
-        type="search"
+        type="text"
+        role="searchbox"
         value={value}
         className="h-9 pl-8 pr-8 text-xs placeholder:text-xs placeholder:text-muted-foreground/80"
         {...props}

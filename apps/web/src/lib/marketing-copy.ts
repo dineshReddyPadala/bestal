@@ -441,3 +441,544 @@ export const FOR_ENGINEERS_GET = [
 
 export const FOOTER_TAGLINE =
   'Tested, verified and priced before you commit — working a full day in your time zone.';
+
+export const ABOUT_HERO = {
+  title: 'About us',
+  subtitle: 'We help organizations build and scale their technology workforce.',
+  body:
+    'BesTal supports clients globally with digital engineering talent — freelancers, contractors, dedicated engineers, and managed teams — so businesses can acquire the skills and capacity they need, when they need them.',
+  primaryCta: 'See how it works',
+} as const;
+
+export const ABOUT_SPLIT = {
+  paragraphs: [
+    'Technology priorities shift faster than traditional hiring models can keep pace. Organizations need access to specialized talent without compromising quality or carrying unnecessary workforce capacity. BesTal bridges that gap through specialist-led assessments, transparent talent profiles, and flexible engagement models — giving businesses a faster, more reliable way to access digital engineering expertise.',
+    'Whether you need to augment a team, access niche skills, accelerate a critical initiative, or build a managed delivery team, BesTal provides workforce solutions aligned to your business goals.',
+  ],
+} as const;
+
+export const ABOUT_FEATURED = {
+  num: '01',
+  title: 'Pre-Vetted, Not Just Screened',
+  body:
+    'Every engineer is evaluated by an independent specialist across five areas: Technical Depth, Problem Solving, Architecture, Code Quality, and Communication. Each area is scored separately, and you see the full results — including identified weaknesses. We publish those reservations because a score without context isn\'t evidence.',
+  tags: [
+    'Technical Depth',
+    'Problem Solving',
+    'Architecture',
+    'Code Quality',
+    'Communication',
+  ],
+} as const;
+
+export type AboutDifferenceCard = {
+  num: string;
+  title: string;
+  body: string;
+  tags?: readonly string[];
+  tagVariant?: 'filled' | 'outline';
+};
+
+export const ABOUT_DIFFERENCE: AboutDifferenceCard[] = [
+  {
+    num: '02',
+    title: 'Your Hours, Not Theirs',
+    body:
+      'Every engineer commits to your business hours in one US time zone: Eastern, Central, Mountain, or Pacific. Not a few hours of overlap. Not a flexible schedule. Working hours aligned with your team.',
+    tags: ['Eastern', 'Central', 'Mountain', 'Pacific'],
+    tagVariant: 'outline',
+  },
+  {
+    num: '03',
+    title: 'Transparent From the Start',
+    body:
+      'Hourly rates are displayed on every profile before you shortlist, schedule a call, or begin evaluations. Every profile also includes verified availability and a confirmed start date.',
+  },
+  {
+    num: '04',
+    title: 'Try Before You Commit',
+    body:
+      'Put any available engineer on real work for up to 10 hours at no charge. Keep everything they produce, whether you continue or not. The best way to evaluate talent is through real work, in your systems, alongside your team.',
+  },
+  {
+    num: '05',
+    title: 'Verified, Not Assumed',
+    body:
+      'Identity is verified through a live capture linked directly to the assessment process, ensuring the assessment belongs to the person you\'ll work with. Education and employment history are independently verified, with verification status visible on the profile while personal documents remain private.',
+  },
+];
+
+export const ABOUT_SPECIALISTS = {
+  title: 'Specialists, Not Generalists',
+  body:
+    'Engineers belong to one of seven specialist communities — Data & AI, Cloud & Platform, Full Stack, SAP, ServiceNow, Salesforce, and Cybersecurity — each with its own assessments and independent evaluators. A Snowflake engineer is evaluated by someone who has built on Snowflake.',
+  tags: [
+    'Data & AI',
+    'Cloud & Platform',
+    'Full Stack',
+    'SAP',
+    'ServiceNow',
+    'Salesforce',
+    'Cybersecurity',
+  ],
+} as const;
+
+export const HIW_HERO = {
+  label: 'Process',
+  title: 'How BesTal works',
+  body:
+    'Two engines work in parallel. One is built around customer requirements—understanding, shaping and delivering the right talent. The other is built around engineering talent—building communities, developing capabilities and validating skills. Together, they create a talent supply chain you can see, measure and trust.',
+} as const;
+
+export const HIW_CLIENT = {
+  partLabel: 'Part — 1',
+  stepCount: '6 steps',
+  title: 'How Client Requirements get Served',
+  intro:
+    'Six stages from describing what you need through managing an active engagement — including a free trial before you commit.',
+  flowRibbon: {
+    left: 'Requirement → Matched engineers → Trial → Your decision',
+    right: '10 free hours · 3 outcomes',
+  },
+  processCards: [
+    {
+      tone: 'peach' as const,
+      title: 'What you describe',
+      stage: '01',
+      tags: ['Skills', 'Hours per week', 'Time zone'],
+      body: 'One brief. No job post, no sourcing on your side.',
+    },
+    {
+      tone: 'blue' as const,
+      title: 'What comes back',
+      stage: '02 – 03',
+      matchRows: [
+        { num: '01', fill: 100 },
+        { num: '02', fill: 62 },
+      ],
+      body: 'Only fully Vetted profiles. Compared on tests, rates, and hours.',
+    },
+    {
+      tone: 'green' as const,
+      title: 'The trial you direct',
+      stage: '04',
+      trialHours: 10,
+      body: '10 free hours. You choose the engineer and what the hours are spent on.',
+    },
+  ],
+  trialOutcome: {
+    title: 'At the end of the trial, you decide',
+    stageTag: 'stage 05',
+    footnote:
+      'Timesheets are approved by you throughout — including after the trial ends.',
+    options: [
+      {
+        title: 'Continue',
+        body: 'Engagement runs on at the rate you already saw.',
+        footerLabel: 'Manage and Scale',
+        footerStage: 'stage 06',
+      },
+      {
+        title: 'Swap',
+        body: 'We source a replacement. Your hours stay put.',
+      },
+      {
+        title: 'Stop',
+        body: 'Nothing continues. No further commitment.',
+      },
+    ],
+  },
+  stagesLabel: 'The six stages',
+  stages: [
+    {
+      num: '01',
+      title: 'Describe What You Need',
+      body: 'Skills, hours, and time zone.',
+      showArrow: true,
+    },
+    {
+      num: '02',
+      title: 'Review Matched Engineers',
+      body: 'Only published profiles reach you.',
+      showArrow: true,
+    },
+    {
+      num: '03',
+      title: 'Compare',
+      body: 'Test results, rates, and hours side by side.',
+      showArrow: false,
+    },
+    {
+      num: '04',
+      title: 'Start a 10-Hour Free Trial',
+      body: 'You choose who goes on trial.',
+      showArrow: true,
+    },
+    {
+      num: '05',
+      title: 'Continue, Swap, or Stop',
+      body: 'Your call at the end of the trial.',
+      showArrow: true,
+    },
+    {
+      num: '06',
+      title: 'Manage and Scale',
+      body: 'Approve timesheets, add engineers.',
+      showArrow: false,
+    },
+  ],
+} as const;
+
+export const HIW_SEEKER = {
+  partLabel: 'Part — 2',
+  stepCount: '8 steps',
+  title: 'How Job Seeker gets onto BesTal',
+  intro:
+    'Eight stages between first contact and a published profile. A profile appears only when all of them are complete.',
+  funnelLabel: 'Eight Stages, one profile',
+  funnel: [
+    {
+      range: '01 – 02',
+      label: 'Identified and screened',
+      width: 100,
+      tone: 'light' as const,
+    },
+    {
+      range: '03 – 04',
+      label: 'Tested externally, then verified',
+      width: 88,
+      tone: 'mid' as const,
+    },
+    {
+      range: '05 – 06',
+      label: 'Priced and time zone assigned',
+      width: 76,
+      tone: 'deep' as const,
+    },
+    {
+      range: '07 – 08',
+      label: 'Published and maintained',
+      width: 64,
+      tone: 'dark' as const,
+    },
+  ],
+  funnelNote:
+    'Each stage narrows the pool. Nothing is visible to you until stage 07.',
+  stats: [
+    {
+      label: 'Stages required',
+      value: '8 / 8',
+      note: 'A profile appears only when all of them are complete.',
+    },
+    {
+      label: 'Who runs the test',
+      value: 'An outside specialist',
+      note: 'Stage 03 is not scored by BesTal.',
+    },
+  ],
+  stagesLabel: 'The eight stages',
+  stages: [
+    {
+      num: '01',
+      title: 'Identified',
+      body: 'Sourced from the engineering communities.',
+      showArrow: true,
+    },
+    {
+      num: '02',
+      title: 'Screened',
+      body: 'First-pass check on experience and fit.',
+      showArrow: true,
+    },
+    {
+      num: '03',
+      title: 'Tested by an Outside Specialist',
+      body: 'Assessed by someone who does not work for us.',
+      showArrow: true,
+    },
+    {
+      num: '04',
+      title: 'Verified',
+      body: 'Identity and claims confirmed.',
+      showArrow: false,
+    },
+    {
+      num: '05',
+      title: 'Pricing',
+      body: 'Rate set and fixed before publication.',
+      showArrow: true,
+    },
+    {
+      num: '06',
+      title: 'Time Zone Assigned',
+      body: 'Working hours recorded against your day.',
+      showArrow: true,
+    },
+    {
+      num: '07',
+      title: 'Published',
+      body: 'Profile becomes visible to you.',
+      showArrow: true,
+    },
+    {
+      num: '08',
+      title: 'Maintained',
+      body: 'Availability and hours kept current.',
+      showArrow: false,
+    },
+  ],
+} as const;
+
+export const ABOUT_CTA = {
+  title: 'Workforce solutions aligned to your business goals.',
+  body:
+    'Augment a team, access niche skills, accelerate a critical initiative, or build a managed delivery team.',
+  primaryCta: 'Reach out to us',
+  // secondaryCta: 'Learn more',
+} as const;
+
+export type FaqItem = {
+  question: string;
+  answer: string;
+};
+
+export type FaqCategory = {
+  id: string;
+  title: string;
+  items: FaqItem[];
+};
+
+export const FAQ_PAGE = {
+  label: 'FAQ',
+  title: 'Frequently Asked Questions',
+  contactPrefix: "Can't find an answer? Reach out to us at",
+  contactEmail: 'info@bestal.co',
+  tocTitle: 'Table of Contents',
+  categories: [
+    {
+      id: 'platform',
+      title: 'Platform & Talent',
+      items: [
+        {
+          question: 'What is BesTal?',
+          answer:
+            'BesTal is a talent platform that helps organizations find and engage pre-vetted digital engineering talent, including freelancers, contractors, dedicated engineers, and managed teams.',
+        },
+        {
+          question: 'What does "pre-vetted" mean?',
+          answer:
+            'Every engineer undergoes a specialist-led assessment before being listed on the platform. Engineers are evaluated across technical depth, problem solving, architecture, code quality, and communication.',
+        },
+        {
+          question: 'Who conducts the assessments?',
+          answer:
+            "Assessments are conducted by independent specialists with expertise in the engineer's specific domain. For example, a Data & AI engineer is assessed by an experienced Data & AI practitioner.",
+        },
+        {
+          question: 'Can I see assessment results before speaking with an engineer?',
+          answer:
+            "Yes. Assessment results are available on each engineer's profile, allowing you to review capabilities before scheduling a conversation.",
+        },
+        {
+          question: "What information is available on an engineer's profile?",
+          answer:
+            'Profiles include: Assessment results | Hourly rate | Availability | Confirmed start date | Verification status | Technology expertise | Professional experience',
+        },
+        {
+          question: 'What technology areas does BesTal support?',
+          answer:
+            'Our current talent communities include: Data & AI | Cloud & Platform | Full Stack | SAP | ServiceNow | Salesforce | Cybersecurity',
+        },
+        {
+          question: 'How are engineers verified?',
+          answer:
+            'BesTal verifies engineer identity through a live verification process and independently validates education and employment history. Verification status is displayed on the profile.',
+        },
+      ],
+    },
+    {
+      id: 'collaboration',
+      title: 'Collaboration & Team Integration',
+      items: [
+        {
+          question: 'How do BesTal engineers collaborate with existing teams?',
+          answer:
+            'BesTal engineers work as an extension of your team. They participate in your communication channels, meetings, development workflows, and delivery processes.',
+        },
+        {
+          question: 'Will engineers follow our existing processes and ways of working?',
+          answer:
+            'Yes. Engineers adapt to your tools, coding standards, workflows, security requirements, and delivery methodologies.',
+        },
+        {
+          question: 'Can engineers work within Agile teams?',
+          answer:
+            'Absolutely. Many engineers have experience participating in stand-ups, sprint planning, retrospectives, backlog refinement, and code reviews.',
+        },
+        {
+          question: 'Do engineers work in US time zones?',
+          answer:
+            'Yes. Engineers commit to working a full business day in one US time zone: Eastern, Central, Mountain, or Pacific.',
+        },
+        {
+          question: 'How much overlap will we have with the engineer?',
+          answer:
+            'Unlike traditional offshore models that rely on limited overlap, BesTal engineers work a full business day aligned to your chosen US time zone.',
+        },
+        {
+          question: 'How do you evaluate communication skills?',
+          answer:
+            'Communication is one of the five areas assessed during the evaluation process. Clients can review communication scores and feedback before engaging an engineer.',
+        },
+        {
+          question: 'Have the engineers worked remotely before?',
+          answer:
+            'Yes. BesTal focuses on engineers who can operate effectively in distributed environments and collaborate with global teams.',
+        },
+        {
+          question: 'Can engineers collaborate with our employees, vendors, and stakeholders?',
+          answer:
+            'Yes. Engineers can work directly with internal teams, contractors, consultants, vendors, product managers, architects, and business stakeholders.',
+        },
+        {
+          question: 'Can engineers participate in code reviews, architecture discussions, and customer meetings?',
+          answer:
+            'Yes. Engineers are expected to contribute as active members of your team and can participate wherever their expertise is required.',
+        },
+        {
+          question: 'Can BesTal engineers become long-term members of our team?',
+          answer:
+            'Yes. BesTal supports both short-term project engagements and long-term team augmentation.',
+        },
+        {
+          question: 'Can we build an entire team through BesTal?',
+          answer:
+            'Yes. We support both individual placements and dedicated teams, depending on your requirements.',
+        },
+      ],
+    },
+    {
+      id: 'onboarding',
+      title: 'Onboarding & Getting Started',
+      items: [
+        {
+          question: 'How does the onboarding process work?',
+          answer:
+            'Once you select an engineer, we coordinate onboarding, including confirming the start date, aligning on project expectations, and integrating the engineer into your tools and workflows.',
+        },
+        {
+          question: 'How quickly can an engineer start?',
+          answer:
+            'Many engineers can start immediately, within 24 hours, or within 48 hours. Confirmed start dates are displayed on their profiles.',
+        },
+        {
+          question: 'What do we need to provide during onboarding?',
+          answer:
+            'Typically, clients provide: Project overview | Team structure | Required system access | Development standards | Communication channels | Key contacts',
+        },
+        {
+          question: 'Will engineers participate in onboarding sessions and team introductions?',
+          answer:
+            'Yes. Engineers can attend onboarding meetings, project walkthroughs, knowledge-transfer sessions, and team introductions.',
+        },
+        {
+          question: 'Can engineers use our existing tools and development environment?',
+          answer:
+            'Yes. Engineers work within your preferred technology stack, collaboration tools, source control systems, and delivery workflows.',
+        },
+        {
+          question: 'What if our onboarding process includes security or compliance requirements?',
+          answer:
+            'Engineers can participate in your standard onboarding procedures, including security training, compliance reviews, and access approval processes.',
+        },
+        {
+          question: 'Will we have a point of contact from BesTal?',
+          answer:
+            'Yes. BesTal provides support throughout onboarding and engagement to help ensure a smooth experience.',
+        },
+        {
+          question: 'Can we onboard multiple engineers at the same time?',
+          answer:
+            'Yes. BesTal supports onboarding both individual engineers and larger teams.',
+        },
+        {
+          question: 'Can we define our own onboarding process?',
+          answer:
+            "Absolutely. Engineers are expected to follow your organization's onboarding, communication, and delivery practices.",
+        },
+      ],
+    },
+    {
+      id: 'trial',
+      title: 'Free Trial',
+      items: [
+        {
+          question: 'How does the 10-hour Free Trial work?',
+          answer:
+            'You can assign real work to an engineer for up to 10 hours at no charge. The trial is designed to help you evaluate technical capability, communication, and overall fit.',
+        },
+        {
+          question: 'Can I use the Free Trial as part of onboarding?',
+          answer:
+            'Yes. Many clients use the trial period to introduce engineers to their systems, workflows, and teams while evaluating fit through real work.',
+        },
+        {
+          question: 'Can I keep the work completed during the trial?',
+          answer:
+            "Yes. Any work completed during the trial remains with your organization, whether or not you continue the engagement.",
+        },
+        {
+          question: 'What happens after the trial?',
+          answer:
+            "If you're satisfied with the engineer's performance, you can continue the engagement through BesTal under a paid arrangement.",
+        },
+        {
+          question: "What if the engineer isn't the right fit?",
+          answer:
+            "The trial is intended to help you make that determination. If the engineer is not the right fit, you're under no obligation to continue.",
+        },
+        {
+          question: 'Is the trial available for every engineer?',
+          answer:
+            "The Free Trial is available for eligible engineers listed on the platform, subject to availability and BesTal's trial terms.",
+        },
+      ],
+    },
+    {
+      id: 'engagement',
+      title: 'Engagement & Commercials',
+      items: [
+        {
+          question: 'What engagement models does BesTal support?',
+          answer:
+            'BesTal supports: Individual specialists | Dedicated engineers | Managed teams | Time-and-materials engagements | Fixed-scope project delivery',
+        },
+        {
+          question: 'Are there long-term contracts?',
+          answer:
+            'No. BesTal offers flexible engagement options designed to align with your business needs.',
+        },
+        {
+          question: 'Can we scale our team after getting started?',
+          answer:
+            'Yes. You can add engineers or expand into larger teams as your requirements evolve.',
+        },
+        {
+          question: "What if I don't find the right engineer?",
+          answer:
+            'Our team can work with you to refine your requirements and recommend alternative engineers that better match your technical and business needs.',
+        },
+        {
+          question: 'Is there a fee to browse engineers?',
+          answer:
+            'No. You can review profiles, assessment results, rates, verification status, and availability before making engagement decisions.',
+        },
+        {
+          question: 'Can we engage engineers for both short-term and long-term projects?',
+          answer:
+            'Yes. BesTal supports project-based engagements, ongoing team augmentation, and long-term workforce expansion.',
+        },
+      ],
+    },
+  ] satisfies FaqCategory[],
+} as const;

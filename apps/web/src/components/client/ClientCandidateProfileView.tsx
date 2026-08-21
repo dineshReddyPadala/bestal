@@ -122,6 +122,7 @@ export function ClientCandidateProfileView({
 }: ClientCandidateProfileViewProps) {
   const rateLabel = `${formatCurrency(profile.billRate, profile.currency)}/hr`;
   const trialHandler = onTrial ?? onPilot;
+  const trialRequested = Boolean(trialBlockReason);
   const trialEnabled =
     profile.trialEligible && canRequestTrial && !trialBlockReason;
   const deployEnabled =
@@ -331,21 +332,27 @@ export function ClientCandidateProfileView({
 
             <div className="flex shrink-0 flex-wrap gap-2 xl:pt-1">
               <Button
-                variant="primary"
-                onClick={trialHandler}
-                disabled={!trialEnabled}
+                variant={trialRequested ? 'outline' : 'primary'}
+                className={cn(
+                  trialRequested &&
+                    'border-border/70 bg-muted/40 text-muted-foreground disabled:opacity-100 disabled:cursor-default',
+                )}
+                onClick={trialRequested ? undefined : trialHandler}
+                disabled={trialRequested || !trialEnabled}
                 title={
-                  trialEnabled
-                    ? 'Request a trial'
-                    : trialBlockReason
-                      ? trialBlockReason
-                    : !canRequestTrial
-                      ? 'Your login is not linked to a client account'
-                      : 'Candidate is not yet trial eligible'
+                  trialRequested
+                    ? 'Trial requested'
+                    : trialEnabled
+                      ? 'Request a trial'
+                      : trialBlockReason
+                        ? trialBlockReason
+                        : !canRequestTrial
+                          ? 'Your login is not linked to a client account'
+                          : 'Candidate is not yet trial eligible'
                 }
               >
                 <FlaskConical className="mr-1.5 h-4 w-4" />
-                Request Trial
+                {trialRequested ? 'Trial requested' : 'Request Trial'}
               </Button>
               {onRequestDeployment ? (
                 <Button

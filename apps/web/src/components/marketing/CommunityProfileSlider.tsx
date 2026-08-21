@@ -7,7 +7,7 @@ import {
 } from '../../lib/demo-engineers';
 import { DemoEngineerCard } from './DemoEngineerCard';
 
-const AUTOPLAY_MS = 4500;
+const AUTOPLAY_MS = 6500;
 
 type CommunityProfileSliderProps = {
   className?: string;
@@ -21,72 +21,63 @@ export function CommunityProfileSlider({
   onSlideChange,
 }: CommunityProfileSliderProps) {
   const [active, setActive] = useState(0);
+  const [paused, setPaused] = useState(false);
 
   useEffect(() => {
     onSlideChange?.(COMMUNITY_PROFILE_SLIDES[active]);
   }, [active, onSlideChange]);
 
   useEffect(() => {
+    if (paused) return undefined;
+
     const id = window.setInterval(() => {
       setActive((current) => (current + 1) % COMMUNITY_PROFILE_SLIDES.length);
     }, AUTOPLAY_MS);
+
     return () => window.clearInterval(id);
-  }, []);
+  }, [paused]);
 
   const activeSlide = COMMUNITY_PROFILE_SLIDES[active];
+  const genderClass =
+    activeSlide.engineer.gender === 'female' ? 'mkt-prof--female' : 'mkt-prof--male';
 
   return (
-    <div className={cn('mkt-community-slider', className)}>
-      <div
-        className="mkt-community-slider-track"
-        aria-live="polite"
-        aria-atomic="true"
-        aria-label={`${activeSlide.community} profile`}
-      >
-        {COMMUNITY_PROFILE_SLIDES.map((slide, index) => {
-          const isActive = index === active;
-          return (
-            <div
-              key={slide.community}
-              className={cn('mkt-community-slider-panel', isActive && 'is-active')}
-              aria-hidden={!isActive}
-            >
-              <DemoEngineerCard
-                engineer={slide.engineer}
-                hideScorecard={hideScorecard}
-                communityLabel={slide.community}
-              />
-            </div>
-          );
-        })}
-      </div>
+    <div
+      className={cn('mkt-community-slider', className)}
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+      onFocusCapture={() => setPaused(true)}
+      onBlurCapture={() => setPaused(false)}
+    >
+      <article className={cn('mkt-prof mkt-community-slider-card', genderClass)}>
+        <div className="mkt-dtag mkt-community-slider-dtag">{activeSlide.community}</div>
 
-      {/* <div className="mkt-community-slider-meta">
-        <p className="mkt-community-slider-name">{activeSlide.community}</p>
-        <p className="mkt-community-slider-desc">{activeSlide.description}</p>
-      </div>
-
-      <div
-        className="mkt-community-slider-nav"
-        role="tablist"
-        aria-label="Skill communities"
-      >
-        {COMMUNITY_PROFILE_SLIDES.map((slide, index) => {
-          const isActive = index === active;
-          return (
-            <button
-              key={slide.community}
-              type="button"
-              role="tab"
-              aria-selected={isActive}
-              aria-label={slide.community}
-              title={slide.community}
-              className={cn('mkt-community-slider-pill', isActive && 'is-active')}
-              onClick={() => select(index)}
-            />
-          );
-        })}
-      </div> */}
+        <div
+          className="mkt-community-slider-viewport"
+          aria-live="polite"
+          aria-atomic="true"
+          aria-label={`${activeSlide.community} profile`}
+        >
+          <div
+            className="mkt-community-slider-track"
+            style={{ transform: `translate3d(-${active * 100}%, 0, 0)` }}
+          >
+            {COMMUNITY_PROFILE_SLIDES.map((slide, index) => (
+              <div
+                key={slide.community}
+                className={cn('mkt-community-slider-panel', index === active && 'is-active')}
+              >
+                <DemoEngineerCard
+                  engineer={slide.engineer}
+                  hideScorecard={hideScorecard}
+                  hideSecondaryActions
+                  shellless
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+      </article>
     </div>
   );
 }

@@ -177,3 +177,7 @@ body {
   color: #12100e !important;
   font-weight: 700;
 }
+
+.marketing-site .bg-amber-400 {
+  background-color: rgb(12 105 87);
+}
