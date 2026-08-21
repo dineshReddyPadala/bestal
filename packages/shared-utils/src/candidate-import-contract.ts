@@ -129,7 +129,7 @@ export const EVALUATION_SHEET_COLUMNS = [
   'technical_score',
   'communication_score',
   'problem_solving_score',
-  'architecture_score',
+  'collaboration_cultural_fit_score',
   'client_readiness_score',
   'recommendation',
   'evaluation_summary',
@@ -167,7 +167,7 @@ export const DEPRECATED_SCORES_SHEET_COLUMNS = [
   'technical_score',
   'communication_score',
   'problem_solving_score',
-  'architecture_score',
+  'collaboration_cultural_fit_score',
   'client_readiness_score',
 ] as const;
 

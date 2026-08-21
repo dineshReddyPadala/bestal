@@ -43,7 +43,7 @@ export type ClientCandidateProfile = {
   readonly evaluation: {
     readonly technical: number | null;
     readonly communication: number | null;
-    readonly architecture: number | null;
+    readonly collaborationCulturalFit: number | null;
     readonly recommendation: string | null;
     readonly status: string;
   };
@@ -132,7 +132,7 @@ export function getClientCandidateProfile(candidateId: number): ClientCandidateP
     evaluation: {
       technical: detail.evaluationDetail.technicalScore,
       communication: detail.evaluationDetail.communicationScore,
-      architecture: detail.evaluationDetail.architectureScore,
+      collaborationCulturalFit: detail.evaluationDetail.collaborationCulturalFitScore,
       recommendation: detail.evaluationDetail.recommendation,
       status: detail.overview.evaluationStatus,
     },

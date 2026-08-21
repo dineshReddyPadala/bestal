@@ -18,7 +18,6 @@ import {
   ShieldCheck,
   Sparkles,
   Trash2,
-  Upload,
   UserCircle,
 } from 'lucide-react';
 import { useMemo, useState } from 'react';
@@ -27,7 +26,6 @@ import { useCandidate, useCandidateMutations } from '../../hooks/api/useCandidat
 import { usePermissions } from '../../hooks/usePermissions';
 import { useAuth } from '../../contexts/AuthContext';
 import { getApiErrorMessage } from '../../lib/api/errors';
-import { uploadCandidateFile } from '../../lib/api/candidates';
 import type { CandidateSkillDto } from '../../lib/api/types';
 import { useDemoToast } from '../../lib/use-demo-toast';
 import { ToastHost } from '../ui/ToastHost';
@@ -92,12 +90,10 @@ export function CandidateDetailView({ candidateId, basePath }: CandidateDetailVi
   const { user } = useAuth();
   const { message, variant, show, showError, dismiss } = useDemoToast();
   const [activeTab, setActiveTab] = useState<TabId>('overview');
-  const [uploadingKind, setUploadingKind] = useState<string | null>(null);
   const {
     canWriteCandidates,
     canRunAiScreening,
     canUploadEvaluation,
-    canUploadBgv,
     canDeleteCandidates,
   } = usePermissions();
   const { data: candidate, isLoading, isError, error, refetch } = useCandidate(candidateId);
@@ -182,23 +178,6 @@ export function CandidateDetailView({ candidateId, basePath }: CandidateDetailVi
       }
     } catch (err) {
       showError(getApiErrorMessage(err, 'Action failed'));
-    }
-  }
-
-  async function uploadAsset(
-    kind: 'resume' | 'profile-image' | 'intro-video',
-    file: File,
-    label: string,
-  ) {
-    setUploadingKind(kind);
-    try {
-      await uploadCandidateFile(candidateId, kind, file);
-      show(`${label} uploaded`);
-      await refetch();
-    } catch (err) {
-      showError(getApiErrorMessage(err, `Failed to upload ${label.toLowerCase()}`));
-    } finally {
-      setUploadingKind(null);
     }
   }
 
@@ -485,18 +464,10 @@ export function CandidateDetailView({ candidateId, basePath }: CandidateDetailVi
           description="Scorecards and reports from the evaluation module"
           action={
             isAdminPortal || canUploadEvaluation ? (
-              <div className="flex flex-wrap gap-2">
-                <Button variant="ghost" size="sm" onClick={() => void handleAction('view-eval')}>
-                  <ClipboardList className="mr-1.5 h-3.5 w-3.5" />
-                  View Evaluation
-                </Button>
-                {canUploadEvaluation ? (
-                  <Button variant="ghost" size="sm" onClick={() => void handleAction('upload-eval')}>
-                    <Upload className="mr-1.5 h-3.5 w-3.5" />
-                    Upload Evaluation
-                  </Button>
-                ) : null}
-              </div>
+              <Button variant="ghost" size="sm" onClick={() => void handleAction('view-eval')}>
+                <ClipboardList className="mr-1.5 h-3.5 w-3.5" />
+                View Evaluation
+              </Button>
             ) : null
           }
         >
@@ -508,14 +479,7 @@ export function CandidateDetailView({ candidateId, basePath }: CandidateDetailVi
       <ModernSection
         title="Background Verification"
         description="Verification status and report"
-        action={
-          canUploadBgv ? (
-            <Button variant="ghost" size="sm" onClick={() => void handleAction('upload-bgv')}>
-              <Upload className="mr-1.5 h-3.5 w-3.5" />
-              Upload BGV
-            </Button>
-          ) : null
-        }
+        action={null}
       >
         <SchemaFieldGrid fields={bgvFields} columns={2} />
         {candidate.bgvSummary ? (
@@ -524,7 +488,7 @@ export function CandidateDetailView({ candidateId, basePath }: CandidateDetailVi
           </p>
         ) : (
           <p className="mt-4 text-xs text-muted-foreground">
-            Upload the BGV report from the Documents tab or the BGV module.
+            View the BGV report from the Documents tab or the BGV module.
           </p>
         )}
       </ModernSection>
@@ -532,55 +496,34 @@ export function CandidateDetailView({ candidateId, basePath }: CandidateDetailVi
     documents: (
       <ModernSection
         title="Documents & Assets"
-        description="Upload or download candidate files"
+        description="Preview candidate files"
       >
         <div className="space-y-3">
           <DocumentAssetRow
             label="Resume"
             description="PDF or Word resume"
             doc={candidate.resume}
-            accept=".pdf,.doc,.docx,application/pdf"
-            canUpload={canWriteCandidates}
-            onUpload={(file) => void uploadAsset('resume', file, 'Resume')}
             onDownload={(doc) => openDoc(doc, 'Resume')}
           />
           <DocumentAssetRow
             label="Profile Photo"
             doc={candidate.profileImage}
-            accept="image/*"
-            canUpload={canWriteCandidates}
-            onUpload={(file) => void uploadAsset('profile-image', file, 'Profile photo')}
             onDownload={(doc) => openDoc(doc, 'Profile photo')}
           />
           <DocumentAssetRow
             label="Intro Video"
             doc={candidate.introVideo}
-            accept="video/*"
-            canUpload={canWriteCandidates}
-            onUpload={(file) => void uploadAsset('intro-video', file, 'Intro video')}
             onDownload={(doc) => openDoc(doc, 'Intro video')}
           />
           <DocumentAssetRow
             label="Evaluation Report"
             description="Managed in Evaluations module"
-            canUpload={canUploadEvaluation}
-            accept=".pdf,.doc,.docx"
-            onUpload={() => void handleAction('upload-eval')}
           />
           <DocumentAssetRow
             label="BGV Report"
             description="Managed in Background Checks module"
-            canUpload={canUploadBgv}
-            accept=".pdf,.doc,.docx"
-            onUpload={() => void handleAction('upload-bgv')}
           />
         </div>
-        {uploadingKind ? (
-          <p className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
-            <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            Uploading {uploadingKind.replace('-', ' ')}…
-          </p>
-        ) : null}
       </ModernSection>
     ),
     timeline: (

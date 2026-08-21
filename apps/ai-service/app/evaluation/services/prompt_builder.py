@@ -8,7 +8,7 @@ RESPONSE_SCHEMA = {
     "technical_score": "0-100 integer",
     "communication_score": "0-100 integer",
     "problem_solving_score": "0-100 integer",
-    "architecture_score": "0-100 integer",
+    "collaboration_cultural_fit_score": "0-100 integer — teamwork, client alignment, and cultural fit",
     "client_readiness_score": "0-100 integer",
     "recommendation": "string — MUST be one of: Strong Hire|Hire|Borderline|Reject",
     "evaluator_comments": "string — key comments/notes from the evaluation document",

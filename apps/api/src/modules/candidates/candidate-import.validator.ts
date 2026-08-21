@@ -228,7 +228,7 @@ function evaluationRowHasScores(raw: RawRow): boolean {
     'technical_score',
     'communication_score',
     'problem_solving_score',
-    'architecture_score',
+    'collaboration_cultural_fit_score',
     'client_readiness_score',
   ] as const;
   return scoreColumns.some((column) => raw[column]?.trim());
@@ -922,11 +922,11 @@ export async function parseAndValidateCandidateWorkbook(
         errors,
         sourceCandidateId,
       ),
-      architectureScore: parseScore(
-        raw.architecture_score,
+      collaborationCulturalFitScore: parseScore(
+        raw.collaboration_cultural_fit_score,
         IMPORT_WORKBOOK_SHEETS.EVALUATION,
         rowNumber,
-        'architecture_score',
+        'collaboration_cultural_fit_score',
         errors,
         sourceCandidateId,
       ),

@@ -50,7 +50,7 @@ const SCORE_FIELD_KEYS = [
   'technicalScore',
   'communicationScore',
   'problemSolvingScore',
-  'architectureScore',
+  'collaborationCulturalFitScore',
   'clientReadinessScore',
 ] as const;
 
@@ -59,7 +59,7 @@ function evaluationScoreFieldsChanged(
     technicalScore: number | null;
     communicationScore: number | null;
     problemSolvingScore: number | null;
-    architectureScore: number | null;
+    collaborationCulturalFitScore: number | null;
     clientReadinessScore: number | null;
     aiEvaluationSummary: string | null;
   },
@@ -83,7 +83,7 @@ function hasEvaluationScoreData(input: {
   technicalScore?: number | null;
   communicationScore?: number | null;
   problemSolvingScore?: number | null;
-  architectureScore?: number | null;
+  collaborationCulturalFitScore?: number | null;
   clientReadinessScore?: number | null;
 }): boolean {
   return Boolean(
@@ -257,8 +257,8 @@ export class EvaluationService {
             output.communicationScore ?? existing.communicationScore,
           problemSolvingScore:
             output.problemSolvingScore ?? existing.problemSolvingScore,
-          architectureScore:
-            output.architectureScore ?? existing.architectureScore,
+          collaborationCulturalFitScore:
+            output.collaborationCulturalFitScore ?? existing.collaborationCulturalFitScore,
           clientReadinessScore:
             output.clientReadinessScore ?? existing.clientReadinessScore,
           recommendation: recommendation ?? existing.recommendation,
@@ -296,7 +296,7 @@ export class EvaluationService {
         technicalScore: output.technicalScore,
         communicationScore: output.communicationScore,
         problemSolvingScore: output.problemSolvingScore,
-        architectureScore: output.architectureScore,
+        collaborationCulturalFitScore: output.collaborationCulturalFitScore,
         clientReadinessScore: output.clientReadinessScore,
       })
     ) {

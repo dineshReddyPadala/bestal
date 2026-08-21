@@ -19,7 +19,7 @@ export type EvaluationExtractionResponse = {
   technicalScore?: number;
   communicationScore?: number;
   problemSolvingScore?: number;
-  architectureScore?: number;
+  collaborationCulturalFitScore?: number;
   clientReadinessScore?: number;
   recommendation?: string;
   evaluatorComments?: string;

@@ -284,8 +284,19 @@ export function SuperAdminCandidateDetailPage() {
             <p className="text-sm text-muted-foreground">No documents</p>
           ) : (
             documents.map((d) => (
-              <div key={String(d.id)} className="text-sm">
-                {String(d.originalName)} ({String(d.kind)})
+              <div key={String(d.id)} className="flex items-center justify-between gap-3 text-sm">
+                <span>
+                  {String(d.originalName)} ({String(d.kind)})
+                </span>
+                {typeof d.downloadUrl === 'string' && d.downloadUrl ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => window.open(d.downloadUrl as string, '_blank', 'noopener,noreferrer')}
+                  >
+                    Preview
+                  </Button>
+                ) : null}
               </div>
             ))
           )}

@@ -283,6 +283,11 @@ export function useAdminMutations() {
       mutationFn: (id: number) => adminApi.deleteSkillCommunity(id),
       onSuccess: invalidate,
     }),
+    uploadSkillCommunityIcon: useMutation({
+      mutationFn: ({ id, file }: { id: number; file: File }) =>
+        adminApi.uploadSkillCommunityIcon(id, file),
+      onSuccess: invalidate,
+    }),
     approveTrial: useMutation({
       mutationFn: ({ id, recruiterId }: { id: number; recruiterId?: number }) =>
         adminApi.approveTrial(id, recruiterId),

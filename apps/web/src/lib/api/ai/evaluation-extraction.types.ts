@@ -17,7 +17,7 @@ export interface EvaluationExtractionResponse {
   technicalScore?: number;
   communicationScore?: number;
   problemSolvingScore?: number;
-  architectureScore?: number;
+  collaborationCulturalFitScore?: number;
   clientReadinessScore?: number;
   recommendation?: string;
   evaluatorComments?: string;
@@ -33,7 +33,7 @@ export type EvaluationExtractionFormPatch = {
   technicalScore?: number;
   communicationScore?: number;
   problemSolvingScore?: number;
-  architectureScore?: number;
+  collaborationCulturalFitScore?: number;
   clientReadinessScore?: number;
   recommendation?: string;
   evaluatorComments?: string;

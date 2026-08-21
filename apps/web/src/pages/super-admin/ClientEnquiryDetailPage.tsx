@@ -1,7 +1,7 @@
 import { Button, Select, StatusBadge } from '@bestal/ui';
 import { ArrowLeft, Download, ExternalLink } from 'lucide-react';
 import { useMemo, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useClientEnquiryBasePath } from '../../hooks/useClientEnquiryBasePath';
 import { usePermissions } from '../../hooks/usePermissions';
 import {
@@ -85,6 +85,7 @@ function JobCard({ job, index }: { job: ClientEnquiryJob; index: number }) {
 
 export function SuperAdminClientEnquiryDetailPage() {
   const { id: idParam } = useParams();
+  const navigate = useNavigate();
   const id = Number(idParam);
   const basePath = useClientEnquiryBasePath();
   const { has } = usePermissions();
@@ -127,6 +128,7 @@ export function SuperAdminClientEnquiryDetailPage() {
         },
       });
       show('Client enquiry updated');
+      navigate(basePath);
     } catch (e) {
       showError(e instanceof Error ? e.message : 'Failed to update enquiry');
     } finally {

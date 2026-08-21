@@ -1422,6 +1422,23 @@ export class CandidateService {
       dto.bgvSummary = null;
     }
 
+    const latestEvaluation = await this.prisma.evaluation.findFirst({
+      where: {
+        organizationId: candidate.organizationId,
+        candidateId: candidate.id,
+        deletedAt: null,
+      },
+      orderBy: [{ evaluationDate: 'desc' }, { createdAt: 'desc' }],
+      select: {
+        collaborationCulturalFitScore: true,
+        recommendation: true,
+      },
+    });
+    dto.collaborationCulturalFitScore = latestEvaluation?.collaborationCulturalFitScore ?? null;
+    if (latestEvaluation?.recommendation) {
+      dto.evaluationRecommendation = latestEvaluation.recommendation;
+    }
+
     // Clients never receive document assets beyond public profile media already on DTO.
     if (authUser.role === ROLES.CLIENT) {
       return {
