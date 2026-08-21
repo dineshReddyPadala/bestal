@@ -20,12 +20,14 @@ import {
 } from 'lucide-react';
 import { ActionMenu } from '../../components/ui/ActionMenu';
 import { ClientTrialDetailDialog } from '../../components/client/ClientTrialDetailDialog';
+import { RequestDeploymentDialog } from '../../components/client/RequestDeploymentDialog';
 import { useMemo, useState } from 'react';
 import { ClientPortalStatCard } from '../../components/client/ClientPortalStatCard';
 import { ClientSegmentTabs } from '../../components/client/ClientSegmentTabs';
 import { PickCandidateDialog } from '../../components/client/PickCandidateDialog';
 import { RequestTrialDialog } from '../../components/client/RequestTrialDialog';
 import { useTrialMutations, useTrialsList, toTrialRow } from '../../hooks/api/useTrials';
+import { useDeploymentMutations } from '../../hooks/api/useDeployments';
 import { useClientTrialRequests } from '../../hooks/useClientEngagementRequests';
 import { getApiErrorMessage } from '../../lib/api/errors';
 import type { TrialManagementRow } from '../../hooks/api/useTrials';
@@ -47,6 +49,7 @@ export function TrialRequestsPage() {
   const { data, isLoading } = useTrialsList({ clientId, limit: 100, sort: '-createdAt' });
   const { addRequest } = useClientTrialRequests();
   const { submitFeedback } = useTrialMutations();
+  const deploymentMutations = useDeploymentMutations();
   const formatDate = useOrgFormatDate();
   const [segment, setSegment] = useState<'active' | 'history'>('active');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -54,6 +57,10 @@ export function TrialRequestsPage() {
   const [selected, setSelected] = useState<{ id: number; name: string } | null>(null);
   const [feedbackTrialId, setFeedbackTrialId] = useState<number | null>(null);
   const [viewTrialId, setViewTrialId] = useState<number | null>(null);
+  const [deployCandidate, setDeployCandidate] = useState<{ id: number; name: string } | null>(
+    null,
+  );
+  const [deployOpen, setDeployOpen] = useState(false);
   const [feedbackText, setFeedbackText] = useState('');
   const [rating, setRating] = useState('5');
   const [decision, setDecision] = useState<'CONTINUE' | 'DO_NOT_CONTINUE'>('CONTINUE');
@@ -102,8 +109,8 @@ export function TrialRequestsPage() {
 
   const feedbackTrial = trialRows.find((t) => t.id === feedbackTrialId);
 
-  const columns = useMemo<ColumnDef<TrialManagementRow>[]>(
-    () => [
+  const columns = useMemo<ColumnDef<TrialManagementRow>[]>(() => {
+    const base: ColumnDef<TrialManagementRow>[] = [
       {
         id: 'trialId',
         header: 'Trial ID',
@@ -150,7 +157,10 @@ export function TrialRequestsPage() {
             <StatusBadge status={row.original.status} />
           ),
       },
-      {
+    ];
+
+    if (segment === 'history') {
+      base.push({
         accessorKey: 'clientRating',
         header: 'Rating',
         cell: ({ row }) =>
@@ -159,41 +169,44 @@ export function TrialRequestsPage() {
           ) : (
             <span className="text-muted-foreground">—</span>
           ),
-      },
-      {
-        id: 'actions',
-        header: '',
-        cell: ({ row }) => (
-          <ActionMenu
-            label="Trial actions"
-            items={[
-              {
-                id: 'view-trial',
-                label: 'View Trial Details',
-                onSelect: () => setViewTrialId(row.original.id),
-              },
-              {
-                id: 'feedback',
-                label: 'Feedback',
-                hidden:
-                  row.original.status !== 'COMPLETED' ||
-                  Boolean(row.original.feedback?.trim()),
-                separatorBefore: true,
-                onSelect: () => setFeedbackTrialId(row.original.id),
-              },
-            ]}
-          />
-        ),
-      },
-    ],
-    [formatDate],
-  );
+      });
+    }
+
+    base.push({
+      id: 'actions',
+      header: '',
+      cell: ({ row }) => (
+        <ActionMenu
+          label="Trial actions"
+          items={[
+            {
+              id: 'view-trial',
+              label: 'View Trial Details',
+              onSelect: () => setViewTrialId(row.original.id),
+            },
+            {
+              id: 'feedback',
+              label: 'Feedback',
+              hidden:
+                row.original.status !== 'COMPLETED' ||
+                Boolean(row.original.feedback?.trim()),
+              separatorBefore: true,
+              onSelect: () => setFeedbackTrialId(row.original.id),
+            },
+          ]}
+        />
+      ),
+    });
+
+    return base;
+  }, [formatDate, segment]);
 
   async function handleSubmitFeedback() {
     if (!feedbackTrialId || feedbackText.trim().length < 3) {
       showError('Please enter feedback (min 3 characters)');
       return;
     }
+    const trial = feedbackTrial;
     try {
       await submitFeedback.mutateAsync({
         id: feedbackTrialId,
@@ -210,6 +223,10 @@ export function TrialRequestsPage() {
       );
       setFeedbackTrialId(null);
       setFeedbackText('');
+      if (decision === 'CONTINUE' && trial) {
+        setDeployCandidate({ id: trial.candidateId, name: trial.candidateName });
+        setDeployOpen(true);
+      }
     } catch (err) {
       showError(getApiErrorMessage(err, 'Feedback failed'));
     }
@@ -271,7 +288,6 @@ export function TrialRequestsPage() {
                   <>
                     <option value="REQUESTED">Requested</option>
                     <option value="APPROVED">Approved</option>
-                    <option value="IN_PROGRESS">In progress</option>
                   </>
                 ) : (
                   <>
@@ -387,6 +403,40 @@ export function TrialRequestsPage() {
             </div>
           </div>
         </div>
+      ) : null}
+      {deployCandidate ? (
+        <RequestDeploymentDialog
+          open={deployOpen}
+          onClose={() => {
+            setDeployOpen(false);
+            setDeployCandidate(null);
+          }}
+          candidateName={deployCandidate.name}
+          onSubmit={async (values) => {
+            try {
+              await deploymentMutations.request.mutateAsync({
+                candidateId: deployCandidate.id,
+                roleTitle: values.roleTitle.trim(),
+                placementType: values.placementType,
+                startDate: values.startDate || undefined,
+                endDate: values.endDate || undefined,
+                workLocation: values.workLocation || undefined,
+                expectedHoursPerWeek: values.expectedHoursPerWeek
+                  ? Number(values.expectedHoursPerWeek)
+                  : undefined,
+                timezone: values.timezone || undefined,
+                reportingManagerName: values.reportingManagerName || undefined,
+                reportingManagerEmail: values.reportingManagerEmail || undefined,
+              });
+              show(`Deployment requested — ${deployCandidate.name}`);
+              setDeployOpen(false);
+              setDeployCandidate(null);
+            } catch (err) {
+              showError(getApiErrorMessage(err, 'Deployment request failed'));
+              throw err;
+            }
+          }}
+        />
       ) : null}
       <ClientTrialDetailDialog trialId={viewTrialId} onClose={() => setViewTrialId(null)} />
     </div>

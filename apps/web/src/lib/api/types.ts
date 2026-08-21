@@ -389,6 +389,9 @@ export type CandidateDto = CandidateListItem & {
   technicalScore?: number | null;
   communicationScore?: number | null;
   collaborationCulturalFitScore?: number | null;
+  clientReadinessScore?: number | null;
+  aiEvaluationSummary?: string | null;
+  evaluationSummary?: string | null;
   evaluationRecommendation?: string | null;
   reliabilityScore?: number | null;
   deploymentStatus?: string | null;

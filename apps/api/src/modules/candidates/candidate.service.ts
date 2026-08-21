@@ -1480,13 +1480,31 @@ export class CandidateService {
       },
       orderBy: [{ evaluationDate: 'desc' }, { createdAt: 'desc' }],
       select: {
+        technicalScore: true,
+        communicationScore: true,
         collaborationCulturalFitScore: true,
+        clientReadinessScore: true,
+        aiEvaluationSummary: true,
+        evaluationSummary: true,
         recommendation: true,
       },
     });
-    dto.collaborationCulturalFitScore = latestEvaluation?.collaborationCulturalFitScore ?? null;
-    if (latestEvaluation?.recommendation) {
-      dto.evaluationRecommendation = latestEvaluation.recommendation;
+    if (latestEvaluation) {
+      dto.technicalScore = latestEvaluation.technicalScore ?? dto.technicalScore;
+      dto.communicationScore =
+        latestEvaluation.communicationScore ?? dto.communicationScore;
+      dto.collaborationCulturalFitScore = latestEvaluation.collaborationCulturalFitScore;
+      dto.clientReadinessScore = latestEvaluation.clientReadinessScore;
+      dto.aiEvaluationSummary = latestEvaluation.aiEvaluationSummary;
+      dto.evaluationSummary = latestEvaluation.evaluationSummary;
+      if (latestEvaluation.recommendation) {
+        dto.evaluationRecommendation = latestEvaluation.recommendation;
+      }
+    } else {
+      dto.collaborationCulturalFitScore = null;
+      dto.clientReadinessScore = null;
+      dto.aiEvaluationSummary = null;
+      dto.evaluationSummary = null;
     }
 
     // Clients never receive document assets beyond public profile media already on DTO.

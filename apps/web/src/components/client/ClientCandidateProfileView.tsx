@@ -161,9 +161,12 @@ export function ClientCandidateProfileView({
         label: COLLABORATION_CULTURAL_FIT_LABEL,
         value: scoreOrDash(profile.evaluation.collaborationCulturalFit),
       },
-      { label: 'BesTal Score', value: String(profile.bestalScore) },
+      {
+        label: 'Client Readiness Score',
+        value: scoreOrDash(profile.evaluation.clientReadinessScore),
+      },
     ],
-    [profile.bestalScore, profile.evaluation],
+    [profile.evaluation],
   );
 
   const evaluationScoreGrid = (
@@ -189,11 +192,6 @@ export function ClientCandidateProfileView({
         <p className="text-sm leading-relaxed text-muted-foreground">
           {profile.clientAiSummary.trim() || 'Summary is not available yet.'}
         </p>
-      </section>
-
-      <section>
-        <h3 className="mb-3 text-sm font-semibold text-foreground">Evaluation scores</h3>
-        {evaluationScoreGrid}
       </section>
 
       {rankedSkills.length > 0 ? (
@@ -243,7 +241,17 @@ export function ClientCandidateProfileView({
         <StatusPill>{clientEvaluationStatusText(profile.evaluation.status)}</StatusPill>
       </div>
 
-      {evaluationScoreGrid}
+      <section>
+        <h3 className="mb-3 text-sm font-semibold text-foreground">Evaluation scores</h3>
+        {evaluationScoreGrid}
+      </section>
+
+      <section>
+        <h3 className="mb-2 text-sm font-semibold text-foreground">Evaluation summary</h3>
+        <p className="text-sm leading-relaxed text-muted-foreground">
+          {profile.evaluation.summary?.trim() || 'Evaluation summary is not available yet.'}
+        </p>
+      </section>
 
       <section>
         <h3 className="mb-2 text-sm font-semibold text-foreground">Recommendation</h3>
@@ -262,7 +270,7 @@ export function ClientCandidateProfileView({
       </div>
 
       <section>
-        <h3 className="mb-2 text-sm font-semibold text-foreground">Summary</h3>
+        <h3 className="mb-2 text-sm font-semibold text-foreground">BGV summary</h3>
         <p className="text-sm leading-relaxed text-muted-foreground">
           {profile.bgv.summary?.trim() || 'Background verification summary is not available yet.'}
         </p>
