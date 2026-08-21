@@ -20,7 +20,6 @@ export type InviteEmailPayload = {
   firstName: string;
   lastName: string;
   role: Role;
-  organizationName: string;
   temporaryPassword: string;
   portalLoginUrl: string;
 };
@@ -36,6 +35,13 @@ export type PasswordResetEmailPayload = {
 export type ClientRegistrationAcknowledgementPayload = {
   to: string;
   contactName: string;
+  companyName: string;
+  loginUrl: string;
+};
+
+export type ClientWelcomeEmailPayload = {
+  to: string;
+  firstName: string;
   companyName: string;
   loginUrl: string;
 };
@@ -218,6 +224,8 @@ export async function readResolvedMailConfig(
   return resolveMailConfig(config, await readEmailSettings(prisma));
 }
 
+const EMAIL_SIGNATURE = '— Team BesTal';
+
 function portalLabel(role: Role): string {
   switch (role) {
     case 'RECRUITER':
@@ -296,11 +304,11 @@ export class EmailService {
   }
 
   async sendInviteCredentials(payload: InviteEmailPayload): Promise<{ sent: boolean }> {
-    const subject = `Your ${payload.organizationName} BesTal account (${portalLabel(payload.role)})`;
+    const subject = `Your BesTal account (${portalLabel(payload.role)})`;
     const text = [
       `Hi ${payload.firstName},`,
       '',
-      `You have been invited to the ${portalLabel(payload.role)} for ${payload.organizationName}.`,
+      `You have been invited to the ${portalLabel(payload.role)}.`,
       '',
       `Sign in here: ${payload.portalLoginUrl}`,
       `Email: ${payload.to}`,
@@ -308,12 +316,12 @@ export class EmailService {
       '',
       'Please sign in and change your password after your first login.',
       '',
-      '— BesTal / Amnet Digital',
+      EMAIL_SIGNATURE,
     ].join('\n');
 
     const html = `
       <p>Hi ${escapeHtml(payload.firstName)},</p>
-      <p>You have been invited to the <strong>${portalLabel(payload.role)}</strong> for <strong>${escapeHtml(payload.organizationName)}</strong>.</p>
+      <p>You have been invited to the <strong>${portalLabel(payload.role)}</strong>.</p>
       <p>
         <a href="${escapeHtml(payload.portalLoginUrl)}">Sign in to your portal</a>
       </p>
@@ -322,7 +330,7 @@ export class EmailService {
         <li><strong>Temporary password:</strong> <code>${escapeHtml(payload.temporaryPassword)}</code></li>
       </ul>
       <p>Please sign in and change your password after your first login.</p>
-      <p>— BesTal / Amnet Digital</p>
+      <p>${escapeHtml(EMAIL_SIGNATURE)}</p>
     `;
 
     const runtime = await this.ensureReady();
@@ -351,7 +359,7 @@ export class EmailService {
       '',
       'If you did not request this, you can safely ignore this email.',
       '',
-      '— BesTal / Amnet Digital',
+      EMAIL_SIGNATURE,
     ].join('\n');
 
     const html = `
@@ -362,7 +370,7 @@ export class EmailService {
       </p>
       <p>This link expires in ${escapeHtml(payload.expiresIn)}.</p>
       <p>If you did not request this, you can safely ignore this email.</p>
-      <p>— BesTal / Amnet Digital</p>
+      <p>${escapeHtml(EMAIL_SIGNATURE)}</p>
     `;
 
     const runtime = await this.ensureReady();
@@ -394,7 +402,7 @@ export class EmailService {
       payload.body,
       ...(payload.actionUrl ? ['', `Open: ${payload.actionUrl}`] : []),
       '',
-      '— BesTal / Amnet Digital',
+      EMAIL_SIGNATURE,
     ].join('\n');
 
     const html = `
@@ -406,7 +414,7 @@ export class EmailService {
           ? `<p><a href="${escapeHtml(payload.actionUrl)}">View details</a></p>`
           : ''
       }
-      <p>— BesTal / Amnet Digital</p>
+      <p>${escapeHtml(EMAIL_SIGNATURE)}</p>
     `;
 
     const runtime = await this.ensureReady();
@@ -440,7 +448,7 @@ export class EmailService {
       '',
       `You can sign in here once activated: ${payload.loginUrl}`,
       '',
-      '— BesTal / Amnet Digital',
+      EMAIL_SIGNATURE,
     ].join('\n');
 
     const html = `
@@ -448,12 +456,47 @@ export class EmailService {
       <p>Thank you for registering <strong>${escapeHtml(payload.companyName)}</strong> with BesTal.</p>
       <p>Your account is pending review. We will email you when your account has been activated.</p>
       <p><a href="${escapeHtml(payload.loginUrl)}">Client sign in</a></p>
-      <p>— BesTal / Amnet Digital</p>
+      <p>${escapeHtml(EMAIL_SIGNATURE)}</p>
     `;
 
     const runtime = await this.ensureReady();
     if (runtime.transport.mode === 'none') {
       console.info('[email] Mail not configured — client registration acknowledgement (dev):', {
+        to: payload.to,
+        companyName: payload.companyName,
+        loginUrl: payload.loginUrl,
+      });
+      return { sent: false };
+    }
+
+    return this.sendOutboundEmail({ to: payload.to, subject, text, html });
+  }
+
+  async sendClientWelcomeEmail(payload: ClientWelcomeEmailPayload): Promise<{ sent: boolean }> {
+    const subject = `Welcome to BesTal — ${payload.companyName} is now active`;
+    const text = [
+      `Hi ${payload.firstName},`,
+      '',
+      `Welcome to BesTal! Your ${payload.companyName} account has been activated.`,
+      '',
+      'You can now sign in to the Client Portal and start using BesTal.',
+      '',
+      `Sign in: ${payload.loginUrl}`,
+      '',
+      EMAIL_SIGNATURE,
+    ].join('\n');
+
+    const html = `
+      <p>Hi ${escapeHtml(payload.firstName)},</p>
+      <p>Welcome to BesTal! Your <strong>${escapeHtml(payload.companyName)}</strong> account has been activated.</p>
+      <p>You can now sign in to the Client Portal and start using BesTal.</p>
+      <p><a href="${escapeHtml(payload.loginUrl)}">Sign in to the Client Portal</a></p>
+      <p>${escapeHtml(EMAIL_SIGNATURE)}</p>
+    `;
+
+    const runtime = await this.ensureReady();
+    if (runtime.transport.mode === 'none') {
+      console.info('[email] Mail not configured — client welcome (dev):', {
         to: payload.to,
         companyName: payload.companyName,
         loginUrl: payload.loginUrl,
