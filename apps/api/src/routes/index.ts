@@ -5,7 +5,7 @@ import { automationRoutes } from '../modules/automation/index.js';
 import { internalAutomationRoutes } from '../modules/automation/internal-automation.routes.js';
 import { authRoutes } from '../modules/auth/auth.routes.js';
 import { backgroundCheckRoutes } from '../modules/background-checks/background-check.routes.js';
-import { candidateRoutes } from '../modules/candidates/candidate.routes.js';
+import { candidateRoutes, candidatePublicRoutes } from '../modules/candidates/candidate.routes.js';
 import { clientRoutes } from '../modules/clients/client.routes.js';
 import { clientRegistrationPublicRoutes } from '../modules/clients/client-registration.routes.js';
 import { deploymentRoutes } from '../modules/deployments/deployment.routes.js';
@@ -16,7 +16,7 @@ import { shortlistRoutes } from '../modules/shortlists/shortlist.routes.js';
 import { trialRoutes } from '../modules/trials/trial.routes.js';
 import { jobRequestRoutes, jobRequestPublicRoutes, clientEnquiryPublicRoutes } from '../modules/job-requests/index.js';
 import { userRoutes } from '../modules/users/user.routes.js';
-import { skillCommunityRoutes } from '../modules/skill-communities/skill-community.routes.js';
+import { skillCommunityRoutes, skillCommunityPublicRoutes } from '../modules/skill-communities/skill-community.routes.js';
 import { settingsRoutes } from '../modules/settings/settings.routes.js';
 import { healthRoutes } from './health.routes.js';
 
@@ -35,7 +35,9 @@ export async function registerRoutes(fastify: FastifyInstance): Promise<void> {
       await api.register(adminRoutes, { prefix: '/admin' });
       await api.register(userRoutes, { prefix: '/users' });
       await api.register(skillCommunityRoutes, { prefix: '/skill-communities' });
+      await api.register(skillCommunityPublicRoutes, { prefix: '/public/skill-communities' });
       await api.register(candidateRoutes, { prefix: '/candidates' });
+      await api.register(candidatePublicRoutes, { prefix: '/public/candidates' });
       await api.register(clientRoutes, { prefix: '/clients' });
       await api.register(evaluationRoutes, { prefix: '/evaluations' });
       await api.register(backgroundCheckRoutes, { prefix: '/background-checks' });

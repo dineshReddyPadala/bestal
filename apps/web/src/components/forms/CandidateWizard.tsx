@@ -1070,9 +1070,6 @@ function BackgroundCheckTab({
     if (!checkType) return;
     const checks = getBgvChecksForType(checkType);
     setValue('bgvEmployment', checks.employment);
-    setValue('bgvEducation', checks.education);
-    setValue('bgvReference', checks.reference);
-    setValue('bgvAddress', checks.address);
     setValue('bgvCriminal', checks.criminal);
   }, [checkType, setValue, allowAiAnalysis]);
 
@@ -1308,14 +1305,11 @@ function BackgroundCheckTab({
       </SectionCard>
 
       <SectionCard title="Checks to run">
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {(
             [
               ['bgvIdCheck', 'Identity'],
               ['bgvEmployment', 'Employment'],
-              ['bgvEducation', 'Education'],
-              ['bgvReference', 'Reference'],
-              ['bgvAddress', 'Address'],
               ['bgvCriminal', 'Criminal'],
             ] as const
           ).map(([name, label]) => (

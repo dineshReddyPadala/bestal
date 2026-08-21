@@ -29,11 +29,8 @@ export interface BackgroundCheckDto {
   aiSummary: string | null;
   reviewNotes: string | null;
   idCheckStatus: string | null;
-  addressCheckStatus: string | null;
   employmentCheckStatus: string | null;
-  educationCheckStatus: string | null;
   criminalCheckStatus: string | null;
-  referenceCheckStatus: string | null;
   consentConfirmedAt: string | null;
   vendorAssignedAt: string | null;
   reviewedAt: string | null;
@@ -117,11 +114,8 @@ export interface UpdateBackgroundCheckInput {
   consentDocumentId?: number | null;
   reportDocumentId?: number | null;
   idCheckStatus?: string | null;
-  addressCheckStatus?: string | null;
   employmentCheckStatus?: string | null;
-  educationCheckStatus?: string | null;
   criminalCheckStatus?: string | null;
-  referenceCheckStatus?: string | null;
   initiatedAt?: string | null;
   completedAt?: string | null;
   expiresAt?: string | null;

@@ -26,11 +26,8 @@ class BgvAnalysisResponse(BaseModel):
     status: str = ""
 
     id_check_status: str = Field("", serialization_alias="idCheckStatus")
-    address_check_status: str = Field("", serialization_alias="addressCheckStatus")
     employment_check_status: str = Field("", serialization_alias="employmentCheckStatus")
-    education_check_status: str = Field("", serialization_alias="educationCheckStatus")
     criminal_check_status: str = Field("", serialization_alias="criminalCheckStatus")
-    reference_check_status: str = Field("", serialization_alias="referenceCheckStatus")
 
     report_url: Optional[str] = Field(None, serialization_alias="reportUrl")
     ai_bgv_summary: str = Field("", serialization_alias="aiBgvSummary")

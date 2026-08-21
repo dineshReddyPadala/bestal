@@ -5,6 +5,7 @@ export const skillCommunityListItemSchema = z.object({
   name: z.string(),
   slug: z.string(),
   description: z.string().nullable(),
+  iconUrl: z.string().nullable(),
 });
 
 export const skillCommunityListResponseSchema = z.object({

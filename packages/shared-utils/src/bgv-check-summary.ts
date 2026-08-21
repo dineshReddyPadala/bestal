@@ -1,10 +1,7 @@
 export type BgvCheckStatusFields = {
   idCheckStatus?: string | null;
-  addressCheckStatus?: string | null;
   employmentCheckStatus?: string | null;
-  educationCheckStatus?: string | null;
   criminalCheckStatus?: string | null;
-  referenceCheckStatus?: string | null;
 };
 
 const PLACEHOLDER_BGV_SUMMARY_PATTERNS = [
@@ -47,11 +44,8 @@ export function formatBgvStatusLabel(status: string): string {
 export function formatBgvCheckStatusesSummary(fields: BgvCheckStatusFields): string {
   const lines = [
     `ID: ${fields.idCheckStatus?.trim() || 'N/A'}`,
-    `Address: ${fields.addressCheckStatus?.trim() || 'N/A'}`,
     `Employment: ${fields.employmentCheckStatus?.trim() || 'N/A'}`,
-    `Education: ${fields.educationCheckStatus?.trim() || 'N/A'}`,
     `Criminal: ${fields.criminalCheckStatus?.trim() || 'N/A'}`,
-    `Reference: ${fields.referenceCheckStatus?.trim() || 'N/A'}`,
   ];
   return lines.join('\n');
 }
@@ -59,11 +53,8 @@ export function formatBgvCheckStatusesSummary(fields: BgvCheckStatusFields): str
 export function hasAnyBgvCheckStatus(fields: BgvCheckStatusFields): boolean {
   return Boolean(
     fields.idCheckStatus?.trim() ||
-      fields.addressCheckStatus?.trim() ||
       fields.employmentCheckStatus?.trim() ||
-      fields.educationCheckStatus?.trim() ||
-      fields.criminalCheckStatus?.trim() ||
-      fields.referenceCheckStatus?.trim(),
+      fields.criminalCheckStatus?.trim(),
   );
 }
 

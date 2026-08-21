@@ -35,11 +35,8 @@ export function getBgvStepsForDetail(
 export function bgvCheckFieldsFromDetail(detail: BackgroundCheckDto): BgvCheckStatusFields {
   return {
     idCheckStatus: detail.idCheckStatus,
-    addressCheckStatus: detail.addressCheckStatus,
     employmentCheckStatus: detail.employmentCheckStatus,
-    educationCheckStatus: detail.educationCheckStatus,
     criminalCheckStatus: detail.criminalCheckStatus,
-    referenceCheckStatus: detail.referenceCheckStatus,
   };
 }
 

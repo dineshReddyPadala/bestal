@@ -4,9 +4,10 @@ import type {
   CandidateDocumentDto,
   CandidateDto,
   CandidateListItemDto,
+  PublicFeaturedEvaluationDto,
 } from './candidate.types.js';
 import type { CandidateWithRelations } from './candidate.repository.js';
-import type { Document } from '@prisma/client';
+import type { Document, Evaluation } from '@prisma/client';
 import { bigintToNumber } from '../../utils/index.js';
 
 type UrlResolver = (
@@ -178,6 +179,7 @@ export function parseSortParam(
       case 'visibility':
       case 'approvalStatus':
       case 'yearsExperience':
+      case 'bestalScore':
       case 'publishedAt':
       case 'createdAt':
       case 'updatedAt':
@@ -186,6 +188,41 @@ export function parseSortParam(
         return { createdAt: 'desc' as const };
     }
   });
+}
+
+export function mapPublicFeaturedEvaluation(
+  candidate: CandidateWithRelations,
+  evaluation?: Evaluation | null,
+): PublicFeaturedEvaluationDto | null {
+  if (evaluation) {
+    return {
+      technicalScore: evaluation.technicalScore,
+      problemSolvingScore: evaluation.problemSolvingScore,
+      collaborationCulturalFitScore: evaluation.collaborationCulturalFitScore,
+      clientReadinessScore: evaluation.clientReadinessScore,
+      communicationScore: evaluation.communicationScore,
+      evaluationSummary: evaluation.evaluationSummary,
+      recommendation: evaluation.recommendation,
+      evaluatorComments: evaluation.evaluatorComments,
+      evaluationDate: evaluation.evaluationDate?.toISOString().slice(0, 10) ?? null,
+    };
+  }
+
+  if (candidate.technicalScore == null && candidate.communicationScore == null) {
+    return null;
+  }
+
+  return {
+    technicalScore: candidate.technicalScore,
+    problemSolvingScore: null,
+    collaborationCulturalFitScore: null,
+    clientReadinessScore: null,
+    communicationScore: candidate.communicationScore,
+    evaluationSummary: null,
+    recommendation: null,
+    evaluatorComments: null,
+    evaluationDate: null,
+  };
 }
 
 export function buildPublicUploadUrl(

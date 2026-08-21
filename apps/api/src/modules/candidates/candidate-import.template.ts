@@ -184,7 +184,6 @@ export async function buildCandidateImportTemplate(
     years_experience: 8,
     primary_role: 'Full Stack Engineer',
     skill_community: skillCommunities[0] ?? 'Full Stack',
-    summary: 'Experienced engineer with strong product sense.',
     ai_summary: '',
     strengths: 'React|System Design|Communication',
     weaknesses: '',
@@ -248,11 +247,8 @@ export async function buildCandidateImportTemplate(
 
   const bgvPerCheckDropdownColumns = [
     'id_check_status',
-    'address_check_status',
     'employment_check_status',
-    'education_check_status',
     'criminal_check_status',
-    'reference_check_status',
   ] as const;
 
   const bgvDropdownColumns = ['bgv_status', 'package_type', ...bgvPerCheckDropdownColumns] as const;
@@ -269,11 +265,8 @@ export async function buildCandidateImportTemplate(
     package_type: 'COMPREHENSIVE',
     vendor: 'Example BGV Vendor',
     id_check_status: 'PENDING',
-    address_check_status: 'PENDING',
     employment_check_status: 'PENDING',
-    education_check_status: 'PENDING',
     criminal_check_status: 'PENDING',
-    reference_check_status: 'PENDING',
     initiated_date: '2026-07-20',
     completed_date: '',
     bgv_summary: '',

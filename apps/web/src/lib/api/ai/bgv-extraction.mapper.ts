@@ -22,11 +22,8 @@ function normalizeCheckType(value: string | undefined): string | undefined {
 function formatCheckStatuses(extraction: BgvExtractionResponse): string {
   return [
     `ID: ${extraction.idCheckStatus ?? 'N/A'}`,
-    `Address: ${extraction.addressCheckStatus ?? 'N/A'}`,
     `Employment: ${extraction.employmentCheckStatus ?? 'N/A'}`,
-    `Education: ${extraction.educationCheckStatus ?? 'N/A'}`,
     `Criminal: ${extraction.criminalCheckStatus ?? 'N/A'}`,
-    `Reference: ${extraction.referenceCheckStatus ?? 'N/A'}`,
   ].join('\n');
 }
 

@@ -5,7 +5,7 @@ export { jobRequestsApi } from './job-requests';
 export { trialsApi } from './trials';
 export { clientsApi, registerClient } from './clients';
 export { deploymentsApi } from './deployments';
-export { candidatesApi, uploadCandidateFile } from './candidates';
+export { candidatesApi, listPublicFeaturedCandidates, uploadCandidateFile } from './candidates';
 export { shortlistsApi } from './shortlists';
 export { evaluationsApi, backgroundChecksApi } from './evaluations';
 export { adminApi } from './admin';

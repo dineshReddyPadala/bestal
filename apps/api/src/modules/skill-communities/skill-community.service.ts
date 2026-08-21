@@ -2,6 +2,19 @@ import type { FastifyInstance } from 'fastify';
 import { SkillCommunityRepository } from './skill-community.repository.js';
 import type { SkillCommunityListItemDto } from './skill-community.types.js';
 
+function resolveCommunityIconUrl(row: {
+  iconUrl: string | null;
+  icon: { url: string; deletedAt: Date | null } | null;
+}): string | null {
+  if (row.icon && !row.icon.deletedAt && row.icon.url && row.icon.url !== 'pending') {
+    return row.icon.url;
+  }
+  if (row.iconUrl && row.iconUrl !== 'pending') {
+    return row.iconUrl;
+  }
+  return null;
+}
+
 export class SkillCommunityService {
   private readonly repository: SkillCommunityRepository;
 
@@ -16,6 +29,7 @@ export class SkillCommunityService {
       name: row.name,
       slug: row.slug,
       description: row.description,
+      iconUrl: resolveCommunityIconUrl(row),
     }));
   }
 }

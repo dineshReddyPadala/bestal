@@ -1,10 +1,11 @@
 import { Button, Dialog, Input, PageHeader, Select, Tabs, StatusBadge, TanStackDataTable } from '@bestal/ui';
 import { type ColumnDef } from '@tanstack/react-table';
-import { Plus, Upload } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState, type TextareaHTMLAttributes } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
 import { ActionMenu, type ActionMenuItem } from '../../components/super-admin/ActionMenu';
+import { IconSelectField } from '../../components/super-admin/IconSelectField';
 import { useConfirmAction } from '../../components/super-admin/useConfirmAction';
 import {
   useAdminMutations,
@@ -1578,17 +1579,40 @@ function SkillCommunitiesPanel() {
     name: string;
     slug: string;
     description: string | null;
+    iconId?: number | null;
     iconUrl?: string | null;
     isActive: boolean;
     candidateCount?: number;
   }>;
-  const [open, setOpen] = useState(false);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
   const [name, setName] = useState('');
   const [slug, setSlug] = useState('');
   const [description, setDescription] = useState('');
-  const [iconFile, setIconFile] = useState<File | null>(null);
-  const [uploadIconCommunityId, setUploadIconCommunityId] = useState<number | null>(null);
-  const iconInputRef = useRef<HTMLInputElement>(null);
+  const [iconId, setIconId] = useState('');
+
+  function resetForm() {
+    setName('');
+    setSlug('');
+    setDescription('');
+    setIconId('');
+    setEditingId(null);
+  }
+
+  function openCreate() {
+    resetForm();
+    setCreateOpen(true);
+  }
+
+  function openEdit(row: (typeof rows)[number]) {
+    setEditingId(row.id);
+    setName(row.name);
+    setSlug(row.slug);
+    setDescription(row.description ?? '');
+    setIconId(row.iconId != null ? String(row.iconId) : '');
+    setEditOpen(true);
+  }
 
   const columns = useMemo<ColumnDef<(typeof rows)[number]>[]>(
     () => [
@@ -1631,14 +1655,10 @@ function SkillCommunitiesPanel() {
           const r = row.original;
           const hasCandidates = (r.candidateCount ?? 0) > 0;
           const items: ActionMenuItem[] = [
-            { id: 'view', label: 'View Community' },
             {
-              id: 'upload-icon',
-              label: 'Upload icon',
-              onSelect: () => {
-                setUploadIconCommunityId(r.id);
-                iconInputRef.current?.click();
-              },
+              id: 'edit',
+              label: 'Edit Community',
+              onSelect: () => openEdit(r),
             },
             {
               id: 'activate',
@@ -1694,6 +1714,19 @@ function SkillCommunitiesPanel() {
     [mutations, requestConfirm, show, showError],
   );
 
+  const communityFormFields = (
+    <div className="space-y-3">
+      <Input placeholder="Name" value={name} onChange={(e) => setName(e.target.value)} />
+      <Input placeholder="Slug" value={slug} onChange={(e) => setSlug(e.target.value)} />
+      <Input
+        placeholder="Description"
+        value={description}
+        onChange={(e) => setDescription(e.target.value)}
+      />
+      <IconSelectField value={iconId} onChange={setIconId} />
+    </div>
+  );
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-2">
@@ -1701,7 +1734,7 @@ function SkillCommunitiesPanel() {
           <h3 className="text-sm font-semibold">Configure Skill Communities</h3>
           <p className="text-xs text-muted-foreground">Create and manage talent communities</p>
         </div>
-        <Button size="sm" onClick={() => setOpen(true)}>
+        <Button size="sm" onClick={openCreate}>
           <Plus className="mr-1.5 h-3.5 w-3.5" />
           Add
         </Button>
@@ -1725,12 +1758,12 @@ function SkillCommunitiesPanel() {
       )}
       {confirmDialog}
       <Dialog
-        open={open}
-        onClose={() => setOpen(false)}
+        open={createOpen}
+        onClose={() => setCreateOpen(false)}
         title="Create skill community"
         footer={
           <>
-            <Button variant="outline" onClick={() => setOpen(false)}>
+            <Button variant="outline" onClick={() => setCreateOpen(false)}>
               Cancel
             </Button>
             <Button
@@ -1740,21 +1773,12 @@ function SkillCommunitiesPanel() {
                     name,
                     slug: slug || name.toLowerCase().replace(/\s+/g, '-'),
                     description,
+                    iconId: iconId ? Number(iconId) : null,
                   })
-                  .then(async (created) => {
-                    const communityId = Number((created as { id?: number }).id);
-                    if (iconFile && communityId) {
-                      await mutations.uploadSkillCommunityIcon.mutateAsync({
-                        id: communityId,
-                        file: iconFile,
-                      });
-                    }
+                  .then(() => {
                     show('Created');
-                    setOpen(false);
-                    setName('');
-                    setSlug('');
-                    setDescription('');
-                    setIconFile(null);
+                    setCreateOpen(false);
+                    resetForm();
                   })
                   .catch((e) => showError(e instanceof Error ? e.message : 'Failed'))
               }
@@ -1764,47 +1788,46 @@ function SkillCommunitiesPanel() {
           </>
         }
       >
-        <div className="space-y-3">
-          <Input placeholder="Name" value={name} onChange={(e) => setName(e.target.value)} />
-          <Input placeholder="Slug" value={slug} onChange={(e) => setSlug(e.target.value)} />
-          <Input
-            placeholder="Description"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-          />
-          <div className="space-y-2">
-            <span className="text-xs font-medium text-muted-foreground">Community icon</span>
-            <label className="flex cursor-pointer items-center gap-3 rounded-md border border-dashed border-border px-3 py-3 text-sm hover:bg-muted/30">
-              <Upload className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
-              <span>{iconFile ? iconFile.name : 'Upload icon image (PNG, JPG, WebP)'}</span>
-              <input
-                type="file"
-                accept="image/png,image/jpeg,image/webp"
-                className="hidden"
-                onChange={(e) => setIconFile(e.target.files?.[0] ?? null)}
-              />
-            </label>
-          </div>
-        </div>
+        {communityFormFields}
       </Dialog>
-      <input
-        ref={iconInputRef}
-        type="file"
-        accept="image/png,image/jpeg,image/webp"
-        className="hidden"
-        onChange={(e) => {
-          const file = e.target.files?.[0];
-          if (!file || uploadIconCommunityId == null) return;
-          void mutations.uploadSkillCommunityIcon
-            .mutateAsync({ id: uploadIconCommunityId, file })
-            .then(() => show('Icon uploaded'))
-            .catch((err) => showError(err instanceof Error ? err.message : 'Upload failed'))
-            .finally(() => {
-              setUploadIconCommunityId(null);
-              if (iconInputRef.current) iconInputRef.current.value = '';
-            });
-        }}
-      />
+      <Dialog
+        open={editOpen}
+        onClose={() => setEditOpen(false)}
+        title="Edit skill community"
+        footer={
+          <>
+            <Button variant="outline" onClick={() => setEditOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              disabled={editingId == null}
+              onClick={() => {
+                if (editingId == null) return;
+                void mutations.updateSkillCommunity
+                  .mutateAsync({
+                    id: editingId,
+                    body: {
+                      name,
+                      slug: slug || name.toLowerCase().replace(/\s+/g, '-'),
+                      description,
+                      iconId: iconId ? Number(iconId) : null,
+                    },
+                  })
+                  .then(() => {
+                    show('Community updated');
+                    setEditOpen(false);
+                    resetForm();
+                  })
+                  .catch((e) => showError(e instanceof Error ? e.message : 'Failed'));
+              }}
+            >
+              Save
+            </Button>
+          </>
+        }
+      >
+        {communityFormFields}
+      </Dialog>
     </div>
   );
 }
