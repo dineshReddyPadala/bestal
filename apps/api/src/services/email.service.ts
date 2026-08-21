@@ -258,26 +258,22 @@ function portalLabel(role: Role): string {
 }
 
 export class EmailService {
-  private runtime: ResolvedEmailRuntime | null = null;
-
   constructor(
     private readonly config: AppConfig,
     private readonly prisma?: PrismaClient,
   ) {}
 
   private async ensureReady(): Promise<ResolvedEmailRuntime> {
-    if (this.runtime) return this.runtime;
-
     const dbSettings = this.prisma ? await readEmailSettings(this.prisma) : null;
-    this.runtime = resolveEmailRuntime(this.config, dbSettings);
+    const runtime = resolveEmailRuntime(this.config, dbSettings);
 
-    if (this.runtime.transport.mode === 'none' && this.config.isDevelopment) {
+    if (runtime.transport.mode === 'none' && this.config.isDevelopment) {
       console.warn(
         '[email] Outbound email not configured (Platform Settings or FROM_MAIL). Emails will be logged only.',
       );
     }
 
-    return this.runtime;
+    return runtime;
   }
 
   async isConfigured(): Promise<boolean> {
