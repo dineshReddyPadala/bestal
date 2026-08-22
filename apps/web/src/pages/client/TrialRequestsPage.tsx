@@ -40,7 +40,7 @@ function pad2(value: number): string {
 }
 
 const ACTIVE_STATUSES = new Set(['REQUESTED', 'APPROVED', 'IN_PROGRESS']);
-const HISTORY_STATUSES = new Set(['COMPLETED', 'CANCELLED', 'FAILED']);
+const HISTORY_STATUSES = new Set(['COMPLETED', 'CANCELLED', 'FAILED', 'REJECTED']);
 
 export function TrialRequestsPage() {
   const { message, variant, show, showError, dismiss } = useDemoToast();
@@ -102,7 +102,9 @@ export function TrialRequestsPage() {
       total: trialRows.length,
       active: active.length,
       highRating: history.filter((t) => (t.clientRating ?? 0) >= 4.5).length,
-      rejected: trialRows.filter((t) => ['CANCELLED', 'FAILED'].includes(t.status)).length,
+      rejected: trialRows.filter((t) =>
+        ['CANCELLED', 'FAILED', 'REJECTED'].includes(t.status),
+      ).length,
     }),
     [trialRows, active, history],
   );
@@ -288,10 +290,12 @@ export function TrialRequestsPage() {
                   <>
                     <option value="REQUESTED">Requested</option>
                     <option value="APPROVED">Approved</option>
+                    <option value="IN_PROGRESS">In Progress</option>
                   </>
                 ) : (
                   <>
                     <option value="COMPLETED">Completed</option>
+                    <option value="REJECTED">Rejected</option>
                     <option value="CANCELLED">Cancelled</option>
                     <option value="FAILED">Failed</option>
                   </>

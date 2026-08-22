@@ -1,4 +1,4 @@
-import { StatusBadge, TanStackDataTable } from '@bestal/ui';
+import { StatusBadge, Select, TanStackDataTable } from '@bestal/ui';
 import { type ColumnDef } from '@tanstack/react-table';
 import { useMemo, useState } from 'react';
 import { AdminTrialDetailDialog } from '../../components/super-admin/AdminOpsDetailDialog';
@@ -6,6 +6,7 @@ import { ListingPageShell } from '../../components/layout/ListingPageShell';
 import { ActionMenu, type ActionMenuItem } from '../../components/super-admin/ActionMenu';
 import { useConfirmAction } from '../../components/super-admin/useConfirmAction';
 import { useAdminMutations, useAdminTrials } from '../../hooks/api/useAdmin';
+import { trialsApi } from '../../lib/api';
 import { useDebouncedSearch } from '../../hooks/useDebouncedSearch';
 import { useDemoToast } from '../../lib/use-demo-toast';
 
@@ -19,6 +20,16 @@ type Row = {
   createdAt: string;
   convertedToPaid?: boolean;
 };
+
+const TRIAL_STATUSES = [
+  'REQUESTED',
+  'APPROVED',
+  'REJECTED',
+  'IN_PROGRESS',
+  'COMPLETED',
+  'FAILED',
+  'CANCELLED',
+] as const;
 
 function trialActions(
   r: Row,
@@ -90,6 +101,15 @@ function trialActions(
   if (status === 'APPROVED') {
     return [
       view,
+      {
+        id: 'start',
+        label: 'Start Trial',
+        onSelect: () =>
+          void trialsApi
+            .update(r.id, { status: 'IN_PROGRESS' })
+            .then(() => show('Trial started'))
+            .catch((e) => showError(e instanceof Error ? e.message : 'Failed')),
+      },
       {
         id: 'assign',
         label: 'Assign Recruiter',
@@ -188,7 +208,12 @@ export function SuperAdminTrialsPage() {
   const { message, show, showError } = useDemoToast();
   const { requestConfirm, confirmDialog } = useConfirmAction();
   const { searchInput, setSearchInput, search, searchParam } = useDebouncedSearch();
-  const { data, isLoading, isError, error } = useAdminTrials({ limit: 100, ...searchParam });
+  const [statusFilter, setStatusFilter] = useState('all');
+  const { data, isLoading, isError, error } = useAdminTrials({
+    limit: 100,
+    ...searchParam,
+    ...(statusFilter !== 'all' ? { status: statusFilter } : {}),
+  });
   const mutations = useAdminMutations();
   const rows = (data?.data ?? []) as unknown as Row[];
   const [viewTrialId, setViewTrialId] = useState<number | null>(null);
@@ -254,8 +279,22 @@ export function SuperAdminTrialsPage() {
         loading={isLoading}
         loadingLabel="Loading trials…"
       >
+        <div className="mb-4 flex flex-wrap items-center gap-2">
+          <Select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="h-9 w-[11rem] text-sm"
+          >
+            <option value="all">All statuses</option>
+            {TRIAL_STATUSES.map((s) => (
+              <option key={s} value={s}>
+                {s.replace(/_/g, ' ')}
+              </option>
+            ))}
+          </Select>
+        </div>
         <TanStackDataTable
-          key={search}
+          key={`${search}-${statusFilter}`}
           columns={columns}
           data={rows}
           searchPlaceholder="Search trials…"

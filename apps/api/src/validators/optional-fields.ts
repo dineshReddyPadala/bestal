@@ -27,3 +27,15 @@ export const optionalNullableTextField = (max = 5000) =>
 export const optionalRateField = z.coerce.number().nonnegative().optional();
 
 export const optionalIntField = z.coerce.number().int().min(0).optional();
+
+/** Optional email — empty/whitespace is cleared; non-empty values must be valid. */
+export const optionalEmailField = z
+  .union([z.string().max(255), z.undefined()])
+  .optional()
+  .transform((value) => {
+    if (!value?.trim()) return undefined;
+    return value.trim().toLowerCase();
+  })
+  .refine((value) => value === undefined || z.string().email().safeParse(value).success, {
+    message: 'Invalid email',
+  });

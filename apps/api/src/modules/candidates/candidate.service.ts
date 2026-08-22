@@ -1353,7 +1353,7 @@ export class CandidateService {
       },
     );
 
-    void notifyCandidatePendingApproval(this.prisma, this.fastify.config, {
+    await notifyCandidatePendingApproval(this.prisma, this.fastify.config, {
       organizationId,
       candidateId: id,
       candidateName: `${updated.firstName} ${updated.lastName}`.trim(),

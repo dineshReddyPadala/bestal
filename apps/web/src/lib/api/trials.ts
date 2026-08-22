@@ -10,8 +10,6 @@ export const trialsApi = {
   approve: (id: number) => apiAction<TrialDto>(`/trials/${id}/approve`),
   reject: (id: number, reason?: string) =>
     apiAction<TrialDto>(`/trials/${id}/reject`, reason ? { reason } : {}),
-  confirmCandidate: (id: number) =>
-    apiAction<TrialDto>(`/trials/${id}/confirm-candidate`),
   submitFeedback: (
     id: number,
     body: { feedback: string; clientRating: number; decision: 'CONTINUE' | 'DO_NOT_CONTINUE' },

@@ -74,6 +74,7 @@ export async function maybeAutoSubmitSuperAdminCandidate(
   config: AppConfig,
   organizationId: number,
   candidateId: number,
+  submittedById?: number | null,
 ): Promise<boolean> {
   const candidate = await prisma.candidate.findFirst({
     where: {
@@ -137,10 +138,11 @@ export async function maybeAutoSubmitSuperAdminCandidate(
     },
   });
 
-  void notifyCandidatePendingApproval(prisma, config, {
+  await notifyCandidatePendingApproval(prisma, config, {
     organizationId,
     candidateId,
     candidateName: `${candidate.firstName} ${candidate.lastName}`.trim(),
+    submittedById: submittedById ?? undefined,
   });
 
   return true;

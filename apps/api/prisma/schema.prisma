@@ -874,6 +874,7 @@ model TrialRequest {
   convertedToPaid Boolean           @default(false) @map("converted_to_paid")
   outcome        String?            @db.VarChar(500)
   approvedAt     DateTime?          @map("approved_at")
+  startedAt      DateTime?          @map("started_at")
   candidateConfirmedAt DateTime?     @map("candidate_confirmed_at")
   rejectedAt     DateTime?          @map("rejected_at")
   rejectReason   String?            @map("reject_reason") @db.VarChar(500)

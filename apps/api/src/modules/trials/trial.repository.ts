@@ -111,12 +111,14 @@ export class TrialRepository extends BaseRepository {
           convertedToPaid: data.convertedToPaid,
         }),
         ...(data.outcome !== undefined && { outcome: data.outcome }),
+        ...(data.startedAt !== undefined && { startedAt: data.startedAt }),
       },
       include: trialInclude,
     });
   }
 
   approve(organizationId: number, id: number): Promise<TrialRecord> {
+    const now = new Date();
     return this.prisma.trialRequest.update({
       where: {
         id: BigInt(id),
@@ -124,7 +126,7 @@ export class TrialRepository extends BaseRepository {
       },
       data: {
         status: 'APPROVED',
-        approvedAt: new Date(),
+        approvedAt: now,
         rejectedAt: null,
         rejectReason: null,
       },
@@ -148,14 +150,6 @@ export class TrialRepository extends BaseRepository {
         rejectReason: input.reason ?? null,
         approvedAt: null,
       },
-      include: trialInclude,
-    });
-  }
-
-  confirmCandidate(organizationId: number, id: number): Promise<TrialRecord> {
-    return this.prisma.trialRequest.update({
-      where: { id: BigInt(id), organizationId: BigInt(organizationId) },
-      data: { candidateConfirmedAt: new Date() },
       include: trialInclude,
     });
   }
