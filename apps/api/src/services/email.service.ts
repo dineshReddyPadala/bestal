@@ -44,6 +44,7 @@ export type ClientWelcomeEmailPayload = {
   firstName: string;
   companyName: string;
   loginUrl: string;
+  temporaryPassword: string;
 };
 
 export type ClientSignupOtpEmailPayload = {
@@ -321,10 +322,10 @@ export class EmailService {
       `You have been invited to the ${portalLabel(payload.role)}.`,
       '',
       `Sign in here: ${payload.portalLoginUrl}`,
-      `Email: ${payload.to}`,
-      `Temporary password: ${payload.temporaryPassword}`,
+      `User ID: ${payload.to}`,
+      `Password: ${payload.temporaryPassword}`,
       '',
-      'Please sign in and change your password after your first login.',
+      'You must change your password after your first sign-in.',
       '',
       EMAIL_SIGNATURE,
     ].join('\n');
@@ -336,10 +337,10 @@ export class EmailService {
         <a href="${escapeHtml(payload.portalLoginUrl)}">Sign in to your portal</a>
       </p>
       <ul>
-        <li><strong>Email:</strong> ${escapeHtml(payload.to)}</li>
-        <li><strong>Temporary password:</strong> <code>${escapeHtml(payload.temporaryPassword)}</code></li>
+        <li><strong>User ID:</strong> ${escapeHtml(payload.to)}</li>
+        <li><strong>Password:</strong> <code>${escapeHtml(payload.temporaryPassword)}</code></li>
       </ul>
-      <p>Please sign in and change your password after your first login.</p>
+      <p>You must change your password after your first sign-in.</p>
       <p>${escapeHtml(EMAIL_SIGNATURE)}</p>
     `;
 
@@ -452,20 +453,20 @@ export class EmailService {
     const text = [
       `Hi ${payload.contactName},`,
       '',
-      `Thank you for registering ${payload.companyName} with BesTal.`,
+      'Thank you for registering. We sent a confirmation email to your inbox.',
       '',
-      'Your account is pending review. We will email you when your account has been activated.',
+      'Your account is pending review. You will be able to sign in once a BesTal administrator activates your company account.',
       '',
-      `You can sign in here once activated: ${payload.loginUrl}`,
+      `Client sign in (after activation): ${payload.loginUrl}`,
       '',
       EMAIL_SIGNATURE,
     ].join('\n');
 
     const html = `
       <p>Hi ${escapeHtml(payload.contactName)},</p>
-      <p>Thank you for registering <strong>${escapeHtml(payload.companyName)}</strong> with BesTal.</p>
-      <p>Your account is pending review. We will email you when your account has been activated.</p>
-      <p><a href="${escapeHtml(payload.loginUrl)}">Client sign in</a></p>
+      <p>Thank you for registering. We sent a confirmation email to your inbox.</p>
+      <p>Your account is pending review. You will be able to sign in once a BesTal administrator activates your company account.</p>
+      <p><a href="${escapeHtml(payload.loginUrl)}">Client sign in</a> (available after activation)</p>
       <p>${escapeHtml(EMAIL_SIGNATURE)}</p>
     `;
 
@@ -561,15 +562,19 @@ export class EmailService {
   }
 
   async sendClientWelcomeEmail(payload: ClientWelcomeEmailPayload): Promise<{ sent: boolean }> {
-    const subject = `Welcome to BesTal — ${payload.companyName} is now active`;
+    const subject = `Your BesTal Client Portal account is active — ${payload.companyName}`;
     const text = [
       `Hi ${payload.firstName},`,
       '',
       `Welcome to BesTal! Your ${payload.companyName} account has been activated.`,
       '',
-      'You can now sign in to the Client Portal and start using BesTal.',
+      'Use the credentials below to sign in to the Client Portal for the first time:',
       '',
       `Sign in: ${payload.loginUrl}`,
+      `User ID: ${payload.to}`,
+      `Password: ${payload.temporaryPassword}`,
+      '',
+      'You must change your password after your first sign-in.',
       '',
       EMAIL_SIGNATURE,
     ].join('\n');
@@ -577,8 +582,13 @@ export class EmailService {
     const html = `
       <p>Hi ${escapeHtml(payload.firstName)},</p>
       <p>Welcome to BesTal! Your <strong>${escapeHtml(payload.companyName)}</strong> account has been activated.</p>
-      <p>You can now sign in to the Client Portal and start using BesTal.</p>
+      <p>Use the credentials below to sign in to the Client Portal for the first time:</p>
       <p><a href="${escapeHtml(payload.loginUrl)}">Sign in to the Client Portal</a></p>
+      <ul>
+        <li><strong>User ID:</strong> ${escapeHtml(payload.to)}</li>
+        <li><strong>Password:</strong> <code>${escapeHtml(payload.temporaryPassword)}</code></li>
+      </ul>
+      <p>You must change your password after your first sign-in.</p>
       <p>${escapeHtml(EMAIL_SIGNATURE)}</p>
     `;
 
@@ -588,6 +598,7 @@ export class EmailService {
         to: payload.to,
         companyName: payload.companyName,
         loginUrl: payload.loginUrl,
+        temporaryPassword: payload.temporaryPassword,
       });
       return { sent: false };
     }

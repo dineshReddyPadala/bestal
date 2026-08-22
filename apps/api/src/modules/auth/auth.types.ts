@@ -20,6 +20,7 @@ export interface AuthUserProfile {
   portal: Portal;
   permissions: Permission[];
   lastLoginAt: string | null;
+  mustChangePassword: boolean;
 }
 
 export interface ForgotPasswordResult {

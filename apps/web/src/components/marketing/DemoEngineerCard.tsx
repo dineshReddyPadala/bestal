@@ -1,6 +1,7 @@
 import { cn } from '@bestal/shared-utils';
 import { MAX_COMPARE } from '../../hooks/useSampleTalentShortlist';
 import type { DemoEngineer } from '../../lib/demo-engineers';
+import { formatDimensionScoreDisplay } from '../../lib/score-display';
 
 type DemoEngineerCardProps = {
   engineer: DemoEngineer;
@@ -90,7 +91,7 @@ export function DemoEngineerCard({
                   style={{ width: `${dim.value * 10}%` }}
                 />
               </span>
-              <span className="mkt-scr-v">{dim.value}</span>
+              <span className="mkt-scr-v">{formatDimensionScoreDisplay(dim.value)}</span>
             </div>
           ))}
           <p className="mkt-evl">
@@ -181,7 +182,6 @@ export function DemoEngineerCard({
     <article
       className={cn(
         'mkt-prof',
-        engineer.gender === 'female' ? 'mkt-prof--female' : 'mkt-prof--male',
         showTalentActions && isShortlisted && 'is-shortlisted',
         showTalentActions && isInCompare && 'is-in-compare',
         className,

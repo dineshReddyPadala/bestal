@@ -2,7 +2,9 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link } from 'react-router-dom';
+import { Controller } from 'react-hook-form';
 import { ForwardArrow } from '../ui/ForwardArrow';
+import { OtpDigitInput } from '../ui/OtpDigitInput';
 import { requestClientSignupOtp, verifyClientSignupOtp } from '../../lib/api/clients';
 import {
   clientSignupDetailsSchema,
@@ -106,22 +108,18 @@ export function ClientSignupForm({
           in {otpExpiresInMinutes} minutes.
         </p>
 
-        <label className="mkt-login-field">
-          <RequiredLabel>Verification code</RequiredLabel>
-          <input
-            type="text"
-            inputMode="numeric"
-            autoComplete="one-time-code"
-            maxLength={6}
-            required
-            className="mkt-login-input tracking-[0.3em]"
-            placeholder="000000"
-            {...otpForm.register('otp')}
-          />
-          {otpForm.formState.errors.otp && (
-            <span className="mkt-login-field-error">{otpForm.formState.errors.otp.message}</span>
+        <Controller
+          name="otp"
+          control={otpForm.control}
+          render={({ field }) => (
+            <OtpDigitInput
+              value={field.value}
+              onChange={field.onChange}
+              disabled={otpForm.formState.isSubmitting}
+              error={otpForm.formState.errors.otp?.message}
+            />
           )}
-        </label>
+        />
 
         <button
           type="submit"

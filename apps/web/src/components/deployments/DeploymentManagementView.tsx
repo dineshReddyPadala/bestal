@@ -305,7 +305,7 @@ export function DeploymentManagementView({
           placementType: values.placementType,
           roleTitle: values.roleTitle,
           startDate: values.startDate,
-          endDate: values.endDate || undefined,
+          endDate: values.endDate,
           billingRate: values.billingRate,
           candidatePayRate: values.candidatePayRate || undefined,
           grossMarginPerHour: values.grossMarginPerHour ?? undefined,

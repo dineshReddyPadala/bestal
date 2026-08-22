@@ -132,6 +132,7 @@ export function AboutPage() {
           </div>
 
           <AboutFeaturedCard
+            num={ABOUT_SPECIALISTS.num}
             title={ABOUT_SPECIALISTS.title}
             body={ABOUT_SPECIALISTS.body}
             tags={ABOUT_SPECIALISTS.tags}

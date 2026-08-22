@@ -48,6 +48,13 @@ export function getPortalAuthPageMeta(
     };
   }
 
+  if (pathname.endsWith('/change-password')) {
+    return {
+      title: config.title,
+      subtitle: 'Set a new password to continue',
+    };
+  }
+
   return {
     title: config.title,
   };

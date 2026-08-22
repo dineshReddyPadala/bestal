@@ -2899,10 +2899,7 @@
 }
 
 .marketing-site .mkt-community-slider-dtag {
-  transition:
-    background-color 0.55s cubic-bezier(0.22, 1, 0.36, 1),
-    border-color 0.55s cubic-bezier(0.22, 1, 0.36, 1),
-    color 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+  transition: opacity 0.25s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -2918,7 +2915,7 @@
 
 .marketing-site .mkt-community-slider-track {
   display: flex;
-  transition: transform 1.05s cubic-bezier(0.22, 1, 0.36, 1);
+  transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
   will-change: transform;
   backface-visibility: hidden;
   transform: translate3d(0, 0, 0);
@@ -2930,14 +2927,6 @@
 }
 
 .marketing-site .mkt-community-slider-panel .mkt-pb {
-  transition: opacity 0.8s cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-.marketing-site .mkt-community-slider-panel:not(.is-active) .mkt-pb {
-  opacity: 0.5;
-}
-
-.marketing-site .mkt-community-slider-panel.is-active .mkt-pb {
   opacity: 1;
 }
 
@@ -3001,26 +2990,6 @@
   box-shadow:
     0 2px 4px rgba(18, 22, 28, 0.03),
     0 14px 40px rgba(18, 22, 28, 0.06);
-}
-
-.marketing-site .mkt-prof--female .mkt-dtag {
-  background: var(--mkt-amber-t);
-  border-bottom-color: #efdcb4;
-  color: var(--mkt-amber-d);
-}
-
-.marketing-site .mkt-prof--female .mkt-av {
-  background: var(--mkt-teal);
-}
-
-.marketing-site .mkt-prof--male .mkt-dtag {
-  background: #e8f1f8;
-  border-bottom-color: #c5d9ea;
-  color: #1a4a6e;
-}
-
-.marketing-site .mkt-prof--male .mkt-av {
-  background: #041e21;
 }
 
 .marketing-site .mkt-dtag {
@@ -3144,18 +3113,6 @@
   background: var(--mkt-teal-t);
   border: 1px solid var(--mkt-teal-t2);
   color: var(--mkt-teal-d);
-}
-
-.marketing-site .mkt-prof--female .mkt-bdg-verified {
-  background: var(--mkt-teal-t);
-  border-color: var(--mkt-teal-t2);
-  color: var(--mkt-teal-d);
-}
-
-.marketing-site .mkt-prof--male .mkt-bdg-verified {
-  background: #e8f1f8;
-  border-color: #c5d9ea;
-  color: #1a4a6e;
 }
 
 .marketing-site .mkt-bdg-amber {
@@ -5236,6 +5193,41 @@
 .marketing-site .mkt-login-input:focus {
   border-color: var(--mkt-teal);
   box-shadow: 0 0 0 3px var(--mkt-teal-t);
+}
+
+.marketing-site .mkt-otp-input-group {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.marketing-site .mkt-otp-digit {
+  width: 2.75rem;
+  height: 3rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.375rem;
+  padding: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  text-align: center;
+  color: var(--mkt-ink);
+  outline: none;
+  font-family: var(--mkt-font);
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.marketing-site .mkt-otp-digit:focus {
+  border-color: var(--mkt-teal);
+  box-shadow: 0 0 0 3px var(--mkt-teal-t);
+}
+
+.marketing-site .mkt-otp-digit-error {
+  border-color: #dc2626;
+}
+
+.marketing-site .mkt-otp-digit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .marketing-site .mkt-login-input[type='date'] {

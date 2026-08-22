@@ -3,6 +3,7 @@ import { AuthContext } from '../../contexts/AuthContext';
 import { isAuthenticated, type Portal } from '../../lib/api';
 import { useContext } from 'react';
 import { PageMeta } from '../PageMeta';
+import { getChangePasswordPath, isChangePasswordPath } from '../../lib/change-password-path';
 
 type ProtectedRouteProps = {
   portal: Portal;
@@ -51,6 +52,19 @@ export function ProtectedRoute({ portal, children }: ProtectedRouteProps) {
     user.role !== 'SUPER_ADMIN'
   ) {
     return <Navigate to={PORTAL_LOGIN[user.portal]} replace />;
+  }
+
+  if (
+    user.mustChangePassword &&
+    !isChangePasswordPath(location.pathname)
+  ) {
+    return (
+      <Navigate
+        to={getChangePasswordPath(portal, user.role)}
+        state={{ from: location }}
+        replace
+      />
+    );
   }
 
   return (

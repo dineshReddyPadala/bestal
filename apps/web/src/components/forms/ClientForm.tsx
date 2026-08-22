@@ -19,7 +19,6 @@ const clientFormSchema = z.object({
   companySize: z.string().max(50).optional(),
   headquarters: z.string().max(255).optional(),
   website: z.string().min(1, 'Website is required').max(500),
-  paymentTerms: z.string().max(100).optional(),
   logoFileName: z.string().optional(),
   logoPreviewUrl: z.string().optional(),
 });
@@ -82,7 +81,6 @@ export function ClientForm({
       accountManagerId: '',
       companySize: '',
       headquarters: '',
-      paymentTerms: '',
       ...defaultValues,
     },
   });
@@ -184,18 +182,6 @@ export function ClientForm({
             placeholder="San Francisco, CA"
             disabled={readOnly}
           />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="paymentTerms">Payment terms</Label>
-          <Select id="paymentTerms" {...register('paymentTerms')} disabled={readOnly}>
-            <option value="">— Select —</option>
-            <option value="NET_15">Net 15</option>
-            <option value="NET_30">Net 30</option>
-            <option value="NET_45">Net 45</option>
-            <option value="NET_60">Net 60</option>
-            <option value="PREPAID">Prepaid</option>
-          </Select>
         </div>
       </div>
 

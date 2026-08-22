@@ -7,9 +7,6 @@ import { AuthController } from './auth.controller.js';
 import { AuthService } from './auth.service.js';
 import {
   changePasswordBodySchema,
-  clientLoginRequestOtpBodySchema,
-  clientLoginRequestOtpResponseSchema,
-  clientLoginVerifyOtpBodySchema,
   forgotPasswordBodySchema,
   forgotPasswordResponseSchema,
   loginBodySchema,
@@ -39,32 +36,6 @@ export async function authRoutes(fastify: FastifyInstance): Promise<void> {
       },
     },
     authController.login,
-  );
-
-  app.post(
-    '/login/client/request-otp',
-    {
-      schema: {
-        tags: ['Auth'],
-        summary: 'Send a one-time code for client portal sign-in',
-        body: clientLoginRequestOtpBodySchema,
-        response: { 200: clientLoginRequestOtpResponseSchema },
-      },
-    },
-    authController.requestClientLoginOtp,
-  );
-
-  app.post(
-    '/login/client/verify-otp',
-    {
-      schema: {
-        tags: ['Auth'],
-        summary: 'Verify client login OTP and issue JWT tokens',
-        body: clientLoginVerifyOtpBodySchema,
-        response: { 200: tokenResponseSchema },
-      },
-    },
-    authController.verifyClientLoginOtp,
   );
 
   app.post(

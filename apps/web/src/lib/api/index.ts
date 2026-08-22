@@ -1,4 +1,4 @@
-export { login, logout, getMe, forgotPassword, resetPassword, apiRequest } from './client';
+export { login, logout, getMe, forgotPassword, resetPassword, changePassword, apiRequest } from './client';
 export { ApiError } from './types';
 export { clientEnquiriesApi } from './client-enquiries';
 export { jobRequestsApi } from './job-requests';

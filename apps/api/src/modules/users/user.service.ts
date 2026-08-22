@@ -89,6 +89,11 @@ export class UserService {
       { ...input, clientId: linkedClientId },
     );
 
+    await this.fastify.prisma.user.update({
+      where: { id: user.id },
+      data: { mustChangePassword: true },
+    });
+
     if (linkedClientId != null) {
       const client = await this.fastify.prisma.client.findFirst({
         where: {

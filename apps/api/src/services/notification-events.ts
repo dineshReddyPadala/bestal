@@ -145,6 +145,7 @@ export async function notifyTrialStatusChanged(
     requestedById: number;
     assignedRecruiterId?: number | null;
     actedById?: number | null;
+    maxTrialHours?: number | null;
   },
 ): Promise<void> {
   const userIds = [
@@ -152,16 +153,32 @@ export async function notifyTrialStatusChanged(
     ...(input.assignedRecruiterId ? [input.assignedRecruiterId] : []),
     ...(input.actedById ? [input.actedById] : []),
   ];
+
+  const isApproved = input.status === 'APPROVED';
+  const title = isApproved
+    ? 'Trial period approved'
+    : `Trial ${input.status.toLowerCase().replace(/_/g, ' ')}`;
+  const body = isApproved
+    ? input.maxTrialHours != null
+      ? `Trial for ${input.candidateName} has been approved for up to ${input.maxTrialHours} hours.`
+      : `Trial for ${input.candidateName} has been approved.`
+    : `Trial for ${input.candidateName} is now ${input.status.replace(/_/g, ' ').toLowerCase()}.`;
+
   await safeNotify('trial-status', () =>
     notifyWithEmailFlag(prisma, config, {
       organizationId: input.organizationId,
       userIds,
       roles: ['SUPER_ADMIN', 'ADMIN', 'SALES', 'RECRUITER'],
       type: 'TRIAL',
-      title: `Trial ${input.status.toLowerCase().replace(/_/g, ' ')}`,
-      body: `Trial for ${input.candidateName} is now ${input.status.replace(/_/g, ' ').toLowerCase()}.`,
+      title,
+      body,
       actionUrl: webUrl(config, '/client/trials'),
-      metadata: { trialId: input.trialId, event: 'trial_status', status: input.status },
+      metadata: {
+        trialId: input.trialId,
+        event: 'trial_status',
+        status: input.status,
+        ...(input.maxTrialHours != null ? { maxTrialHours: input.maxTrialHours } : {}),
+      },
     }),
   );
 }

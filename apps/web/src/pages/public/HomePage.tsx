@@ -18,6 +18,7 @@ import { usePublicFeaturedCandidates } from '../../hooks/api/useCandidates';
 import { images } from '../../data/homeCopy';
 import { PAGE_SEO } from '../../lib/marketing-seo';
 import { cn } from '@bestal/shared-utils';
+import { formatDimensionScoreDisplay } from '../../lib/score-display';
 import { ForwardArrow } from '../../components/ui/ForwardArrow';
 
 const TIMEZONE_CHIPS = [
@@ -159,7 +160,7 @@ export function HomePage() {
                       style={{ width: `${dim.value * 10}%` }}
                     />
                   </span>
-                  <span className="mkt-scr-v">{dim.value}</span>
+                  <span className="mkt-scr-v">{formatDimensionScoreDisplay(dim.value)}</span>
                 </div>
               ))
             ) : (

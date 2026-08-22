@@ -159,32 +159,6 @@ export async function login(body: LoginRequest): Promise<TokenPair> {
   return json.data;
 }
 
-export async function requestClientLoginOtp(body: {
-  email: string;
-}): Promise<{ message: string; expiresInMinutes: number }> {
-  const json = await apiRequest<
-    ApiDataResponse<{ message: string; expiresInMinutes: number }>
-  >('/auth/login/client/request-otp', {
-    method: 'POST',
-    body,
-    auth: false,
-  });
-  return json.data;
-}
-
-export async function verifyClientLoginOtp(body: {
-  email: string;
-  otp: string;
-}): Promise<TokenPair> {
-  const json = await apiRequest<ApiDataResponse<TokenPair>>('/auth/login/client/verify-otp', {
-    method: 'POST',
-    body,
-    auth: false,
-  });
-  setTokens(json.data, 'CLIENT');
-  return json.data;
-}
-
 export async function logout(): Promise<void> {
   const refreshToken = getRefreshToken();
   try {
@@ -220,6 +194,18 @@ export async function resetPassword(
     method: 'POST',
     body,
     auth: false,
+  });
+  return json.data;
+}
+
+export async function changePassword(body: {
+  currentPassword: string;
+  newPassword: string;
+  confirmPassword: string;
+}): Promise<{ message: string }> {
+  const json = await apiRequest<ApiDataResponse<{ message: string }>>('/auth/change-password', {
+    method: 'POST',
+    body,
   });
   return json.data;
 }

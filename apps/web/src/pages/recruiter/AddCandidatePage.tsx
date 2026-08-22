@@ -96,10 +96,11 @@ export function AddCandidatePage() {
     hydratedCandidateIdRef.current = null;
     setInitialFormValues(undefined);
     setLinkedDataLoading(false);
-  }, [editId]);
+    setDraftId(isEdit ? editId : null);
+  }, [editId, isEdit]);
 
   useEffect(() => {
-    if (!isEdit || !existingQuery.data) return;
+    if (!isEdit || !existingQuery.data || existingQuery.data.id !== editId) return;
 
     const candidateId = existingQuery.data.id;
     setDraftId(candidateId);
@@ -326,13 +327,23 @@ export function AddCandidatePage() {
     );
   }
 
-  if (isEdit && (existingQuery.isLoading || (wizardMode === 'importedEdit' && linkedDataLoading))) {
+  const isEditFormReady =
+    !isEdit ||
+    (existingQuery.data?.id === editId &&
+      initialFormValues !== undefined &&
+      !(wizardMode === 'importedEdit' && linkedDataLoading));
+
+  if (
+    isEdit &&
+    (existingQuery.isLoading ||
+      !isEditFormReady)
+  ) {
     return (
       <div className="p-6 text-sm text-muted-foreground">Loading candidate…</div>
     );
   }
 
-  if (isEdit && (existingQuery.isError || !existingQuery.data)) {
+  if (isEdit && (existingQuery.isError || !existingQuery.data || existingQuery.data.id !== editId)) {
     return (
       <div className="p-6">
         <p className="text-muted-foreground">Candidate not found.</p>
@@ -384,6 +395,7 @@ export function AddCandidatePage() {
                 initialTab="basic"
                 freshStart={!isEdit}
                 wizardMode={wizardMode}
+                hydrationKey={isEdit ? `edit-${editId}` : 'new'}
                 initialFormValues={initialFormValues}
                 draftCandidateId={draftCandidateId}
                 onDraftCandidateId={(id) => {

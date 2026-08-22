@@ -23,6 +23,7 @@ export function mapClientToDto(client: ClientRecord): ClientDto {
     website: client.website,
     headquarters: client.headquarters,
     contactName: client.contactName,
+    contactDesignation: client.contactDesignation,
     contactEmail: client.contactEmail,
     contactPhone: client.contactPhone,
     paymentTerms: client.paymentTerms,

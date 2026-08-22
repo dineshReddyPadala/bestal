@@ -163,6 +163,16 @@ export class AdminController {
     return reply.send({ data });
   };
 
+  deleteClient = async (request: FastifyRequest, reply: FastifyReply) => {
+    const { id } = request.params as { id: number };
+    const data = await this.admin.deleteClient(
+      request.authUser!,
+      id,
+      this.ctx(request),
+    );
+    return reply.send({ data });
+  };
+
   listCandidates = async (request: FastifyRequest, reply: FastifyReply) => {
     const result = await this.admin.listCandidates(
       request.authUser!,

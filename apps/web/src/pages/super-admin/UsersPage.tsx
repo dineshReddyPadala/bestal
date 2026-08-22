@@ -171,6 +171,26 @@ export function SuperAdminUsersPage() {
                 }),
             },
             {
+              id: 'delete',
+              label: 'Delete User',
+              hidden: isSelf,
+              disabled: isLastActiveSuperAdmin,
+              disabledReason: 'Cannot delete the last active Super Admin',
+              destructive: true,
+              onSelect: () =>
+                requestConfirm({
+                  title: 'Delete User?',
+                  description: `${name} will be permanently removed from user lists. They can register again with the same email if applicable.`,
+                  confirmLabel: 'Delete User',
+                  destructive: true,
+                  onConfirm: async () => {
+                    await mutations.deleteUser.mutateAsync(r.id);
+                    show('User deleted');
+                  },
+                  onError: showError,
+                }),
+            },
+            {
               id: 'reset',
               label: 'Reset Password',
               separatorBefore: true,

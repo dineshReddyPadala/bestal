@@ -13,6 +13,7 @@ export interface ClientDto {
   website: string | null;
   headquarters: string | null;
   contactName: string | null;
+  contactDesignation: string | null;
   contactEmail: string | null;
   contactPhone: string | null;
   paymentTerms: string | null;
@@ -59,6 +60,7 @@ export interface CreateClientInput {
   website: string;
   headquarters?: string;
   contactName: string;
+  contactDesignation?: string;
   contactEmail: string;
   contactPhone: string;
   paymentTerms?: string;
@@ -80,6 +82,7 @@ export interface UpdateClientInput {
   website?: string;
   headquarters?: string | null;
   contactName?: string;
+  contactDesignation?: string | null;
   contactEmail?: string;
   contactPhone?: string;
   paymentTerms?: string | null;

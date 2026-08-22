@@ -1,12 +1,12 @@
 import { useState } from 'react';
-import { Link, Navigate, useSearchParams } from 'react-router-dom';
+import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import { SplitLoginLayout } from '../../components/marketing/SplitLoginLayout';
 import { SplitLoginPanel } from '../../components/marketing/SplitLoginPanel';
 import { PageMeta } from '../../components/PageMeta';
 import { ForwardArrow } from '../../components/ui/ForwardArrow';
-import { ClientLoginForm } from '../../components/marketing/ClientLoginForm';
 import { useAuth } from '../../contexts/AuthContext';
 import { getMe, type Portal } from '../../lib/api';
+import { getChangePasswordPath } from '../../lib/change-password-path';
 import { CLIENT_LOGIN_PATH } from '../../lib/login-portals';
 
 type MarketingLoginPageProps = {
@@ -21,7 +21,6 @@ const LOGIN_CONFIG = {
     successPath: '/login/portal',
     forgotPath: '/admin/forgot-password',
     secondaryHref: '/login/portal',
-    // secondaryLabel: "Don't have an account? Sign up",
   },
   client: {
     portal: 'CLIENT' as Portal,
@@ -36,8 +35,9 @@ const LOGIN_CONFIG = {
 
 export function MarketingLoginPage({ variant = 'admin' }: MarketingLoginPageProps) {
   const config = LOGIN_CONFIG[variant];
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { login, user, isLoading, refreshProfile } = useAuth();
+  const { login, user, isLoading } = useAuth();
   const [email, setEmail] = useState(config.demoEmail);
   const [password, setPassword] = useState(config.demoPassword);
   const [error, setError] = useState<string | null>(null);
@@ -54,7 +54,6 @@ export function MarketingLoginPage({ variant = 'admin' }: MarketingLoginPageProp
       ? `/client/search?q=${encodeURIComponent(discipline)}`
       : config.successPath;
 
-  // Admin login: skip form if already signed in as admin
   if (
     !isClientLogin &&
     !isLoading &&
@@ -74,8 +73,12 @@ export function MarketingLoginPage({ variant = 'admin' }: MarketingLoginPageProp
     setError(null);
     try {
       await login({ email, password, portal: config.portal });
-      await getMe();
-      window.location.assign(successPath);
+      const profile = await getMe();
+      if (profile.mustChangePassword) {
+        navigate(getChangePasswordPath(config.portal, profile.role));
+        return;
+      }
+      navigate(successPath);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Sign in failed. Check your credentials.');
     } finally {
@@ -98,54 +101,52 @@ export function MarketingLoginPage({ variant = 'admin' }: MarketingLoginPageProp
       <PageMeta title="Sign In | BesTal" description="Sign in to BesTal." noIndex />
       <SplitLoginLayout>
         <SplitLoginPanel brandHref={isClientLogin ? '/' : undefined}>
-          {isClientLogin ? (
-            <ClientLoginForm
-              successPath={successPath}
-              signupHref={signupHref}
-              onAuthenticated={refreshProfile}
-            />
-          ) : (
-            <form className="mkt-login-form" onSubmit={handleSubmit}>
-              {error && <div className="mkt-login-error">{error}</div>}
+          <form className="mkt-login-form" onSubmit={handleSubmit}>
+            {error && <div className="mkt-login-error">{error}</div>}
 
-              <label className="mkt-login-field">
-                <span className="mkt-login-label">Email</span>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  autoComplete="email"
-                  required
-                  className="mkt-login-input"
-                />
-              </label>
+            <label className="mkt-login-field">
+              <span className="mkt-login-label">Email</span>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                autoComplete="email"
+                required
+                className="mkt-login-input"
+              />
+            </label>
 
-              <label className="mkt-login-field">
-                <span className="mkt-login-label">Password</span>
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  autoComplete="current-password"
-                  required
-                  className="mkt-login-input"
-                />
-              </label>
+            <label className="mkt-login-field">
+              <span className="mkt-login-label">Password</span>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                autoComplete="current-password"
+                required
+                className="mkt-login-input"
+              />
+            </label>
 
-              <p className="mkt-login-forgot">
-                <Link to={config.forgotPath}>Forgot password ?</Link>
-              </p>
+            <p className="mkt-login-forgot">
+              <Link to={config.forgotPath}>Forgot password ?</Link>
+            </p>
 
-              <button
-                type="submit"
-                className="mkt-btn mkt-btn-primary mkt-login-submit"
-                disabled={submitting}
-              >
-                {submitting ? 'Signing in…' : 'Sign In'}
-                {!submitting && <ForwardArrow className="h-4 w-4" />}
-              </button>
-            </form>
-          )}
+            <button
+              type="submit"
+              className="mkt-btn mkt-btn-primary mkt-login-submit"
+              disabled={submitting}
+            >
+              {submitting ? 'Signing in…' : 'Sign In'}
+              {!submitting && <ForwardArrow className="h-4 w-4" />}
+            </button>
+
+            {isClientLogin && 'secondaryLabel' in config ? (
+              <Link to={signupHref} className="mkt-btn mkt-login-signup">
+                {config.secondaryLabel}
+              </Link>
+            ) : null}
+          </form>
         </SplitLoginPanel>
       </SplitLoginLayout>
     </>

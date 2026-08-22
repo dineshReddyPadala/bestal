@@ -76,12 +76,32 @@ export class ClientRegistrationService {
     return Number(org.id);
   }
 
-  private async generateUniqueSlug(organizationId: number, name: string): Promise<string> {
+  private async slugTaken(
+    organizationId: number,
+    slug: string,
+    excludeClientId?: number,
+  ): Promise<boolean> {
+    const existing = await this.fastify.prisma.client.findFirst({
+      where: {
+        organizationId: BigInt(organizationId),
+        slug,
+        ...(excludeClientId != null ? { NOT: { id: BigInt(excludeClientId) } } : {}),
+      },
+      select: { id: true },
+    });
+    return Boolean(existing);
+  }
+
+  private async generateUniqueSlug(
+    organizationId: number,
+    name: string,
+    excludeClientId?: number,
+  ): Promise<string> {
     const base = slugify(name) || 'client';
     let slug = base;
     let suffix = 0;
 
-    while (await this.clientRepository.findBySlug(organizationId, slug)) {
+    while (await this.slugTaken(organizationId, slug, excludeClientId)) {
       suffix += 1;
       slug = `${base}-${suffix}`;
     }
@@ -233,13 +253,125 @@ export class ClientRegistrationService {
       throw new NotFoundError('Organization not found');
     }
 
-    const slug = await this.generateUniqueSlug(organizationId, input.companyName);
     const { firstName, lastName } = splitContactName(input.contactName);
     const passwordHash = password
       ? await argon2.hash(password)
       : await argon2.hash(crypto.randomBytes(32).toString('hex'));
 
+    const deletedUser = await this.fastify.prisma.user.findFirst({
+      where: { email, deletedAt: { not: null } },
+      include: {
+        memberships: {
+          where: {
+            organizationId: BigInt(organizationId),
+            role: 'CLIENT',
+          },
+        },
+      },
+    });
+
     const result = await this.fastify.prisma.$transaction(async (tx) => {
+      if (deletedUser) {
+        const membership = deletedUser.memberships[0];
+        let linkedClient =
+          membership?.clientId != null
+            ? await tx.client.findFirst({
+                where: {
+                  id: membership.clientId,
+                  organizationId: BigInt(organizationId),
+                },
+              })
+            : null;
+
+        if (!linkedClient) {
+          linkedClient = await tx.client.findFirst({
+            where: {
+              organizationId: BigInt(organizationId),
+              contactEmail: email,
+              deletedAt: { not: null },
+            },
+            orderBy: { id: 'desc' },
+          });
+        }
+
+        const restoreClientId =
+          linkedClient != null ? Number(linkedClient.id) : undefined;
+        const slug =
+          linkedClient?.slug ??
+          (await this.generateUniqueSlug(organizationId, input.companyName, restoreClientId));
+
+        let client;
+        if (linkedClient) {
+          client = await tx.client.update({
+            where: { id: linkedClient.id },
+            data: {
+              deletedAt: null,
+              slug,
+              name: input.companyName,
+              status: 'INACTIVE',
+              industry: 'Pending',
+              contactName: input.contactName,
+              contactDesignation: input.contactDesignation || null,
+              website: input.website?.trim() || null,
+              contactEmail: email,
+              contactPhone: input.contactPhone,
+            },
+          });
+        } else {
+          client = await tx.client.create({
+            data: {
+              organizationId: BigInt(organizationId),
+              slug,
+              name: input.companyName,
+              status: 'INACTIVE',
+              industry: 'Pending',
+              contactName: input.contactName,
+              contactDesignation: input.contactDesignation || null,
+              website: input.website?.trim() || null,
+              contactEmail: email,
+              contactPhone: input.contactPhone,
+            },
+          });
+        }
+
+        const user = await tx.user.update({
+          where: { id: deletedUser.id },
+          data: {
+            deletedAt: null,
+            isActive: false,
+            mustChangePassword: false,
+            passwordHash,
+            firstName,
+            lastName,
+            phone: input.contactPhone,
+          },
+        });
+
+        if (membership) {
+          await tx.membership.update({
+            where: { id: membership.id },
+            data: {
+              clientId: client.id,
+              isActive: false,
+            },
+          });
+        } else {
+          await tx.membership.create({
+            data: {
+              userId: user.id,
+              organizationId: BigInt(organizationId),
+              role: 'CLIENT',
+              clientId: client.id,
+              isActive: false,
+            },
+          });
+        }
+
+        return { client, user };
+      }
+
+      const slug = await this.generateUniqueSlug(organizationId, input.companyName);
+
       const client = await tx.client.create({
         data: {
           organizationId: BigInt(organizationId),

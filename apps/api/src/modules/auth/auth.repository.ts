@@ -115,7 +115,7 @@ export class AuthRepository extends BaseRepository {
   updatePassword(userId: number, passwordHash: string): Promise<User> {
     return this.prisma.user.update({
       where: { id: BigInt(userId) },
-      data: { passwordHash },
+      data: { passwordHash, mustChangePassword: false },
     });
   }
 

@@ -18,6 +18,7 @@ import { EvaluationsPage as AdminEvaluationsPage } from '../pages/admin/Evaluati
 import { LoginPage as AdminLoginPage } from '../pages/admin/LoginPage';
 import { ForgotPasswordPage as AdminForgotPasswordPage } from '../pages/admin/ForgotPasswordPage';
 import { ResetPasswordPage as AdminResetPasswordPage } from '../pages/admin/ResetPasswordPage';
+import { AdminChangePasswordPage } from '../pages/admin/ChangePasswordPage';
 import { TrialsPage } from '../pages/admin/TrialsPage';
 import { CandidateDetailPage as ClientCandidateDetailPage } from '../pages/client/CandidateDetailPage';
 import { CandidateSearchPage } from '../pages/client/CandidateSearchPage';
@@ -70,6 +71,7 @@ import { ScrollToTop } from '../components/ScrollToTop';
 import { PORTAL_AUTH_CONFIG } from '../lib/auth-portal-config';
 import { PortalForgotPasswordPage } from '../pages/shared/PortalForgotPasswordPage';
 import { PortalResetPasswordPage } from '../pages/shared/PortalResetPasswordPage';
+import { PortalChangePasswordPage } from '../pages/shared/PortalChangePasswordPage';
 import { SuperAdminShell } from '../layouts/SuperAdminShell';
 import { SuperAdminDashboardPage } from '../pages/super-admin/DashboardPage';
 import { SuperAdminUsersPage } from '../pages/super-admin/UsersPage';
@@ -95,9 +97,11 @@ import { SuperAdminDataImportPage } from '../pages/super-admin/OorwinSyncPage';
 import { SuperAdminReportsPage } from '../pages/super-admin/ReportsPage';
 import { SuperAdminAuditLogsPage } from '../pages/super-admin/AuditLogsPage';
 import { SuperAdminSettingsPage } from '../pages/super-admin/SettingsPage';
-import { useAuth } from '../contexts/AuthContext';
+import { useContext } from 'react';
+import { AuthContext, useAuth } from '../contexts/AuthContext';
 import { usePermissions } from '../hooks/usePermissions';
 import { CLIENT_LOGIN_PATH, LOGIN_PORTAL_CHOOSER_PATH } from '../lib/login-portals';
+import { AppProviders } from '../providers/AppProviders';
 
 function ClientEnquiriesRoute({ redirectTo }: { redirectTo: string }) {
   return (
@@ -124,10 +128,10 @@ function ProtectedAdminShell() {
 }
 
 function ProtectedSuperAdminShell() {
-  const { user, isLoading } = useAuth();
+  const auth = useContext(AuthContext);
   const { isPlatformAdmin } = usePermissions();
 
-  if (isLoading) {
+  if (!auth || auth.isLoading) {
     return (
       <div className="flex min-h-[50vh] items-center justify-center text-sm text-muted-foreground">
         Loading…
@@ -135,7 +139,7 @@ function ProtectedSuperAdminShell() {
     );
   }
 
-  const allowed = user?.role === 'SUPER_ADMIN' || isPlatformAdmin;
+  const allowed = auth.user?.role === 'SUPER_ADMIN' || isPlatformAdmin;
   if (!allowed) {
     return <Navigate to="/admin" replace />;
   }
@@ -244,6 +248,13 @@ function ClientAuthShell() {
 
 const router = createBrowserRouter([
   {
+    element: (
+      <AppProviders>
+        <Outlet />
+      </AppProviders>
+    ),
+    children: [
+  {
     element: <MarketingShell />,
     children: [
       { index: true, element: <HomePage /> },
@@ -293,6 +304,7 @@ const router = createBrowserRouter([
           { path: 'login', element: <AdminLoginPage /> },
           { path: 'forgot-password', element: <AdminForgotPasswordPage /> },
           { path: 'reset-password', element: <AdminResetPasswordPage /> },
+          { path: 'change-password', element: <AdminChangePasswordPage /> },
         ],
       },
       {
@@ -392,6 +404,7 @@ const router = createBrowserRouter([
           { path: 'login', element: <RecruiterLoginPage /> },
           { path: 'forgot-password', element: <PortalForgotPasswordPage portal="RECRUITER" /> },
           { path: 'reset-password', element: <PortalResetPasswordPage portal="RECRUITER" /> },
+          { path: 'change-password', element: <PortalChangePasswordPage portal="RECRUITER" /> },
         ],
       },
       {
@@ -421,6 +434,7 @@ const router = createBrowserRouter([
           { path: 'login', element: <Navigate to="/login/client" replace /> },
           { path: 'forgot-password', element: <PortalForgotPasswordPage portal="CLIENT" /> },
           { path: 'reset-password', element: <PortalResetPasswordPage portal="CLIENT" /> },
+          { path: 'change-password', element: <PortalChangePasswordPage portal="CLIENT" /> },
         ],
       },
       {
@@ -444,6 +458,7 @@ const router = createBrowserRouter([
           { path: 'login', element: <SalesLoginPage /> },
           { path: 'forgot-password', element: <PortalForgotPasswordPage portal="SALES" /> },
           { path: 'reset-password', element: <PortalResetPasswordPage portal="SALES" /> },
+          { path: 'change-password', element: <PortalChangePasswordPage portal="SALES" /> },
         ],
       },
       {
@@ -466,6 +481,8 @@ const router = createBrowserRouter([
           { path: 'margin', element: <SalesMarginReportPage /> },
         ],
       },
+    ],
+  },
     ],
   },
 ]);

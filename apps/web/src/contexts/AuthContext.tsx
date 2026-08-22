@@ -18,6 +18,7 @@ import {
   type LoginRequest,
   type Portal,
 } from '../lib/api';
+import { getChangePasswordPath } from '../lib/change-password-path';
 
 type AuthContextValue = {
   user: AuthUserProfile | null;
@@ -110,6 +111,10 @@ export function usePortalLogin(portal: Portal) {
       try {
         await login({ email, password, portal });
         const profile = await getMe();
+        if (profile.mustChangePassword) {
+          navigate(getChangePasswordPath(portal, profile.role));
+          return;
+        }
         if (portal === 'ADMIN' && profile.role === 'SUPER_ADMIN') {
           navigate('/super-admin/dashboard');
         } else {
