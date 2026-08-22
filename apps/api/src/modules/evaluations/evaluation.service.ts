@@ -763,6 +763,7 @@ export class EvaluationService {
       this.config,
       organizationId,
       Number(candidateId),
+      triggeredByUserId,
     );
   }
 

@@ -146,6 +146,7 @@ export async function notifyTrialStatusChanged(
     assignedRecruiterId?: number | null;
     actedById?: number | null;
     maxTrialHours?: number | null;
+    approvedAndStarted?: boolean;
   },
 ): Promise<void> {
   const userIds = [
@@ -155,14 +156,22 @@ export async function notifyTrialStatusChanged(
   ];
 
   const isApproved = input.status === 'APPROVED';
-  const title = isApproved
+  const isApprovedAndStarted =
+    input.approvedAndStarted === true && input.status === 'IN_PROGRESS';
+  const title = isApprovedAndStarted
     ? 'Trial period approved'
-    : `Trial ${input.status.toLowerCase().replace(/_/g, ' ')}`;
-  const body = isApproved
+    : isApproved
+      ? 'Trial period approved'
+      : `Trial ${input.status.toLowerCase().replace(/_/g, ' ')}`;
+  const body = isApprovedAndStarted
     ? input.maxTrialHours != null
-      ? `Trial for ${input.candidateName} has been approved for up to ${input.maxTrialHours} hours.`
-      : `Trial for ${input.candidateName} has been approved.`
-    : `Trial for ${input.candidateName} is now ${input.status.replace(/_/g, ' ').toLowerCase()}.`;
+      ? `Trial for ${input.candidateName} has been approved and started for up to ${input.maxTrialHours} hours.`
+      : `Trial for ${input.candidateName} has been approved and started.`
+    : isApproved
+      ? input.maxTrialHours != null
+        ? `Trial for ${input.candidateName} has been approved for up to ${input.maxTrialHours} hours.`
+        : `Trial for ${input.candidateName} has been approved.`
+      : `Trial for ${input.candidateName} is now ${input.status.replace(/_/g, ' ').toLowerCase()}.`;
 
   await safeNotify('trial-status', () =>
     notifyWithEmailFlag(prisma, config, {
@@ -281,16 +290,23 @@ export async function notifyCandidatePendingApproval(
 ): Promise<void> {
   await safeNotify('candidate-pending', async () => {
     const settings = await readNotificationsSettings(prisma);
-    await notifyOrgMembersWithPermission(prisma, config, {
+    await notifyOrgRoles(prisma, config, {
       organizationId: input.organizationId,
-      permission: PERMISSIONS.CANDIDATES_APPROVE,
+      roles: ['SUPER_ADMIN'],
       type: 'SYSTEM',
       title: 'Candidate pending approval',
       body: `${input.candidateName} was submitted for approval.`,
-      actionUrlForRole: (role) =>
-        role === 'SUPER_ADMIN'
-          ? webUrl(config, '/super-admin/candidates')
-          : webUrl(config, '/admin/candidate-approvals'),
+      actionUrl: webUrl(config, '/super-admin/candidates'),
+      metadata: { candidateId: input.candidateId, event: 'candidate_pending_approval' },
+      sendEmail: settings.emailEnabled,
+    });
+    await notifyOrgRoles(prisma, config, {
+      organizationId: input.organizationId,
+      roles: ['ADMIN'],
+      type: 'SYSTEM',
+      title: 'Candidate pending approval',
+      body: `${input.candidateName} was submitted for approval.`,
+      actionUrl: webUrl(config, '/admin/candidate-approvals'),
       metadata: { candidateId: input.candidateId, event: 'candidate_pending_approval' },
       sendEmail: settings.emailEnabled,
     });

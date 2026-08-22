@@ -1755,9 +1755,7 @@ export function CandidateWizard({
   const isFirstTab = currentTabIndex <= 0;
   const isLastTab = currentTabIndex >= WIZARD_TABS.length - 1;
   const formValues = watchedValues ?? getValues();
-  const submitReady = canSubmitCandidateForApproval(formValues, {
-    importedEdit: wizardMode === 'importedEdit',
-  });
+  const submitReady = canSubmitCandidateForApproval(formValues);
   const isBusy = isPersisting || isSavingDraft || isSubmitting;
 
   const handleAiScreeningComplete = useCallback(
@@ -1820,12 +1818,10 @@ export function CandidateWizard({
 
   async function submitForApproval(formValuesToSubmit: CandidateWizardFormValues) {
     if (
-      !canSubmitCandidateForApproval(formValuesToSubmit, {
-        importedEdit: wizardMode === 'importedEdit',
-      })
+      !canSubmitCandidateForApproval(formValuesToSubmit)
     ) {
       onToast(
-        'Complete Basic Details (with AI screening), Skills, Availability, Pricing, Evaluation, and Background Verification before submitting',
+        'Complete Basic Details, Skills, Availability, Pricing, Evaluation, and Background Verification before submitting',
       );
       return;
     }

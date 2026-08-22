@@ -5,7 +5,6 @@ import { BadRequestError, ConflictError, NotFoundError } from '../../utils/index
 import { hashToken } from '../../utils/index.js';
 import { EmailService } from '../../services/email.service.js';
 import { notifyClientOnboarded } from '../../services/notification-events.js';
-import { ClientRepository } from './client.repository.js';
 import { slugify } from '../../utils/slug.js';
 import type {
   ClientSignupRequestOtpBody,
@@ -43,11 +42,9 @@ function generateOtp(): string {
 }
 
 export class ClientRegistrationService {
-  private readonly clientRepository: ClientRepository;
   private readonly emailService: EmailService;
 
   constructor(private readonly fastify: FastifyInstance) {
-    this.clientRepository = new ClientRepository(fastify.prisma);
     this.emailService = new EmailService(fastify.config, fastify.prisma);
   }
 

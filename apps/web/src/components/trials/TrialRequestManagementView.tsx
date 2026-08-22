@@ -28,7 +28,7 @@ import {
   ListingPageShell,
 } from '../layout/ListingPageShell';
 
-type TrialAction = 'Approve' | 'Reject' | 'Confirm' | 'Start' | 'Complete' | 'Convert';
+type TrialAction = 'Approve' | 'Reject' | 'Start' | 'Complete' | 'Convert';
 
 type TrialRequestStatus =
   | 'REQUESTED'
@@ -61,7 +61,7 @@ const defaultFilters = {
   candidate: 'all',
 };
 
-const TODAY = new Date('2026-06-30');
+const TODAY = new Date();
 
 function usePortalBasePath() {
   const { pathname } = useLocation();
@@ -110,7 +110,7 @@ function TrialRowActions({
       case 'REQUESTED':
         return ['Approve', 'Reject'];
       case 'APPROVED':
-        return record.candidateConfirmedAt ? ['Start'] : ['Confirm', 'Start'];
+        return ['Start'];
       case 'IN_PROGRESS':
         return ['Complete'];
       case 'COMPLETED':
@@ -170,13 +170,18 @@ export function TrialRequestManagementView({
   const portalBase = usePortalBasePath();
   const { message, show } = useDemoToast();
   const { searchInput, setSearchInput, search, searchParam } = useDebouncedSearch();
-  const { data, isLoading, isError, error } = useTrialsList({
-    limit: 100,
-    ...searchParam,
-  });
-  const { approve, reject, update, confirmCandidate } = useTrialMutations();
-  const { create: createDeployment } = useDeploymentMutations();
   const [filters, setFilters] = useState(defaultFilters);
+  const listParams = useMemo(
+    () => ({
+      limit: 100,
+      ...searchParam,
+      ...(filters.status !== 'all' ? { status: filters.status } : {}),
+    }),
+    [searchParam, filters.status],
+  );
+  const { data, isLoading, isError, error } = useTrialsList(listParams);
+  const { approve, reject, update } = useTrialMutations();
+  const { create: createDeployment } = useDeploymentMutations();
   const [rejectTarget, setRejectTarget] = useState<TrialManagementRow | null>(null);
   const [completeTarget, setCompleteTarget] = useState<TrialManagementRow | null>(null);
   const [convertTarget, setConvertTarget] = useState<TrialManagementRow | null>(null);
@@ -198,9 +203,6 @@ export function TrialRequestManagementView({
   const filteredData = useMemo(() => {
     let rows = [...records];
 
-    if (filters.status !== 'all') {
-      rows = rows.filter((r) => r.status === filters.status);
-    }
     if (filters.client !== 'all') {
       rows = rows.filter((r) => r.clientName === filters.client);
     }
@@ -244,9 +246,10 @@ export function TrialRequestManagementView({
       try {
         if (action === 'Approve') {
           await approve.mutateAsync(record.id);
-        } else if (action === 'Confirm') {
-          await confirmCandidate.mutateAsync(record.id);
-        } else if (action === 'Start') {
+          show(`Trial approved — ${record.candidateName} @ ${record.clientName}`);
+          return;
+        }
+        if (action === 'Start') {
           await update.mutateAsync({ id: record.id, body: { status: 'IN_PROGRESS' } });
         }
         show(`${action} — ${record.candidateName} @ ${record.clientName}`);
@@ -254,7 +257,7 @@ export function TrialRequestManagementView({
         show(err instanceof Error ? err.message : 'Action failed');
       }
     },
-    [approve, confirmCandidate, update, show],
+    [approve, update, show],
   );
 
   const confirmReject = async (values: TrialRejectFormValues) => {
@@ -409,7 +412,7 @@ export function TrialRequestManagementView({
         error={isError ? (error instanceof Error ? error.message : 'Failed to load trials') : null}
       >
         <TanStackDataTable
-          key={search}
+          key={`${search}-${filters.status}`}
           columns={columns}
           data={filteredData}
           searchPlaceholder="Search by client, candidate, or role…"

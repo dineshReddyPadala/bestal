@@ -471,7 +471,6 @@ export function getInitialStepIndexForEntryMethod(method: CandidateEntryMethod):
 export function isProgressStepComplete(
   stepId: WizardProgressId,
   values: CandidateWizardFormValues,
-  options?: { importedEdit?: boolean },
 ): boolean {
   switch (stepId) {
     case 'basic':
@@ -479,11 +478,7 @@ export function isProgressStepComplete(
         values.firstName?.trim() &&
           values.lastName?.trim() &&
           values.email?.trim() &&
-          values.source &&
-          (options?.importedEdit ||
-            values.aiSummary?.trim() ||
-            values.bestalScore != null ||
-            values.resumeFileName?.trim()),
+          values.source,
       );
     case 'professional':
       return Boolean(values.primaryRole?.trim() || values.yearsExperience != null);
@@ -517,24 +512,17 @@ export function isProgressStepComplete(
   }
 }
 
-/** Submit for Approval unlocks after basic+AI, skills, availability, pricing, evaluation, and BGV. */
+/** Submit for Approval unlocks after basic, skills, availability, pricing, evaluation, and BGV. */
 export function canSubmitCandidateForApproval(
   values: CandidateWizardFormValues,
-  options?: { importedEdit?: boolean },
 ): boolean {
-  const progressOptions = options?.importedEdit ? { importedEdit: true } : undefined;
   return (
-    isProgressStepComplete('basic', values, progressOptions) &&
-    isProgressStepComplete('skills', values, progressOptions) &&
-    isProgressStepComplete('availability', values, progressOptions) &&
-    isProgressStepComplete('pricing', values, progressOptions) &&
-    isProgressStepComplete('evaluation', values, progressOptions) &&
-    isProgressStepComplete('background-check', values, progressOptions) &&
-    Boolean(
-      options?.importedEdit ||
-        values.resumeFileName?.trim() ||
-        values.aiSummary?.trim(),
-    )
+    isProgressStepComplete('basic', values) &&
+    isProgressStepComplete('skills', values) &&
+    isProgressStepComplete('availability', values) &&
+    isProgressStepComplete('pricing', values) &&
+    isProgressStepComplete('evaluation', values) &&
+    isProgressStepComplete('background-check', values)
   );
 }
 

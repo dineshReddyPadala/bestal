@@ -108,6 +108,7 @@ const trialDtoSchema = z.object({
   convertedToPaid: z.boolean().optional(),
   outcome: z.string().nullable(),
   approvedAt: z.string().nullable(),
+  startedAt: z.string().nullable(),
   candidateConfirmedAt: z.string().nullable().optional(),
   rejectedAt: z.string().nullable(),
   rejectReason: z.string().nullable(),

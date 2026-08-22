@@ -45,11 +45,6 @@ export function useTrialMutations() {
     onSuccess: invalidate,
   });
 
-  const confirmCandidate = useMutation({
-    mutationFn: (id: number) => trialsApi.confirmCandidate(id),
-    onSuccess: invalidate,
-  });
-
   const submitFeedback = useMutation({
     mutationFn: ({
       id,
@@ -61,7 +56,7 @@ export function useTrialMutations() {
     onSuccess: invalidate,
   });
 
-  return { approve, reject, update, create, confirmCandidate, submitFeedback };
+  return { approve, reject, update, create, submitFeedback };
 }
 
 /** Map API trial list + detail fields to management view row shape */

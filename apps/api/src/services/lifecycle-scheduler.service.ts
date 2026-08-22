@@ -1,6 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import { notifyReminder } from './notification-events.js';
-import { readNotificationsSettings } from './system-settings.reader.js';
+import { readNotificationsSettings, readTrialsSettings } from './system-settings.reader.js';
 
 const INTERVAL_MS = 30 * 60 * 1000;
 
@@ -49,6 +49,7 @@ export class LifecycleSchedulerService {
     try {
       await this.completeExpiredDeployments();
       await this.completeExpiredTrials();
+      await this.completeTrialsExceedingMaxHours();
       await this.sendEndingSoonReminders();
     } catch (err) {
       this.fastify.log.error({ err }, 'Lifecycle scheduler tick failed');
@@ -183,6 +184,52 @@ export class LifecycleSchedulerService {
         body: `Trial for ${trial.candidate.firstName} ${trial.candidate.lastName} has ended.`,
         actionUrl: `${this.fastify.config.webAppUrl.replace(/\/$/, '')}/admin/trials`,
         roles: ['ADMIN', 'SALES'],
+        userIds: [
+          Number(trial.requestedById),
+          ...(trial.assignedRecruiterId
+            ? [Number(trial.assignedRecruiterId)]
+            : []),
+        ],
+      });
+    }
+  }
+
+  private async completeTrialsExceedingMaxHours(): Promise<void> {
+    const now = new Date();
+    const trialsSettings = await readTrialsSettings(this.fastify.prisma);
+    const defaultHours = trialsSettings.freeTrialHours;
+
+    const active = await this.fastify.prisma.trialRequest.findMany({
+      where: {
+        deletedAt: null,
+        status: 'IN_PROGRESS',
+        startedAt: { not: null },
+      },
+      include: {
+        candidate: { select: { firstName: true, lastName: true } },
+      },
+    });
+
+    for (const trial of active) {
+      if (!trial.startedAt) continue;
+      const maxHours = trial.maxTrialHours ?? defaultHours;
+      const deadlineMs = trial.startedAt.getTime() + maxHours * 60 * 60 * 1000;
+      if (now.getTime() < deadlineMs) continue;
+
+      await this.fastify.prisma.trialRequest.update({
+        where: { id: trial.id },
+        data: { status: 'COMPLETED' },
+      });
+
+      const reminderKey = `trial-hours-expired:${trial.id}`;
+      await notifyReminder(this.fastify.prisma, this.fastify.config, {
+        organizationId: Number(trial.organizationId),
+        reminderKey,
+        type: 'TRIAL',
+        title: 'Trial period completed',
+        body: `The ${maxHours}-hour free trial for ${trial.candidate.firstName} ${trial.candidate.lastName} has ended.`,
+        actionUrl: `${this.fastify.config.webAppUrl.replace(/\/$/, '')}/client/trials`,
+        roles: ['ADMIN', 'SALES', 'CLIENT'],
         userIds: [
           Number(trial.requestedById),
           ...(trial.assignedRecruiterId

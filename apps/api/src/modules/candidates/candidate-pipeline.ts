@@ -157,15 +157,6 @@ export function assertCanSubmitForApproval(candidate: PipelineCandidateSnapshot)
       'Submit for approval requires client bill rate, availability status, and available-from date',
     );
   }
-  // Imported candidates may proceed with supplied AI summary even without a local resume file.
-  if (!hasResumeUploaded(candidate) && !candidate.aiSummary?.trim()) {
-    throw new BadRequestError(
-      'Submit for approval requires a resume upload or an imported AI summary',
-    );
-  }
-  if (!candidate.aiSummary?.trim()) {
-    throw new BadRequestError('Submit for approval requires an AI summary');
-  }
   if (candidate.evaluationStatus !== 'COMPLETED') {
     throw new BadRequestError('Evaluation must be completed before submit for approval');
   }

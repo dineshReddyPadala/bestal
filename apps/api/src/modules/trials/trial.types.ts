@@ -26,6 +26,7 @@ export interface TrialDto {
   convertedToPaid: boolean;
   outcome: string | null;
   approvedAt: string | null;
+  startedAt: string | null;
   candidateConfirmedAt: string | null;
   rejectedAt: string | null;
   rejectReason: string | null;
@@ -100,6 +101,7 @@ export interface UpdateTrialInput {
   clientRating?: number;
   convertedToPaid?: boolean;
   outcome?: string;
+  startedAt?: Date | null;
 }
 
 export interface RejectTrialInput {

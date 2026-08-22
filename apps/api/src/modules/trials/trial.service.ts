@@ -107,6 +107,15 @@ export class TrialService {
       this.validateTransition(existing.status, input.status);
     }
 
+    const patch: UpdateTrialInput = { ...input };
+    if (
+      input.status === 'IN_PROGRESS' &&
+      input.status !== existing.status &&
+      !existing.startedAt
+    ) {
+      patch.startedAt = new Date();
+    }
+
     if (
       (input.feedback !== undefined || input.clientRating !== undefined) &&
       (input.status ?? existing.status) !== 'COMPLETED'
@@ -114,7 +123,7 @@ export class TrialService {
       throw new BadRequestError('Client feedback can only be added to a completed trial');
     }
 
-    const trial = await this.trialRepository.update(organizationId, id, input);
+    const trial = await this.trialRepository.update(organizationId, id, patch);
     return mapTrialToDto(trial);
   }
 
@@ -166,21 +175,6 @@ export class TrialService {
       actedById: authUser.id,
     });
     return dto;
-  }
-
-  async confirmCandidate(
-    authUser: AuthenticatedUser,
-    id: number,
-  ): Promise<TrialDto> {
-    const organizationId = requireOrganization(authUser);
-    const existing = await this.getTrialOrThrow(organizationId, id);
-    if (!['APPROVED', 'IN_PROGRESS'].includes(existing.status)) {
-      throw new BadRequestError(
-        'Candidate confirmation is only available for approved or active trials',
-      );
-    }
-    const trial = await this.trialRepository.confirmCandidate(organizationId, id);
-    return mapTrialToDto(trial);
   }
 
   async submitFeedback(
@@ -314,7 +308,7 @@ export class TrialService {
     next: TrialRequestStatus,
   ): void {
     const transitions: Record<TrialRequestStatus, TrialRequestStatus[]> = {
-      REQUESTED: ['APPROVED', 'REJECTED', 'CANCELLED'],
+      REQUESTED: ['APPROVED', 'IN_PROGRESS', 'REJECTED', 'CANCELLED'],
       APPROVED: ['IN_PROGRESS', 'REJECTED', 'CANCELLED'],
       REJECTED: [],
       IN_PROGRESS: ['COMPLETED', 'FAILED', 'CANCELLED'],

@@ -58,12 +58,6 @@ export class TrialController {
     return reply.status(200).send({ data });
   };
 
-  confirmCandidate = async (request: FastifyRequest, reply: FastifyReply) => {
-    const { id } = request.params as { id: number };
-    const data = await this.trialService.confirmCandidate(request.authUser!, id);
-    return reply.status(200).send({ data });
-  };
-
   submitFeedback = async (request: FastifyRequest, reply: FastifyReply) => {
     const { id } = request.params as { id: number };
     const data = await this.trialService.submitFeedback(

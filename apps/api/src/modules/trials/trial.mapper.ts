@@ -47,6 +47,7 @@ export function mapTrialToDto(trial: TrialRecord): TrialDto {
     convertedToPaid: trial.convertedToPaid,
     outcome: trial.outcome,
     approvedAt: trial.approvedAt?.toISOString() ?? null,
+    startedAt: trial.startedAt?.toISOString() ?? null,
     candidateConfirmedAt: trial.candidateConfirmedAt?.toISOString() ?? null,
     rejectedAt: trial.rejectedAt?.toISOString() ?? null,
     rejectReason: trial.rejectReason,
