@@ -77,6 +77,8 @@ type CandidateWizardProps = {
   wizardMode?: CandidateWizardMode;
   /** When true, do not restore a browser-stored draft (fresh Add Candidate). */
   freshStart?: boolean;
+  /** When set, re-applies `initialFormValues` whenever this key changes (edit candidate switches). */
+  hydrationKey?: string;
   initialFormValues?: Partial<CandidateWizardFormValues>;
   initialUploads?: CandidateWizardUploads;
   draftCandidateId?: number | null;
@@ -1668,6 +1670,7 @@ export function CandidateWizard({
   initialTab,
   freshStart = false,
   wizardMode = 'superAdminCreate',
+  hydrationKey,
   initialFormValues,
   initialUploads,
   draftCandidateId,
@@ -1691,7 +1694,7 @@ export function CandidateWizard({
   );
   const [isPersisting, setIsPersisting] = useState(false);
   const pendingUploads = useRef<CandidateWizardUploads>(initialUploads ?? {});
-  const appliedInitialFormRef = useRef(false);
+  const appliedHydrationKeyRef = useRef<string | null>(null);
   const {
     data: skillCommunities = [],
     isLoading: skillCommunitiesLoading,
@@ -1714,22 +1717,23 @@ export function CandidateWizard({
 
   useEffect(() => {
     if (initialFormValues) {
-      if (!appliedInitialFormRef.current) {
+      const key = hydrationKey ?? 'initial-form';
+      if (appliedHydrationKeyRef.current !== key) {
         reset({ ...candidateWizardDefaults, ...initialFormValues });
         pendingUploads.current = initialUploads ?? {};
-        appliedInitialFormRef.current = true;
+        appliedHydrationKeyRef.current = key;
       }
       return;
     }
 
-    if (freshStart) {
+    if (freshStart || isEditMode) {
       localStorage.removeItem(DRAFT_STORAGE_KEY);
       reset({ ...candidateWizardDefaults });
-      appliedInitialFormRef.current = true;
+      appliedHydrationKeyRef.current = hydrationKey ?? 'fresh';
       return;
     }
 
-    if (appliedInitialFormRef.current) {
+    if (appliedHydrationKeyRef.current != null) {
       return;
     }
 
@@ -1742,9 +1746,9 @@ export function CandidateWizard({
     } catch {
       /* ignore corrupt draft */
     } finally {
-      appliedInitialFormRef.current = true;
+      appliedHydrationKeyRef.current = 'local-draft';
     }
-  }, [freshStart, initialFormValues, initialUploads, reset]);
+  }, [freshStart, hydrationKey, initialFormValues, initialUploads, isEditMode, reset]);
 
   const currentTab = WIZARD_TABS.find((tab) => tab.id === activeTab) ?? WIZARD_TABS[0]!;
   const currentTabIndex = WIZARD_TABS.findIndex((tab) => tab.id === activeTab);

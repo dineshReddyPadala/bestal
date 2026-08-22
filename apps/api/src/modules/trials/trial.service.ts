@@ -140,6 +140,7 @@ export class TrialService {
       requestedById: dto.requestedById,
       assignedRecruiterId: dto.assignedRecruiterId,
       actedById: authUser.id,
+      maxTrialHours: dto.maxTrialHours,
     });
     return dto;
   }

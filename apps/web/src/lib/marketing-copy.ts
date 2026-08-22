@@ -509,6 +509,7 @@ export const ABOUT_DIFFERENCE: AboutDifferenceCard[] = [
 ];
 
 export const ABOUT_SPECIALISTS = {
+  num: '06',
   title: 'Specialists, Not Generalists',
   body:
     'Engineers belong to one of seven specialist communities — Data & AI, Cloud & Platform, Full Stack, SAP, ServiceNow, Salesforce, and Cybersecurity — each with its own assessments and independent evaluators. A Snowflake engineer is evaluated by someone who has built on Snowflake.',
@@ -752,7 +753,7 @@ export const FAQ_PAGE = {
   label: 'FAQ',
   title: 'Frequently Asked Questions',
   contactPrefix: "Can't find an answer? Reach out to us at",
-  contactEmail: 'info@bestal.co',
+  contactEmail: 'connect@bestal.co',
   tocTitle: 'Table of Contents',
   categories: [
     {

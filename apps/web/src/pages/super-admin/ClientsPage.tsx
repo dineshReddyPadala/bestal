@@ -155,6 +155,23 @@ export function SuperAdminClientsPage() {
                 }),
             },
             {
+              id: 'delete',
+              label: 'Delete Client',
+              destructive: true,
+              onSelect: () =>
+                requestConfirm({
+                  title: 'Delete Client?',
+                  description: `${r.name} and linked portal users will be removed. The contact can sign up again from the public registration form.`,
+                  confirmLabel: 'Delete Client',
+                  destructive: true,
+                  onConfirm: async () => {
+                    await mutations.deleteClient.mutateAsync(r.id);
+                    show('Client deleted');
+                  },
+                  onError: showError,
+                }),
+            },
+            {
               id: 'assign',
               label: 'Assign Account Manager',
               separatorBefore: true,

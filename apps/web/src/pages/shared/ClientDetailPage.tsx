@@ -27,6 +27,7 @@ function clientOverviewFields(client: {
   industry: string | null;
   website: string | null;
   contactName: string | null;
+  contactDesignation: string | null;
   contactEmail: string | null;
   contactPhone: string | null;
   companySize: string | null;
@@ -34,13 +35,13 @@ function clientOverviewFields(client: {
   city: string | null;
   state: string | null;
   country: string | null;
-  paymentTerms: string | null;
   notes: string | null;
 }): SchemaFieldDef[] {
   return [
     { key: 'industry', label: 'Industry', value: client.industry },
     { key: 'website', label: 'Website', value: client.website },
     { key: 'contactName', label: 'Primary contact', value: client.contactName },
+    { key: 'contactDesignation', label: 'Designation', value: client.contactDesignation },
     { key: 'contactEmail', label: 'Contact email', value: client.contactEmail },
     { key: 'contactPhone', label: 'Contact phone', value: client.contactPhone },
     { key: 'companySize', label: 'Company size', value: client.companySize },
@@ -50,7 +51,6 @@ function clientOverviewFields(client: {
       label: 'Location',
       value: [client.city, client.state, client.country].filter(Boolean).join(', ') || null,
     },
-    { key: 'paymentTerms', label: 'Payment terms', value: client.paymentTerms },
     { key: 'notes', label: 'Notes', value: client.notes },
   ];
 }

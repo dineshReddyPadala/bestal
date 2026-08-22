@@ -70,6 +70,8 @@ export const adminApi = {
     );
     return json.data;
   },
+  deleteClient: (id: number) =>
+    apiRequest<{ data: { message: string } }>(`/admin/clients/${id}`, { method: 'DELETE' }),
 
   listCandidates: (query?: ListQuery) =>
     apiList<Record<string, unknown>>('/admin/candidates', query),

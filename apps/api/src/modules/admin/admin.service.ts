@@ -352,8 +352,10 @@ export class AdminService {
       select: {
         user: {
           select: {
+            id: true,
             email: true,
             firstName: true,
+            lastName: true,
             deletedAt: true,
             isActive: true,
           },
@@ -367,11 +369,21 @@ export class AdminService {
       const user = membership.user;
       if (!user?.email || user.deletedAt || !user.isActive) continue;
 
+      const temporaryPassword = tempPassword();
+      await this.prisma.user.update({
+        where: { id: user.id },
+        data: {
+          passwordHash: await argon2.hash(temporaryPassword),
+          mustChangePassword: true,
+        },
+      });
+
       void this.email.sendClientWelcomeEmail({
         to: user.email,
         firstName: user.firstName?.trim() || 'there',
         companyName: client.name,
         loginUrl,
+        temporaryPassword,
       });
     }
   }
@@ -454,6 +466,11 @@ export class AdminService {
         data: { isActive: false },
       });
     }
+
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: { mustChangePassword: true },
+    });
 
     const portalPath = rolePortalLoginPath(input.role);
     const emailResult = await this.email.sendInviteCredentials({
@@ -625,7 +642,10 @@ export class AdminService {
     const temporaryPassword = tempPassword();
     await this.prisma.user.update({
       where: { id: BigInt(id) },
-      data: { passwordHash: await argon2.hash(temporaryPassword) },
+      data: {
+        passwordHash: await argon2.hash(temporaryPassword),
+        mustChangePassword: true,
+      },
     });
 
     const role = (user.role ?? ROLES.VIEWER) as Role;
@@ -664,10 +684,16 @@ export class AdminService {
   ) {
     if (authUser.id === id) throw new BadRequestError('Cannot delete yourself');
     await this.getUser(authUser, id);
-    await this.prisma.user.update({
-      where: { id: BigInt(id) },
-      data: { deletedAt: new Date(), isActive: false },
-    });
+    await this.prisma.$transaction([
+      this.prisma.membership.updateMany({
+        where: { userId: BigInt(id) },
+        data: { isActive: false },
+      }),
+      this.prisma.user.update({
+        where: { id: BigInt(id) },
+        data: { deletedAt: new Date(), isActive: false },
+      }),
+    ]);
     await this.auditWrite(authUser, 'DELETE', 'User', id, `Deleted user ${id}`, undefined, ctx);
     return { message: 'User deleted' };
   }
@@ -700,6 +726,8 @@ export class AdminService {
       companySize: body.companySize as string | undefined,
       headquarters: body.headquarters as string | undefined,
       contactName: (body.primaryContactName ?? body.contactName) as string | undefined,
+      contactDesignation: (body.primaryContactDesignation ??
+        body.contactDesignation) as string | undefined,
       contactEmail: (body.primaryContactEmail ?? body.contactEmail) as string | undefined,
       contactPhone: (body.primaryContactPhone ?? body.contactPhone) as string | undefined,
       accountManagerId: body.accountManagerId as number | undefined,
@@ -726,6 +754,7 @@ export class AdminService {
       companySize: mapped.companySize,
       headquarters: mapped.headquarters,
       contactName: String(mapped.contactName ?? '').trim(),
+      contactDesignation: String(mapped.contactDesignation ?? '').trim() || undefined,
       contactEmail: String(mapped.contactEmail ?? '').trim(),
       contactPhone: String(mapped.contactPhone ?? '').trim(),
       accountManagerId: mapped.accountManagerId,
@@ -746,6 +775,9 @@ export class AdminService {
     const mapped: Record<string, unknown> = { ...body };
     if (body.companyName !== undefined) mapped.name = body.companyName;
     if (body.primaryContactName !== undefined) mapped.contactName = body.primaryContactName;
+    if (body.primaryContactDesignation !== undefined) {
+      mapped.contactDesignation = body.primaryContactDesignation;
+    }
     if (body.primaryContactEmail !== undefined) mapped.contactEmail = body.primaryContactEmail;
     if (body.primaryContactPhone !== undefined) mapped.contactPhone = body.primaryContactPhone;
     const updated = await this.clients.update(authUser, id, mapped as never);
@@ -775,7 +807,9 @@ export class AdminService {
     const updated = await this.updateClient(authUser, id, { status }, ctx);
     if (status === 'ACTIVE') {
       await this.syncClientUsersOnClientActivation(organizationId, id);
-      if (existing.status !== 'ACTIVE') {
+      const isFirstActivation =
+        existing.status === 'INACTIVE' || existing.status === 'PROSPECT';
+      if (isFirstActivation) {
         void this.sendClientActivationWelcomeEmails(organizationId, id);
       }
     }
@@ -803,6 +837,38 @@ export class AdminService {
       ctx,
     );
     return this.getClient(authUser, id);
+  }
+
+  async deleteClient(
+    authUser: AuthenticatedUser,
+    id: number,
+    ctx?: { ipAddress?: string | null; userAgent?: string | null },
+  ) {
+    const organizationId = requireOrganization(authUser);
+    const existing = await this.prisma.client.findFirst({
+      where: {
+        id: BigInt(id),
+        organizationId: BigInt(organizationId),
+        deletedAt: null,
+      },
+      select: { name: true },
+    });
+    if (!existing) {
+      throw new NotFoundError('Client not found');
+    }
+
+    await this.clients.delete(authUser, id);
+
+    await this.auditWrite(
+      authUser,
+      'DELETE',
+      'Client',
+      id,
+      `Deleted client ${existing.name}`,
+      undefined,
+      ctx,
+    );
+    return { message: 'Client deleted' };
   }
 
   // ── Candidates ───────────────────────────────────────────────────────────

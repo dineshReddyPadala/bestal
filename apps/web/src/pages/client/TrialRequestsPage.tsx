@@ -373,7 +373,7 @@ export function TrialRequestsPage() {
                 </Select>
               </div>
               <div>
-                <label className="text-sm font-medium">Feedback</label>
+                <label className="text-sm font-medium">Feedback *</label>
                 <Input
                   className="mt-1"
                   value={feedbackText}

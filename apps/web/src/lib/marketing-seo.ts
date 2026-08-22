@@ -66,7 +66,7 @@ export const PAGE_SEO = {
   faq: {
     title: 'Frequently Asked Questions | BesTal',
     description:
-      'Answers about BesTal — pre-vetted talent, team collaboration, onboarding, free trials, and engagement models. Can\'t find what you need? Email info@bestal.co.',
+      'Answers about BesTal — pre-vetted talent, team collaboration, onboarding, free trials, and engagement models. Can\'t find what you need? Email connect@bestal.co.',
   },
   contact: {
     title: 'Reach out to us | BesTal',

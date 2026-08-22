@@ -3,8 +3,6 @@ import { AuthenticationError } from '../../utils/index.js';
 import { AuthService } from './auth.service.js';
 import type {
   ChangePasswordBody,
-  ClientLoginRequestOtpBody,
-  ClientLoginVerifyOtpBody,
   ForgotPasswordBody,
   LoginBody,
   LogoutBody,
@@ -17,20 +15,6 @@ export class AuthController {
 
   login = async (request: FastifyRequest, reply: FastifyReply) => {
     const tokens = await this.authService.login(request.body as LoginBody);
-    return reply.status(200).send({ data: tokens });
-  };
-
-  requestClientLoginOtp = async (request: FastifyRequest, reply: FastifyReply) => {
-    const result = await this.authService.requestClientLoginOtp(
-      request.body as ClientLoginRequestOtpBody,
-    );
-    return reply.status(200).send({ data: result });
-  };
-
-  verifyClientLoginOtp = async (request: FastifyRequest, reply: FastifyReply) => {
-    const tokens = await this.authService.verifyClientLoginOtp(
-      request.body as ClientLoginVerifyOtpBody,
-    );
     return reply.status(200).send({ data: tokens });
   };
 

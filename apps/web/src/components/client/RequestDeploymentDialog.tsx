@@ -58,6 +58,14 @@ export function RequestDeploymentDialog({
       setError('Role title is required');
       return;
     }
+    if (!values.startDate.trim()) {
+      setError('Start date is required');
+      return;
+    }
+    if (!values.endDate.trim()) {
+      setError('End date is required');
+      return;
+    }
     setError(null);
     setSubmitting(true);
     try {
@@ -141,21 +149,23 @@ export function RequestDeploymentDialog({
             </Select>
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="startDate">Start date</Label>
+            <Label htmlFor="startDate">Start date *</Label>
             <Input
               id="startDate"
               type="date"
               value={values.startDate}
               onChange={(e) => setField('startDate', e.target.value)}
+              required
             />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="endDate">End date</Label>
+            <Label htmlFor="endDate">End date *</Label>
             <Input
               id="endDate"
               type="date"
               value={values.endDate}
               onChange={(e) => setField('endDate', e.target.value)}
+              required
             />
           </div>
           <div className="space-y-1.5">

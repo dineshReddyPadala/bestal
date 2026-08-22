@@ -95,7 +95,38 @@ export class ClientService {
   async delete(authUser: AuthenticatedUser, id: number): Promise<void> {
     const organizationId = requireOrganization(authUser);
     await this.getClientOrThrow(organizationId, id);
+
+    const portalUserIds = await this.fastify.prisma.membership.findMany({
+      where: {
+        organizationId: BigInt(organizationId),
+        clientId: BigInt(id),
+        role: 'CLIENT',
+      },
+      select: { userId: true },
+    });
+
     await this.clientRepository.softDelete(organizationId, id);
+
+    const userIds = portalUserIds.map((row) => row.userId);
+    if (userIds.length === 0) return;
+
+    await this.fastify.prisma.$transaction([
+      this.fastify.prisma.membership.updateMany({
+        where: {
+          organizationId: BigInt(organizationId),
+          clientId: BigInt(id),
+          role: 'CLIENT',
+        },
+        data: { isActive: false },
+      }),
+      this.fastify.prisma.user.updateMany({
+        where: {
+          id: { in: userIds },
+          deletedAt: null,
+        },
+        data: { deletedAt: new Date(), isActive: false },
+      }),
+    ]);
   }
 
   async list(

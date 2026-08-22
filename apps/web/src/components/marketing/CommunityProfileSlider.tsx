@@ -7,7 +7,7 @@ import {
 } from '../../lib/demo-engineers';
 import { DemoEngineerCard } from './DemoEngineerCard';
 
-const AUTOPLAY_MS = 6500;
+const AUTOPLAY_MS = 5000;
 
 type CommunityProfileSliderProps = {
   className?: string;
@@ -49,8 +49,6 @@ export function CommunityProfileSlider({
   }
 
   const activeSlide = slides[active] ?? slides[0];
-  const genderClass =
-    activeSlide.engineer.gender === 'female' ? 'mkt-prof--female' : 'mkt-prof--male';
 
   return (
     <div
@@ -60,7 +58,7 @@ export function CommunityProfileSlider({
       onFocusCapture={() => setPaused(true)}
       onBlurCapture={() => setPaused(false)}
     >
-      <article className={cn('mkt-prof mkt-community-slider-card', genderClass)}>
+      <article className="mkt-prof mkt-community-slider-card">
         <div className="mkt-dtag mkt-community-slider-dtag">{activeSlide.community}</div>
 
         <div

@@ -41,11 +41,11 @@ export function SuperAdminClientFormPage() {
     companySize: '',
     headquarters: '',
     primaryContactName: '',
+    primaryContactDesignation: '',
     primaryContactEmail: '',
     primaryContactPhone: '',
     accountManagerId: '',
     status: 'PROSPECT',
-    paymentTerms: '',
     notes: '',
   });
   const [busy, setBusy] = useState(false);
@@ -59,11 +59,11 @@ export function SuperAdminClientFormPage() {
       companySize: String(data.companySize ?? ''),
       headquarters: String(data.headquarters ?? ''),
       primaryContactName: String(data.contactName ?? ''),
+      primaryContactDesignation: String(data.contactDesignation ?? ''),
       primaryContactEmail: String(data.contactEmail ?? ''),
       primaryContactPhone: String(data.contactPhone ?? ''),
       accountManagerId: data.accountManagerId != null ? String(data.accountManagerId) : '',
       status: String(data.status ?? 'PROSPECT'),
-      paymentTerms: String(data.paymentTerms ?? ''),
       notes: String(data.notes ?? ''),
     });
   }, [data, isNew, clientId, isEdit]);
@@ -175,9 +175,9 @@ export function SuperAdminClientFormPage() {
             ['companySize', 'Company size', false],
             ['headquarters', 'Headquarters', false],
             ['primaryContactName', 'Primary contact name', true],
+            ['primaryContactDesignation', 'Designation', false],
             ['primaryContactEmail', 'Primary contact email', true],
             ['primaryContactPhone', 'Primary contact phone', true],
-            ['paymentTerms', 'Payment terms', false],
           ] as const
         ).map(([key, label, required]) => (
           <label key={key} className="space-y-1 text-sm">

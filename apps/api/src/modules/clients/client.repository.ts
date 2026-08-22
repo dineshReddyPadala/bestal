@@ -41,6 +41,7 @@ export class ClientRepository extends BaseRepository {
         website: data.website,
         headquarters: data.headquarters,
         contactName: data.contactName,
+        contactDesignation: data.contactDesignation,
         contactEmail: data.contactEmail?.toLowerCase() ?? data.contactEmail,
         contactPhone: data.contactPhone,
         paymentTerms: data.paymentTerms,
@@ -101,6 +102,9 @@ export class ClientRepository extends BaseRepository {
         ...(data.website !== undefined && { website: data.website }),
         ...(data.headquarters !== undefined && { headquarters: data.headquarters }),
         ...(data.contactName !== undefined && { contactName: data.contactName }),
+        ...(data.contactDesignation !== undefined && {
+          contactDesignation: data.contactDesignation,
+        }),
         ...(data.contactEmail !== undefined && {
           contactEmail:
             data.contactEmail == null ? null : data.contactEmail.toLowerCase(),

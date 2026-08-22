@@ -246,6 +246,10 @@ export function useAdminMutations() {
       }) => adminApi.assignAccountManager(id, accountManagerId),
       onSuccess: invalidate,
     }),
+    deleteClient: useMutation({
+      mutationFn: (id: number) => adminApi.deleteClient(id),
+      onSuccess: invalidate,
+    }),
     approveCandidate: useMutation({
       mutationFn: (id: number) => adminApi.approveCandidate(id),
       onSuccess: invalidate,

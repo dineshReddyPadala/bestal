@@ -238,7 +238,6 @@ export function ClientManagementView({
                 companySize: values.companySize || undefined,
                 headquarters: values.headquarters || undefined,
                 website: values.website,
-                paymentTerms: values.paymentTerms || undefined,
                 accountManagerId,
               },
             });
@@ -254,7 +253,6 @@ export function ClientManagementView({
               companySize: values.companySize || undefined,
               headquarters: values.headquarters || undefined,
               website: values.website,
-              paymentTerms: values.paymentTerms || undefined,
               ...(accountManagerId ? { accountManagerId } : {}),
             });
             show(`Client created — ${values.company}`);
@@ -460,7 +458,6 @@ export function ClientManagementView({
                     companySize: editingClient.companySize ?? '',
                     headquarters: editingClient.headquarters ?? '',
                     website: editingClient.website ?? '',
-                    paymentTerms: editingClient.paymentTerms ?? '',
                   }
                 : undefined
             }

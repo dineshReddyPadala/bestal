@@ -20,6 +20,7 @@ import {
   IMPORT_SKILL_COMMUNITY_ALIASES,
   IMPORT_SCORE_SOURCES,
   IMPORT_SKILL_COMMUNITIES,
+  IMPORT_TIMEZONES,
   IMPORT_UPLOAD_REQUIRED_SHEETS,
   IMPORT_WORKBOOK_SHEETS,
   SCORES_SHEET_COLUMNS,
@@ -391,6 +392,9 @@ function assertSkillCommunity(
 
 function isValidImportTimezone(value: string): boolean {
   const trimmed = value.trim();
+  if ((IMPORT_TIMEZONES as readonly string[]).includes(trimmed)) {
+    return true;
+  }
   if (trimmed === 'UTC') return true;
   if (!/^[A-Za-z_]+(?:\/[A-Za-z_]+)+$/.test(trimmed)) {
     return false;
@@ -420,7 +424,7 @@ function assertTimezone(
     columnName,
     suppliedValue: value,
     errorCode: 'INVALID_METADATA',
-    message: 'Invalid timezone. Use a valid IANA timezone (e.g. America/New_York) or UTC.',
+    message: 'Invalid timezone. Choose a value from the Timezones sheet in the import template.',
   });
   return false;
 }

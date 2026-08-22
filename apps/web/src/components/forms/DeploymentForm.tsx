@@ -19,7 +19,7 @@ const deploymentFormSchema = z.object({
   placementType: z.enum(['CONTRACT', 'PERMANENT', 'TEMP_TO_PERM', 'FREELANCE']),
   roleTitle: z.string().min(1, 'Role title is required').max(255),
   startDate: z.string().min(1, 'Start date is required'),
-  endDate: z.string().optional(),
+  endDate: z.string().min(1, 'End date is required'),
   billingRate: z.coerce.number().positive('Must be greater than 0'),
   candidatePayRate: z.coerce.number().positive().optional(),
   grossMarginPerHour: z.coerce.number().optional(),
@@ -137,8 +137,9 @@ export function DeploymentForm({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="endDate">End date</Label>
+          <Label htmlFor="endDate">End date *</Label>
           <Input id="endDate" type="date" {...register('endDate')} />
+          {errors.endDate && <p className="text-xs text-red-600">{errors.endDate.message}</p>}
         </div>
 
         <div className="space-y-2">

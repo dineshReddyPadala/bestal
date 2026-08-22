@@ -46,10 +46,12 @@ const RESOURCE_OPTIONS = [
 
 const TIMEZONE_OPTIONS = [
   { value: '', label: 'Select time zone' },
-  { value: 'Eastern', label: 'Eastern (ET)' },
-  { value: 'Central', label: 'Central (CT)' },
-  { value: 'Mountain', label: 'Mountain (MT)' },
-  { value: 'Pacific', label: 'Pacific (PT)' },
+  { value: 'Eastern', label: 'US Eastern Time (ET)' },
+  { value: 'Central', label: 'US Central Time (CT)' },
+  { value: 'Mountain', label: 'US Mountain Time (MT)' },
+  { value: 'Pacific', label: 'US Pacific Time (PT)' },
+  { value: 'Alaska', label: 'US Alaska Time (AKT)' },
+  { value: 'Hawaii', label: 'US Hawaii Time (HT)' },
 ];
 
 const MAX_FILE_BYTES = 10 * 1024 * 1024;

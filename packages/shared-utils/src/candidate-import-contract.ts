@@ -303,17 +303,7 @@ export const IMPORT_PREFERRED_SHIFTS = [
 
 export const IMPORT_CURRENCIES = ['USD', 'EUR', 'GBP', 'INR', 'CAD', 'AUD'] as const;
 
-export const IMPORT_TIMEZONES = [
-  'UTC',
-  'Europe/London',
-  'Europe/Berlin',
-  'America/New_York',
-  'America/Chicago',
-  'America/Los_Angeles',
-  'Asia/Kolkata',
-  'Asia/Singapore',
-  'Australia/Sydney',
-] as const;
+export { IMPORT_TIMEZONE_VALUES as IMPORT_TIMEZONES } from './timezones.js';
 
 export const IMPORT_SCORE_SOURCES = [
   'ATS_AI',

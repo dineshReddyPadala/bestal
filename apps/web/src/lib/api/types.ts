@@ -57,6 +57,7 @@ export type AuthUserProfile = {
   portal: Portal;
   permissions: string[];
   lastLoginAt: string | null;
+  mustChangePassword: boolean;
 };
 
 export type LoginRequest = {
@@ -210,6 +211,7 @@ export type ClientDto = {
   companySize: string | null;
   headquarters: string | null;
   contactName: string | null;
+  contactDesignation: string | null;
   paymentTerms: string | null;
   addressLine1: string | null;
   addressLine2: string | null;
