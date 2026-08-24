@@ -1579,6 +1579,7 @@ function SkillCommunitiesPanel() {
     name: string;
     slug: string;
     description: string | null;
+    displayOrder?: number;
     iconId?: number | null;
     iconUrl?: string | null;
     isActive: boolean;
@@ -1590,12 +1591,14 @@ function SkillCommunitiesPanel() {
   const [name, setName] = useState('');
   const [slug, setSlug] = useState('');
   const [description, setDescription] = useState('');
+  const [displayOrder, setDisplayOrder] = useState('');
   const [iconId, setIconId] = useState('');
 
   function resetForm() {
     setName('');
     setSlug('');
     setDescription('');
+    setDisplayOrder('');
     setIconId('');
     setEditingId(null);
   }
@@ -1610,6 +1613,7 @@ function SkillCommunitiesPanel() {
     setName(row.name);
     setSlug(row.slug);
     setDescription(row.description ?? '');
+    setDisplayOrder(row.displayOrder != null ? String(row.displayOrder) : '');
     setIconId(row.iconId != null ? String(row.iconId) : '');
     setEditOpen(true);
   }
@@ -1636,6 +1640,11 @@ function SkillCommunitiesPanel() {
         cell: ({ getValue }) => <span className="font-medium">{getValue() as string}</span>,
       },
       { accessorKey: 'slug', header: 'Slug' },
+      {
+        accessorKey: 'displayOrder',
+        header: 'Order',
+        cell: ({ getValue }) => getValue() ?? '—',
+      },
       {
         accessorKey: 'description',
         header: 'Description',
@@ -1723,6 +1732,12 @@ function SkillCommunitiesPanel() {
         value={description}
         onChange={(e) => setDescription(e.target.value)}
       />
+      <Input
+        placeholder="Display order"
+        type="number"
+        value={displayOrder}
+        onChange={(e) => setDisplayOrder(e.target.value)}
+      />
       <IconSelectField value={iconId} onChange={setIconId} />
     </div>
   );
@@ -1773,6 +1788,7 @@ function SkillCommunitiesPanel() {
                     name,
                     slug: slug || name.toLowerCase().replace(/\s+/g, '-'),
                     description,
+                    displayOrder: displayOrder.trim() ? Number(displayOrder) : undefined,
                     iconId: iconId ? Number(iconId) : null,
                   })
                   .then(() => {
@@ -1810,6 +1826,7 @@ function SkillCommunitiesPanel() {
                       name,
                       slug: slug || name.toLowerCase().replace(/\s+/g, '-'),
                       description,
+                      displayOrder: displayOrder.trim() ? Number(displayOrder) : undefined,
                       iconId: iconId ? Number(iconId) : null,
                     },
                   })

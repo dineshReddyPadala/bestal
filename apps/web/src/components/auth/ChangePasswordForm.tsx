@@ -1,4 +1,4 @@
-import { Button, Input } from '@bestal/ui';
+import { Button, PasswordInput } from '@bestal/ui';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { z } from 'zod';
@@ -105,9 +105,8 @@ export function ChangePasswordForm({ required = false }: ChangePasswordFormProps
         <label htmlFor="currentPassword" className="text-sm font-medium text-foreground">
           Current password
         </label>
-        <Input
+        <PasswordInput
           id="currentPassword"
-          type="password"
           value={currentPassword}
           onChange={(event) => setCurrentPassword(event.target.value)}
           autoComplete="current-password"
@@ -122,9 +121,8 @@ export function ChangePasswordForm({ required = false }: ChangePasswordFormProps
         <label htmlFor="newPassword" className="text-sm font-medium text-foreground">
           New password
         </label>
-        <Input
+        <PasswordInput
           id="newPassword"
-          type="password"
           value={newPassword}
           onChange={(event) => setNewPassword(event.target.value)}
           autoComplete="new-password"
@@ -139,9 +137,8 @@ export function ChangePasswordForm({ required = false }: ChangePasswordFormProps
         <label htmlFor="confirmPassword" className="text-sm font-medium text-foreground">
           Confirm new password
         </label>
-        <Input
+        <PasswordInput
           id="confirmPassword"
-          type="password"
           value={confirmPassword}
           onChange={(event) => setConfirmPassword(event.target.value)}
           autoComplete="new-password"

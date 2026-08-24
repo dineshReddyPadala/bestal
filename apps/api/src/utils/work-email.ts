@@ -112,7 +112,7 @@ export function validateCompanyContactEmail(
   if (!matchesCompany) {
     return {
       valid: false,
-      message: 'Contact email must match your company name or website domain',
+      message: 'Contact email must match your company name',
     };
   }
 

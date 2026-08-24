@@ -127,6 +127,7 @@ export interface CandidateListItemDto {
   primaryRole: string | null;
   currentCompany: string | null;
   currentTitle: string | null;
+  displayName: string | null;
   bestalScore: number | null;
   clientBillRate: number | null;
   currency: string | null;

@@ -21,7 +21,6 @@ type ClientSearchToolbarProps = {
   viewMode: ClientSearchViewMode;
   onViewModeChange: (mode: ClientSearchViewMode) => void;
   resultCount: number;
-  communityOptions?: readonly string[];
   timezoneOptions?: readonly string[];
   className?: string;
 };
@@ -72,7 +71,6 @@ export function ClientSearchToolbar({
   viewMode,
   onViewModeChange,
   resultCount,
-  communityOptions = [],
   timezoneOptions = [],
   className,
 }: ClientSearchToolbarProps) {
@@ -87,15 +85,7 @@ export function ClientSearchToolbar({
   return (
     <div className={cn('space-y-3', className)}>
       <div className="flex flex-wrap items-center gap-2 lg:flex-nowrap">
-        <div className="grid min-w-0 flex-1 grid-cols-2 items-center gap-2 sm:grid-cols-3 lg:grid-cols-[repeat(4,minmax(0,1fr))_minmax(10rem,1fr)]">
-          <FilterSelect
-            value={filters.community}
-            onChange={(value) => set({ community: value })}
-            options={[
-              { value: 'all', label: 'All Commun..' },
-              ...communityOptions.map((community) => ({ value: community, label: community })),
-            ]}
-          />
+        <div className="grid min-w-0 flex-1 grid-cols-2 items-center gap-2 sm:grid-cols-3 lg:grid-cols-[repeat(3,minmax(0,1fr))_minmax(10rem,1fr)]">
           <FilterSelect
             value={filters.experience}
             onChange={(value) => set({ experience: value })}

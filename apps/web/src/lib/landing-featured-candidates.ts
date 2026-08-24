@@ -1,5 +1,7 @@
 import type { CommunityProfileSlide, DemoEngineer, DemoEngineerGender, ScoreRow } from './demo-engineers';
 
+export type { CommunityProfileSlide };
+
 export type PublicFeaturedEvaluation = {
   technicalScore: number | null;
   problemSolvingScore: number | null;
@@ -26,6 +28,7 @@ export type PublicFeaturedCandidate = {
   primaryRole: string | null;
   currentCompany: string | null;
   currentTitle: string | null;
+  displayName: string | null;
   bestalScore: number | null;
   clientBillRate: number | null;
   currency: string | null;
@@ -101,9 +104,16 @@ function formatTestedOn(evaluationDate: string | null | undefined): string {
   return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
 }
 
+function capitalizeNamePart(value: string): string {
+  const trimmed = value.trim().replace(/\.+$/, '');
+  if (!trimmed) return '';
+  return trimmed.charAt(0).toUpperCase() + trimmed.slice(1).toLowerCase();
+}
+
 function formatDisplayName(firstName: string, lastName: string): string {
-  const initial = lastName.trim().charAt(0);
-  return initial ? `${firstName} ${initial}.` : firstName;
+  const first = capitalizeNamePart(firstName);
+  const last = capitalizeNamePart(lastName);
+  return [first, last].filter(Boolean).join(' ');
 }
 
 function formatInitials(firstName: string, lastName: string): string {
@@ -113,7 +123,7 @@ function formatInitials(firstName: string, lastName: string): string {
 }
 
 function formatExperience(years: number | null): string {
-  if (years == null || years <= 0) return 'Experience on profile';
+  if (years == null || years <= 0) return '';
   return years === 1 ? '1 year' : `${years} years`;
 }
 
@@ -121,7 +131,7 @@ function formatAvailability(status: string | null | undefined): string {
   switch (status) {
     case 'AVAILABLE':
     case 'IMMEDIATE':
-      return 'Available now';
+      return 'Available Now';
     case 'ONE_WEEK':
       return 'Available in 1 week';
     case 'TWO_WEEKS':
@@ -157,11 +167,7 @@ function timezoneDetails(overlap: string | null | undefined): {
 } {
   const raw = overlap?.trim();
   if (!raw) {
-    return {
-      timezone: 'Central',
-      zoneLabel: 'Works US Central hours',
-      zoneHours: '9:00am – 6:00pm CST · full business day',
-    };
+    return { timezone: '', zoneLabel: '', zoneHours: '' };
   }
 
   const lower = raw.toLowerCase();
@@ -205,27 +211,27 @@ export function mapFeaturedCandidateToDemoEngineer(
   candidate: PublicFeaturedCandidate,
 ): DemoEngineer {
   const experience = formatExperience(candidate.yearsExperience);
-  const location = candidate.location?.trim() || 'Location on profile';
+  const location = candidate.location?.trim() ?? '';
   const { zoneLabel, zoneHours, timezone } = timezoneDetails(candidate.timezoneOverlap);
-  const skills =
-    candidate.skillNames.length > 0
-      ? candidate.skillNames
-      : candidate.primarySkillCommunityName
-        ? [candidate.primarySkillCommunityName]
-        : [];
+  const skills = candidate.skillNames.filter(Boolean);
   const dimensions = buildEvaluationDimensions(candidate.evaluation);
   const { quote, quoteIsPlaceholder } = resolveEvaluationQuote(candidate.evaluation);
+  const role =
+    candidate.primaryRole?.trim() ||
+    candidate.currentTitle?.trim() ||
+    candidate.headline?.trim() ||
+    '';
 
   return {
     id: String(candidate.id),
     initials: formatInitials(candidate.firstName, candidate.lastName),
     name: formatDisplayName(candidate.firstName, candidate.lastName),
-    role: candidate.primaryRole ?? candidate.headline ?? 'Technology Consultant',
-    discipline: candidate.primarySkillCommunityName ?? 'Technology',
-    gender: (candidate.id % 2 === 0 ? 'female' : 'male') satisfies DemoEngineerGender,
+    role,
+    discipline: candidate.primarySkillCommunityName?.trim() ?? '',
+    gender: 'female' satisfies DemoEngineerGender,
     experience,
     location,
-    meta: `${experience} · ${location}`,
+    meta: [experience, location].filter(Boolean).join(' · '),
     rate: candidate.clientBillRate ?? 0,
     skills,
     zoneLabel,
@@ -247,16 +253,19 @@ export function mapFeaturedCandidateToDemoEngineer(
           : 0,
     confirmed: formatConfirmed(candidate.publishedAt),
     trialEligible: true,
+    previousCompany: candidate.currentCompany?.trim() || null,
   };
 }
 
 export function mapFeaturedCandidateToProfileSlide(
   candidate: PublicFeaturedCandidate,
 ): CommunityProfileSlide {
-  const community = candidate.primarySkillCommunityName ?? 'Technology';
+  const community = candidate.primarySkillCommunityName?.trim() ?? '';
+  const description =
+    candidate.headline?.trim() || candidate.primaryRole?.trim() || community;
   return {
     community,
-    description: candidate.headline ?? candidate.primaryRole ?? community,
+    description,
     engineer: mapFeaturedCandidateToDemoEngineer(candidate),
   };
 }

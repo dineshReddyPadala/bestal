@@ -20,7 +20,6 @@ type SignupPayload = {
   contactName: string;
   contactPhone: string;
   contactDesignation: string;
-  website?: string | null;
 };
 
 function splitContactName(fullName: string): { firstName: string; lastName: string } {
@@ -142,7 +141,6 @@ export class ClientRegistrationService {
       contactName: input.contactName.trim(),
       contactPhone: input.contactPhone.trim(),
       contactDesignation: input.contactDesignation.trim(),
-      website: input.website?.trim() || null,
     };
 
     const clientSignupOtp = this.getClientSignupOtpDelegate();
@@ -231,7 +229,6 @@ export class ClientRegistrationService {
       contactName: input.contactName.trim(),
       contactPhone: input.contactPhone.trim(),
       contactDesignation: input.contactDesignation?.trim() ?? '',
-      website: input.website?.trim() || null,
     }, input.password);
   }
 
@@ -309,7 +306,6 @@ export class ClientRegistrationService {
               industry: 'Pending',
               contactName: input.contactName,
               contactDesignation: input.contactDesignation || null,
-              website: input.website?.trim() || null,
               contactEmail: email,
               contactPhone: input.contactPhone,
             },
@@ -324,7 +320,6 @@ export class ClientRegistrationService {
               industry: 'Pending',
               contactName: input.contactName,
               contactDesignation: input.contactDesignation || null,
-              website: input.website?.trim() || null,
               contactEmail: email,
               contactPhone: input.contactPhone,
             },
@@ -378,7 +373,6 @@ export class ClientRegistrationService {
           industry: 'Pending',
           contactName: input.contactName,
           contactDesignation: input.contactDesignation || null,
-          website: input.website?.trim() || null,
           contactEmail: email,
           contactPhone: input.contactPhone,
         },

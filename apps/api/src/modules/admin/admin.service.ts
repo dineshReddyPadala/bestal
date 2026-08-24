@@ -1276,6 +1276,7 @@ export class AdminService {
       description: string | null;
       iconId: bigint | null;
       iconUrl: string | null;
+      displayOrder?: number;
       isActive: boolean;
       createdAt: Date;
       updatedAt: Date;
@@ -1291,6 +1292,7 @@ export class AdminService {
       iconId: s.iconId ? bigintToNumber(s.iconId) : null,
       iconUrl: s.icon?.url ?? s.iconUrl,
       iconName: s.icon?.name ?? null,
+      displayOrder: s.displayOrder ?? 0,
       isActive: s.isActive,
       candidateCount,
       createdAt: s.createdAt.toISOString(),
@@ -1330,7 +1332,7 @@ export class AdminService {
       this.prisma.skillCommunity.findMany({
         where,
         include: this.skillCommunityIconInclude,
-        orderBy: { name: 'asc' },
+        orderBy: [{ displayOrder: 'asc' }, { name: 'asc' }] as any,
         skip: (page - 1) * limit,
         take: limit,
       }),
@@ -1359,17 +1361,23 @@ export class AdminService {
       slug: string;
       description?: string;
       isActive?: boolean;
+      displayOrder?: number;
       iconId?: number | null;
     },
     ctx?: { ipAddress?: string | null; userAgent?: string | null },
   ) {
     const iconLink = await this.resolveSkillCommunityIcon(input.iconId);
-    const created = await this.prisma.skillCommunity.create({
+    const displayOrder =
+      input.displayOrder ??
+      (((await (this.prisma.skillCommunity as any).aggregate({ _max: { displayOrder: true } }))._max
+        .displayOrder ?? 0) + 1);
+    const created = await (this.prisma.skillCommunity as any).create({
       data: {
         name: input.name.trim(),
         slug: input.slug.trim().toLowerCase(),
         description: input.description ?? null,
         isActive: input.isActive ?? true,
+        displayOrder,
         iconId: iconLink.iconId,
         iconUrl: iconLink.iconUrl,
       },
@@ -1462,6 +1470,7 @@ export class AdminService {
       slug?: string;
       description?: string | null;
       isActive?: boolean;
+      displayOrder?: number;
       iconId?: number | null;
     },
     ctx?: { ipAddress?: string | null; userAgent?: string | null },
@@ -1483,6 +1492,7 @@ export class AdminService {
         ...(input.slug !== undefined ? { slug: input.slug.toLowerCase() } : {}),
         ...(input.description !== undefined ? { description: input.description } : {}),
         ...(input.isActive !== undefined ? { isActive: input.isActive } : {}),
+        ...(input.displayOrder !== undefined ? { displayOrder: input.displayOrder } : {}),
         ...(input.iconId !== undefined
           ? { iconId: iconPatch.iconId, iconUrl: iconPatch.iconUrl }
           : {}),

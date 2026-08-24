@@ -30,6 +30,7 @@ export class SkillCommunityService {
       slug: row.slug,
       description: row.description,
       iconUrl: resolveCommunityIconUrl(row),
+      displayOrder: row.displayOrder,
     }));
   }
 }

@@ -1,13 +1,15 @@
 import { mapApiCandidateToClientSearchRecord } from '../../lib/client-search-api';
 import { useCandidatesList } from '../../hooks/api/useCandidates';
+import { usePublicSkillCommunitiesList } from '../../hooks/api/useSkillCommunities';
 import { cn } from '@bestal/shared-utils';
 import { Button, EmptyState, useDashboardHeaderLeading } from '@bestal/ui';
-import { Home, Users } from 'lucide-react';
+import { ArrowLeft, Home, Users } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ClientCandidateSearchCard } from '../../components/client/ClientCandidateSearchCard';
 import { ForwardArrow } from '../../components/ui/ForwardArrow';
 import { ClientCandidateSearchTable } from '../../components/client/ClientCandidateSearchTable';
+import { ClientSkillCommunityGrid } from '../../components/client/ClientSkillCommunityGrid';
 import {
   ClientSearchToolbar,
   type ClientSearchViewMode,
@@ -39,13 +41,26 @@ function readStoredViewMode(): ClientSearchViewMode {
   return stored === 'cards' ? 'cards' : 'list';
 }
 
+function parseCommunityId(value: string | null): number | null {
+  if (!value) return null;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+}
+
 export function CandidateSearchPage() {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { user } = useAuth();
   const { message, variant, show, showError, dismiss } = useDemoToast();
   const { addRequest: addTrialRequest, trials } = useClientTrialRequests();
   const canRequestTrialBase = user?.clientId != null;
+
+  const selectedCommunityId = parseCommunityId(searchParams.get('communityId'));
+  const { data: communities = [], isLoading: communitiesLoading } = usePublicSkillCommunitiesList();
+  const selectedCommunity = useMemo(
+    () => communities.find((community) => community.id === selectedCommunityId) ?? null,
+    [communities, selectedCommunityId],
+  );
 
   const [filters, setFilters] = useState<ClientSearchFilters>(() => ({
     ...DEFAULT_CLIENT_SEARCH_FILTERS,
@@ -62,20 +77,20 @@ export function CandidateSearchPage() {
   } | null>(null);
 
   const searchParam = filters.query.trim() || undefined;
-  const { data: apiCandidates, isLoading } = useCandidatesList({
-    limit: 100,
-    sort: '-publishedAt',
-    search: searchParam,
-  });
+  const { data: apiCandidates, isLoading } = useCandidatesList(
+    {
+      limit: 100,
+      sort: '-publishedAt',
+      search: searchParam,
+      primarySkillCommunityId: selectedCommunityId ?? undefined,
+    },
+    { enabled: selectedCommunityId != null },
+  );
 
   const allRecords = useMemo(() => {
     return (apiCandidates?.data ?? []).map(mapApiCandidateToClientSearchRecord);
   }, [apiCandidates]);
 
-  const communityOptions = useMemo(
-    () => uniqueSorted(allRecords.map((r) => r.community)),
-    [allRecords],
-  );
   const timezoneOptions = useMemo(
     () => uniqueSorted(allRecords.map((r) => r.timezone).filter((tz) => tz !== 'Flexible')),
     [allRecords],
@@ -104,10 +119,28 @@ export function CandidateSearchPage() {
         <nav className="flex min-w-0 items-center gap-2 text-sm text-muted-foreground">
           <Home className="h-4 w-4 shrink-0" aria-hidden />
           <span className="text-muted-foreground/60">/</span>
-          <span className="truncate font-semibold text-foreground">Candidate Search</span>
+          {selectedCommunity ? (
+            <>
+              <button
+                type="button"
+                className="truncate hover:text-foreground"
+                onClick={() => {
+                  const next = new URLSearchParams(searchParams);
+                  next.delete('communityId');
+                  setSearchParams(next);
+                }}
+              >
+                Candidate Search
+              </button>
+              <span className="text-muted-foreground/60">/</span>
+              <span className="truncate font-semibold text-foreground">{selectedCommunity.name}</span>
+            </>
+          ) : (
+            <span className="truncate font-semibold text-foreground">Candidate Search</span>
+          )}
         </nav>
       ),
-      [],
+      [searchParams, selectedCommunity, setSearchParams],
     ),
   );
 
@@ -125,6 +158,13 @@ export function CandidateSearchPage() {
       ),
     [selectedRecords, trials],
   );
+
+  function selectCommunity(communityId: number) {
+    const next = new URLSearchParams(searchParams);
+    next.set('communityId', String(communityId));
+    setSearchParams(next);
+    setSelectedIds(new Set());
+  }
 
   function toggleSelected(id: number, next: boolean) {
     setSelectedIds((prev) => {
@@ -169,6 +209,25 @@ export function CandidateSearchPage() {
   const hasSelection = selectedIds.size > 0;
   const isListView = viewMode === 'list';
 
+  if (!selectedCommunityId) {
+    return (
+      <div className="flex min-h-full flex-col p-4 sm:p-6">
+        <div className="mb-6">
+          <h1 className="font-display text-2xl font-semibold text-foreground">Skill Communities</h1>
+          <p className="mt-2 max-w-3xl text-sm leading-relaxed text-muted-foreground">
+            Browse pre-vetted engineers by discipline. Select a community to view matching
+            candidates.
+          </p>
+        </div>
+        <ClientSkillCommunityGrid
+          communities={communities}
+          isLoading={communitiesLoading}
+          onSelect={(community) => selectCommunity(community.id)}
+        />
+      </div>
+    );
+  }
+
   return (
     <div
       className={cn(
@@ -188,6 +247,32 @@ export function CandidateSearchPage() {
             : 'flex-1 space-y-4 p-4 sm:p-6',
         )}
       >
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="mb-2 -ml-2 gap-1.5"
+              onClick={() => {
+                const next = new URLSearchParams(searchParams);
+                next.delete('communityId');
+                setSearchParams(next);
+              }}
+            >
+              <ArrowLeft className="h-4 w-4" />
+              All communities
+            </Button>
+            <h1 className="font-display text-xl font-semibold text-foreground">
+              {selectedCommunity?.name ?? 'Candidates'}
+            </h1>
+            {selectedCommunity?.description ? (
+              <p className="mt-1 max-w-3xl text-sm text-muted-foreground">
+                {selectedCommunity.description}
+              </p>
+            ) : null}
+          </div>
+        </div>
+
         <ClientSearchToolbar
           filters={filters}
           onChange={setFilters}
@@ -196,7 +281,6 @@ export function CandidateSearchPage() {
           viewMode={viewMode}
           onViewModeChange={setViewMode}
           resultCount={filtered.length}
-          communityOptions={communityOptions}
           timezoneOptions={timezoneOptions}
           className={isListView ? 'shrink-0' : undefined}
         />

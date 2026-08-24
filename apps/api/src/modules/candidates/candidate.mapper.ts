@@ -134,6 +134,7 @@ export async function mapCandidateToListItemAsync(
     primaryRole: candidate.primaryRole ?? null,
     currentCompany: candidate.currentCompany ?? null,
     currentTitle: candidate.currentTitle ?? null,
+    displayName: candidate.displayName ?? null,
     bestalScore: candidate.bestalScore ?? null,
     clientBillRate: candidate.clientBillRate ? Number(candidate.clientBillRate) : null,
     currency: candidate.currency,

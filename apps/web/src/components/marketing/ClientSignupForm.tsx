@@ -49,7 +49,6 @@ export function ClientSignupForm({
       contactEmail: '',
       contactPhone: '',
       contactDesignation: '',
-      website: '',
     },
   });
 
@@ -209,24 +208,7 @@ export function ClientSignupForm({
       </label>
 
       <label className="mkt-login-field">
-        <span className="mkt-login-label">Website</span>
-        <input
-          type="text"
-          autoComplete="url"
-          inputMode="url"
-          className="mkt-login-input"
-          placeholder="company.com"
-          {...detailsForm.register('website')}
-        />
-        {detailsForm.formState.errors.website && (
-          <span className="mkt-login-field-error">
-            {detailsForm.formState.errors.website.message}
-          </span>
-        )}
-      </label>
-
-      <label className="mkt-login-field">
-        <RequiredLabel>Primary contact email</RequiredLabel>
+        <RequiredLabel>Official email</RequiredLabel>
         <input
           type="email"
           autoComplete="email"
@@ -242,7 +224,7 @@ export function ClientSignupForm({
       </label>
 
       <label className="mkt-login-field">
-        <RequiredLabel>Primary contact phone</RequiredLabel>
+        <RequiredLabel>Phone number</RequiredLabel>
         <input
           type="tel"
           autoComplete="tel"
@@ -262,7 +244,7 @@ export function ClientSignupForm({
         className="mkt-btn mkt-btn-primary mkt-login-submit"
         disabled={detailsForm.formState.isSubmitting}
       >
-        {detailsForm.formState.isSubmitting ? 'Sending code…' : 'Verify'}
+        {detailsForm.formState.isSubmitting ? 'Sending code…' : 'Generate OTP'}
         {!detailsForm.formState.isSubmitting && <ForwardArrow className="h-4 w-4" />}
       </button>
 

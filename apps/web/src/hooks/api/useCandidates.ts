@@ -3,10 +3,11 @@ import { candidatesApi, listPublicFeaturedCandidates } from '../../lib/api';
 import type { ListQuery } from '../../lib/api/client';
 import { queryKeys } from './query-keys';
 
-export function useCandidatesList(params?: ListQuery) {
+export function useCandidatesList(params?: ListQuery, options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: queryKeys.candidates.list(params),
     queryFn: () => candidatesApi.list(params),
+    enabled: options?.enabled ?? true,
   });
 }
 
@@ -14,7 +15,8 @@ export function usePublicFeaturedCandidates(limit = 5) {
   return useQuery({
     queryKey: [...queryKeys.candidates.publicFeatured, limit],
     queryFn: () => listPublicFeaturedCandidates(limit),
-    staleTime: 5 * 60_000,
+    staleTime: 30_000,
+    refetchOnWindowFocus: true,
   });
 }
 

@@ -1,5 +1,7 @@
-/** BesTal full wordmark — served from public/bestal-logo.svg */
-export const BESTAL_LOGO_SRC = '/New logo (1).svg';
+import bestalLogo from '../asserts/New logo.png';
+
+/** BesTal full wordmark with tagline — marketing landing and portal shells */
+export const BESTAL_LOGO_SRC = bestalLogo;
 
 /** Client login split-layout hero */
 export const CLIENT_LOGIN_HERO_IMAGE_SRC = '/login_updated_img.png';

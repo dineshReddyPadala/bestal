@@ -1,4 +1,5 @@
 import { cn } from '@bestal/shared-utils';
+import { Link } from 'react-router-dom';
 import { MAX_COMPARE } from '../../hooks/useSampleTalentShortlist';
 import type { DemoEngineer } from '../../lib/demo-engineers';
 import { formatDimensionScoreDisplay } from '../../lib/score-display';
@@ -12,6 +13,7 @@ type DemoEngineerCardProps = {
   hideCommunityLabel?: boolean;
   hideSecondaryActions?: boolean;
   shellless?: boolean;
+  variant?: 'default' | 'landing';
   showTalentActions?: boolean;
   isShortlisted?: boolean;
   isInCompare?: boolean;
@@ -19,6 +21,148 @@ type DemoEngineerCardProps = {
   onShortlist?: () => void;
   onCompare?: () => void;
 };
+
+function BriefcaseIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden="true">
+      <rect x="3" y="7" width="18" height="13" rx="2" />
+      <path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+    </svg>
+  );
+}
+
+function VerifyCheckIcon() {
+  return (
+    <span className="mkt-lpc-check" aria-hidden="true">
+      <svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
+        <circle cx="8" cy="8" r="8" fill="currentColor" />
+        <path
+          d="M4.75 8.25 6.8 10.3 11.35 5.75"
+          stroke="#fff"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    </span>
+  );
+}
+
+function formatLandingAvailability(value: string): string {
+  if (/^available now$/i.test(value.trim())) return 'Available Now';
+  return value;
+}
+
+function LandingProfileCardBody({ engineer }: { engineer: DemoEngineer }) {
+  const expertise = engineer.skills.slice(0, 2);
+  const previousCompany = engineer.previousCompany?.trim();
+  const showScore = engineer.score > 0;
+  const showRate = engineer.rate > 0;
+  const showRole = Boolean(engineer.role.trim());
+  const showExperience = Boolean(engineer.experience.trim());
+  const showAvailability = Boolean(engineer.availability.trim()) && engineer.availability !== 'Check availability';
+
+  return (
+    <div className="mkt-lpc">
+      {showRate ? (
+        <div className="mkt-lpc-rate">
+          ${engineer.rate}
+          <span className="mkt-lpc-rate-s">/hr</span>
+        </div>
+      ) : null}
+
+      <div className="mkt-lpc-grid">
+        <div className="mkt-lpc-left">
+          <div className="mkt-lpc-av">{engineer.initials}</div>
+
+          {showScore ? (
+            <div className="mkt-lpc-score">
+              <div className="mkt-lpc-score-l">Bestal Score</div>
+              <div className="mkt-lpc-score-v">
+                <span className="mkt-lpc-star" aria-hidden="true">
+                  ★
+                </span>
+                {engineer.score}
+              </div>
+            </div>
+          ) : null}
+
+          {showAvailability ? (
+            <div
+              className={cn(
+                'mkt-lpc-avail',
+                /^available now$/i.test(engineer.availability.trim()) && 'is-now',
+              )}
+            >
+              {formatLandingAvailability(engineer.availability)}
+            </div>
+          ) : null}
+
+          {previousCompany ? (
+            <div className="mkt-lpc-prev">
+              <div className="mkt-lpc-prev-l">Previously worked at</div>
+              <span className="mkt-lpc-company">{previousCompany}</span>
+            </div>
+          ) : null}
+        </div>
+
+        <div className="mkt-lpc-right">
+          <div className="mkt-lpc-name">{engineer.name}</div>
+
+          {showRole ? (
+            <div className="mkt-lpc-role">
+              <BriefcaseIcon />
+              <span>{engineer.role}</span>
+            </div>
+          ) : null}
+
+          {expertise.length > 0 ? (
+            <div className="mkt-lpc-expertise">
+              <div className="mkt-lpc-expertise-l">Expertise</div>
+              <div className="mkt-lpc-tags">
+                {expertise.map((skill) => (
+                  <span key={skill} className="mkt-lpc-tag">
+                    {skill}
+                  </span>
+                ))}
+              </div>
+            </div>
+          ) : null}
+
+          {showExperience ? (
+            <div className="mkt-lpc-exp">
+              Experience : <strong>{engineer.experience}</strong>
+            </div>
+          ) : null}
+
+          <div className="mkt-lpc-verify">
+            <div className="mkt-lpc-verify-row">
+              <span>Tested By Experts</span>
+              <VerifyCheckIcon />
+            </div>
+            <div className="mkt-lpc-verify-row">
+              <span>Tech Evaluation</span>
+              <VerifyCheckIcon />
+            </div>
+            <div className="mkt-lpc-verify-row">
+              <span>BGV Clear</span>
+              <VerifyCheckIcon />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="mkt-lpc-foot">
+        <Link to="/try-for-a-week" className="mkt-lpc-btn mkt-lpc-btn-primary">
+          Free Trial
+        </Link>
+        <Link to="/sample-talent" className="mkt-lpc-btn mkt-lpc-btn-secondary">
+          Resume
+        </Link>
+      </div>
+    </div>
+  );
+}
 
 export function DemoEngineerCard({
   engineer,
@@ -29,6 +173,7 @@ export function DemoEngineerCard({
   hideCommunityLabel = false,
   hideSecondaryActions = false,
   shellless = false,
+  variant = 'default',
   showTalentActions = false,
   isShortlisted = false,
   isInCompare = false,
@@ -36,6 +181,23 @@ export function DemoEngineerCard({
   onShortlist,
   onCompare,
 }: DemoEngineerCardProps) {
+  if (variant === 'landing') {
+    const landingBody = <LandingProfileCardBody engineer={engineer} />;
+
+    if (shellless) {
+      return landingBody;
+    }
+
+    return (
+      <article className={cn('mkt-prof mkt-prof-landing', className)}>
+        {!hideCommunityLabel && (communityLabel ?? engineer.discipline) ? (
+          <div className="mkt-dtag">{communityLabel ?? engineer.discipline}</div>
+        ) : null}
+        {landingBody}
+      </article>
+    );
+  }
+
   const body = (
     <div className="mkt-pb">
       <div className="mkt-ptop">
