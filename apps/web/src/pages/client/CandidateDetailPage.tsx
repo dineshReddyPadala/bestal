@@ -47,10 +47,10 @@ export function CandidateDetailPage() {
           <Home className="h-4 w-4 shrink-0" aria-hidden />
           <span className="text-muted-foreground/60">/</span>
           <Link to="/client/search" className="truncate hover:text-foreground">
-            Candidate Search
+            Browse Talents
           </Link>
           <span className="text-muted-foreground/60">/</span>
-          <span className="truncate font-semibold text-foreground">Profile Summary</span>
+          <span className="truncate font-semibold text-foreground">Resume</span>
         </nav>
       ),
       [],

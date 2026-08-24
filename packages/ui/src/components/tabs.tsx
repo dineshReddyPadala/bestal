@@ -5,9 +5,11 @@ export type TabsProps = {
   tabs: { id: string; label: string; content: ReactNode }[];
   defaultTab?: string;
   className?: string;
+  /** Active tab styling — `primary` uses brand teal with white text. */
+  variant?: 'default' | 'primary';
 };
 
-export function Tabs({ tabs, defaultTab, className }: TabsProps) {
+export function Tabs({ tabs, defaultTab, className, variant = 'default' }: TabsProps) {
   const [active, setActive] = useState(defaultTab ?? tabs[0]?.id ?? '');
 
   const current = tabs.find((tab) => tab.id === active) ?? tabs[0];
@@ -23,7 +25,9 @@ export function Tabs({ tabs, defaultTab, className }: TabsProps) {
             className={cn(
               'inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1 text-sm font-medium transition-all',
               active === tab.id
-                ? 'bg-background text-foreground shadow-sm'
+                ? variant === 'primary'
+                  ? 'bg-brand text-white shadow-sm'
+                  : 'bg-background text-foreground shadow-sm'
                 : 'hover:text-foreground',
             )}
           >

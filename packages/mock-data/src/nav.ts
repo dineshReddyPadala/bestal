@@ -35,7 +35,7 @@ export const recruiterNav = [
 
 export const clientNav = [
   { id: 'dashboard', label: 'Dashboard', href: '/client', icon: 'layout-dashboard' },
-  { id: 'search', label: 'Candidate Search', href: '/client/search', icon: 'search' },
+  { id: 'search', label: 'Browse Talents', href: '/client/search', icon: 'search' },
   { id: 'trials', label: 'Trial Requests', href: '/client/trials', icon: 'flask-conical' },
   { id: 'deployments', label: 'Deployments', href: '/client/deployments', icon: 'rocket' },
 ] as const satisfies readonly NavItem[];
