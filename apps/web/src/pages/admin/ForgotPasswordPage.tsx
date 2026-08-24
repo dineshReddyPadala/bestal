@@ -17,7 +17,7 @@ export function ForgotPasswordPage() {
         <ForgotPasswordForm
           portal="ADMIN"
           loginPath="/admin/login"
-          defaultEmail="admin@bestal.com"
+          defaultEmail=""
         />
       </StaffAuthPageShell>
     </>

@@ -19,7 +19,7 @@ export function StaffPortalLoginForm({
 }: StaffPortalLoginFormProps) {
   const { handleLogin, error, submitting } = usePortalLogin(portal);
   const [email, setEmail] = useState(defaultEmail);
-  const [password, setPassword] = useState('Password123!');
+  const [password, setPassword] = useState('');
 
   function onSubmit(e: React.FormEvent) {
     e.preventDefault();

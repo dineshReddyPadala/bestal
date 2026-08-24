@@ -22,7 +22,7 @@ export function CommunitiesPage() {
                 <h1 className="mt-3 mb-0">Engineers, organised by discipline</h1>
               </div>
               <p className="mkt-big mt-3 mkt-eng-banner-copy howitworks-body-style">
-                Not a general résumé database. Every engineer belongs to a specialist community with its
+                Not a general resume database. Every engineer belongs to a specialist community with its
                 own tests and its own outside testers.
               </p>
               <p className="mkt-lead mt-4 mkt-eng-banner-copy howitworks-body-style">

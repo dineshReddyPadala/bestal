@@ -20,6 +20,7 @@ import { PAGE_SEO } from '../../lib/marketing-seo';
 import { cn } from '@bestal/shared-utils';
 import { formatDimensionScoreDisplay } from '../../lib/score-display';
 import { ForwardArrow } from '../../components/ui/ForwardArrow';
+import { CookieBanner } from '../../components/marketing/CookieBanner';
 
 const TIMEZONE_CHIPS = [
   { abbr: 'ET', name: 'Eastern' },
@@ -261,7 +262,7 @@ export function HomePage() {
       <section className="mkt-cream mkt-section-tight">
         <MktShell className="mkt-g2t mkt-equal-cards">
           <div className="mkt-card mkt-card-dark mkt-card-fill p-8 bgcolordrakgreen">
-            <h2>Don&apos;t hire from a résumé. <br /> See them perform.</h2>
+            <h2>Don&apos;t hire from a resume. <br /> See them perform.</h2>
             <p className="mt-4">
               One cold email or scoped work brief is your trial, and your process, agreed in
               advance.
@@ -294,7 +295,7 @@ export function HomePage() {
               </Link>
             </div>
             <p className="mkt-big mt-3 max-w-[620px]">
-              Not a general résumé database. Every engineer belongs to a specialist community with
+              Not a general resume database. Every engineer belongs to a specialist community with
               its own tests and its own outside testers.
             </p>
           </div>
@@ -372,6 +373,7 @@ export function HomePage() {
           </div>
         </MktShell>
       </section>
+      <CookieBanner />
     </div>
   );
 }

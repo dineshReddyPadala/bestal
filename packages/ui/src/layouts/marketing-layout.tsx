@@ -51,9 +51,10 @@ const defaultFooterColumns: MarketingFooterColumn[] = [
   {
     title: 'Legal',
     links: [
-      { label: 'Privacy Policy', href: '/contact' },
-      { label: 'Terms of Service', href: '/contact' },
-      { label: 'Cookie Policy', href: '/contact' },
+      { label: 'Privacy Policy', href: '/privacy-policy' },
+      { label: 'Terms of Service', href: '/terms-of-service' },
+      { label: 'Free Trial Terms', href: '/free-trial-terms' },
+      { label: 'Cookie Policy', href: '/cookie-policy' },
     ],
   },
 ];

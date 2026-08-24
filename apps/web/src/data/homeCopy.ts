@@ -57,7 +57,7 @@ export const differentiation = {
 export const skillCommunities = {
   h2: 'Specialists, organised by discipline',
   intro:
-    'BesTal is not a general résumé database. Every professional belongs to a Skill Community with its own assessment criteria and its own external evaluators.',
+    'BesTal is not a general resume database. Every professional belongs to a Skill Community with its own assessment criteria and its own external evaluators.',
   button: 'Browse all Skill Communities',
   items: [
     { name: 'Data & AI' },
@@ -100,7 +100,7 @@ export const howItWorks = {
 };
 
 export const trial = {
-  h2: "Don't hire from a résumé. See them perform.",
+  h2: "Don't hire from a resume. See them perform.",
   link: 'How the one-week engagement works',
 };
 
@@ -187,7 +187,7 @@ export const howItWorksDraft: Record<string, string> = {
 };
 
 export const trialDraft = {
-  body: 'A résumé describes work you cannot inspect, and an interview tests how someone talks about work rather than how they do it. The one-week engagement puts the professional on a defined piece of your real backlog, inside your tools and your process, with scope and rate agreed before day one. At the end of the week you have something better than a hiring opinion: delivered work, reviewed by your own team.',
+  body: 'A resume describes work you cannot inspect, and an interview tests how someone talks about work rather than how they do it. The one-week engagement puts the professional on a defined piece of your real backlog, inside your tools and your process, with scope and rate agreed before day one. At the end of the week you have something better than a hiring opinion: delivered work, reviewed by your own team.',
 };
 
 export const scaleDraft = {
@@ -268,7 +268,7 @@ export const footerDraft = {
       links: ['Find Talent', 'Skill Communities', 'How It Works', 'Time-Zone Overlap', 'Post a Job'],
     },
     { heading: 'Company', links: ['About', 'Our Evaluation Standard', 'Enterprise', 'Contact'] },
-    { heading: 'Legal', links: ['Privacy Policy', 'Terms of Service', 'Cookie Policy'] },
+    { heading: 'Legal', links: ['Privacy Policy', 'Terms of Service', 'Free Trial Terms', 'Cookie Policy'] },
   ],
 };
 

@@ -16,16 +16,12 @@ type MarketingLoginPageProps = {
 const LOGIN_CONFIG = {
   admin: {
     portal: 'ADMIN' as Portal,
-    demoEmail: 'admin@bestal.com',
-    demoPassword: 'Password123!',
     successPath: '/login/portal',
     forgotPath: '/admin/forgot-password',
     secondaryHref: '/login/portal',
   },
   client: {
     portal: 'CLIENT' as Portal,
-    demoEmail: 'client@bestal.com',
-    demoPassword: 'Password123!',
     successPath: '/client',
     forgotPath: '/client/forgot-password',
     secondaryHref: `${CLIENT_LOGIN_PATH}/signup`,
@@ -38,8 +34,8 @@ export function MarketingLoginPage({ variant = 'admin' }: MarketingLoginPageProp
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { login, user, isLoading } = useAuth();
-  const [email, setEmail] = useState(config.demoEmail);
-  const [password, setPassword] = useState(config.demoPassword);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 

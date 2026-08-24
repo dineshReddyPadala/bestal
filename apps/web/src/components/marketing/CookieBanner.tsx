@@ -1,0 +1,72 @@
+import { Cookie, Info } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
+
+const COOKIE_CONSENT_KEY = 'bestal-cookie-consent';
+
+export function CookieBanner() {
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const consent = localStorage.getItem(COOKIE_CONSENT_KEY);
+    if (!consent) {
+      setVisible(true);
+    }
+  }, []);
+
+  function handleAccept() {
+    localStorage.setItem(COOKIE_CONSENT_KEY, 'accepted');
+    setVisible(false);
+  }
+
+  function handleReject() {
+    localStorage.setItem(COOKIE_CONSENT_KEY, 'rejected');
+    setVisible(false);
+  }
+
+  if (!visible) {
+    return null;
+  }
+
+  return (
+    <div className="mkt-cookie-banner" role="dialog" aria-labelledby="cookie-banner-title">
+      <div className="mkt-cookie-banner-card">
+        <div className="mkt-cookie-banner-header">
+          <div className="mkt-cookie-banner-title-row">
+            <span className="mkt-cookie-banner-icon" aria-hidden="true">
+              <Cookie size={18} strokeWidth={2} />
+            </span>
+            <h2 id="cookie-banner-title" className="mkt-cookie-banner-title">
+              Cookie Banner
+            </h2>
+          </div>
+        </div>
+
+        <p className="mkt-cookie-banner-text">
+          BesTal uses cookies to improve your experience, analyze website usage, and help us enhance
+          our services. By continuing to use this website, you agree to our use of cookies.
+        </p>
+
+        <p className="mkt-cookie-banner-info">
+          <Info size={14} strokeWidth={2} aria-hidden="true" />
+          <span>
+            Please review our{' '}
+            <Link to="/cookie-policy" className="mkt-cookie-banner-link">
+              Cookie Policy
+            </Link>{' '}
+            for more information.
+          </span>
+        </p>
+
+        <div className="mkt-cookie-banner-actions">
+          <button type="button" className="mkt-btn mkt-btn-primary mkt-btn-sm" onClick={handleAccept}>
+            Accept
+          </button>
+          <button type="button" className="mkt-btn mkt-btn-secondary mkt-btn-sm" onClick={handleReject}>
+            Reject
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
