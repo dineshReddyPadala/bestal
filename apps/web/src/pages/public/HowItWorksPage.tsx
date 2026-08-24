@@ -114,7 +114,7 @@ function HiWProcessFlow() {
           const Icon = processCardIcons[card.tone];
           return (
             <div key={card.title} className="mkt-hiw-v3-flow-wrap">
-              <article className={cn('mkt-hiw-v3-flow-card', `is-${card.tone}`)}>
+              <article className={cn('mkt-hiw-v3-flow-card mkt-hiw-pastel-card', `is-${card.tone}`)}>
                 <div className="mkt-hiw-v3-flow-card-hd">
                   <Icon className="mkt-hiw-v3-flow-card-icon" aria-hidden="true" />
                   <span className="mkt-hiw-v3-flow-card-stage">{card.stage}</span>
@@ -203,7 +203,13 @@ export function HowItWorksPage() {
               {HIW_CLIENT.trialOutcome.options.map((option, index) => {
                 const Icon = trialIcons[index] ?? ArrowRight;
                 return (
-                  <article key={option.title} className="mkt-hiw-v3-trial-card">
+                  <article
+                    key={option.title}
+                    className={cn(
+                      'mkt-hiw-v3-trial-card mkt-hiw-pastel-card',
+                      'tone' in option && option.tone ? `is-${option.tone}` : undefined,
+                    )}
+                  >
                     <Icon className="mkt-hiw-v3-trial-icon" aria-hidden="true" />
                     <h4>{option.title}</h4>
                     <p>{option.body}</p>
@@ -220,7 +226,6 @@ export function HowItWorksPage() {
                 );
               })}
             </div>
-            <p className="mkt-hiw-v3-trial-footnote">{HIW_CLIENT.trialOutcome.footnote}</p>
           </div>
 
           <HiWStagesGrid

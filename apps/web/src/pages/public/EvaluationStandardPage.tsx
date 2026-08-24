@@ -7,8 +7,8 @@ const SCORE_LABELS = [
   { num: '01', title: 'Technical depth' },
   { num: '02', title: 'Problem solving' },
   { num: '03', title: 'Collaboration & Cultural Fit' },
-  { num: '04', title: 'Code quality' },
-  { num: '05', title: 'Communication' },
+  { num: '04', title: 'Communication score' },
+  { num: '05', title: 'Client readiness score' },
 ] as const;
 
 export function EvaluationStandardPage() {
@@ -22,14 +22,14 @@ export function EvaluationStandardPage() {
       <MktShell className="mkt-test-hero">
         <div className="mkt-test-label">Testing</div>
         <h1>
-          A résumé is a claim.
+          A resume is a claim.
           <br />
           A test is evidence.
         </h1>
         <p className="mkt-lead howitworks-body-style">
           A qualified specialist — not a BesTal recruiter — tests the engineer against role-specific
-          criteria and scores technical depth, problem solving, collaboration and cultural fit, code quality and
-          communication separately.
+          criteria and scores technical depth, problem solving, collaboration and cultural fit,
+          communication, and client readiness separately.
         </p>
       </MktShell>
 

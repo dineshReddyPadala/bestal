@@ -267,7 +267,7 @@ export const ONBOARDING_STEPS = [
   {
     step: 1,
     title: 'Identified',
-    body: 'We source continuously into specific engineering communities against live and anticipated demand — not into a general résumé pool.',
+    body: 'We source continuously into specific engineering communities against live and anticipated demand — not into a general resume pool.',
   },
   {
     step: 2,
@@ -363,14 +363,14 @@ export const EVALUATION_DIMENSIONS = [
   { title: 'Technical depth', body: 'Working command of the primary stack, at the depth the role requires. Not trivia.' },
   { title: 'Problem solving', body: 'How they approach an unfamiliar problem — including what they ask before they start.' },
   { title: 'Collaboration & Cultural Fit', body: 'How well they collaborate with teams, adapt to client culture, and communicate under real working conditions.' },
-  { title: 'Code quality', body: 'Structure, readability, testing instinct, error handling.' },
-  { title: 'Communication', body: 'Whether they can explain a technical decision to your team, disagree usefully, and say "I don\'t know."' },
+  { title: 'Communication score', body: 'Whether they can explain a technical decision to your team, disagree usefully, and say "I don\'t know."' },
+  { title: 'Client readiness score', body: 'How prepared they are to start on client work — context gathering, delivery habits, and professional readiness.' },
 ] as const;
 
 export const RATE_FACTORS = [
   { num: '01', title: 'Skill and discipline', body: 'Scarcity differs sharply. A GenAI engineer and a QA automation engineer aren\'t priced alike.' },
   { num: '02', title: 'Experience', body: 'Depend on the experiecen level, what the test showed and what resume claimed.' },
-  { num: '03', title: 'Tested depth', body: 'What the test showed, not what the résumé claimed.' },
+  { num: '03', title: 'Tested depth', body: 'What the test showed, not what the resume claimed.' },
   { num: '04', title: 'Scarcity', body: 'Real supply in that discipline at the depth you need.' },
   { num: '05', title: 'Start date', body: "Available-now senior engineers carry a premium. That's honest supply and demand." },
   { num: '06', title: 'Certification', body: "Where it's genuinely load-bearing, as in SAP and ServiceNow." },
@@ -433,7 +433,7 @@ export const FOR_ENGINEERS_ASK = [
 
 export const FOR_ENGINEERS_GET = [
   { title: 'Tested once, visible to many', body: 'No repeated screening for every opportunity.' },
-  { title: 'Your results, published', body: 'Including what the tester thought you were strong at. Clients see evidence, not a résumé.' },
+  { title: 'Your results, published', body: 'Including what the tester thought you were strong at. Clients see evidence, not a resume.' },
   { title: 'A rate you agreed to', body: "You know what you're paid before you accept anything.", fact: '[FACT: pay-rate transparency policy]' },
   { title: 'Work that matches your stack', body: 'Matched on tested depth, not keyword overlap.' },
   { title: 'US clients, without relocating', body: 'Work with US engineering teams from where you are, on hours you agreed to.' },
@@ -461,13 +461,13 @@ export const ABOUT_FEATURED = {
   num: '01',
   title: 'Pre-Vetted, Not Just Screened',
   body:
-    'Every engineer is evaluated by an independent specialist across five areas: Technical Depth, Problem Solving, Architecture, Code Quality, and Communication. Each area is scored separately, and you see the full results — including identified weaknesses. We publish those reservations because a score without context isn\'t evidence.',
+    'Every engineer is evaluated by an independent specialist across five areas: Technical Depth, Problem Solving, Collaboration & Cultural Fit, Communication, and Client Readiness. Each area is scored separately, and you see the full results — including identified weaknesses. We publish those reservations because a score without context isn\'t evidence.',
   tags: [
-    'Technical Depth',
-    'Problem Solving',
-    'Architecture',
-    'Code Quality',
-    'Communication',
+    'Technical depth',
+    'Problem solving',
+    'Collaboration & Cultural Fit',
+    'Communication score',
+    'Client readiness score',
   ],
 } as const;
 
@@ -570,20 +570,21 @@ export const HIW_CLIENT = {
   trialOutcome: {
     title: 'At the end of the trial, you decide',
     stageTag: 'stage 05',
-    footnote:
-      'Timesheets are approved by you throughout — including after the trial ends.',
     options: [
       {
+        tone: 'lavender' as const,
         title: 'Continue',
         body: 'Engagement runs on at the rate you already saw.',
         footerLabel: 'Manage and Scale',
         footerStage: 'stage 06',
       },
       {
+        tone: 'rose' as const,
         title: 'Swap',
         body: 'We source a replacement. Your hours stay put.',
       },
       {
+        tone: 'amber' as const,
         title: 'Stop',
         body: 'Nothing continues. No further commitment.',
       },

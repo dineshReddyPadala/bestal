@@ -17,7 +17,7 @@ export function PortalLoginForm({
   footerLink,
 }: PortalLoginFormProps) {
   const [email, setEmail] = useState(defaultEmail);
-  const [password, setPassword] = useState('Password123!');
+  const [password, setPassword] = useState('');
   const { handleLogin, error, submitting } = usePortalLogin(portal);
   const forgotPasswordHref =
     portal === 'ADMIN'

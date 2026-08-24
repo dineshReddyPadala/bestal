@@ -14,19 +14,19 @@ export const PORTAL_AUTH_CONFIG: Record<SelfServicePortal, PortalAuthConfig> = {
     portal: 'RECRUITER',
     title: 'Recruiter Portal',
     basePath: '/recruiter',
-    defaultEmail: 'recruiter@bestal.com',
+    defaultEmail: '',
   },
   SALES: {
     portal: 'SALES',
     title: 'Sales Portal',
     basePath: '/sales',
-    defaultEmail: 'sales@bestal.com',
+    defaultEmail: '',
   },
   CLIENT: {
     portal: 'CLIENT',
     title: 'Client Portal',
     basePath: '/client',
-    defaultEmail: 'client@bestal.com',
+    defaultEmail: '',
   },
 };
 

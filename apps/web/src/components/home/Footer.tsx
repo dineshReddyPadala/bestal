@@ -13,9 +13,10 @@ const FOOTER_LINK_HREF: Record<string, string> = {
   'Our Evaluation Standard': '/evaluation-standard',
   Enterprise: '/enterprise',
   Contact: '/contact',
-  'Privacy Policy': '/contact',
-  'Terms of Service': '/contact',
-  'Cookie Policy': '/contact',
+  'Privacy Policy': '/privacy-policy',
+  'Terms of Service': '/terms-of-service',
+  'Free Trial Terms': '/free-trial-terms',
+  'Cookie Policy': '/cookie-policy',
 };
 
 export function Footer() {

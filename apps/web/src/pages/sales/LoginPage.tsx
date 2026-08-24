@@ -13,7 +13,7 @@ export function LoginPage() {
       >
         <StaffPortalLoginForm
           portal="SALES"
-          defaultEmail="sales@bestal.com"
+          defaultEmail=""
           forgotPasswordPath="/sales/forgot-password"
         />
       </StaffAuthPageShell>

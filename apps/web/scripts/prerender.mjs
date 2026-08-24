@@ -24,6 +24,11 @@ const STATIC_ROUTES = [
   '/communities',
   '/enterprise',
   '/about',
+  '/faq',
+  '/privacy-policy',
+  '/terms-of-service',
+  '/free-trial-terms',
+  '/cookie-policy',
   '/contact',
 ];
 

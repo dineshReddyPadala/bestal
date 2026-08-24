@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { cn } from '@bestal/shared-utils';
+import { useState } from 'react';
 import { MktShell } from '../../components/marketing/MktShell';
 import { PageMeta } from '../../components/PageMeta';
 import { ForwardArrow } from '../../components/ui/ForwardArrow';
@@ -59,6 +60,50 @@ function AboutFeaturedCard({
       <div className="mkt-about-featured-body">
         <p className="howitworks-body-style">{body}</p>
         <AboutDifferenceTags tags={tags} variant="filled" />
+      </div>
+    </article>
+  );
+}
+
+function AboutCollapsibleCard({
+  num,
+  title,
+  body,
+  tags,
+  tagVariant = 'filled',
+  className,
+}: {
+  num: string;
+  title: string;
+  body: string;
+  tags?: readonly string[];
+  tagVariant?: AboutDifferenceCard['tagVariant'];
+  className?: string;
+}) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <article
+      className={cn(
+        'mkt-about-card mkt-about-card--hover mkt-about-card--collapsible',
+        open && 'is-open',
+        className,
+      )}
+    >
+      <button
+        type="button"
+        className="mkt-about-card-toggle"
+        aria-expanded={open}
+        onClick={() => setOpen((value) => !value)}
+      >
+        <span className="mkt-about-card-num">{num}</span>
+        <h3>{title}</h3>
+      </button>
+      <div className="mkt-about-card-reveal">
+        <div className="mkt-about-card-reveal-inner">
+          <p className="howitworks-body-style">{body}</p>
+          {tags?.length ? <AboutDifferenceTags tags={tags} variant={tagVariant} /> : null}
+        </div>
       </div>
     </article>
   );
@@ -131,12 +176,12 @@ export function AboutPage() {
             ))}
           </div>
 
-          <AboutFeaturedCard
+          <AboutCollapsibleCard
             num={ABOUT_SPECIALISTS.num}
             title={ABOUT_SPECIALISTS.title}
             body={ABOUT_SPECIALISTS.body}
             tags={ABOUT_SPECIALISTS.tags}
-            className="mkt-about-featured--specialists"
+            className="mkt-about-card--specialists"
           />
         </MktShell>
       </section>

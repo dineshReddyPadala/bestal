@@ -78,6 +78,26 @@ export const PAGE_SEO = {
     description:
       'Get tested once by an outside specialist. Your results, rate, start date and US hours go on your profile — clients read the evidence before they contact you.',
   },
+  privacyPolicy: {
+    title: 'Privacy Policy | BesTal',
+    description:
+      'How BesTal collects, uses, discloses, and safeguards personal information when you visit our website or use our platform.',
+  },
+  termsOfService: {
+    title: 'Terms of Service | BesTal',
+    description:
+      'Terms governing your access to and use of the BesTal website, platform, and related services.',
+  },
+  freeTrialTerms: {
+    title: 'Free Trial Terms | BesTal',
+    description:
+      'Terms and conditions for the BesTal Free Trial Program — scope, evaluation purpose, work product, and engagement rules.',
+  },
+  cookiePolicy: {
+    title: 'Cookie Policy | BesTal',
+    description:
+      'How BesTal uses cookies and similar technologies on our website, and how you can manage your cookie preferences.',
+  },
 } as const;
 
 export const MARKETING_ROUTES = [
@@ -94,5 +114,10 @@ export const MARKETING_ROUTES = [
   '/communities',
   '/enterprise',
   '/about',
+  '/faq',
+  '/privacy-policy',
+  '/terms-of-service',
+  '/free-trial-terms',
+  '/cookie-policy',
   '/contact',
 ] as const;

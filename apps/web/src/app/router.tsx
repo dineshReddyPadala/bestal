@@ -26,7 +26,11 @@ import { DashboardPage as ClientDashboardPage } from '../pages/client/DashboardP
 import { TrialRequestsPage } from '../pages/client/TrialRequestsPage';
 import { DeploymentsPage as ClientDeploymentsPage } from '../pages/client/DeploymentsPage';
 import { AboutPage } from '../pages/public/AboutPage';
+import { CookiePolicyPage } from '../pages/public/CookiePolicyPage';
 import { FaqPage } from '../pages/public/FaqPage';
+import { FreeTrialTermsPage } from '../pages/public/FreeTrialTermsPage';
+import { PrivacyPolicyPage } from '../pages/public/PrivacyPolicyPage';
+import { TermsOfServicePage } from '../pages/public/TermsOfServicePage';
 import { CommunitiesPage } from '../pages/public/CommunitiesPage';
 import { ContactPage } from '../pages/public/ContactPage';
 import { EnterprisePage } from '../pages/public/EnterprisePage';
@@ -271,6 +275,10 @@ const router = createBrowserRouter([
       { path: 'enterprise', element: <EnterprisePage /> },
       { path: 'about', element: <AboutPage /> },
       { path: 'faq', element: <FaqPage /> },
+      { path: 'privacy-policy', element: <PrivacyPolicyPage /> },
+      { path: 'terms-of-service', element: <TermsOfServicePage /> },
+      { path: 'free-trial-terms', element: <FreeTrialTermsPage /> },
+      { path: 'cookie-policy', element: <CookiePolicyPage /> },
       { path: 'for-engineers', element: <ForEngineersPage /> },
       { path: 'contact', element: <ContactPage /> },
     ],

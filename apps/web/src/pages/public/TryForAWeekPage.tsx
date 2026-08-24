@@ -15,7 +15,7 @@ export function TryForAWeekPage() {
         <MktShell className="mkt-trial-hero">
           <div className="mkt-trial-label">Trial</div>
           <h1>
-            Don&apos;t hire from a résumé.
+            Don&apos;t hire from a resume.
             <br />
             See them perform.
           </h1>
