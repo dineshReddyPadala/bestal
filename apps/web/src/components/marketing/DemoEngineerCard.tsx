@@ -60,7 +60,11 @@ function LandingProfileCardBody({ engineer }: { engineer: DemoEngineer }) {
   const showRate = engineer.rate > 0;
   const showRole = Boolean(engineer.role.trim());
   const showExperience = Boolean(engineer.experience.trim());
-  const showAvailability = Boolean(engineer.availability.trim()) && engineer.availability !== 'Check availability';
+  const showAvailability =
+    Boolean(engineer.availability.trim()) && engineer.availability !== 'Check availability';
+  const availabilityLabel = showAvailability
+    ? formatLandingAvailability(engineer.availability)
+    : '';
 
   return (
     <div className="mkt-lpc">
@@ -75,65 +79,78 @@ function LandingProfileCardBody({ engineer }: { engineer: DemoEngineer }) {
         <div className="mkt-lpc-left">
           <div className="mkt-lpc-av">{engineer.initials}</div>
 
-          {showScore ? (
-            <div className="mkt-lpc-score">
-              <div className="mkt-lpc-score-l">Bestal Score</div>
-              <div className="mkt-lpc-score-v">
-                <span className="mkt-lpc-star" aria-hidden="true">
-                  ★
-                </span>
-                {engineer.score}
+          <div className={cn('mkt-lpc-score-slot', !showScore && 'is-empty')}>
+            {showScore ? (
+              <div className="mkt-lpc-score">
+                <div className="mkt-lpc-score-l">Bestal Score</div>
+                <div className="mkt-lpc-score-v">
+                  <span className="mkt-lpc-star" aria-hidden="true">
+                    ★
+                  </span>
+                  {engineer.score}
+                </div>
               </div>
-            </div>
-          ) : null}
+            ) : null}
+          </div>
 
-          {showAvailability ? (
-            <div
-              className={cn(
-                'mkt-lpc-avail',
-                /^available now$/i.test(engineer.availability.trim()) && 'is-now',
-              )}
-            >
-              {formatLandingAvailability(engineer.availability)}
-            </div>
-          ) : null}
+          <div className={cn('mkt-lpc-avail-slot', !showAvailability && 'is-empty')}>
+            {showAvailability ? (
+              <div
+                className={cn(
+                  'mkt-lpc-avail',
+                  /^available now$/i.test(engineer.availability.trim()) && 'is-now',
+                )}
+                title={availabilityLabel}
+              >
+                {availabilityLabel}
+              </div>
+            ) : null}
+          </div>
 
-          {previousCompany ? (
-            <div className="mkt-lpc-prev">
-              <div className="mkt-lpc-prev-l">Previously worked at</div>
-              <span className="mkt-lpc-company">{previousCompany}</span>
-            </div>
-          ) : null}
+          <div className={cn('mkt-lpc-prev-slot', !previousCompany && 'is-empty')}>
+            {previousCompany ? (
+              <div className="mkt-lpc-prev">
+                <div className="mkt-lpc-prev-l">Previously worked at</div>
+                <span className="mkt-lpc-company" title={previousCompany}>
+                  {previousCompany}
+                </span>
+              </div>
+            ) : null}
+          </div>
         </div>
 
         <div className="mkt-lpc-right">
-          <div className="mkt-lpc-name">{engineer.name}</div>
+          <div className="mkt-lpc-name" title={engineer.name}>
+            {engineer.name}
+          </div>
 
-          {showRole ? (
-            <div className="mkt-lpc-role">
-              <BriefcaseIcon />
-              <span>{engineer.role}</span>
-            </div>
-          ) : null}
+          <div className="mkt-lpc-role" title={showRole ? engineer.role : undefined}>
+            <BriefcaseIcon />
+            <span>{showRole ? engineer.role : '\u00A0'}</span>
+          </div>
 
-          {expertise.length > 0 ? (
-            <div className="mkt-lpc-expertise">
-              <div className="mkt-lpc-expertise-l">Expertise</div>
-              <div className="mkt-lpc-tags">
-                {expertise.map((skill) => (
-                  <span key={skill} className="mkt-lpc-tag">
-                    {skill}
-                  </span>
-                ))}
+          <div className={cn('mkt-lpc-expertise', expertise.length === 0 && 'is-empty')}>
+            {expertise.length > 0 ? (
+              <>
+                <div className="mkt-lpc-expertise-l">Expertise</div>
+                <div className="mkt-lpc-tags">
+                  {expertise.map((skill) => (
+                    <span key={skill} className="mkt-lpc-tag" title={skill}>
+                      {skill}
+                    </span>
+                  ))}
+                </div>
+              </>
+            ) : null}
+          </div>
+
+          <div className={cn('mkt-lpc-exp-slot', !showExperience && 'is-empty')}>
+            {showExperience ? (
+              <div className="mkt-lpc-exp" title={`Experience : ${engineer.experience}`}>
+                Experience : <strong>{engineer.experience}</strong>
               </div>
-            </div>
-          ) : null}
-
-          {showExperience ? (
-            <div className="mkt-lpc-exp">
-              Experience : <strong>{engineer.experience}</strong>
-            </div>
-          ) : null}
+            ) : null}
+          </div>
 
           <div className="mkt-lpc-verify">
             <div className="mkt-lpc-verify-row">

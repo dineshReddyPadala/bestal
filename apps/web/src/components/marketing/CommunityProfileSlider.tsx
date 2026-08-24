@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { cn } from '@bestal/shared-utils';
 import type { CommunityProfileSlide } from '../../lib/landing-featured-candidates';
 import type { DemoEngineer } from '../../lib/demo-engineers';
@@ -69,26 +69,29 @@ export function CommunityProfileSlider({
   const [viewportHeight, setViewportHeight] = useState<number | undefined>(undefined);
   const panelRefs = useRef<Array<HTMLDivElement | null>>([]);
 
-  const syncViewportHeight = () => {
-    const panel = panelRefs.current[active];
-    if (!panel) return;
-    setViewportHeight(panel.offsetHeight);
-  };
+  const syncViewportHeight = useCallback(() => {
+    const heights = panelRefs.current
+      .filter((panel): panel is HTMLDivElement => panel != null)
+      .map((panel) => panel.offsetHeight);
+
+    if (heights.length === 0) return;
+    setViewportHeight(Math.max(...heights));
+  }, []);
 
   useLayoutEffect(() => {
     syncViewportHeight();
-  }, [active, slides]);
+  }, [slides, syncViewportHeight]);
 
   useEffect(() => {
-    const panel = panelRefs.current[active];
-    if (!panel) return undefined;
+    const panels = panelRefs.current.filter((panel): panel is HTMLDivElement => panel != null);
+    if (panels.length === 0) return undefined;
 
     const observer = new ResizeObserver(() => {
       syncViewportHeight();
     });
-    observer.observe(panel);
+    panels.forEach((panel) => observer.observe(panel));
     return () => observer.disconnect();
-  }, [active, slides]);
+  }, [slides, syncViewportHeight]);
 
   useEffect(() => {
     setActive(0);
@@ -153,7 +156,9 @@ export function CommunityProfileSlider({
               aria-hidden={index !== active}
             >
               {slide.community ? (
-                <div className="mkt-dtag mkt-community-slider-dtag">{slide.community}</div>
+                <div className="mkt-dtag mkt-community-slider-dtag" title={slide.community}>
+                  {slide.community}
+                </div>
               ) : null}
               <div className="mkt-community-slider-panel-body">
                 <DemoEngineerCard
