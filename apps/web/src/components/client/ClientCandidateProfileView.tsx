@@ -1,10 +1,16 @@
-import type { ClientCandidateProfile, ClientGroupedSkill } from '@bestal/mock-data';
+import type {
+  ClientCandidateProfile,
+  ClientGroupedSkill,
+  ClientProfileAttachment,
+} from '@bestal/mock-data';
 import { COLLABORATION_CULTURAL_FIT_LABEL, cn, formatCurrency, initials } from '@bestal/shared-utils';
 import { Button, Tabs } from '@bestal/ui';
 import {
   BadgeCheck,
   Calendar,
+  CheckCircle2,
   Clock,
+  FileText,
   FlaskConical,
   Globe,
   Laptop,
@@ -16,7 +22,9 @@ import {
   clientBgvStatusText,
   clientEvaluationStatusText,
   formatClientBgvLabel,
+  formatClientEvaluationLabel,
 } from '../../lib/client-status-labels';
+import { isBgvClear } from '../../lib/candidate-approval-gates';
 
 type ClientCandidateProfileViewProps = {
   profile: ClientCandidateProfile;
@@ -89,25 +97,155 @@ function StatusPill({ children }: { children: string }) {
   );
 }
 
-function SkillBar({ label, score }: { label: string; score: number }) {
+function SkillBar({
+  label,
+  score,
+  scoreLabel,
+}: {
+  label: string;
+  score: number;
+  scoreLabel?: string;
+}) {
+  const displayScore = scoreLabel ?? `${score}/100`;
+  const barWidth = scoreLabel === 'NA' ? 0 : Math.min(Math.max(score, 0), 100);
+
   return (
     <div className="space-y-1.5">
       <div className="flex items-center justify-between gap-3 text-sm">
         <span className="font-medium text-foreground">{label}</span>
-        <span className="tabular-nums text-muted-foreground">{score}/100</span>
+        <span className="tabular-nums text-muted-foreground">{displayScore}</span>
       </div>
       <div className="h-2 overflow-hidden rounded-full bg-muted">
         <div
           className="h-full rounded-full bg-emerald-500 transition-all"
-          style={{ width: `${Math.min(Math.max(score, 0), 100)}%` }}
+          style={{ width: `${barWidth}%` }}
         />
       </div>
     </div>
   );
 }
 
-function scoreOrDash(value: number | null | undefined): string {
-  return value != null ? String(value) : '—';
+function scoreOrNa(value: number | null | undefined): string {
+  return value != null ? `${normalizeScore(value)}/100` : 'NA';
+}
+
+function textOrNa(value: string | null | undefined): string {
+  const trimmed = value?.trim();
+  return trimmed ? trimmed : 'NA';
+}
+
+function normalizeScore(value: number): number {
+  if (value <= 10) return Math.round(value * 10);
+  return Math.round(value);
+}
+
+function formatAttachmentSize(bytes: number | null | undefined): string {
+  if (bytes == null || bytes <= 0) return 'NA';
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function formatAttachmentDate(value: string | null | undefined): string {
+  if (!value?.trim()) return 'NA';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleDateString('en-US', {
+    month: 'short',
+    day: '2-digit',
+    year: 'numeric',
+  });
+}
+
+function TabStatusLine({
+  label,
+  statusText,
+  showCheck,
+}: {
+  label: string;
+  statusText: string;
+  showCheck?: boolean;
+}) {
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <span className="text-sm font-medium text-muted-foreground">{label}</span>
+      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-800 ring-1 ring-emerald-200/70">
+        {showCheck ? <CheckCircle2 className="h-3.5 w-3.5 shrink-0" aria-hidden="true" /> : null}
+        {statusText}
+      </span>
+    </div>
+  );
+}
+
+function ReportCheckRow({ label, cleared }: { label: string; cleared: boolean }) {
+  return (
+    <div className="flex items-center justify-between gap-3 py-2.5">
+      <span className="text-sm font-medium text-foreground">{label}</span>
+      {cleared ? (
+        <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" aria-label="Clear" />
+      ) : (
+        <span className="text-xs font-medium text-muted-foreground">NA</span>
+      )}
+    </div>
+  );
+}
+
+function ProfileAttachments({
+  attachments,
+}: {
+  attachments: readonly (ClientProfileAttachment | null | undefined)[];
+}) {
+  const items = attachments.filter(
+    (item): item is ClientProfileAttachment => Boolean(item?.fileName?.trim()),
+  );
+
+  if (items.length === 0) {
+    return (
+      <section>
+        <p className="text-sm text-muted-foreground">No attachments</p>
+      </section>
+    );
+  }
+
+  return (
+    <section className="space-y-3">
+      {items.map((attachment) => (
+        <div
+          key={attachment.fileName}
+          className="flex items-center justify-between gap-3 rounded-lg border border-border/60 bg-muted/10 px-4 py-3"
+        >
+          <div className="flex min-w-0 items-start gap-3">
+            <FileText className="mt-0.5 h-5 w-5 shrink-0 text-muted-foreground" aria-hidden="true" />
+            <div className="min-w-0">
+              <p className="truncate text-sm font-semibold text-foreground">{attachment.fileName}</p>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                {[attachment.categoryLabel, formatAttachmentSize(attachment.fileSize), formatAttachmentDate(attachment.createdAt)]
+                  .filter((part) => part && part !== 'NA')
+                  .join(' · ') || 'NA'}
+              </p>
+            </div>
+          </div>
+          {attachment.url ? (
+            <a
+              href={attachment.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="shrink-0 text-sm font-semibold text-brand hover:underline"
+            >
+              View
+            </a>
+          ) : (
+            <span className="shrink-0 text-sm font-medium text-muted-foreground">View</span>
+          )}
+        </div>
+      ))}
+    </section>
+  );
+}
+
+function isBgvCheckClear(status: string | null | undefined): boolean {
+  const value = (status ?? '').toUpperCase();
+  return value === 'CLEAR' || value === 'VERIFIED' || value === 'COMPLETED_CLEAR';
 }
 
 export function ClientCandidateProfileView({
@@ -153,50 +291,36 @@ export function ClientCandidateProfileView({
     return [...tags].slice(0, 8);
   }, [profile.industryExperience, profile.primarySkills, profile.secondarySkills]);
 
-  const evaluationScoreCards = useMemo(
+  const evaluationReportRows = useMemo(
     () => [
-      { label: 'Technical', value: scoreOrDash(profile.evaluation.technical) },
-      { label: 'Communication', value: scoreOrDash(profile.evaluation.communication) },
+      { label: 'Technical', value: profile.evaluation.technical },
+      { label: 'Problem solving', value: profile.evaluation.problemSolving },
       {
         label: COLLABORATION_CULTURAL_FIT_LABEL,
-        value: scoreOrDash(profile.evaluation.collaborationCulturalFit),
+        value: profile.evaluation.collaborationCulturalFit,
       },
-      {
-        label: 'Client Readiness Score',
-        value: scoreOrDash(profile.evaluation.clientReadinessScore),
-      },
+      { label: 'Communication', value: profile.evaluation.communication },
+      { label: 'Client Readiness', value: profile.evaluation.clientReadinessScore },
     ],
     [profile.evaluation],
   );
 
-  const evaluationScoreGrid = (
-    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-      {evaluationScoreCards.map((item) => (
-        <div
-          key={item.label}
-          className="rounded-xl border border-border/60 bg-muted/20 px-4 py-3 text-center"
-        >
-          <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-            {item.label}
-          </p>
-          <p className="mt-1 text-lg font-semibold tabular-nums text-foreground">{item.value}</p>
-        </div>
-      ))}
-    </div>
-  );
+  const evaluationCompleted =
+    (profile.evaluation.status ?? '').toUpperCase() === 'COMPLETED';
+  const bgvClear = isBgvClear(profile.bgv.status);
 
-  const summaryTab = (
+  const resumeTab = (
     <div className="space-y-8">
       <section>
-        <h3 className="mb-3 text-sm font-semibold text-foreground">Client Summary</h3>
+        <h3 className="mb-3 text-sm font-semibold text-foreground">Candidate Summary</h3>
         <p className="text-sm leading-relaxed text-muted-foreground">
-          {profile.clientAiSummary.trim() || 'Summary is not available yet.'}
+          {textOrNa(profile.clientAiSummary)}
         </p>
       </section>
 
-      {rankedSkills.length > 0 ? (
-        <section>
-          <h3 className="mb-4 text-sm font-semibold text-foreground">Skills</h3>
+      <section>
+        <h3 className="mb-4 text-sm font-semibold text-foreground">Skills</h3>
+        {rankedSkills.length > 0 ? (
           <div className="space-y-4">
             {rankedSkills.map((skill) => (
               <SkillBar
@@ -206,12 +330,14 @@ export function ClientCandidateProfileView({
               />
             ))}
           </div>
-        </section>
-      ) : null}
+        ) : (
+          <p className="text-sm text-muted-foreground">NA</p>
+        )}
+      </section>
 
-      {expertiseTags.length > 0 ? (
-        <section>
-          <h3 className="mb-3 text-sm font-semibold text-foreground">Expertise</h3>
+      <section>
+        <h3 className="mb-3 text-sm font-semibold text-foreground">Expertise</h3>
+        {expertiseTags.length > 0 ? (
           <div className="flex flex-wrap gap-2">
             {expertiseTags.map((tag) => (
               <span
@@ -222,78 +348,87 @@ export function ClientCandidateProfileView({
               </span>
             ))}
           </div>
-        </section>
-      ) : null}
+        ) : (
+          <p className="text-sm text-muted-foreground">NA</p>
+        )}
+      </section>
 
-      {profile.education.trim() ? (
-        <section>
-          <h3 className="mb-2 text-sm font-semibold text-foreground">Education</h3>
-          <p className="text-sm text-muted-foreground">{profile.education}</p>
-        </section>
-      ) : null}
+      <section>
+        <h3 className="mb-2 text-sm font-semibold text-foreground">Education</h3>
+        <p className="text-sm text-muted-foreground">{textOrNa(profile.education)}</p>
+      </section>
     </div>
   );
 
   const evaluationTab = (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="text-sm font-medium text-muted-foreground">Status</span>
-        <StatusPill>{clientEvaluationStatusText(profile.evaluation.status)}</StatusPill>
-      </div>
+      <TabStatusLine
+        label="Evaluation:"
+        statusText={formatClientEvaluationLabel(profile.evaluation.status)}
+        showCheck={evaluationCompleted}
+      />
 
       <section>
-        <h3 className="mb-3 text-sm font-semibold text-foreground">Evaluation scores</h3>
-        {evaluationScoreGrid}
+        <h3 className="mb-4 text-sm font-semibold text-foreground">Evaluation Report</h3>
+        <div className="space-y-4">
+          {evaluationReportRows.map((row) => (
+            <SkillBar
+              key={row.label}
+              label={row.label}
+              score={row.value != null ? normalizeScore(row.value) : 0}
+              scoreLabel={scoreOrNa(row.value)}
+            />
+          ))}
+        </div>
       </section>
 
       <section>
-        <h3 className="mb-2 text-sm font-semibold text-foreground">Evaluation summary</h3>
+        <h3 className="mb-2 text-sm font-medium text-muted-foreground">Recommendation</h3>
         <p className="text-sm leading-relaxed text-muted-foreground">
-          {profile.evaluation.summary?.trim() || 'Evaluation summary is not available yet.'}
+          {textOrNa(profile.evaluation.recommendation)}
         </p>
       </section>
 
-      <section>
-        <h3 className="mb-2 text-sm font-semibold text-foreground">Recommendation</h3>
-        <p className="text-sm leading-relaxed text-muted-foreground">
-          {profile.evaluation.recommendation?.trim() || 'No recommendation recorded yet.'}
-        </p>
-      </section>
+      <ProfileAttachments attachments={[profile.evaluation.attachment]} />
     </div>
   );
 
   const bgvTab = (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="text-sm font-medium text-muted-foreground">Status</span>
-        <StatusPill>{clientBgvStatusText(profile.bgv.status)}</StatusPill>
-      </div>
+      <TabStatusLine
+        label="BGV:"
+        statusText={formatClientBgvLabel(profile.bgv.status)}
+      />
 
       <section>
-        <h3 className="mb-2 text-sm font-semibold text-foreground">BGV summary</h3>
+        <h3 className="mb-2 text-sm font-semibold text-foreground">BGV Report</h3>
+        <div className="divide-y divide-border/60">
+          {profile.bgv.completedChecks.length > 0 ? (
+            profile.bgv.completedChecks.map((check) => (
+              <ReportCheckRow
+                key={check.label}
+                label={check.label}
+                cleared={isBgvCheckClear(check.status)}
+              />
+            ))
+          ) : (
+            <>
+              <ReportCheckRow label="ID Check" cleared={bgvClear} />
+              <ReportCheckRow label="Criminal Check" cleared={bgvClear} />
+              <ReportCheckRow label="Employment Verification" cleared={bgvClear} />
+            </>
+          )}
+        </div>
+      </section>
+
+      <section>
+        <h3 className="mb-2 text-sm font-medium text-muted-foreground">Recommendation</h3>
         <p className="text-sm leading-relaxed text-muted-foreground">
-          {profile.bgv.summary?.trim() || 'Background verification summary is not available yet.'}
+          {textOrNa(profile.bgv.recommendation ?? profile.bgv.summary)}
         </p>
       </section>
 
-      {profile.bgv.completedChecks.length > 0 ? (
-        <section>
-          <h3 className="mb-3 text-sm font-semibold text-foreground">Checks</h3>
-          <div className="space-y-2">
-            {profile.bgv.completedChecks.map((check) => (
-              <div
-                key={check.label}
-                className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border/50 bg-muted/20 px-4 py-3"
-              >
-                <span className="text-sm font-medium text-foreground">{check.label}</span>
-                <span className="text-xs font-medium text-emerald-700">
-                  {formatClientBgvLabel(check.status)}
-                </span>
-              </div>
-            ))}
-          </div>
-        </section>
-      ) : null}
+      <ProfileAttachments attachments={[profile.bgv.attachment]} />
     </div>
   );
 
@@ -407,9 +542,10 @@ export function ClientCandidateProfileView({
       <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6">
         <div className="rounded-xl border border-border/70 bg-white p-5 shadow-sm sm:p-6">
           <Tabs
-            defaultTab="summary"
+            defaultTab="resume"
+            variant="primary"
             tabs={[
-              { id: 'summary', label: 'Summary', content: summaryTab },
+              { id: 'resume', label: 'Resume', content: resumeTab },
               { id: 'evaluation', label: 'Evaluation', content: evaluationTab },
               { id: 'bgv', label: 'BGV', content: bgvTab },
             ]}

@@ -130,13 +130,13 @@ export function CandidateSearchPage() {
                   setSearchParams(next);
                 }}
               >
-                Candidate Search
+                Browse Talents
               </button>
               <span className="text-muted-foreground/60">/</span>
               <span className="truncate font-semibold text-foreground">{selectedCommunity.name}</span>
             </>
           ) : (
-            <span className="truncate font-semibold text-foreground">Candidate Search</span>
+            <span className="truncate font-semibold text-foreground">Browse Talents</span>
           )}
         </nav>
       ),
@@ -350,7 +350,7 @@ export function CandidateSearchPage() {
                     if (id) navigate(`/client/candidates/${id}`);
                   }}
                 >
-                  Profile
+                  Resume
                   <ForwardArrow />
                 </Button>
               ) : null}

@@ -18,6 +18,14 @@ export type ClientBgvCheck = {
   readonly status: string;
 };
 
+export type ClientProfileAttachment = {
+  readonly fileName: string;
+  readonly url: string | null;
+  readonly fileSize?: number | null;
+  readonly createdAt?: string | null;
+  readonly categoryLabel?: string;
+};
+
 export type ClientCandidateProfile = {
   readonly candidateId: number;
   readonly photoUrl: string;
@@ -42,17 +50,21 @@ export type ClientCandidateProfile = {
   readonly secondarySkills: readonly ClientGroupedSkill[];
   readonly evaluation: {
     readonly technical: number | null;
+    readonly problemSolving: number | null;
     readonly communication: number | null;
     readonly collaborationCulturalFit: number | null;
     readonly clientReadinessScore: number | null;
     readonly summary: string | null;
     readonly recommendation: string | null;
     readonly status: string;
+    readonly attachment: ClientProfileAttachment | null;
   };
   readonly bgv: {
     readonly status: string;
     readonly completedChecks: readonly ClientBgvCheck[];
     readonly summary: string;
+    readonly recommendation: string | null;
+    readonly attachment: ClientProfileAttachment | null;
   };
   readonly availabilityDetail: {
     readonly hoursMin: number;
@@ -88,12 +100,9 @@ function buildGroupedSkills(candidateId: number): {
 function buildBgvChecks(detail: CandidateDetailProfile): ClientBgvCheck[] {
   const { bgvDetail } = detail;
   return [
-    { label: 'Identity Verification', status: bgvDetail.idCheck },
-    { label: 'Employment History', status: bgvDetail.employment },
-    { label: 'Education', status: bgvDetail.education },
-    { label: 'Professional References', status: bgvDetail.reference },
-    { label: 'Address Verification', status: bgvDetail.address },
-    { label: 'Criminal Background', status: bgvDetail.criminal },
+    { label: 'ID Check', status: bgvDetail.idCheck },
+    { label: 'Criminal Check', status: bgvDetail.criminal },
+    { label: 'Employment Verification', status: bgvDetail.employment },
   ];
 }
 
@@ -133,17 +142,33 @@ export function getClientCandidateProfile(candidateId: number): ClientCandidateP
     secondarySkills: grouped.secondary,
     evaluation: {
       technical: detail.evaluationDetail.technicalScore,
+      problemSolving: detail.evaluationDetail.problemSolvingScore ?? null,
       communication: detail.evaluationDetail.communicationScore,
       collaborationCulturalFit: detail.evaluationDetail.collaborationCulturalFitScore,
       clientReadinessScore: detail.evaluationDetail.clientReadinessScore,
       summary: detail.evaluationDetail.aiEvaluationSummary?.trim() || null,
       recommendation: detail.evaluationDetail.recommendation,
       status: detail.overview.evaluationStatus,
+      attachment: {
+        fileName: detail.evaluationDetail.evaluationPdfFileName ?? 'Tech Evaluation.pdf',
+        url: null,
+        fileSize: 421888,
+        createdAt: null,
+        categoryLabel: 'Resume',
+      },
     },
     bgv: {
       status: detail.bgvDetail.status,
       completedChecks: buildBgvChecks(detail),
       summary: detail.bgvDetail.summary,
+      recommendation: null,
+      attachment: {
+        fileName: 'BGV.pdf',
+        url: null,
+        fileSize: 421888,
+        createdAt: null,
+        categoryLabel: 'Resume',
+      },
     },
     availabilityDetail: {
       hoursMin: detail.availabilityDetail.minHours,

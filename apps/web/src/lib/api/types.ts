@@ -390,12 +390,14 @@ export type CandidateDto = CandidateListItem & {
   riskFlags?: string | null;
   bestalScore?: number | null;
   technicalScore?: number | null;
+  problemSolvingScore?: number | null;
   communicationScore?: number | null;
   collaborationCulturalFitScore?: number | null;
   clientReadinessScore?: number | null;
   aiEvaluationSummary?: string | null;
   evaluationSummary?: string | null;
   evaluationRecommendation?: string | null;
+  evaluationFileUrl?: string | null;
   reliabilityScore?: number | null;
   deploymentStatus?: string | null;
   bgvVerified?: boolean;

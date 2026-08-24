@@ -26,10 +26,12 @@ function StatusRow({
   icon,
   label,
   tone,
+  iconPosition = 'start',
 }: {
   icon: ReactNode;
   label: string;
   tone: 'success' | 'warning' | 'muted';
+  iconPosition?: 'start' | 'end';
 }) {
   return (
     <div
@@ -40,8 +42,9 @@ function StatusRow({
         tone === 'muted' && 'text-muted-foreground',
       )}
     >
-      {icon}
-      <span className="truncate">{label}</span>
+      {iconPosition === 'start' ? icon : null}
+      <span className="min-w-0 flex-1 truncate">{label}</span>
+      {iconPosition === 'end' ? icon : null}
     </div>
   );
 }
@@ -199,36 +202,41 @@ export function ClientCandidateSearchCard({
             ) : null}
 
             <div className="space-y-1 pt-0.5">
+            {evaluationDone ? (
+              <StatusRow
+                tone="success"
+                icon={<CheckCircle2 className="h-3 w-3 shrink-0" />}
+                iconPosition="end"
+                label="Tech Evaluation"
+              />
+            ) : (
+              <StatusRow
+                tone="muted"
+                icon={<Loader2 className="h-3 w-3 shrink-0" />}
+                iconPosition="end"
+                label="Evaluation Pending"
+              />
+            )}
             {bgvClear ? (
               <StatusRow
                 tone="success"
                 icon={<CheckCircle2 className="h-3 w-3 shrink-0" />}
+                iconPosition="end"
                 label="BGV Clear"
               />
             ) : bgvInProgress ? (
               <StatusRow
                 tone="warning"
                 icon={<Loader2 className="h-3 w-3 shrink-0 animate-spin" />}
+                iconPosition="end"
                 label="BGV in Progress"
               />
             ) : (
               <StatusRow
                 tone="muted"
                 icon={<Loader2 className="h-3 w-3 shrink-0" />}
+                iconPosition="end"
                 label="BGV Pending"
-              />
-            )}
-            {evaluationDone ? (
-              <StatusRow
-                tone="success"
-                icon={<CheckCircle2 className="h-3 w-3 shrink-0" />}
-                label="Evaluation Completed"
-              />
-            ) : (
-              <StatusRow
-                tone="muted"
-                icon={<Loader2 className="h-3 w-3 shrink-0" />}
-                label="Evaluation Pending"
               />
             )}
             </div>
@@ -238,10 +246,7 @@ export function ClientCandidateSearchCard({
             <p className="text-[9px] font-medium uppercase tracking-wide text-muted-foreground">
               Previously worked at
             </p>
-            <div className="mt-0.5 flex items-center gap-1.5">
-              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded bg-muted text-[9px] font-bold uppercase text-muted-foreground">
-                {companyLabel(record).slice(0, 1)}
-              </span>
+            <div className="mt-0.5">
               <span className="truncate text-xs font-semibold text-foreground">
                 {companyLabel(record)}
               </span>
@@ -279,7 +284,7 @@ export function ClientCandidateSearchCard({
             onView();
           }}
         >
-          Profile
+          Resume
           <ForwardArrow />
         </Button>
       </div>

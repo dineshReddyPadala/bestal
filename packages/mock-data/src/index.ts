@@ -122,6 +122,7 @@ export {
 export {
   getClientCandidateProfile,
   type ClientCandidateProfile,
+  type ClientProfileAttachment,
   type ClientGroupedSkill,
   type ClientBgvCheck,
 } from './clientCandidateProfile.js';

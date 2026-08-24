@@ -1,6 +1,6 @@
-import type { ClientCandidateProfile, ClientGroupedSkill } from '@bestal/mock-data';
+import type { ClientCandidateProfile, ClientGroupedSkill, ClientBgvCheck } from '@bestal/mock-data';
 import type { CandidateDto } from './api/types';
-import { isTrialEligible } from './candidate-approval-gates';
+import { isTrialEligible, isBgvClear } from './candidate-approval-gates';
 
 function splitLines(value: string | null | undefined): string[] {
   if (!value?.trim()) return [];
@@ -25,6 +25,15 @@ function mapSkills(candidate: CandidateDto): {
     primary: skills.filter((s) => s.isPrimary),
     secondary: skills.filter((s) => !s.isPrimary),
   };
+}
+
+function buildClientBgvChecks(bgvStatus: string | null | undefined): ClientBgvCheck[] {
+  const clear = isBgvClear(bgvStatus);
+  return [
+    { label: 'ID Check', status: clear ? 'CLEAR' : 'NA' },
+    { label: 'Criminal Check', status: clear ? 'CLEAR' : 'NA' },
+    { label: 'Employment Verification', status: clear ? 'CLEAR' : 'NA' },
+  ];
 }
 
 /** Maps a live CandidateDto to the client profile view shape (already server-redacted). */
@@ -63,6 +72,7 @@ export function mapCandidateDtoToClientProfile(
     secondarySkills: secondary,
     evaluation: {
       technical: candidate.technicalScore ?? null,
+      problemSolving: candidate.problemSolvingScore ?? null,
       communication: candidate.communicationScore ?? null,
       collaborationCulturalFit: candidate.collaborationCulturalFitScore ?? null,
       clientReadinessScore: candidate.clientReadinessScore ?? null,
@@ -72,11 +82,22 @@ export function mapCandidateDtoToClientProfile(
         null,
       recommendation: candidate.evaluationRecommendation ?? null,
       status: evaluationStatus,
+      attachment: candidate.evaluationFileUrl
+        ? {
+            fileName: candidate.evaluationFileUrl.split('/').pop() ?? 'Tech Evaluation.pdf',
+            url: candidate.evaluationFileUrl,
+            fileSize: null,
+            createdAt: null,
+            categoryLabel: 'Resume',
+          }
+        : null,
     },
     bgv: {
       status: bgvStatus,
-      completedChecks: [],
+      completedChecks: buildClientBgvChecks(bgvStatus),
       summary: candidate.bgvSummary ?? '',
+      recommendation: null,
+      attachment: null,
     },
     availabilityDetail: {
       hoursMin: candidate.minHoursPerWeek ?? 20,
