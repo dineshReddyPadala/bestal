@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { cn } from '@bestal/shared-utils';
 import type { CommunityProfileSlide } from '../../lib/landing-featured-candidates';
 import type { DemoEngineer } from '../../lib/demo-engineers';
@@ -15,7 +15,10 @@ type CommunityProfileSliderProps = {
 
 function LandingProfileCardSkeleton() {
   return (
-    <article className="mkt-prof mkt-prof-landing mkt-prof-loading" aria-hidden="true">
+    <article
+      className="mkt-prof mkt-prof-landing mkt-community-slider-card mkt-prof-loading"
+      aria-hidden="true"
+    >
       <div className="mkt-dtag mkt-skeleton-bar mkt-skeleton-bar-sm" />
       <div className="mkt-lpc">
         <div className="mkt-lpc-grid">
@@ -44,7 +47,7 @@ function LandingProfileCardSkeleton() {
 
 function LandingProfileCardEmpty() {
   return (
-    <article className="mkt-prof mkt-prof-landing mkt-prof-empty">
+    <article className="mkt-prof mkt-prof-landing mkt-community-slider-card mkt-prof-empty">
       <div className="mkt-lpc mkt-lpc-empty">
         <p className="mkt-lpc-empty-title">No featured profiles yet</p>
         <p className="mkt-lpc-empty-copy">
@@ -63,6 +66,29 @@ export function CommunityProfileSlider({
 }: CommunityProfileSliderProps) {
   const [active, setActive] = useState(0);
   const [paused, setPaused] = useState(false);
+  const [viewportHeight, setViewportHeight] = useState<number | undefined>(undefined);
+  const panelRefs = useRef<Array<HTMLDivElement | null>>([]);
+
+  const syncViewportHeight = () => {
+    const panel = panelRefs.current[active];
+    if (!panel) return;
+    setViewportHeight(panel.offsetHeight);
+  };
+
+  useLayoutEffect(() => {
+    syncViewportHeight();
+  }, [active, slides]);
+
+  useEffect(() => {
+    const panel = panelRefs.current[active];
+    if (!panel) return undefined;
+
+    const observer = new ResizeObserver(() => {
+      syncViewportHeight();
+    });
+    observer.observe(panel);
+    return () => observer.disconnect();
+  }, [active, slides]);
 
   useEffect(() => {
     setActive(0);
@@ -84,7 +110,11 @@ export function CommunityProfileSlider({
   }, [paused, slides.length]);
 
   if (isLoading) {
-    return <div className={cn('mkt-community-slider', className)}><LandingProfileCardSkeleton /></div>;
+    return (
+      <div className={cn('mkt-community-slider', className)}>
+        <LandingProfileCardSkeleton />
+      </div>
+    );
   }
 
   if (slides.length === 0) {
@@ -106,26 +136,26 @@ export function CommunityProfileSlider({
       onBlurCapture={() => setPaused(false)}
     >
       <article className="mkt-prof mkt-prof-landing mkt-community-slider-card">
-        {activeSlide.community ? (
-          <div className="mkt-dtag mkt-community-slider-dtag">{activeSlide.community}</div>
-        ) : null}
-
         <div
           className="mkt-community-slider-viewport"
+          style={viewportHeight ? { height: viewportHeight } : undefined}
           aria-live="polite"
           aria-atomic="true"
           aria-label={`${activeSlide.community || activeSlide.engineer.name} profile`}
         >
-          <div
-            className="mkt-community-slider-track"
-            style={{ transform: `translate3d(-${active * 100}%, 0, 0)` }}
-          >
-            {slides.map((slide, index) => (
-              <div
-                key={slide.engineer.id}
-                className={cn('mkt-community-slider-panel', index === active && 'is-active')}
-                aria-hidden={index !== active}
-              >
+          {slides.map((slide, index) => (
+            <div
+              key={slide.engineer.id}
+              ref={(node) => {
+                panelRefs.current[index] = node;
+              }}
+              className={cn('mkt-community-slider-panel', index === active && 'is-active')}
+              aria-hidden={index !== active}
+            >
+              {slide.community ? (
+                <div className="mkt-dtag mkt-community-slider-dtag">{slide.community}</div>
+              ) : null}
+              <div className="mkt-community-slider-panel-body">
                 <DemoEngineerCard
                   engineer={slide.engineer}
                   variant="landing"
@@ -133,8 +163,8 @@ export function CommunityProfileSlider({
                   shellless
                 />
               </div>
-            ))}
-          </div>
+            </div>
+          ))}
         </div>
       </article>
     </div>
