@@ -1,4 +1,25 @@
+import {
+  getEmailLogoAttachment,
+  getEmailLogoGraphAttachment,
+} from './email-templates/brand-email.logo.js';
 import nodemailer from 'nodemailer';
+import {
+  buildOtpEmailHtml,
+  buildOtpEmailSubject,
+  buildOtpEmailText,
+} from './email-templates/otp-email.template.js';
+import {
+  buildClientRegistrationAcknowledgementHtml,
+  buildClientRegistrationAcknowledgementText,
+  buildClientWelcomeEmailHtml,
+  buildClientWelcomeEmailText,
+  buildInviteEmailHtml,
+  buildInviteEmailText,
+  buildNotificationEmailHtml,
+  buildNotificationEmailText,
+  buildPasswordResetEmailHtml,
+  buildPasswordResetEmailText,
+} from './email-templates/transactional-email.templates.js';
 import type { PrismaClient } from '@prisma/client';
 import type { AppConfig } from '../config/index.js';
 import type { Role } from '../constants/index.js';
@@ -239,8 +260,6 @@ export async function readResolvedMailConfig(
   return resolveMailConfig(config, await readEmailSettings(prisma));
 }
 
-const EMAIL_SIGNATURE = '— Team BesTal';
-
 function portalLabel(role: Role): string {
   switch (role) {
     case 'RECRUITER':
@@ -292,14 +311,20 @@ export class EmailService {
 
     try {
       if (transport.mode === 'graph') {
-        await transport.client.sendMail(message);
+        const logoAttachment = getEmailLogoGraphAttachment();
+        await transport.client.sendMail({
+          ...message,
+          attachments: logoAttachment ? [logoAttachment] : undefined,
+        });
       } else {
+        const logoAttachment = getEmailLogoAttachment();
         await transport.transporter.sendMail({
           from: `"${transport.fromName}" <${transport.fromAddress}>`,
           to: message.to,
           subject: message.subject,
           text: message.text,
           html: message.html,
+          attachments: logoAttachment ? [logoAttachment] : undefined,
         });
       }
       return { sent: true };
@@ -315,34 +340,17 @@ export class EmailService {
   }
 
   async sendInviteCredentials(payload: InviteEmailPayload): Promise<{ sent: boolean }> {
-    const subject = `Your BesTal account (${portalLabel(payload.role)})`;
-    const text = [
-      `Hi ${payload.firstName},`,
-      '',
-      `You have been invited to the ${portalLabel(payload.role)}.`,
-      '',
-      `Sign in here: ${payload.portalLoginUrl}`,
-      `User ID: ${payload.to}`,
-      `Password: ${payload.temporaryPassword}`,
-      '',
-      'You must change your password after your first sign-in.',
-      '',
-      EMAIL_SIGNATURE,
-    ].join('\n');
-
-    const html = `
-      <p>Hi ${escapeHtml(payload.firstName)},</p>
-      <p>You have been invited to the <strong>${portalLabel(payload.role)}</strong>.</p>
-      <p>
-        <a href="${escapeHtml(payload.portalLoginUrl)}">Sign in to your portal</a>
-      </p>
-      <ul>
-        <li><strong>User ID:</strong> ${escapeHtml(payload.to)}</li>
-        <li><strong>Password:</strong> <code>${escapeHtml(payload.temporaryPassword)}</code></li>
-      </ul>
-      <p>You must change your password after your first sign-in.</p>
-      <p>${escapeHtml(EMAIL_SIGNATURE)}</p>
-    `;
+    const label = portalLabel(payload.role);
+    const subject = `Your BesTal account (${label})`;
+    const templateOptions = {
+      firstName: payload.firstName,
+      portalLabel: label,
+      portalLoginUrl: payload.portalLoginUrl,
+      userId: payload.to,
+      temporaryPassword: payload.temporaryPassword,
+    };
+    const text = buildInviteEmailText(templateOptions);
+    const html = buildInviteEmailHtml(templateOptions);
 
     const runtime = await this.ensureReady();
     if (runtime.transport.mode === 'none') {
@@ -360,29 +368,14 @@ export class EmailService {
 
   async sendPasswordResetEmail(payload: PasswordResetEmailPayload): Promise<{ sent: boolean }> {
     const subject = `Reset your ${payload.portalLabel} password`;
-    const text = [
-      `Hi ${payload.firstName},`,
-      '',
-      `We received a request to reset your password for the ${payload.portalLabel}.`,
-      '',
-      `Reset your password here (expires in ${payload.expiresIn}):`,
-      payload.resetUrl,
-      '',
-      'If you did not request this, you can safely ignore this email.',
-      '',
-      EMAIL_SIGNATURE,
-    ].join('\n');
-
-    const html = `
-      <p>Hi ${escapeHtml(payload.firstName)},</p>
-      <p>We received a request to reset your password for the <strong>${escapeHtml(payload.portalLabel)}</strong>.</p>
-      <p>
-        <a href="${escapeHtml(payload.resetUrl)}">Reset your password</a>
-      </p>
-      <p>This link expires in ${escapeHtml(payload.expiresIn)}.</p>
-      <p>If you did not request this, you can safely ignore this email.</p>
-      <p>${escapeHtml(EMAIL_SIGNATURE)}</p>
-    `;
+    const templateOptions = {
+      firstName: payload.firstName,
+      portalLabel: payload.portalLabel,
+      resetUrl: payload.resetUrl,
+      expiresIn: payload.expiresIn,
+    };
+    const text = buildPasswordResetEmailText(templateOptions);
+    const html = buildPasswordResetEmailHtml(templateOptions);
 
     const runtime = await this.ensureReady();
     if (runtime.transport.mode === 'none') {
@@ -405,28 +398,14 @@ export class EmailService {
     subject?: string | null;
   }): Promise<{ sent: boolean }> {
     const greeting = payload.firstName ? `Hi ${payload.firstName},` : 'Hi,';
-    const text = [
+    const templateOptions = {
       greeting,
-      '',
-      payload.title,
-      '',
-      payload.body,
-      ...(payload.actionUrl ? ['', `Open: ${payload.actionUrl}`] : []),
-      '',
-      EMAIL_SIGNATURE,
-    ].join('\n');
-
-    const html = `
-      <p>${escapeHtml(greeting)}</p>
-      <p><strong>${escapeHtml(payload.title)}</strong></p>
-      <p>${escapeHtml(payload.body)}</p>
-      ${
-        payload.actionUrl
-          ? `<p><a href="${escapeHtml(payload.actionUrl)}">View details</a></p>`
-          : ''
-      }
-      <p>${escapeHtml(EMAIL_SIGNATURE)}</p>
-    `;
+      title: payload.title,
+      body: payload.body,
+      actionUrl: payload.actionUrl,
+    };
+    const text = buildNotificationEmailText(templateOptions);
+    const html = buildNotificationEmailHtml(templateOptions);
 
     const runtime = await this.ensureReady();
     if (runtime.transport.mode === 'none') {
@@ -450,25 +429,12 @@ export class EmailService {
     payload: ClientRegistrationAcknowledgementPayload,
   ): Promise<{ sent: boolean }> {
     const subject = 'BesTal registration received';
-    const text = [
-      `Hi ${payload.contactName},`,
-      '',
-      'Thank you for registering. We sent a confirmation email to your inbox.',
-      '',
-      'Your account is pending review. You will be able to sign in once a BesTal administrator activates your company account.',
-      '',
-      `Client sign in (after activation): ${payload.loginUrl}`,
-      '',
-      EMAIL_SIGNATURE,
-    ].join('\n');
-
-    const html = `
-      <p>Hi ${escapeHtml(payload.contactName)},</p>
-      <p>Thank you for registering. We sent a confirmation email to your inbox.</p>
-      <p>Your account is pending review. You will be able to sign in once a BesTal administrator activates your company account.</p>
-      <p><a href="${escapeHtml(payload.loginUrl)}">Client sign in</a> (available after activation)</p>
-      <p>${escapeHtml(EMAIL_SIGNATURE)}</p>
-    `;
+    const templateOptions = {
+      contactName: payload.contactName,
+      loginUrl: payload.loginUrl,
+    };
+    const text = buildClientRegistrationAcknowledgementText(templateOptions);
+    const html = buildClientRegistrationAcknowledgementHtml(templateOptions);
 
     const runtime = await this.ensureReady();
     if (runtime.transport.mode === 'none') {
@@ -486,29 +452,15 @@ export class EmailService {
   async sendClientSignupOtpEmail(
     payload: ClientSignupOtpEmailPayload,
   ): Promise<{ sent: boolean }> {
-    const subject = 'Verify your BesTal client signup';
-    const text = [
-      `Hi ${payload.contactName},`,
-      '',
-      'Use this verification code to complete your BesTal client registration:',
-      '',
-      payload.otp,
-      '',
-      `This code expires in ${payload.expiresInMinutes} minutes.`,
-      '',
-      'If you did not request this, you can safely ignore this email.',
-      '',
-      EMAIL_SIGNATURE,
-    ].join('\n');
-
-    const html = `
-      <p>Hi ${escapeHtml(payload.contactName)},</p>
-      <p>Use this verification code to complete your BesTal client registration:</p>
-      <p style="font-size:24px;font-weight:700;letter-spacing:0.2em;">${escapeHtml(payload.otp)}</p>
-      <p>This code expires in ${payload.expiresInMinutes} minutes.</p>
-      <p>If you did not request this, you can safely ignore this email.</p>
-      <p>${escapeHtml(EMAIL_SIGNATURE)}</p>
-    `;
+    const subject = buildOtpEmailSubject();
+    const templateInput = {
+      recipientName: payload.contactName,
+      otp: payload.otp,
+      expiresInMinutes: payload.expiresInMinutes,
+      purpose: 'signup' as const,
+    };
+    const text = buildOtpEmailText(templateInput);
+    const html = buildOtpEmailHtml(templateInput);
 
     const runtime = await this.ensureReady();
     if (runtime.transport.mode === 'none') {
@@ -525,29 +477,15 @@ export class EmailService {
   async sendClientLoginOtpEmail(
     payload: ClientLoginOtpEmailPayload,
   ): Promise<{ sent: boolean }> {
-    const subject = 'Your BesTal client portal sign-in code';
-    const text = [
-      `Hi ${payload.firstName},`,
-      '',
-      'Use this verification code to sign in to the BesTal Client Portal:',
-      '',
-      payload.otp,
-      '',
-      `This code expires in ${payload.expiresInMinutes} minutes.`,
-      '',
-      'If you did not request this, you can safely ignore this email.',
-      '',
-      EMAIL_SIGNATURE,
-    ].join('\n');
-
-    const html = `
-      <p>Hi ${escapeHtml(payload.firstName)},</p>
-      <p>Use this verification code to sign in to the BesTal Client Portal:</p>
-      <p style="font-size:24px;font-weight:700;letter-spacing:0.2em;">${escapeHtml(payload.otp)}</p>
-      <p>This code expires in ${payload.expiresInMinutes} minutes.</p>
-      <p>If you did not request this, you can safely ignore this email.</p>
-      <p>${escapeHtml(EMAIL_SIGNATURE)}</p>
-    `;
+    const subject = buildOtpEmailSubject('login');
+    const templateInput = {
+      recipientName: payload.firstName,
+      otp: payload.otp,
+      expiresInMinutes: payload.expiresInMinutes,
+      purpose: 'login' as const,
+    };
+    const text = buildOtpEmailText(templateInput);
+    const html = buildOtpEmailHtml(templateInput);
 
     const runtime = await this.ensureReady();
     if (runtime.transport.mode === 'none') {
@@ -563,34 +501,15 @@ export class EmailService {
 
   async sendClientWelcomeEmail(payload: ClientWelcomeEmailPayload): Promise<{ sent: boolean }> {
     const subject = `Your BesTal Client Portal account is active — ${payload.companyName}`;
-    const text = [
-      `Hi ${payload.firstName},`,
-      '',
-      `Welcome to BesTal! Your ${payload.companyName} account has been activated.`,
-      '',
-      'Use the credentials below to sign in to the Client Portal for the first time:',
-      '',
-      `Sign in: ${payload.loginUrl}`,
-      `User ID: ${payload.to}`,
-      `Password: ${payload.temporaryPassword}`,
-      '',
-      'You must change your password after your first sign-in.',
-      '',
-      EMAIL_SIGNATURE,
-    ].join('\n');
-
-    const html = `
-      <p>Hi ${escapeHtml(payload.firstName)},</p>
-      <p>Welcome to BesTal! Your <strong>${escapeHtml(payload.companyName)}</strong> account has been activated.</p>
-      <p>Use the credentials below to sign in to the Client Portal for the first time:</p>
-      <p><a href="${escapeHtml(payload.loginUrl)}">Sign in to the Client Portal</a></p>
-      <ul>
-        <li><strong>User ID:</strong> ${escapeHtml(payload.to)}</li>
-        <li><strong>Password:</strong> <code>${escapeHtml(payload.temporaryPassword)}</code></li>
-      </ul>
-      <p>You must change your password after your first sign-in.</p>
-      <p>${escapeHtml(EMAIL_SIGNATURE)}</p>
-    `;
+    const templateOptions = {
+      firstName: payload.firstName,
+      companyName: payload.companyName,
+      loginUrl: payload.loginUrl,
+      userId: payload.to,
+      temporaryPassword: payload.temporaryPassword,
+    };
+    const text = buildClientWelcomeEmailText(templateOptions);
+    const html = buildClientWelcomeEmailHtml(templateOptions);
 
     const runtime = await this.ensureReady();
     if (runtime.transport.mode === 'none') {
@@ -613,12 +532,4 @@ export class EmailService {
       body: 'This is a test email from BesTal platform settings.',
     });
   }
-}
-
-function escapeHtml(value: string): string {
-  return value
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
 }

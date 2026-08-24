@@ -1,4 +1,4 @@
-import { Button, Input } from '@bestal/ui';
+import { Button, PasswordInput } from '@bestal/ui';
 import { useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { z } from 'zod';
@@ -129,9 +129,8 @@ export function ResetPasswordForm({
             <label htmlFor="password" className="text-sm font-medium text-foreground">
               New password
             </label>
-            <Input
+            <PasswordInput
               id="password"
-              type="password"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
               autoComplete="new-password"
@@ -146,9 +145,8 @@ export function ResetPasswordForm({
             <label htmlFor="confirmPassword" className="text-sm font-medium text-foreground">
               Confirm new password
             </label>
-            <Input
+            <PasswordInput
               id="confirmPassword"
-              type="password"
               value={confirmPassword}
               onChange={(event) => setConfirmPassword(event.target.value)}
               autoComplete="new-password"

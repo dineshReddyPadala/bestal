@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ForwardArrow } from '../ui/ForwardArrow';
+import { MarketingPasswordInput } from '../ui/MarketingPasswordInput';
 import { usePortalLogin } from '../../contexts/AuthContext';
 import type { Portal } from '../../lib/api/types';
 
@@ -44,13 +45,11 @@ export function StaffPortalLoginForm({
 
       <label className="mkt-login-field">
         <span className="mkt-login-label">Password</span>
-        <input
-          type="password"
+        <MarketingPasswordInput
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           autoComplete="current-password"
           required
-          className="mkt-login-input"
         />
       </label>
 

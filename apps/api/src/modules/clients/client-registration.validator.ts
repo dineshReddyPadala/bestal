@@ -1,36 +1,18 @@
 import { z } from 'zod';
 import { validateCompanyContactEmail } from '../../utils/work-email.js';
 
-const WEBSITE_PATTERN = /^(https?:\/\/)?([\w-]+\.)+[\w-]{2,}(\/.*)?$/i;
-
-function isValidWebsite(value: string | undefined): boolean {
-  if (!value?.trim()) return true;
-  return WEBSITE_PATTERN.test(value.trim());
-}
-
 const signupDetailsFields = {
   companyName: z.string().trim().min(1, 'Company name is required').max(255),
   contactName: z.string().trim().min(1, 'Primary contact name is required').max(150),
-  contactEmail: z.string().trim().email('Valid primary contact email is required').max(255),
-  contactPhone: z.string().trim().min(1, 'Primary contact phone is required').max(30),
+  contactEmail: z.string().trim().email('Valid official email is required').max(255),
+  contactPhone: z.string().trim().min(1, 'Phone number is required').max(30),
   contactDesignation: z.string().trim().min(1, 'Designation is required').max(150),
-  website: z
-    .string()
-    .trim()
-    .max(255)
-    .optional()
-    .or(z.literal(''))
-    .refine(isValidWebsite, { message: 'Enter a valid website (e.g. company.com)' }),
 };
 
 export const clientSignupRequestOtpBodySchema = z
   .object(signupDetailsFields)
   .superRefine((data, ctx) => {
-    const result = validateCompanyContactEmail(
-      data.contactEmail,
-      data.companyName,
-      data.website,
-    );
+    const result = validateCompanyContactEmail(data.contactEmail, data.companyName);
     if (!result.valid) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
@@ -63,11 +45,7 @@ export const publicClientRegistrationBodySchema = z
     path: ['confirmPassword'],
   })
   .superRefine((data, ctx) => {
-    const result = validateCompanyContactEmail(
-      data.contactEmail,
-      data.companyName,
-      data.website,
-    );
+    const result = validateCompanyContactEmail(data.contactEmail, data.companyName);
     if (!result.valid) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,

@@ -309,6 +309,7 @@ export const candidateListItemSchema = z.object({
   primaryRole: z.string().nullable(),
   currentCompany: z.string().nullable(),
   currentTitle: z.string().nullable(),
+  displayName: z.string().nullable(),
   bestalScore: z.number().nullable(),
   clientBillRate: z.number().nullable(),
   currency: z.string().nullable(),

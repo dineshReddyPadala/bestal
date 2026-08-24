@@ -26,22 +26,17 @@ type StageItem = {
 };
 
 function HiWSectionHeader({
-  partLabel,
   stepCount,
   title,
   intro,
-  badgeClass,
 }: {
-  partLabel: string;
   stepCount: string;
   title: string;
   intro: string;
-  badgeClass: string;
 }) {
   return (
     <div className="mkt-hiw-v3-section-hd">
       <div className="mkt-hiw-v3-section-meta">
-        <span className={cn('mkt-hiw-v3-part-badge', badgeClass)}>{partLabel}</span>
         <span className="mkt-hiw-v3-step-count">{stepCount}</span>
       </div>
       <div className="mkt-hiw-v3-section-title-row">
@@ -185,11 +180,9 @@ export function HowItWorksPage() {
       <section className="mkt-section mkt-hiw-v3-section">
         <MktShell>
           <HiWSectionHeader
-            partLabel={HIW_CLIENT.partLabel}
             stepCount={HIW_CLIENT.stepCount}
             title={HIW_CLIENT.title}
             intro={HIW_CLIENT.intro}
-            badgeClass="is-client"
           />
 
           <HiWProcessFlow />
@@ -265,11 +258,9 @@ export function HowItWorksPage() {
       <section className="mkt-section mkt-hiw-v3-section mkt-hiw-v3-section--seeker">
         <MktShell>
           <HiWSectionHeader
-            partLabel={HIW_SEEKER.partLabel}
             stepCount={HIW_SEEKER.stepCount}
             title={HIW_SEEKER.title}
             intro={HIW_SEEKER.intro}
-            badgeClass="is-seeker"
           />
 
           <div className="mkt-hiw-v3-seeker-layout">

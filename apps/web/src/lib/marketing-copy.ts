@@ -28,7 +28,7 @@ export const EVIDENCE_STRIP = [
   },
   {
     num: '06',
-    title: '10 Hours Free',
+    title: '10 Hours Free Trial',
     body: 'Try any engineer on real work at no charge.',
   },
 ] as const;
@@ -532,9 +532,8 @@ export const HIW_HERO = {
 } as const;
 
 export const HIW_CLIENT = {
-  partLabel: 'Part — 1',
   stepCount: '6 steps',
-  title: 'How Client Requirements get Served',
+  title: 'How client requirements get served',
   intro:
     'Six stages from describing what you need through managing an active engagement — including a free trial before you commit.',
   flowRibbon: {
@@ -632,9 +631,8 @@ export const HIW_CLIENT = {
 } as const;
 
 export const HIW_SEEKER = {
-  partLabel: 'Part — 2',
   stepCount: '8 steps',
-  title: 'How Job Seeker gets onto BesTal',
+  title: 'How job seeker gets onto BesTal',
   intro:
     'Eight stages between first contact and a published profile. A profile appears only when all of them are complete.',
   funnelLabel: 'Eight Stages, one profile',
@@ -984,3 +982,20 @@ export const FAQ_PAGE = {
     },
   ] satisfies FaqCategory[],
 } as const;
+
+export const HOME_FAQ_QUESTIONS = [
+  'Can I see assessment results before speaking with an engineer?',
+  "What information is available on an engineer's profile?",
+  'What does "pre-vetted" mean?',
+  'How are engineers verified?',
+  'Do engineers work in US time zones?',
+] as const;
+
+export function getHomeFaqItems(): FaqItem[] {
+  const all = FAQ_PAGE.categories.flatMap((c) => c.items);
+  return HOME_FAQ_QUESTIONS.map((q) => {
+    const item = all.find((i) => i.question === q);
+    if (!item) throw new Error(`Missing FAQ: ${q}`);
+    return item;
+  });
+}

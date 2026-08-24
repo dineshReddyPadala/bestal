@@ -213,18 +213,18 @@ async function main() {
   const orgId = organization.id;
 
   const skillCommunitySeed = [
-    { name: 'Data Engineering', slug: 'data-engineering', description: 'Spark, Kafka, Snowflake, dbt, and real-time pipeline architects.' },
-    { name: 'AI / GenAI', slug: 'ai-genai', description: 'LLM, GenAI, MLOps, and applied AI specialists.' },
-    { name: 'Cloud / DevOps', slug: 'cloud-devops', description: 'Kubernetes, Terraform, AWS, GCP, and site reliability engineering experts.' },
-    { name: 'QA Automation', slug: 'qa-automation', description: 'Cypress, Playwright, Selenium, and quality engineering leaders.' },
-    { name: 'Frontend', slug: 'frontend', description: 'React, Angular, Vue, and modern UI engineers.' },
-    { name: 'Backend', slug: 'backend', description: 'Node.js, Java, .NET, Python, and API platform engineers.' },
-    { name: 'Full Stack', slug: 'full-stack', description: 'End-to-end product engineers spanning frontend and backend.' },
-    { name: 'Mobile', slug: 'mobile', description: 'React Native, Flutter, Swift, and Kotlin mobile engineers.' },
-    { name: 'Cybersecurity', slug: 'cybersecurity', description: 'Security architects, penetration testers, and compliance specialists.' },
-    { name: 'SAP', slug: 'sap', description: 'SAP functional and technical consultants.' },
-    { name: 'Salesforce', slug: 'salesforce', description: 'Salesforce admins, developers, and architects.' },
-    { name: 'ServiceNow', slug: 'servicenow', description: 'ServiceNow developers and platform consultants.' },
+    { name: 'Data Engineering', slug: 'data-engineering', description: 'Spark, Kafka, Snowflake, dbt, and real-time pipeline architects.', displayOrder: 1 },
+    { name: 'AI / GenAI', slug: 'ai-genai', description: 'LLM, GenAI, MLOps, and applied AI specialists.', displayOrder: 2 },
+    { name: 'Cloud / DevOps', slug: 'cloud-devops', description: 'Kubernetes, Terraform, AWS, GCP, and site reliability engineering experts.', displayOrder: 3 },
+    { name: 'QA Automation', slug: 'qa-automation', description: 'Cypress, Playwright, Selenium, and quality engineering leaders.', displayOrder: 4 },
+    { name: 'Frontend', slug: 'frontend', description: 'React, Angular, Vue, and modern UI engineers.', displayOrder: 5 },
+    { name: 'Backend', slug: 'backend', description: 'Node.js, Java, .NET, Python, and API platform engineers.', displayOrder: 6 },
+    { name: 'Full Stack', slug: 'full-stack', description: 'End-to-end product engineers spanning frontend and backend.', displayOrder: 7 },
+    { name: 'Mobile', slug: 'mobile', description: 'React Native, Flutter, Swift, and Kotlin mobile engineers.', displayOrder: 8 },
+    { name: 'Cybersecurity', slug: 'cybersecurity', description: 'Security architects, penetration testers, and compliance specialists.', displayOrder: 9 },
+    { name: 'SAP', slug: 'sap', description: 'SAP functional and technical consultants.', displayOrder: 10 },
+    { name: 'Salesforce', slug: 'salesforce', description: 'Salesforce admins, developers, and architects.', displayOrder: 11 },
+    { name: 'ServiceNow', slug: 'servicenow', description: 'ServiceNow developers and platform consultants.', displayOrder: 12 },
   ] as const;
 
   for (const community of skillCommunitySeed) {
@@ -233,6 +233,7 @@ async function main() {
       update: {
         name: community.name,
         description: community.description,
+        displayOrder: community.displayOrder,
         isActive: true,
         deletedAt: null,
       },
@@ -240,6 +241,7 @@ async function main() {
         name: community.name,
         slug: community.slug,
         description: community.description,
+        displayOrder: community.displayOrder,
       },
     });
   }

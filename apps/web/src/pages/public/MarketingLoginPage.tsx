@@ -4,6 +4,7 @@ import { SplitLoginLayout } from '../../components/marketing/SplitLoginLayout';
 import { SplitLoginPanel } from '../../components/marketing/SplitLoginPanel';
 import { PageMeta } from '../../components/PageMeta';
 import { ForwardArrow } from '../../components/ui/ForwardArrow';
+import { MarketingPasswordInput } from '../../components/ui/MarketingPasswordInput';
 import { useAuth } from '../../contexts/AuthContext';
 import { getMe, type Portal } from '../../lib/api';
 import { getChangePasswordPath } from '../../lib/change-password-path';
@@ -114,13 +115,11 @@ export function MarketingLoginPage({ variant = 'admin' }: MarketingLoginPageProp
 
             <label className="mkt-login-field">
               <span className="mkt-login-label">Password</span>
-              <input
-                type="password"
+              <MarketingPasswordInput
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 autoComplete="current-password"
                 required
-                className="mkt-login-input"
               />
             </label>
 

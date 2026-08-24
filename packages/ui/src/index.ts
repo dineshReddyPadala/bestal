@@ -9,6 +9,7 @@ export {
 } from './components/card.js';
 export { Badge, type BadgeProps } from './components/badge.js';
 export { Input, type InputProps } from './components/input.js';
+export { PasswordInput, type PasswordInputProps } from './components/password-input.js';
 export { Avatar, type AvatarProps } from './components/avatar.js';
 export { StatCard, type StatCardProps } from './components/stat-card.js';
 export { PageHeader, type PageHeaderProps } from './components/page-header.js';

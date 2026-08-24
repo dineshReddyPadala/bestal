@@ -1,4 +1,4 @@
-import { Button, Input } from '@bestal/ui';
+import { Button, Input, PasswordInput } from '@bestal/ui';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { usePortalLogin } from '../../contexts/AuthContext';
@@ -57,9 +57,8 @@ export function PortalLoginForm({
         <label htmlFor="password" className="text-sm font-medium text-foreground">
           Password
         </label>
-        <Input
+        <PasswordInput
           id="password"
-          type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           autoComplete="current-password"

@@ -13,11 +13,21 @@ export type MicrosoftGraphMailConfig = {
   fromName: string;
 };
 
+export type GraphMailAttachment = {
+  '@odata.type': '#microsoft.graph.fileAttachment';
+  name: string;
+  contentType: string;
+  contentBytes: string;
+  contentId: string;
+  isInline: true;
+};
+
 export type GraphMailMessage = {
   to: string;
   subject: string;
   text: string;
   html: string;
+  attachments?: GraphMailAttachment[];
 };
 
 type CachedToken = {
@@ -63,6 +73,7 @@ export class MicrosoftGraphMailClient {
                 name: this.config.fromName,
               },
             },
+            attachments: message.attachments?.length ? message.attachments : undefined,
           },
           saveToSentItems: true,
         }),

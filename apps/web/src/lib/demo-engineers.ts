@@ -34,10 +34,24 @@ export type DemoEngineer = {
   availabilityWeeks: number;
   confirmed: string;
   trialEligible: boolean;
+  previousCompany?: string | null;
 };
 
 const PLACEHOLDER_NOTE =
   '[PLACEHOLDER: tester note pending — retains structure of a scored, written evaluation from an outside specialist.]';
+
+const ENGINEER_PREVIOUS_COMPANIES: Partial<Record<string, string>> = {
+  'ananya-m': 'Amazon',
+  'priya-s': 'Snowflake',
+  'karan-d': 'Nvidia',
+  'sneha-p': 'Deloitte',
+  'meera-n': 'Accenture',
+  'lakshmi-v': 'Salesforce',
+  'aditya-c': 'CrowdStrike',
+  'rahul-k': 'Google',
+  'arjun-t': 'Microsoft',
+  'vikram-r': 'Freshworks',
+};
 
 function engineer(
   data: Omit<
@@ -51,6 +65,7 @@ function engineer(
     timezoneDetail: data.zoneHours,
     evaluation: data.quote,
     trialEligible: data.trialEligible ?? true,
+    previousCompany: ENGINEER_PREVIOUS_COMPANIES[data.id] ?? data.previousCompany ?? null,
   };
 }
 

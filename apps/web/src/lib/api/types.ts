@@ -89,6 +89,7 @@ export type SkillCommunityListItem = {
   slug: string;
   description: string | null;
   iconUrl: string | null;
+  displayOrder: number;
 };
 
 // ─── Trial ────────────────────────────────────────────────────────────────────

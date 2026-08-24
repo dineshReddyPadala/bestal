@@ -6,15 +6,17 @@ import { MktShell } from '../../components/marketing/MktShell';
 import { PageMeta } from '../../components/PageMeta';
 import {
   EVIDENCE_STRIP,
-  HOME_BUYER_FAQ,
-  HOME_COMMUNITIES,
+  getHomeFaqItems,
   HOME_STATS,
   HOME_STEPS,
   TIMEZONE_BLOCKS,
 } from '../../lib/marketing-copy';
-import { COMMUNITY_PROFILE_SLIDES, type CommunityProfileSlide } from '../../lib/demo-engineers';
-import { mapFeaturedCandidateToProfileSlide } from '../../lib/landing-featured-candidates';
+import {
+  mapFeaturedCandidateToProfileSlide,
+  type CommunityProfileSlide,
+} from '../../lib/landing-featured-candidates';
 import { usePublicFeaturedCandidates } from '../../hooks/api/useCandidates';
+import { usePublicSkillCommunitiesList } from '../../hooks/api/useSkillCommunities';
 import { images } from '../../data/homeCopy';
 import { PAGE_SEO } from '../../lib/marketing-seo';
 import { cn } from '@bestal/shared-utils';
@@ -31,24 +33,51 @@ const TIMEZONE_CHIPS = [
 
 export function HomePage() {
   const [openFaq, setOpenFaq] = useState(0);
-  const { data: featuredCandidates = [] } = usePublicFeaturedCandidates(5);
+  const { data: featuredCandidates, isLoading: featuredLoading } = usePublicFeaturedCandidates(5);
+  const {
+    data: skillCommunities = [],
+    isLoading: communitiesLoading,
+    isError: communitiesError,
+  } = usePublicSkillCommunitiesList();
 
-  const profileSlides = useMemo(() => {
-    if (featuredCandidates.length === 0) return COMMUNITY_PROFILE_SLIDES;
-    return featuredCandidates.map(mapFeaturedCandidateToProfileSlide);
-  }, [featuredCandidates]);
+  const homeFaqItems = useMemo(() => getHomeFaqItems(), []);
 
-  const [heroSlide, setHeroSlide] = useState<CommunityProfileSlide>(profileSlides[0]);
+  const topCommunities = useMemo(() => skillCommunities.slice(0, 8), [skillCommunities]);
+
+  const homeStats = useMemo(
+    () =>
+      HOME_STATS.map((stat) =>
+        stat.label === 'Skill Communities'
+          ? {
+              ...stat,
+              value: topCommunities.length > 0 ? String(topCommunities.length) : stat.value,
+            }
+          : stat,
+      ),
+    [topCommunities.length],
+  );
+
+  const communityCountLabel =
+    topCommunities.length > 0
+      ? `${topCommunities.length} Skill Communities`
+      : 'Skill Communities';
+
+  const profileSlides = useMemo(
+    () => (featuredCandidates ?? []).map(mapFeaturedCandidateToProfileSlide),
+    [featuredCandidates],
+  );
+
+  const [heroSlide, setHeroSlide] = useState<CommunityProfileSlide | null>(null);
 
   useEffect(() => {
-    setHeroSlide(profileSlides[0]);
+    setHeroSlide(profileSlides[0] ?? null);
   }, [profileSlides]);
 
   const handleHeroSlideChange = useCallback((slide: CommunityProfileSlide) => {
     setHeroSlide(slide);
   }, []);
 
-  const heroEngineer = heroSlide.engineer;
+  const heroEngineer = heroSlide?.engineer;
 
   return (
     <div className="mkt-home">
@@ -80,8 +109,8 @@ export function HomePage() {
             </p>
           </div>
           <CommunityProfileSlider
-            hideScorecard
             slides={profileSlides}
+            isLoading={featuredLoading}
             onSlideChange={handleHeroSlideChange}
           />
         </MktShell>
@@ -89,8 +118,8 @@ export function HomePage() {
 
       <div className="mkt-band mkt-section-tight">
         <MktShell className="mkt-stats">
-          {HOME_STATS.map((stat) => (
-            <div key={stat.value}>
+          {homeStats.map((stat) => (
+            <div key={stat.label}>
               <div className="mkt-stat-v">{stat.value}</div>
               <div className="mkt-stat-l whitespace-pre-line">{stat.label}</div>
             </div>
@@ -118,13 +147,13 @@ export function HomePage() {
         </MktShell>
       </section>
 
-      <section className="mkt-dark mkt-section">
+      <section id="evidence-section" className="mkt-dark mkt-section">
         <MktShell className="mkt-g2 items-start">
           <div>
             <h2>
-              Everyone claims the top 3%.
+              Everyone claims the top 10%.
               <br />
-              We show you the test.
+              We show you the evidence.
             </h2>
             <p className="mkt-dark-p mt-6">
               Most talent platforms ask you to trust a badge. A percentage, a promise, a curated
@@ -143,44 +172,46 @@ export function HomePage() {
               <ForwardArrow />
             </Link>
           </div>
-          <div className="mkt-score-dark">
-            <div className="mkt-score-dark-hd">
-              <span>Scorecard · {heroEngineer.role}</span>
-              <strong>
-                {heroEngineer.score}
-                <span>/100</span>
-              </strong>
-            </div>
-            {heroEngineer.dimensions.length > 0 ? (
-              heroEngineer.dimensions.map((dim) => (
-                <div key={dim.label} className="mkt-scr">
-                  <span className="mkt-scr-n">{dim.label}</span>
-                  <span className="mkt-tr">
-                    <span
-                      className={cn('mkt-fl', dim.tone === 'gold' && 'mkt-fl-amber')}
-                      style={{ width: `${dim.value * 10}%` }}
-                    />
-                  </span>
-                  <span className="mkt-scr-v">{formatDimensionScoreDisplay(dim.value)}</span>
-                </div>
-              ))
-            ) : (
-              <p className="mkt-dark-p mt-4">
-                Full dimensional scorecard available on the candidate profile.
-              </p>
-            )}
-            <p className="mkt-evl">
-              {heroEngineer.quoteIsPlaceholder ? (
-                <span className="italic">{heroEngineer.quote}</span>
+          {heroEngineer ? (
+            <div className="mkt-score-dark">
+              <div className="mkt-score-dark-hd">
+                <span>Scorecard · {heroEngineer.role}</span>
+                <strong>
+                  {heroEngineer.score}
+                  <span>/100</span>
+                </strong>
+              </div>
+              {heroEngineer.dimensions.length > 0 ? (
+                heroEngineer.dimensions.map((dim) => (
+                  <div key={dim.label} className="mkt-scr">
+                    <span className="mkt-scr-n">{dim.label}</span>
+                    <span className="mkt-tr">
+                      <span
+                        className={cn('mkt-fl', dim.tone === 'gold' && 'mkt-fl-amber')}
+                        style={{ width: `${dim.value * 10}%` }}
+                      />
+                    </span>
+                    <span className="mkt-scr-v">{formatDimensionScoreDisplay(dim.value)}</span>
+                  </div>
+                ))
               ) : (
-                <>“{heroEngineer.quote}”</>
+                <p className="mkt-dark-p mt-4">
+                  Full dimensional scorecard available on the candidate profile.
+                </p>
               )}
-              <br />
-              <span className="mkt-evl-meta">
-                — External Specialist, tested {heroEngineer.testedOn}
-              </span>
-            </p>
-          </div>
+              <p className="mkt-evl">
+                {heroEngineer.quoteIsPlaceholder ? (
+                  <span className="italic">{heroEngineer.quote}</span>
+                ) : (
+                  <>“{heroEngineer.quote}”</>
+                )}
+                <br />
+                <span className="mkt-evl-meta">
+                  — External Specialist, tested {heroEngineer.testedOn}
+                </span>
+              </p>
+            </div>
+          ) : null}
         </MktShell>
       </section>
 
@@ -201,10 +232,10 @@ export function HomePage() {
               No 6am standups for them. No 8pm handoffs for you. No hunting for three usable hours
               in the middle of the day.
             </p>
-            <Link to="/how-it-works" className="mkt-btn mkt-btn-primary mt-7">
+            <a href="#evidence-section" className="mkt-btn mkt-btn-primary mt-7">
               See a sample scorecard
               <ForwardArrow />
-            </Link>
+            </a>
             <div className="mkt-tz-chips">
               {TIMEZONE_CHIPS.map((z) => (
                 <span key={z.abbr} className="mkt-tz-chip">
@@ -300,12 +331,26 @@ export function HomePage() {
             </p>
           </div>
           <div className="mkt-g3">
-            {HOME_COMMUNITIES.map((c) => (
-              <div key={c.name} className="mkt-comm mkt-comm--static">
-                <h3>{c.name}</h3>
-                <p>{c.body}</p>
-              </div>
-            ))}
+            {communitiesLoading ? (
+              <p className="mkt-lead howitworks-body-style col-span-full">
+                Loading communities…
+              </p>
+            ) : communitiesError ? (
+              <p className="mkt-lead howitworks-body-style col-span-full">
+                Unable to load skill communities right now. Please try again shortly.
+              </p>
+            ) : topCommunities.length === 0 ? (
+              <p className="mkt-lead howitworks-body-style col-span-full">
+                No skill communities are available yet.
+              </p>
+            ) : (
+              topCommunities.map((community) => (
+                <div key={community.id} className="mkt-comm mkt-comm--static">
+                  <h3>{community.name}</h3>
+                  <p>{community.description ?? ''}</p>
+                </div>
+              ))
+            )}
           </div>
         </MktShell>
       </section>
@@ -317,9 +362,13 @@ export function HomePage() {
             <p className="mkt-big mt-4">
               Every one of these is answerable on a profile, without a call.
             </p>
+            <Link to="/faq" className="mkt-btn mkt-btn-primary mt-6">
+              Can&apos;t find an answer?
+              <ForwardArrow />
+            </Link>
           </div>
           <div className="mkt-faq mkt-faq-list">
-            {HOME_BUYER_FAQ.map((item, i) => {
+            {homeFaqItems.map((item, i) => {
               const isOpen = openFaq === i;
               return (
                 <div key={item.question} className={cn('mkt-faq-item', isOpen && 'is-open')}>
@@ -351,8 +400,8 @@ export function HomePage() {
             <div className="mkt-cta-copy">
               <h2>Start with the evidence.</h2>
               <p>
-                Browse the 7 Skill Communities, or tell us what you need and we&apos;ll match against
-                it.
+                Browse the {communityCountLabel}, or tell us what you need and we&apos;ll match
+                against it.
               </p>
               <div className="mkt-actions">
                 <Link to="/sample-talent" className="mkt-btn mkt-btn-dark mkt-btn-lg">
