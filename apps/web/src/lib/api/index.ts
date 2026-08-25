@@ -13,5 +13,6 @@ export { notificationsApi } from './notifications';
 export { searchApi } from './search';
 export { usersApi } from './users';
 export * from './types';
+export { fetchPublicTrialPolicy, fetchTrialPolicy } from './settings';
 export { isAuthenticated, clearTokens, getStoredPortal } from './auth-storage';
 

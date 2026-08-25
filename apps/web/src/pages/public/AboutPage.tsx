@@ -1,20 +1,21 @@
 import { Link } from 'react-router-dom';
 import { cn } from '@bestal/shared-utils';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { MktShell } from '../../components/marketing/MktShell';
 import { PageMeta } from '../../components/PageMeta';
 import { ForwardArrow } from '../../components/ui/ForwardArrow';
 import { images } from '../../data/homeCopy';
 import { ABOUT_HERO_IMAGE_SRC } from '../../lib/brand';
+import { useFreeTrialHours } from '../../hooks/api/useTrialPolicy';
 import {
   ABOUT_CTA,
-  ABOUT_DIFFERENCE,
   ABOUT_FEATURED,
   ABOUT_HERO,
   ABOUT_SPECIALISTS,
   ABOUT_SPLIT,
   type AboutDifferenceCard,
 } from '../../lib/marketing-copy';
+import { buildAboutDifference } from '../../lib/marketing-trial-copy';
 import { PAGE_SEO } from '../../lib/marketing-seo';
 
 function AboutDifferenceTags({
@@ -110,6 +111,12 @@ function AboutCollapsibleCard({
 }
 
 export function AboutPage() {
+  const freeTrialHours = useFreeTrialHours();
+  const aboutDifference = useMemo(
+    () => buildAboutDifference(freeTrialHours),
+    [freeTrialHours],
+  );
+
   return (
     <div className="mkt-about-page">
       <PageMeta title={PAGE_SEO.about.title} description={PAGE_SEO.about.description} />
@@ -160,7 +167,7 @@ export function AboutPage() {
           />
 
           <div className="mkt-about-grid">
-            {ABOUT_DIFFERENCE.map((item) => (
+            {aboutDifference.map((item) => (
               <article key={item.title} className="mkt-about-card mkt-about-card--hover">
                 <span className="mkt-about-card-num">{item.num}</span>
                 <h3>{item.title}</h3>

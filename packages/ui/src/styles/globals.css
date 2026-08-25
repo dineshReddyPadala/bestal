@@ -92,6 +92,21 @@
     right: 0.75rem;
     cursor: pointer;
   }
+
+  /* Custom show/hide toggles render their own icon — hide the browser duplicate. */
+  .password-input-wrap input[type='password']::-ms-reveal,
+  .password-input-wrap input[type='password']::-ms-clear,
+  .mkt-login-input-password::-ms-reveal,
+  .mkt-login-input-password::-ms-clear {
+    display: none;
+  }
+
+  .password-input-wrap input[type='password']::-webkit-password-reveal-button,
+  .mkt-login-input-password::-webkit-password-reveal-button {
+    display: none;
+    -webkit-appearance: none;
+    appearance: none;
+  }
 }
 
 /*

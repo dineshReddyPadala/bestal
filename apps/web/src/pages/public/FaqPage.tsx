@@ -3,7 +3,9 @@ import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { MktShell } from '../../components/marketing/MktShell';
 import { PageMeta } from '../../components/PageMeta';
+import { useFreeTrialHours } from '../../hooks/api/useTrialPolicy';
 import { FAQ_PAGE } from '../../lib/marketing-copy';
+import { buildFaqCategories } from '../../lib/marketing-trial-copy';
 import { PAGE_SEO } from '../../lib/marketing-seo';
 
 function faqItemId(categoryId: string, question: string) {
@@ -11,12 +13,17 @@ function faqItemId(categoryId: string, question: string) {
 }
 
 export function FaqPage() {
-  const defaultCategory = FAQ_PAGE.categories[0]?.id ?? 'general';
+  const freeTrialHours = useFreeTrialHours();
+  const faqCategories = useMemo(
+    () => buildFaqCategories(freeTrialHours),
+    [freeTrialHours],
+  );
+  const defaultCategory = faqCategories[0]?.id ?? 'general';
   const [activeCategory, setActiveCategory] = useState(defaultCategory);
 
   const activeCategoryData = useMemo(
-    () => FAQ_PAGE.categories.find((category) => category.id === activeCategory),
-    [activeCategory],
+    () => faqCategories.find((category) => category.id === activeCategory),
+    [activeCategory, faqCategories],
   );
 
   const firstItem = activeCategoryData?.items[0];
@@ -25,7 +32,7 @@ export function FaqPage() {
   );
 
   function selectCategory(categoryId: string) {
-    const category = FAQ_PAGE.categories.find((item) => item.id === categoryId);
+    const category = faqCategories.find((item) => item.id === categoryId);
     setActiveCategory(categoryId);
     const firstQuestion = category?.items[0];
     setOpenId(firstQuestion ? faqItemId(categoryId, firstQuestion.question) : '');
@@ -55,7 +62,7 @@ export function FaqPage() {
           <aside className="mkt-faq-toc" aria-label="FAQ categories">
             <h2>{FAQ_PAGE.tocTitle}</h2>
             <ul>
-              {FAQ_PAGE.categories.map((category) => (
+              {faqCategories.map((category) => (
                 <li key={category.id}>
                   <button
                     type="button"

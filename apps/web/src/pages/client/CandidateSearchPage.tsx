@@ -3,8 +3,8 @@ import { useCandidatesList } from '../../hooks/api/useCandidates';
 import { usePublicSkillCommunitiesList } from '../../hooks/api/useSkillCommunities';
 import { cn } from '@bestal/shared-utils';
 import { Button, EmptyState, useDashboardHeaderLeading } from '@bestal/ui';
-import { ArrowLeft, Home, Users } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { Home, Users } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ClientCandidateSearchCard } from '../../components/client/ClientCandidateSearchCard';
 import { ForwardArrow } from '../../components/ui/ForwardArrow';
@@ -20,6 +20,11 @@ import { useClientTrialRequests } from '../../hooks/useClientEngagementRequests'
 import {
   hasBlockingTrialForCandidate,
 } from '../../lib/client-engagement-gates';
+import {
+  isCommunityNameQuery,
+  parseCommunityId,
+  resolveCommunityFromParams,
+} from '../../lib/client-community-filter';
 import {
   DEFAULT_CLIENT_SEARCH_FILTERS,
   DEFAULT_CLIENT_SEARCH_SORT,
@@ -41,10 +46,13 @@ function readStoredViewMode(): ClientSearchViewMode {
   return stored === 'cards' ? 'cards' : 'list';
 }
 
-function parseCommunityId(value: string | null): number | null {
-  if (!value) return null;
-  const parsed = Number(value);
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+function initialSearchQuery(
+  searchParams: URLSearchParams,
+  communities: readonly { id: number; name: string }[],
+): string {
+  const q = searchParams.get('q')?.trim() ?? '';
+  if (!q || isCommunityNameQuery(q, communities)) return '';
+  return q;
 }
 
 export function CandidateSearchPage() {
@@ -64,7 +72,7 @@ export function CandidateSearchPage() {
 
   const [filters, setFilters] = useState<ClientSearchFilters>(() => ({
     ...DEFAULT_CLIENT_SEARCH_FILTERS,
-    query: searchParams.get('q') ?? '',
+    query: initialSearchQuery(searchParams, []),
   }));
   const [sort, setSort] = useState<Exclude<ClientSearchSort, 'best-match'>>(
     DEFAULT_CLIENT_SEARCH_SORT,
@@ -75,6 +83,7 @@ export function CandidateSearchPage() {
     ids: number[];
     label: string;
   } | null>(null);
+  const autoSelectAttempted = useRef(false);
 
   const searchParam = filters.query.trim() || undefined;
   const { data: apiCandidates, isLoading } = useCandidatesList(
@@ -101,6 +110,27 @@ export function CandidateSearchPage() {
     return sortClientSearchRecords(rows, sort);
   }, [allRecords, filters, sort]);
 
+  const selectCommunity = useCallback(
+    (communityId: number | null, options?: { clearEntryParams?: boolean }) => {
+      const next = new URLSearchParams(searchParams);
+      if (communityId != null) {
+        next.set('communityId', String(communityId));
+      } else {
+        next.delete('communityId');
+      }
+      if (options?.clearEntryParams) {
+        next.delete('discipline');
+        const q = next.get('q')?.trim();
+        if (q && isCommunityNameQuery(q, communities)) {
+          next.delete('q');
+        }
+      }
+      setSearchParams(next);
+      setSelectedIds(new Set());
+    },
+    [communities, searchParams, setSearchParams],
+  );
+
   useEffect(() => {
     setSelectedIds((prev) => {
       const visible = new Set(filtered.map((record) => record.id));
@@ -113,6 +143,38 @@ export function CandidateSearchPage() {
     window.localStorage.setItem(VIEW_MODE_STORAGE_KEY, viewMode);
   }, [viewMode]);
 
+  useEffect(() => {
+    if (communitiesLoading || communities.length === 0) return;
+
+    setFilters((prev) => {
+      const nextQuery = initialSearchQuery(searchParams, communities);
+      return prev.query === nextQuery ? prev : { ...prev, query: nextQuery };
+    });
+
+    if (selectedCommunityId != null || autoSelectAttempted.current) return;
+
+    const resolved = resolveCommunityFromParams(
+      {
+        communityId: searchParams.get('communityId'),
+        discipline: searchParams.get('discipline'),
+        q: searchParams.get('q'),
+      },
+      communities,
+    );
+
+    autoSelectAttempted.current = true;
+
+    if (resolved) {
+      selectCommunity(resolved.id, { clearEntryParams: true });
+    }
+  }, [
+    communities,
+    communitiesLoading,
+    searchParams,
+    selectCommunity,
+    selectedCommunityId,
+  ]);
+
   useDashboardHeaderLeading(
     useMemo(
       () => (
@@ -124,11 +186,7 @@ export function CandidateSearchPage() {
               <button
                 type="button"
                 className="truncate hover:text-foreground"
-                onClick={() => {
-                  const next = new URLSearchParams(searchParams);
-                  next.delete('communityId');
-                  setSearchParams(next);
-                }}
+                onClick={() => selectCommunity(null)}
               >
                 Browse Talents
               </button>
@@ -140,7 +198,7 @@ export function CandidateSearchPage() {
           )}
         </nav>
       ),
-      [searchParams, selectedCommunity, setSearchParams],
+      [selectCommunity, selectedCommunity],
     ),
   );
 
@@ -158,13 +216,6 @@ export function CandidateSearchPage() {
       ),
     [selectedRecords, trials],
   );
-
-  function selectCommunity(communityId: number) {
-    const next = new URLSearchParams(searchParams);
-    next.set('communityId', String(communityId));
-    setSearchParams(next);
-    setSelectedIds(new Set());
-  }
 
   function toggleSelected(id: number, next: boolean) {
     setSelectedIds((prev) => {
@@ -208,84 +259,64 @@ export function CandidateSearchPage() {
 
   const hasSelection = selectedIds.size > 0;
   const isListView = viewMode === 'list';
-
-  if (!selectedCommunityId) {
-    return (
-      <div className="flex min-h-full flex-col p-4 sm:p-6">
-        <div className="mb-6">
-          <h1 className="font-display text-2xl font-semibold text-foreground">Skill Communities</h1>
-          <p className="mt-2 max-w-3xl text-sm leading-relaxed text-muted-foreground">
-            Browse pre-vetted engineers by discipline. Select a community to view matching
-            candidates.
-          </p>
-        </div>
-        <ClientSkillCommunityGrid
-          communities={communities}
-          isLoading={communitiesLoading}
-          onSelect={(community) => selectCommunity(community.id)}
-        />
-      </div>
-    );
-  }
+  const showCandidateList = selectedCommunityId != null;
 
   return (
     <div
       className={cn(
         'flex flex-col',
-        isListView
+        showCandidateList && isListView
           ? 'h-[calc(100svh-var(--shell-header-h))] min-h-0 overflow-hidden'
           : 'min-h-full',
-        hasSelection && !isListView && 'pb-2',
+        hasSelection && showCandidateList && !isListView && 'pb-2',
       )}
     >
       <ToastHost message={message} variant={variant} onDismiss={dismiss} />
 
       <div
         className={cn(
-          isListView
+          showCandidateList && isListView
             ? 'flex min-h-0 flex-1 flex-col gap-4 p-4 sm:p-6'
             : 'flex-1 space-y-4 p-4 sm:p-6',
         )}
       >
-        <div className="flex flex-wrap items-center justify-between gap-3">
+        {!showCandidateList ? (
           <div>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="mb-2 -ml-2 gap-1.5"
-              onClick={() => {
-                const next = new URLSearchParams(searchParams);
-                next.delete('communityId');
-                setSearchParams(next);
-              }}
-            >
-              <ArrowLeft className="h-4 w-4" />
-              All communities
-            </Button>
-            <h1 className="font-display text-xl font-semibold text-foreground">
-              {selectedCommunity?.name ?? 'Candidates'}
+            <h1 className="font-display text-2xl font-semibold text-foreground">
+              Browse Talents
             </h1>
-            {selectedCommunity?.description ? (
-              <p className="mt-1 max-w-3xl text-sm text-muted-foreground">
-                {selectedCommunity.description}
-              </p>
-            ) : null}
+            <p className="mt-2 max-w-3xl text-sm leading-relaxed text-muted-foreground">
+              Browse pre-vetted engineers by discipline. Select a community to view matching
+              candidates.
+            </p>
           </div>
-        </div>
+        ) : null}
 
-        <ClientSearchToolbar
-          filters={filters}
-          onChange={setFilters}
-          sort={sort}
-          onSortChange={setSort}
-          viewMode={viewMode}
-          onViewModeChange={setViewMode}
-          resultCount={filtered.length}
-          timezoneOptions={timezoneOptions}
-          className={isListView ? 'shrink-0' : undefined}
-        />
+        {showCandidateList ? (
+          <ClientSearchToolbar
+            filters={filters}
+            onChange={setFilters}
+            sort={sort}
+            onSortChange={setSort}
+            viewMode={viewMode}
+            onViewModeChange={setViewMode}
+            resultCount={filtered.length}
+            timezoneOptions={timezoneOptions}
+            communities={communities}
+            selectedCommunityId={selectedCommunityId}
+            onCommunityChange={selectCommunity}
+            communitiesLoading={communitiesLoading}
+            className={isListView ? 'shrink-0' : undefined}
+          />
+        ) : null}
 
-        {isLoading ? (
+        {!showCandidateList ? (
+          <ClientSkillCommunityGrid
+            communities={communities}
+            isLoading={communitiesLoading}
+            onSelect={(community) => selectCommunity(community.id)}
+          />
+        ) : isLoading ? (
           <p className="text-sm text-muted-foreground">Loading talent pool…</p>
         ) : filtered.length === 0 ? (
           <EmptyState
@@ -309,23 +340,23 @@ export function CandidateSearchPage() {
                 hasBlockingTrialForCandidate(record.id, trials);
 
               return (
-              <ClientCandidateSearchCard
-                key={record.id}
-                record={record}
-                canRequestTrial={canRequestTrialBase && !trialRequested}
-                trialRequested={trialRequested}
-                selected={selectedIds.has(record.id)}
-                onSelectedChange={(next) => toggleSelected(record.id, next)}
-                onView={() => navigate(`/client/candidates/${record.id}`)}
-                onRequestTrial={() => openTrialDialog([record])}
-              />
+                <ClientCandidateSearchCard
+                  key={record.id}
+                  record={record}
+                  canRequestTrial={canRequestTrialBase && !trialRequested}
+                  trialRequested={trialRequested}
+                  selected={selectedIds.has(record.id)}
+                  onSelectedChange={(next) => toggleSelected(record.id, next)}
+                  onView={() => navigate(`/client/candidates/${record.id}`)}
+                  onRequestTrial={() => openTrialDialog([record])}
+                />
               );
             })}
           </div>
         )}
       </div>
 
-      {hasSelection ? (
+      {showCandidateList && hasSelection ? (
         <div className="sticky bottom-0 z-20 shrink-0 border-t border-border bg-background/95 px-4 py-2.5 shadow-[0_-4px_16px_rgba(0,0,0,0.06)] backdrop-blur sm:px-6">
           <div className="mx-auto flex max-w-[1600px] flex-wrap items-center justify-between gap-3">
             <p className="text-sm text-muted-foreground">

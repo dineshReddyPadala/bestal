@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { cn } from '@bestal/shared-utils';
 import {
@@ -14,8 +15,10 @@ import {
 import { PageMeta } from '../../components/PageMeta';
 import { MktShell } from '../../components/marketing/MktShell';
 import { ForwardArrow } from '../../components/ui/ForwardArrow';
+import { useFreeTrialHours } from '../../hooks/api/useTrialPolicy';
 import { images } from '../../data/homeCopy';
-import { HIW_CLIENT, HIW_HERO, HIW_SEEKER } from '../../lib/marketing-copy';
+import { HIW_HERO, HIW_SEEKER } from '../../lib/marketing-copy';
+import { buildHiwClient } from '../../lib/marketing-trial-copy';
 import { PAGE_SEO } from '../../lib/marketing-seo';
 
 type StageItem = {
@@ -97,15 +100,15 @@ const processCardIcons = {
   green: Timer,
 } as const;
 
-function HiWProcessFlow() {
+function HiWProcessFlow({ hiwClient }: { hiwClient: ReturnType<typeof buildHiwClient> }) {
   return (
     <div className="mkt-hiw-v3-flow">
       <div className="mkt-hiw-v3-flow-ribbon">
-        <span>{HIW_CLIENT.flowRibbon.left}</span>
-        <span>{HIW_CLIENT.flowRibbon.right}</span>
+        <span>{hiwClient.flowRibbon.left}</span>
+        <span>{hiwClient.flowRibbon.right}</span>
       </div>
       <div className="mkt-hiw-v3-flow-row">
-        {HIW_CLIENT.processCards.map((card, index) => {
+        {hiwClient.processCards.map((card, index) => {
           const Icon = processCardIcons[card.tone];
           return (
             <div key={card.title} className="mkt-hiw-v3-flow-wrap">
@@ -149,7 +152,7 @@ function HiWProcessFlow() {
                 ) : null}
                 <p>{card.body}</p>
               </article>
-              {index < HIW_CLIENT.processCards.length - 1 ? (
+              {index < hiwClient.processCards.length - 1 ? (
                 <span className="mkt-hiw-v3-flow-arrow" aria-hidden="true">
                   →
                 </span>
@@ -163,6 +166,9 @@ function HiWProcessFlow() {
 }
 
 export function HowItWorksPage() {
+  const freeTrialHours = useFreeTrialHours();
+  const hiwClient = useMemo(() => buildHiwClient(freeTrialHours), [freeTrialHours]);
+
   return (
     <div className="mkt-hiw-page mkt-hiw-v3-page">
       <PageMeta title={PAGE_SEO.howItWorks.title} description={PAGE_SEO.howItWorks.description} />
@@ -180,20 +186,20 @@ export function HowItWorksPage() {
       <section className="mkt-section mkt-hiw-v3-section">
         <MktShell>
           <HiWSectionHeader
-            stepCount={HIW_CLIENT.stepCount}
-            title={HIW_CLIENT.title}
-            intro={HIW_CLIENT.intro}
+            stepCount={hiwClient.stepCount}
+            title={hiwClient.title}
+            intro={hiwClient.intro}
           />
 
-          <HiWProcessFlow />
+          <HiWProcessFlow hiwClient={hiwClient} />
 
           <div className="mkt-hiw-v3-trial-panel">
             <div className="mkt-hiw-v3-trial-hd">
-              <h3>{HIW_CLIENT.trialOutcome.title}</h3>
-              <span className="mkt-hiw-v3-stage-pill">{HIW_CLIENT.trialOutcome.stageTag}</span>
+              <h3>{hiwClient.trialOutcome.title}</h3>
+              <span className="mkt-hiw-v3-stage-pill">{hiwClient.trialOutcome.stageTag}</span>
             </div>
             <div className="mkt-hiw-v3-trial-grid">
-              {HIW_CLIENT.trialOutcome.options.map((option, index) => {
+              {hiwClient.trialOutcome.options.map((option, index) => {
                 const Icon = trialIcons[index] ?? ArrowRight;
                 return (
                   <article
@@ -222,8 +228,8 @@ export function HowItWorksPage() {
           </div>
 
           <HiWStagesGrid
-            label={HIW_CLIENT.stagesLabel}
-            stages={HIW_CLIENT.stages}
+            label={hiwClient.stagesLabel}
+            stages={hiwClient.stages}
             columns={3}
           />
         </MktShell>

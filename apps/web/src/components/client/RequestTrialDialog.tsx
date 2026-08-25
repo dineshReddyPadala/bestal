@@ -3,11 +3,9 @@ import { useEffect, useState } from 'react';
 import { TrialRequestForm } from '../forms/TrialRequestForm';
 import type { TrialRequestFormValues } from '../../lib/entity-field-metadata';
 import { getApiErrorMessage } from '../../lib/api/errors';
-import { apiRequest } from '../../lib/api/client';
-import type { ApiDataResponse } from '../../lib/api/types';
+import { useTrialPolicy } from '../../hooks/api/useTrialPolicy';
+import { DEFAULT_FREE_TRIAL_HOURS } from '../../lib/trial-policy';
 import { FreeTrialTermsPanel } from './FreeTrialTermsPanel';
-
-const DEFAULT_FREE_TRIAL_HOURS = 20;
 
 type RequestTrialDialogProps = {
   open: boolean;
@@ -28,7 +26,8 @@ export function RequestTrialDialog({
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [freeTrialHours, setFreeTrialHours] = useState(DEFAULT_FREE_TRIAL_HOURS);
+  const { data: trialPolicy } = useTrialPolicy({ authenticated: true });
+  const freeTrialHours = trialPolicy?.freeTrialHours ?? DEFAULT_FREE_TRIAL_HOURS;
 
   useEffect(() => {
     if (!open) return;
@@ -36,16 +35,6 @@ export function RequestTrialDialog({
     setTermsAccepted(false);
     setSubmitting(false);
     setError(null);
-
-    void apiRequest<ApiDataResponse<{ freeTrialHours: number }>>('/settings/trial-policy')
-      .then((response) => {
-        if (response.data.freeTrialHours > 0) {
-          setFreeTrialHours(response.data.freeTrialHours);
-        }
-      })
-      .catch(() => {
-        setFreeTrialHours(DEFAULT_FREE_TRIAL_HOURS);
-      });
   }, [open]);
 
   function handleClose() {

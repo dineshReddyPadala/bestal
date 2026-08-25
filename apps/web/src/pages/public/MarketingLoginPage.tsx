@@ -48,7 +48,7 @@ export function MarketingLoginPage({ variant = 'admin' }: MarketingLoginPageProp
       : `${CLIENT_LOGIN_PATH}/signup`;
   const successPath =
     isClientLogin && discipline
-      ? `/client/search?q=${encodeURIComponent(discipline)}`
+      ? `/client/search?discipline=${encodeURIComponent(discipline)}`
       : config.successPath;
 
   if (

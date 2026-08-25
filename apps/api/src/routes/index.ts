@@ -17,7 +17,7 @@ import { trialRoutes } from '../modules/trials/trial.routes.js';
 import { jobRequestRoutes, jobRequestPublicRoutes, clientEnquiryPublicRoutes } from '../modules/job-requests/index.js';
 import { userRoutes } from '../modules/users/user.routes.js';
 import { skillCommunityRoutes, skillCommunityPublicRoutes } from '../modules/skill-communities/skill-community.routes.js';
-import { settingsRoutes } from '../modules/settings/settings.routes.js';
+import { settingsRoutes, settingsPublicRoutes } from '../modules/settings/settings.routes.js';
 import { healthRoutes } from './health.routes.js';
 
 export async function registerRoutes(fastify: FastifyInstance): Promise<void> {
@@ -51,6 +51,7 @@ export async function registerRoutes(fastify: FastifyInstance): Promise<void> {
       await api.register(searchRoutes, { prefix: '/search' });
       await api.register(notificationRoutes, { prefix: '/notifications' });
       await api.register(settingsRoutes, { prefix: '/settings' });
+      await api.register(settingsPublicRoutes, { prefix: '/public/settings' });
       await api.register(automationRoutes, { prefix: '/automation' });
     },
     { prefix: API_PREFIX },
