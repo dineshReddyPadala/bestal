@@ -1,5 +1,4 @@
 import { cn } from '@bestal/shared-utils';
-import { Link } from 'react-router-dom';
 import { MAX_COMPARE } from '../../hooks/useSampleTalentShortlist';
 import type { DemoEngineer } from '../../lib/demo-engineers';
 import { formatDimensionScoreDisplay } from '../../lib/score-display';
@@ -102,7 +101,7 @@ function LandingProfileCardBody({ engineer }: { engineer: DemoEngineer }) {
                 )}
                 title={availabilityLabel}
               >
-                {availabilityLabel}
+                <span className="mkt-lpc-avail-t">{availabilityLabel}</span>
               </div>
             ) : null}
           </div>
@@ -170,12 +169,12 @@ function LandingProfileCardBody({ engineer }: { engineer: DemoEngineer }) {
       </div>
 
       <div className="mkt-lpc-foot">
-        <Link to="/try-for-a-week" className="mkt-lpc-btn mkt-lpc-btn-primary">
+        <button type="button" className="mkt-lpc-btn mkt-lpc-btn-primary">
           Free Trial
-        </Link>
-        <Link to="/sample-talent" className="mkt-lpc-btn mkt-lpc-btn-secondary">
+        </button>
+        <button type="button" className="mkt-lpc-btn mkt-lpc-btn-secondary">
           Resume
-        </Link>
+        </button>
       </div>
     </div>
   );

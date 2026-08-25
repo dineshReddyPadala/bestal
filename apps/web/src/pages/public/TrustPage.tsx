@@ -141,7 +141,7 @@ Trust at the Core of Every Engagement          </h1>
               <h3>IP assignment</h3>
               <p>
                 Work product is assigned to you at the point of creation — including everything
-                produced during the free 20 hours.
+                produced during the free {formatFreeTrialHours(freeTrialHours)}.
               </p>
               <div className="mkt-fact">[FACT: contractual construction]</div>
             </article>

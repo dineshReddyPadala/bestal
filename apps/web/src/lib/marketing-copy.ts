@@ -1,4 +1,7 @@
-/** Marketing copy from bestal_prototype_v2.html */
+/** Marketing copy from bestal_prototype_v2.html
+ *  Note: strings with trial hour counts (e.g. "10 hours") are templates — pages use
+ *  `marketing-trial-copy.ts` builders + `useFreeTrialHours()` for live platform settings.
+ */
 
 export const EVIDENCE_STRIP = [
   {

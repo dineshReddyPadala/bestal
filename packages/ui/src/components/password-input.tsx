@@ -10,7 +10,7 @@ export const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>(
     const [visible, setVisible] = useState(false);
 
     return (
-      <div className={cn('relative', className)}>
+      <div className={cn('password-input-wrap relative', className)}>
         <Input
           ref={ref}
           type={visible ? 'text' : 'password'}

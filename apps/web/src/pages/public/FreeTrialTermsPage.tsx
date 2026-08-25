@@ -3,6 +3,7 @@ import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { MktShell } from '../../components/marketing/MktShell';
 import { PageMeta } from '../../components/PageMeta';
+import { useFreeTrialHours } from '../../hooks/api/useTrialPolicy';
 import {
   FREE_TRIAL_TERMS_CLOSING,
   FREE_TRIAL_TERMS_INTRO,
@@ -10,16 +11,15 @@ import {
 } from '../../lib/free-trial-terms';
 import { PAGE_SEO } from '../../lib/marketing-seo';
 
-const DEFAULT_FREE_TRIAL_HOURS = 20;
-
 function freeTrialItemId(title: string) {
   return title.toLowerCase().replace(/[^a-z0-9]+/g, '-');
 }
 
 export function FreeTrialTermsPage() {
+  const freeTrialHours = useFreeTrialHours();
   const termsItems = useMemo(
-    () => buildFreeTrialTermsItems(DEFAULT_FREE_TRIAL_HOURS),
-    [],
+    () => buildFreeTrialTermsItems(freeTrialHours),
+    [freeTrialHours],
   );
   const firstItem = termsItems[0];
   const [openId, setOpenId] = useState(firstItem ? freeTrialItemId(firstItem.title) : '');

@@ -1,11 +1,15 @@
 import { PageMeta } from '../../components/PageMeta';
 import { MktShell } from '../../components/marketing/MktShell';
+import { useFreeTrialHours } from '../../hooks/api/useTrialPolicy';
 import { RATE_FACTORS } from '../../lib/marketing-copy';
+import { formatFreeTrialHours } from '../../lib/trial-policy';
 import { PAGE_SEO } from '../../lib/marketing-seo';
 
 const PRICE_BANDS = ['Under $25', '$25–$35', '$35–$50', '$50–$75', '$75+'] as const;
 
 export function RatesPage() {
+  const freeTrialHours = useFreeTrialHours();
+
   return (
     <div className="mkt-rates-page">
       <PageMeta title={PAGE_SEO.rates.title} description={PAGE_SEO.rates.description} />
@@ -47,8 +51,8 @@ export function RatesPage() {
         <MktShell>
           <h2>What the price includes</h2>
           <p>
-            The published price is the all-in hourly price for engaged time. The first 10 hours are
-            not billed at all.
+            The published price is the all-in hourly price for engaged time. The first{' '}
+            {formatFreeTrialHours(freeTrialHours)} are not billed at all.
           </p>
           {/* <div className="mkt-fact">[FACT: precise inclusions and exclusions]</div>
           <p>

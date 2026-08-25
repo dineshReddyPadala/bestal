@@ -22,6 +22,10 @@ type ClientSearchToolbarProps = {
   onViewModeChange: (mode: ClientSearchViewMode) => void;
   resultCount: number;
   timezoneOptions?: readonly string[];
+  communities?: readonly { id: number; name: string }[];
+  selectedCommunityId?: number | null;
+  onCommunityChange?: (communityId: number | null) => void;
+  communitiesLoading?: boolean;
   className?: string;
 };
 
@@ -46,7 +50,7 @@ function FilterSelect({
         className={cn(
           'h-9 w-full cursor-pointer appearance-none rounded-lg border border-border/80 bg-background py-0 pl-3 pr-8 text-sm font-medium shadow-sm transition-colors',
           'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/30',
-          value === 'all' ? 'text-muted-foreground' : 'text-foreground',
+          value === 'all' || value === '' ? 'text-muted-foreground' : 'text-foreground',
         )}
       >
         {options.map((option) => (
@@ -72,6 +76,10 @@ export function ClientSearchToolbar({
   onViewModeChange,
   resultCount,
   timezoneOptions = [],
+  communities = [],
+  selectedCommunityId = null,
+  onCommunityChange,
+  communitiesLoading = false,
   className,
 }: ClientSearchToolbarProps) {
   const set = (patch: Partial<ClientSearchFilters>) => onChange({ ...filters, ...patch });
@@ -85,7 +93,25 @@ export function ClientSearchToolbar({
   return (
     <div className={cn('space-y-3', className)}>
       <div className="flex flex-wrap items-center gap-2 lg:flex-nowrap">
-        <div className="grid min-w-0 flex-1 grid-cols-2 items-center gap-2 sm:grid-cols-3 lg:grid-cols-[repeat(3,minmax(0,1fr))_minmax(10rem,1fr)]">
+        <div className="grid min-w-0 flex-1 grid-cols-2 items-center gap-2 sm:grid-cols-3 lg:grid-cols-[repeat(4,minmax(0,1fr))_minmax(10rem,1fr)]">
+          {onCommunityChange ? (
+            <FilterSelect
+              value={selectedCommunityId != null ? String(selectedCommunityId) : ''}
+              onChange={(value) =>
+                onCommunityChange(value ? Number(value) : null)
+              }
+              options={[
+                {
+                  value: '',
+                  label: communitiesLoading ? 'Loading communities…' : 'Choose community…',
+                },
+                ...communities.map((community) => ({
+                  value: String(community.id),
+                  label: community.name,
+                })),
+              ]}
+            />
+          ) : null}
           <FilterSelect
             value={filters.experience}
             onChange={(value) => set({ experience: value })}

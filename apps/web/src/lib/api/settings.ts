@@ -1,4 +1,6 @@
-import { apiGet } from './client';
+import { apiGet, apiRequest } from './client';
+import type { ApiDataResponse } from './types';
+import { normalizeFreeTrialHours, type TrialPolicy } from '../trial-policy';
 
 export type OrgDisplaySettings = {
   currency: string;
@@ -10,3 +12,19 @@ export type OrgDisplaySettings = {
 export const settingsApi = {
   getOrgDisplay: () => apiGet<OrgDisplaySettings>('/settings/org-display'),
 };
+
+export async function fetchPublicTrialPolicy(): Promise<TrialPolicy> {
+  const json = await apiRequest<ApiDataResponse<TrialPolicy>>('/public/settings/trial-policy', {
+    auth: false,
+  });
+  return {
+    freeTrialHours: normalizeFreeTrialHours(json.data.freeTrialHours),
+  };
+}
+
+export async function fetchTrialPolicy(): Promise<TrialPolicy> {
+  const json = await apiRequest<ApiDataResponse<TrialPolicy>>('/settings/trial-policy');
+  return {
+    freeTrialHours: normalizeFreeTrialHours(json.data.freeTrialHours),
+  };
+}

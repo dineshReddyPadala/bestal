@@ -39,9 +39,9 @@ export const PAGE_SEO = {
       'Every profile shows the hourly client price before you shortlist. The seven factors that set it, what it includes, and why BesTal doesn\'t compete on being cheapest.',
   },
   tryForAWeek: {
-    title: '20-Hour Trial — See Them Perform Before You Commit',
+    title: 'Free Trial — See Them Perform Before You Commit',
     description:
-      'See test results, rate and start date up front, then try an engineer free. No recruiter calls, no sourcing cycle, no commitment for the first 10 hours.',
+      'See test results, rate and start date up front, then try an engineer free. No recruiter calls, no sourcing cycle, no commitment for the free trial period.',
   },
   jobs: {
     title: 'Open Roles | BesTal',

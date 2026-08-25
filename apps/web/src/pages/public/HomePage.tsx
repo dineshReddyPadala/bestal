@@ -5,17 +5,16 @@ import { ProfileTabs } from '../../components/marketing/ProfileTabs';
 import { MktShell } from '../../components/marketing/MktShell';
 import { PageMeta } from '../../components/PageMeta';
 import {
-  EVIDENCE_STRIP,
   getHomeFaqItems,
-  HOME_STATS,
   HOME_STEPS,
   TIMEZONE_BLOCKS,
 } from '../../lib/marketing-copy';
+import { buildEvidenceStrip, buildHomeStats } from '../../lib/marketing-trial-copy';
+import { useFreeTrialHours } from '../../hooks/api/useTrialPolicy';
 import {
-  mapFeaturedCandidateToProfileSlide,
+  LANDING_PROFILE_SLIDES,
   type CommunityProfileSlide,
-} from '../../lib/landing-featured-candidates';
-import { usePublicFeaturedCandidates } from '../../hooks/api/useCandidates';
+} from '../../lib/demo-engineers';
 import { usePublicSkillCommunitiesList } from '../../hooks/api/useSkillCommunities';
 import { images } from '../../data/homeCopy';
 import { PAGE_SEO } from '../../lib/marketing-seo';
@@ -33,7 +32,7 @@ const TIMEZONE_CHIPS = [
 
 export function HomePage() {
   const [openFaq, setOpenFaq] = useState(0);
-  const { data: featuredCandidates, isLoading: featuredLoading } = usePublicFeaturedCandidates(5);
+  const freeTrialHours = useFreeTrialHours();
   const {
     data: skillCommunities = [],
     isLoading: communitiesLoading,
@@ -45,27 +44,18 @@ export function HomePage() {
   const topCommunities = useMemo(() => skillCommunities.slice(0, 8), [skillCommunities]);
 
   const homeStats = useMemo(
-    () =>
-      HOME_STATS.map((stat) =>
-        stat.label === 'Skill Communities'
-          ? {
-              ...stat,
-              value: topCommunities.length > 0 ? String(topCommunities.length) : stat.value,
-            }
-          : stat,
-      ),
-    [topCommunities.length],
+    () => buildHomeStats(freeTrialHours, topCommunities.length > 0 ? topCommunities.length : undefined),
+    [freeTrialHours, topCommunities.length],
   );
+
+  const evidenceStrip = useMemo(() => buildEvidenceStrip(freeTrialHours), [freeTrialHours]);
 
   const communityCountLabel =
     topCommunities.length > 0
       ? `${topCommunities.length} Skill Communities`
       : 'Skill Communities';
 
-  const profileSlides = useMemo(
-    () => (featuredCandidates ?? []).map(mapFeaturedCandidateToProfileSlide),
-    [featuredCandidates],
-  );
+  const profileSlides = LANDING_PROFILE_SLIDES;
 
   const [heroSlide, setHeroSlide] = useState<CommunityProfileSlide | null>(null);
 
@@ -110,7 +100,6 @@ export function HomePage() {
           </div>
           <CommunityProfileSlider
             slides={profileSlides}
-            isLoading={featuredLoading}
             onSlideChange={handleHeroSlideChange}
           />
         </MktShell>
@@ -136,7 +125,7 @@ export function HomePage() {
             </div>
           </div>
           <div className="mkt-g6">
-            {EVIDENCE_STRIP.map((item) => (
+            {evidenceStrip.map((item) => (
               <div key={item.num} className="mkt-ev-col">
                 <div className="mkt-ev-num">{item.num}</div>
                 <h4>{item.title}</h4>
