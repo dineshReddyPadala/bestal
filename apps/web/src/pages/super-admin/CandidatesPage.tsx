@@ -1,7 +1,7 @@
 import { Button, StatusBadge, TanStackDataTable } from '@bestal/ui';
 import { type ColumnDef } from '@tanstack/react-table';
-import { FileSpreadsheet, Plus } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { CheckCircle, EyeOff, FileSpreadsheet, Globe, Loader2, Plus } from 'lucide-react';
+import { useCallback, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   ListingFilterSelect,
@@ -17,6 +17,8 @@ import {
   useAdminPendingCandidates,
 } from '../../hooks/api/useAdmin';
 import { useDebouncedSearch } from '../../hooks/useDebouncedSearch';
+import { getApiErrorMessage } from '../../lib/api/errors';
+import { canApprove, canPublish, type ApprovalGateInput } from '../../lib/candidate-approval-gates';
 import { useDemoToast } from '../../lib/use-demo-toast';
 
 type Row = {
@@ -41,6 +43,46 @@ const defaultFilters = {
   profileStatus: 'all',
   visibilityStatus: 'all',
 };
+
+const selectColumn: ColumnDef<Row> = {
+  id: 'select',
+  header: ({ table }) => (
+    <input
+      type="checkbox"
+      className="h-4 w-4 rounded border-border accent-brand"
+      checked={table.getIsAllPageRowsSelected()}
+      onChange={table.getToggleAllPageRowsSelectedHandler()}
+      onClick={(e) => e.stopPropagation()}
+      aria-label="Select all"
+    />
+  ),
+  cell: ({ row }) => (
+    <input
+      type="checkbox"
+      className="h-4 w-4 rounded border-border accent-brand"
+      checked={row.getIsSelected()}
+      onChange={row.getToggleSelectedHandler()}
+      onClick={(e) => e.stopPropagation()}
+      aria-label="Select row"
+    />
+  ),
+  enableSorting: false,
+};
+
+function rowToGateInput(row: Row): ApprovalGateInput {
+  return {
+    profileStatus: row.profileStatus,
+    evaluationStatus: row.evaluationStatus,
+    bgvStatus: row.bgvStatus,
+    approvalStatus: row.approvalStatus ?? 'PENDING',
+    visibility: row.visibilityStatus ?? 'INTERNAL_ONLY',
+    submittedForApprovalAt: row.submittedForApprovalAt ?? null,
+  };
+}
+
+function canUnpublishRow(row: Row): boolean {
+  return (row.visibilityStatus ?? '').toUpperCase() === 'CLIENT_VISIBLE';
+}
 
 function buildCandidateActions(
   r: Row,
@@ -238,6 +280,7 @@ function CandidatesTable({ pendingOnly }: { pendingOnly: boolean }) {
   const { requestReason, reasonDialog } = useReasonPrompt();
   const [filters, setFilters] = useState(defaultFilters);
   const [listTab, setListTab] = useState<'active' | 'archived'>('active');
+  const [bulkBusy, setBulkBusy] = useState(false);
   const { searchInput, setSearchInput, search, searchParam } = useDebouncedSearch();
   const query = {
     limit: 100,
@@ -251,9 +294,109 @@ function CandidatesTable({ pendingOnly }: { pendingOnly: boolean }) {
   const { data, isLoading, isError, error } = pendingOnly ? pendingQuery : allQuery;
   const mutations = useAdminMutations();
   const rows = (data?.data ?? []) as unknown as Row[];
+  const enableBulkActions = listTab !== 'archived';
+
+  const runBulkAction = useCallback(
+    async (
+      selected: Row[],
+      eligible: Row[],
+      action: 'approve' | 'publish' | 'unpublish',
+    ) => {
+      if (eligible.length === 0) {
+        showError(`None of the selected candidates can be ${action}d`);
+        return;
+      }
+
+      setBulkBusy(true);
+      let success = 0;
+      const failures: string[] = [];
+
+      for (const row of eligible) {
+        try {
+          if (action === 'approve') {
+            await mutations.approveCandidate.mutateAsync(row.id);
+          } else if (action === 'publish') {
+            await mutations.publishCandidate.mutateAsync(row.id);
+          } else {
+            await mutations.hideCandidate.mutateAsync(row.id);
+          }
+          success += 1;
+        } catch (err) {
+          failures.push(`${row.name}: ${getApiErrorMessage(err, 'failed')}`);
+        }
+      }
+
+      setBulkBusy(false);
+
+      const skipped = selected.length - eligible.length;
+      const actionLabel =
+        action === 'approve' ? 'Approved' : action === 'publish' ? 'Published' : 'Unpublished';
+
+      if (failures.length === 0) {
+        show(
+          `${actionLabel} ${success} candidate${success === 1 ? '' : 's'}${
+            skipped > 0 ? ` (${skipped} skipped — not eligible)` : ''
+          }`,
+        );
+      } else {
+        showError(
+          `${actionLabel} ${success}, failed ${failures.length}${
+            skipped > 0 ? `, skipped ${skipped}` : ''
+          }. ${failures[0]}`,
+        );
+      }
+    },
+    [
+      mutations.approveCandidate,
+      mutations.hideCandidate,
+      mutations.publishCandidate,
+      show,
+      showError,
+    ],
+  );
+
+  const bulkApprove = useCallback(
+    (selected: Row[]) => {
+      const eligible = selected.filter((row) => canApprove(rowToGateInput(row)).allowed);
+      void runBulkAction(selected, eligible, 'approve');
+    },
+    [runBulkAction],
+  );
+
+  const bulkPublish = useCallback(
+    (selected: Row[]) => {
+      const eligible = selected.filter((row) => canPublish(rowToGateInput(row)).allowed);
+      void runBulkAction(selected, eligible, 'publish');
+    },
+    [runBulkAction],
+  );
+
+  const bulkUnpublish = useCallback(
+    (selected: Row[]) => {
+      const eligible = selected.filter(canUnpublishRow);
+      if (eligible.length === 0) {
+        showError('None of the selected candidates are published to clients');
+        return;
+      }
+      requestConfirm({
+        title: 'Unpublish selected candidates?',
+        description: `${eligible.length} candidate${eligible.length === 1 ? '' : 's'} will be hidden from the client portal.`,
+        confirmLabel: 'Unpublish',
+        destructive: true,
+        onConfirm: async () => {
+          await runBulkAction(selected, eligible, 'unpublish');
+        },
+        onError: showError,
+      });
+    },
+    [requestConfirm, runBulkAction, showError],
+  );
 
   const columns = useMemo<ColumnDef<Row>[]>(
-    () => [
+    () => {
+      const cols: ColumnDef<Row>[] = enableBulkActions ? [selectColumn] : [];
+
+      cols.push(
       {
         accessorKey: 'name',
         header: 'Candidate',
@@ -340,8 +483,11 @@ function CandidatesTable({ pendingOnly }: { pendingOnly: boolean }) {
           />
         ),
       },
-    ],
-    [listTab, mutations, pendingOnly, requestConfirm, requestReason, show, showError],
+      );
+
+      return cols;
+    },
+    [enableBulkActions, listTab, mutations, pendingOnly, requestConfirm, requestReason, show, showError],
   );
 
   return (
@@ -381,10 +527,84 @@ function CandidatesTable({ pendingOnly }: { pendingOnly: boolean }) {
           onSearchChange={setSearchInput}
           serverSideSearch
           pageSize={12}
+          getRowId={(row) => String(row.id)}
           stickyHeader
           fillHeight
           dense
           filtersInline={!pendingOnly && listTab === 'active'}
+          enableRowSelection={enableBulkActions}
+          bulkActions={
+            enableBulkActions
+              ? (selected) => {
+                  const approveEligible = selected.filter(
+                    (row) => canApprove(rowToGateInput(row)).allowed,
+                  );
+                  const publishEligible = selected.filter(
+                    (row) => canPublish(rowToGateInput(row)).allowed,
+                  );
+                  const unpublishEligible = selected.filter(canUnpublishRow);
+
+                  return (
+                    <>
+                      <Button
+                        size="sm"
+                        disabled={bulkBusy || approveEligible.length === 0}
+                        title={
+                          approveEligible.length === 0
+                            ? 'Select candidates pending admin approval'
+                            : `Approve ${approveEligible.length} candidate(s)`
+                        }
+                        onClick={() => bulkApprove(selected)}
+                      >
+                        {bulkBusy ? (
+                          <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <CheckCircle className="mr-1.5 h-3.5 w-3.5" />
+                        )}
+                        Approve{approveEligible.length > 0 ? ` (${approveEligible.length})` : ''}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={bulkBusy || publishEligible.length === 0}
+                        title={
+                          publishEligible.length === 0
+                            ? 'Select approved candidates ready to publish'
+                            : `Publish ${publishEligible.length} candidate(s)`
+                        }
+                        onClick={() => bulkPublish(selected)}
+                      >
+                        {bulkBusy ? (
+                          <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <Globe className="mr-1.5 h-3.5 w-3.5" />
+                        )}
+                        Publish{publishEligible.length > 0 ? ` (${publishEligible.length})` : ''}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={bulkBusy || unpublishEligible.length === 0}
+                        title={
+                          unpublishEligible.length === 0
+                            ? 'Select candidates published to clients'
+                            : `Unpublish ${unpublishEligible.length} candidate(s)`
+                        }
+                        onClick={() => bulkUnpublish(selected)}
+                      >
+                        {bulkBusy ? (
+                          <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <EyeOff className="mr-1.5 h-3.5 w-3.5" />
+                        )}
+                        Unpublish
+                        {unpublishEligible.length > 0 ? ` (${unpublishEligible.length})` : ''}
+                      </Button>
+                    </>
+                  );
+                }
+              : undefined
+          }
           toolbar={
             pendingOnly || listTab === 'archived' ? undefined : (
               <>

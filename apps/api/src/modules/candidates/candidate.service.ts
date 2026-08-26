@@ -54,8 +54,10 @@ import { buildPaginationMeta } from '../../validators/common.validator.js';
 import {
   mapCandidateToDtoAsync,
   mapCandidateToListItemAsync,
+  mapDocumentToDtoAsync,
   mapPublicFeaturedEvaluation,
 } from './candidate.mapper.js';
+import { parseS3ObjectReference } from '../../services/storage/upload.utils.js';
 import { CandidateRepository } from './candidate.repository.js';
 import { AuditService } from '../admin/audit.service.js';
 import type {
@@ -561,7 +563,7 @@ export class CandidateService {
           summary,
           clientProfileSummary: summary,
           yearsExperience:
-            yearsExperience != null ? Math.round(yearsExperience) : undefined,
+            yearsExperience != null ? yearsExperience : undefined,
           displayName: `${firstName} ${lastName}`.trim(),
           strengths: output.strengths ?? undefined,
           weaknesses: output.weaknesses ?? undefined,
@@ -1443,16 +1445,48 @@ export class CandidateService {
     }
   }
 
+  private resolveUrl = (key: string, bucket: string, mimeType?: string) =>
+    this.storageService.resolveFileUrl(key, bucket, mimeType);
+
+  private async resolveEvaluationReportDocument(
+    organizationId: bigint,
+    candidateId: bigint,
+    evaluationFileUrl: string | null | undefined,
+  ) {
+    const parsed = parseS3ObjectReference(evaluationFileUrl);
+    if (parsed) {
+      const byRef = await this.prisma.document.findFirst({
+        where: {
+          organizationId,
+          s3Bucket: parsed.bucket,
+          s3Key: parsed.key,
+          deletedAt: null,
+        },
+      });
+      if (byRef) return byRef;
+    }
+
+    return this.prisma.document.findFirst({
+      where: {
+        organizationId,
+        entityType: 'CANDIDATE',
+        entityId: candidateId,
+        deletedAt: null,
+        s3Key: { contains: '/evaluations/' },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
   private async toDto(
     candidate: NonNullable<Awaited<ReturnType<CandidateRepository['findById']>>>,
     authUser: AuthenticatedUser,
   ): Promise<CandidateDto> {
-    const dto = await mapCandidateToDtoAsync(candidate, (key, bucket, mimeType) =>
-      this.storageService.resolveFileUrl(key, bucket, mimeType),
-    );
+    const dto = await mapCandidateToDtoAsync(candidate, this.resolveUrl);
 
     const bgvVerified = isClearBgvStatus(candidate.bgvStatus);
     dto.bgvVerified = bgvVerified;
+    dto.bgvReport = null;
 
     if (bgvVerified) {
       const clearCheck = await this.prisma.backgroundCheck.findFirst({
@@ -1463,10 +1497,18 @@ export class CandidateService {
           deletedAt: null,
         },
         orderBy: { completedAt: 'desc' },
-        select: { completedAt: true, aiSummary: true, resultSummary: true },
+        select: {
+          completedAt: true,
+          aiSummary: true,
+          resultSummary: true,
+          reportDocument: true,
+        },
       });
       dto.bgvCompletedAt = clearCheck?.completedAt?.toISOString() ?? null;
       dto.bgvSummary = clearCheck?.aiSummary ?? clearCheck?.resultSummary ?? null;
+      dto.bgvReport = clearCheck?.reportDocument
+        ? await mapDocumentToDtoAsync(clearCheck.reportDocument, this.resolveUrl)
+        : null;
     } else {
       dto.bgvCompletedAt = null;
       dto.bgvSummary = null;
@@ -1491,6 +1533,7 @@ export class CandidateService {
         evaluationFileUrl: true,
       },
     });
+    dto.evaluationReport = null;
     if (latestEvaluation) {
       dto.technicalScore = latestEvaluation.technicalScore ?? dto.technicalScore;
       dto.problemSolvingScore = latestEvaluation.problemSolvingScore;
@@ -1504,6 +1547,18 @@ export class CandidateService {
       if (latestEvaluation.recommendation) {
         dto.evaluationRecommendation = latestEvaluation.recommendation;
       }
+
+      const evaluationDocument = await this.resolveEvaluationReportDocument(
+        candidate.organizationId,
+        candidate.id,
+        latestEvaluation.evaluationFileUrl,
+      );
+      dto.evaluationReport = evaluationDocument
+        ? await mapDocumentToDtoAsync(evaluationDocument, this.resolveUrl)
+        : null;
+      if (dto.evaluationReport?.url) {
+        dto.evaluationFileUrl = dto.evaluationReport.url;
+      }
     } else {
       dto.collaborationCulturalFitScore = null;
       dto.clientReadinessScore = null;
@@ -1513,12 +1568,8 @@ export class CandidateService {
       dto.evaluationFileUrl = null;
     }
 
-    // Clients never receive document assets beyond public profile media already on DTO.
     if (authUser.role === ROLES.CLIENT) {
-      return {
-        ...redactCandidateForClient(dto),
-        resume: null,
-      };
+      return redactCandidateForClient(dto);
     }
 
     return redactCandidatePayFields(dto, authUser.role);

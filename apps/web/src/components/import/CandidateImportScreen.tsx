@@ -227,13 +227,15 @@ function BatchDetailContent({
           </p>
         ) : (
           <div className="scrollbar-thin max-h-72 min-w-0 overflow-auto rounded-lg border border-border/60">
-            <table className="w-full min-w-[520px] caption-bottom text-sm">
+            <table className="w-full min-w-[720px] caption-bottom text-sm">
               <DataTableHeader>
                 <DataTableRow>
-                  <DataTableHead className="w-[18%]">Sheet</DataTableHead>
-                  <DataTableHead className="w-[10%]">Row</DataTableHead>
-                  <DataTableHead className="w-[18%]">Candidate</DataTableHead>
-                  <DataTableHead className="w-[54%]">Message</DataTableHead>
+                  <DataTableHead className="w-[14%]">Sheet</DataTableHead>
+                  <DataTableHead className="w-[8%]">Row</DataTableHead>
+                  <DataTableHead className="w-[12%]">Candidate</DataTableHead>
+                  <DataTableHead className="w-[16%]">Field</DataTableHead>
+                  <DataTableHead className="w-[14%]">Supplied</DataTableHead>
+                  <DataTableHead className="w-[36%]">Message</DataTableHead>
                 </DataTableRow>
               </DataTableHeader>
               <DataTableBody>
@@ -245,6 +247,12 @@ function BatchDetailContent({
                     </DataTableCell>
                     <DataTableCell className="truncate text-xs">
                       {row.sourceCandidateId ?? '—'}
+                    </DataTableCell>
+                    <DataTableCell className="truncate font-mono text-xs">
+                      {row.columnName ?? '—'}
+                    </DataTableCell>
+                    <DataTableCell className="truncate text-xs">
+                      {row.suppliedValue?.trim() ? row.suppliedValue : row.columnName ? '(empty)' : '—'}
                     </DataTableCell>
                     <DataTableCell className="text-xs">{row.message}</DataTableCell>
                   </DataTableRow>

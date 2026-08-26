@@ -17,7 +17,7 @@ import type { EvaluationExtractionResponse } from '../../services/evaluation-ext
 import { StorageService } from '../../services/storage.service.js';
 import { readStoredDocumentBuffer, type DocumentDownloadPayload } from '../../services/document-buffer.util.js';
 import { UPLOAD_CATEGORIES } from '../../services/storage/storage.constants.js';
-import { buildS3ObjectReference } from '../../services/storage/upload.utils.js';
+import { buildS3ObjectReference, parseS3ObjectReference } from '../../services/storage/upload.utils.js';
 import { normalizeUploadToPdf } from '../../services/document-pdf-normalizer.js';
 import { AutomationService } from '../automation/automation.service.js';
 import type { EvaluationAnalysisOutput } from '../automation/dto/evaluation-analysis.dto.js';
@@ -524,28 +524,66 @@ export class EvaluationService {
     evaluationId: number,
   ): Promise<DocumentDownloadPayload> {
     const organizationId = requireOrganization(authUser);
-    await this.getEvaluationOrThrow(organizationId, evaluationId);
+    const evaluation = await this.getEvaluationOrThrow(organizationId, evaluationId);
     const documentId =
       (await this.resolveEvaluationDocumentIds(organizationId, [evaluationId])).get(
         evaluationId,
       ) ?? null;
 
-    if (documentId == null) {
-      throw new NotFoundError('Evaluation document not found');
+    let document =
+      documentId != null
+        ? await this.prisma.document.findFirst({
+            where: {
+              id: BigInt(documentId),
+              organizationId: BigInt(organizationId),
+              deletedAt: null,
+            },
+          })
+        : null;
+
+    if (!document) {
+      document = await this.resolveEvaluationReportDocument(
+        BigInt(organizationId),
+        evaluation.candidateId,
+        evaluation.evaluationFileUrl,
+      );
     }
 
-    const document = await this.prisma.document.findFirst({
-      where: {
-        id: BigInt(documentId),
-        organizationId: BigInt(organizationId),
-        deletedAt: null,
-      },
-    });
     if (!document) {
       throw new NotFoundError('Evaluation document not found');
     }
 
     return readStoredDocumentBuffer(document, this.config, this.storageService);
+  }
+
+  private async resolveEvaluationReportDocument(
+    organizationId: bigint,
+    candidateId: bigint,
+    evaluationFileUrl: string | null,
+  ) {
+    const parsed = parseS3ObjectReference(evaluationFileUrl);
+    if (parsed) {
+      const byRef = await this.prisma.document.findFirst({
+        where: {
+          organizationId,
+          s3Bucket: parsed.bucket,
+          s3Key: parsed.key,
+          deletedAt: null,
+        },
+      });
+      if (byRef) return byRef;
+    }
+
+    return this.prisma.document.findFirst({
+      where: {
+        organizationId,
+        entityType: 'CANDIDATE',
+        entityId: candidateId,
+        deletedAt: null,
+        s3Key: { contains: '/evaluations/' },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
   }
 
   private async resolveEvaluationDocumentIds(

@@ -24,6 +24,7 @@ export type ClientProfileAttachment = {
   readonly fileSize?: number | null;
   readonly createdAt?: string | null;
   readonly categoryLabel?: string;
+  readonly mimeType?: string | null;
 };
 
 export type ClientCandidateProfile = {
@@ -48,6 +49,7 @@ export type ClientCandidateProfile = {
   readonly projects: readonly CandidateProjectHighlight[];
   readonly primarySkills: readonly ClientGroupedSkill[];
   readonly secondarySkills: readonly ClientGroupedSkill[];
+  readonly resumeAttachment: ClientProfileAttachment | null;
   readonly evaluation: {
     readonly technical: number | null;
     readonly problemSolving: number | null;
@@ -140,6 +142,13 @@ export function getClientCandidateProfile(candidateId: number): ClientCandidateP
     projects: detail.experience.projectHighlights,
     primarySkills: grouped.primary,
     secondarySkills: grouped.secondary,
+    resumeAttachment: {
+      fileName: 'Resume.pdf',
+      url: null,
+      fileSize: 421888,
+      createdAt: null,
+      categoryLabel: 'Resume',
+    },
     evaluation: {
       technical: detail.evaluationDetail.technicalScore,
       problemSolving: detail.evaluationDetail.problemSolvingScore ?? null,
