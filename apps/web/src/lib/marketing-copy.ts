@@ -442,20 +442,6 @@ export const CONTACT_DIRECT_LINES = [
     display: 'support@bestal.co',
     description: 'Account, billing, and platform help.',
   },
-  {
-    num: '03',
-    title: 'Partnerships',
-    href: 'mailto:partners@bestal.co',
-    display: 'partners@bestal.co',
-    description: 'Co-marketing, resellers, and integrations.',
-  },
-  {
-    num: '04',
-    title: 'Investors',
-    href: 'mailto:investors@bestal.co',
-    display: 'investors@bestal.co',
-    description: 'Financials and shareholder questions.',
-  },
 ] as const;
 
 export const CONTACT_ADDRESSES = [

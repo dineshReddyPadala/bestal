@@ -12,7 +12,7 @@ const FOOTER_LINK_HREF: Record<string, string> = {
   About: '/about',
   'Our Evaluation Standard': '/evaluation-standard',
   Enterprise: '/enterprise',
-  Contact: '/contact',
+  'Contact us': '/contact',
   'Privacy Policy': '/privacy-policy',
   'Terms of Service': '/terms-of-service',
   'Free Trial Terms': '/free-trial-terms',

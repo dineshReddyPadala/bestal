@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
 import { BesTalBrand } from '../components/bestal-brand.js';
+import { SocialMediaIcons } from '../components/social-media-icons.js';
 
 export type MarketingNavItem = {
   label: string;
@@ -33,7 +34,7 @@ const defaultFooterColumns: MarketingFooterColumn[] = [
     links: [
       { label: 'Pre-Vetted Talent', href: '/sample-talent' },
       { label: 'Skill Communities', href: '/communities' },
-      { label: 'How It Works', href: '/how-it-works' },
+      { label: 'How we assist', href: '/how-it-works' },
       { label: 'Time Zone Overlap', href: '/#time-zone' },
       { label: 'Pricing', href: '/rates' },
     ],
@@ -45,7 +46,7 @@ const defaultFooterColumns: MarketingFooterColumn[] = [
       { label: 'FAQ', href: '/faq' },
       { label: 'Our Evaluation Standard', href: '/evaluation-standard' },
       { label: 'Enterprise', href: '/enterprise' },
-      { label: 'Contact', href: '/contact' },
+      { label: 'Contact us', href: '/contact' },
     ],
   },
   {
@@ -160,6 +161,7 @@ export function MarketingLayout({
                 <BesTalBrand variant="light" logoSrc={brandLogoSrc} />
               </Link>
               <p className="mt-[18px] max-w-xs text-[15px] text-[var(--mkt-ink-d)]">{footerTagline}</p>
+              <SocialMediaIcons />
             </div>
             {footerColumns.map((column) => (
               <div key={column.title}>
