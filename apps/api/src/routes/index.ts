@@ -15,6 +15,7 @@ import { searchRoutes } from '../modules/search/search.routes.js';
 import { shortlistRoutes } from '../modules/shortlists/shortlist.routes.js';
 import { trialRoutes } from '../modules/trials/trial.routes.js';
 import { jobRequestRoutes, jobRequestPublicRoutes, clientEnquiryPublicRoutes } from '../modules/job-requests/index.js';
+import { contactMessageRoutes, contactMessagePublicRoutes } from '../modules/contact-messages/index.js';
 import { userRoutes } from '../modules/users/user.routes.js';
 import { skillCommunityRoutes, skillCommunityPublicRoutes } from '../modules/skill-communities/skill-community.routes.js';
 import { settingsRoutes, settingsPublicRoutes } from '../modules/settings/settings.routes.js';
@@ -46,6 +47,8 @@ export async function registerRoutes(fastify: FastifyInstance): Promise<void> {
       await api.register(jobRequestRoutes, { prefix: '/job-requests' });
       await api.register(jobRequestPublicRoutes, { prefix: '/public/job-requests' });
       await api.register(clientEnquiryPublicRoutes, { prefix: '/public/client-enquiries' });
+      await api.register(contactMessageRoutes, { prefix: '/contact-messages' });
+      await api.register(contactMessagePublicRoutes, { prefix: '/public/contact-messages' });
       await api.register(clientRegistrationPublicRoutes, { prefix: '/public/clients' });
       await api.register(shortlistRoutes, { prefix: '/shortlists' });
       await api.register(searchRoutes, { prefix: '/search' });

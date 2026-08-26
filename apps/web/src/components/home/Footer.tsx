@@ -8,7 +8,7 @@ const FOOTER_LINK_HREF: Record<string, string> = {
   'Skill Communities': '/communities',
   'How It Works': '/how-it-works',
   'Time-Zone Overlap': '/#time-zone',
-  'Post a Job': '/contact',
+  'Post a Job': '/reach-out',
   About: '/about',
   'Our Evaluation Standard': '/evaluation-standard',
   Enterprise: '/enterprise',

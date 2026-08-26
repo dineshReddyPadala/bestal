@@ -23,7 +23,7 @@ export function FinalCTA() {
                 <ForwardArrow />
               </Link>
               <Link
-                to="/contact"
+                to="/reach-out"
                 className="inline-flex items-center rounded-full border border-white/30 px-6 py-3 text-sm font-medium text-white transition-colors duration-150 ease-out hover:border-white/60"
               >
                 {finalCta.secondaryCta}

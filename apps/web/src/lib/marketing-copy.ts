@@ -416,6 +416,69 @@ export const CONTACT_REASONS = [
   'Partnership or other',
 ] as const;
 
+export const CONTACT_TOPICS = [
+  { value: 'GENERAL', label: 'General Queries' },
+  { value: 'SALES', label: 'Sales Inquiries' },
+  { value: 'SUPPORT', label: 'Customer Support' },
+  { value: 'PRESS', label: 'Press' },
+  { value: 'PARTNERSHIPS', label: 'Partnerships' },
+  { value: 'INVESTORS', label: 'Investors' },
+] as const;
+
+export type ContactTopicValue = (typeof CONTACT_TOPICS)[number]['value'];
+
+export const CONTACT_DIRECT_LINES = [
+  {
+    num: '01',
+    title: 'Sales Inquiries',
+    href: 'mailto:sales@bestal.co',
+    display: 'sales@bestal.co',
+    description: 'Talk to someone about building a team.',
+  },
+  {
+    num: '02',
+    title: 'Customer Support',
+    href: 'mailto:support@bestal.co',
+    display: 'support@bestal.co',
+    description: 'Account, billing, and platform help.',
+  },
+  {
+    num: '03',
+    title: 'Partnerships',
+    href: 'mailto:partners@bestal.co',
+    display: 'partners@bestal.co',
+    description: 'Co-marketing, resellers, and integrations.',
+  },
+  {
+    num: '04',
+    title: 'Investors',
+    href: 'mailto:investors@bestal.co',
+    display: 'investors@bestal.co',
+    description: 'Financials and shareholder questions.',
+  },
+] as const;
+
+export const CONTACT_ADDRESSES = [
+  {
+    label: 'USA',
+    lines: ['6701, Palermo Trail,', 'Flower Mound, TX 75077'],
+    phone: { href: 'tel:+15125083546', display: '512 508 3546' },
+  },
+  {
+    label: 'India',
+    lines: ['11th Floor, Orbit,', 'HITEC City, Hyderabad'],
+  },
+] as const;
+
+export const CONTACT_TOPIC_LABELS: Record<ContactTopicValue, string> = {
+  GENERAL: 'General Queries',
+  SALES: 'Sales Inquiries',
+  SUPPORT: 'Customer Support',
+  PRESS: 'Press',
+  PARTNERSHIPS: 'Partnerships',
+  INVESTORS: 'Investors',
+};
+
 export const COMMUNITY_DETAILS = [
   { num: '01', name: 'Data & AI', body: 'Data Engineers · Databricks · Snowflake · Analytics Engineers · Data Scientists · ML Engineers · GenAI Engineers · Agentic AI · MLOps · AI Architects' },
   { num: '02', name: 'Cloud & Platform', body: 'AWS · Azure · GCP · DevOps · Site Reliability Engineers · Kubernetes · Platform Engineers · Cloud Architects' },

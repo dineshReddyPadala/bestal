@@ -64,7 +64,7 @@ export function MarketingLayout({
   footerColumns = defaultFooterColumns,
   children,
   ctaLabel = 'Reach out to us',
-  ctaHref = '/contact',
+  ctaHref = '/reach-out',
   brandLogoSrc,
   footerTagline = 'Evaluated, verified and priced before you interview — with a committed working window in your zone.',
   hideFooter = false,

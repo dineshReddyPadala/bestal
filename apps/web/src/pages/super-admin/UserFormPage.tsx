@@ -36,6 +36,12 @@ export function SuperAdminUserFormPage() {
   const [isActive, setIsActive] = useState(true);
   const [busy, setBusy] = useState(false);
 
+  const selectedClient =
+    role === 'CLIENT' && clientId
+      ? clients.find((c) => c.id === Number(clientId))
+      : undefined;
+  const clientPortalActive = selectedClient?.status === 'ACTIVE';
+
   useEffect(() => {
     if (!isNew) return;
     if (ROLES.includes(presetRole as (typeof ROLES)[number])) {
@@ -56,6 +62,11 @@ export function SuperAdminUserFormPage() {
     );
     setIsActive(Boolean(data.isActive));
   }, [data, isNew]);
+
+  useEffect(() => {
+    if (role !== 'CLIENT' || clientPortalActive) return;
+    setIsActive(false);
+  }, [role, clientId, clientPortalActive]);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -209,10 +220,15 @@ export function SuperAdminUserFormPage() {
             type="checkbox"
             checked={isActive}
             onChange={(e) => setIsActive(e.target.checked)}
-            disabled={isSelf}
+            disabled={isSelf || (role === 'CLIENT' && !clientPortalActive)}
           />
           Active
         </label>
+        {role === 'CLIENT' && !clientPortalActive ? (
+          <p className="text-xs text-muted-foreground">
+            Activate the client account first — client portal users cannot be activated until then.
+          </p>
+        ) : null}
         <div className="flex gap-2">
           <Button type="submit" disabled={busy}>
             {busy ? 'Saving…' : 'Save'}

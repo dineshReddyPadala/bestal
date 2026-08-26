@@ -118,7 +118,7 @@ export function FaqPage() {
 
             <p className="mkt-faq-footer-note howitworks-body-style">
               Still have questions?{' '}
-              <Link to="/contact" className="mkt-faq-inline-link">
+              <Link to="/reach-out" className="mkt-faq-inline-link">
                 Reach out to us
               </Link>
               .

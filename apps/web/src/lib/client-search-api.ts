@@ -43,6 +43,7 @@ export function mapApiCandidateToClientSearchRecord(
     bestalScore: candidate.bestalScore ?? 0,
     availability: candidate.availabilityStatus ?? 'Available',
     availabilityCategory: availabilityCategory(candidate.availabilityStatus),
+    availableFrom: candidate.availableFrom ?? null,
     timezone: candidate.timezoneOverlap ?? 'Flexible',
     hourlyRate: rate,
     currency: candidate.currency ?? 'USD',

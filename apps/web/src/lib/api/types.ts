@@ -337,6 +337,7 @@ export type CandidateListItem = {
   clientBillRate?: number | null;
   currency?: string | null;
   availabilityStatus?: string | null;
+  availableFrom?: string | null;
   timezoneOverlap?: string | null;
   hasResume?: boolean;
   hasProfileImage?: boolean;

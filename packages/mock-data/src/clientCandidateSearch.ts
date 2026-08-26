@@ -1,4 +1,5 @@
 import { candidateListingRecords } from './candidateListing.js';
+import { candidateAvailability } from './availability.js';
 import { candidates } from './candidates.js';
 import { evaluations } from './evaluations.js';
 import { backgroundChecks } from './backgroundChecks.js';
@@ -17,6 +18,7 @@ export type ClientSearchRecord = {
   readonly bestalScore: number;
   readonly availability: string;
   readonly availabilityCategory: AvailabilityCategory;
+  readonly availableFrom: string | null;
   readonly timezone: string;
   readonly hourlyRate: number;
   readonly currency: string;
@@ -71,6 +73,10 @@ function buildSearchRecord(listRec: (typeof candidateListingRecords)[number]): C
     bestalScore: listRec.bestalScore,
     availability: listRec.availability,
     availabilityCategory: listRec.availabilityCategory,
+    availableFrom:
+      candidateAvailability.find((a) => a.candidateId === listRec.id)?.availableFrom ??
+      cand.availableFrom ??
+      null,
     timezone: listRec.timezone,
     hourlyRate: listRec.billRate,
     currency: listRec.currency,

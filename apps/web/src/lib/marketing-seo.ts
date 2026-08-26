@@ -69,6 +69,11 @@ export const PAGE_SEO = {
       'Answers about BesTal — pre-vetted talent, team collaboration, onboarding, free trials, and engagement models. Can\'t find what you need? Email connect@bestal.co.',
   },
   contact: {
+    title: 'Talk to us | BesTal',
+    description:
+      'Contact BesTal for sales, support, partnerships, or investor inquiries. We reply within one business day.',
+  },
+  reachOut: {
     title: 'Reach out to us | BesTal',
     description:
       'Tell BesTal what role you need, required skills, and timeline. Our talent team will match you with vetted engineers — test results and rates on every profile.',
@@ -120,4 +125,5 @@ export const MARKETING_ROUTES = [
   '/free-trial-terms',
   '/cookie-policy',
   '/contact',
+  '/reach-out',
 ] as const;

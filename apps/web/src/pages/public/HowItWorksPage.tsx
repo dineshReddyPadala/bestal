@@ -249,7 +249,7 @@ export function HowItWorksPage() {
                   Browse Pre-Vetted Talent
                   <ForwardArrow />
                 </Link>
-                <Link to="/contact" className="mkt-btn mkt-btn-outline mkt-btn-lg">
+                <Link to="/reach-out" className="mkt-btn mkt-btn-outline mkt-btn-lg">
                   Tell us what you need
                 </Link>
               </div>

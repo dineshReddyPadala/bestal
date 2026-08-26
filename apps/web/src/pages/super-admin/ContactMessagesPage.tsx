@@ -8,31 +8,34 @@ import {
   ListingPageShell,
 } from '../../components/layout/ListingPageShell';
 import { ActionMenu, type ActionMenuItem } from '../../components/super-admin/ActionMenu';
-import { useClientEnquiries } from '../../hooks/api/useAdmin';
-import { useClientEnquiryBasePath } from '../../hooks/useClientEnquiryBasePath';
+import { useContactMessages } from '../../hooks/api/useAdmin';
+import { CONTACT_TOPIC_LABELS, CONTACT_TOPICS } from '../../lib/marketing-copy';
 import { useDebouncedSearch } from '../../hooks/useDebouncedSearch';
+import type { ContactTopicValue } from '../../lib/marketing-copy';
 
 type Row = {
   id: number;
   referenceCode: string;
-  companyName: string;
-  contactName: string;
-  contactEmail: string;
-  rolesCount: number;
+  fullName: string;
+  email: string;
+  topic: ContactTopicValue;
   status: string;
   createdAt: string;
 };
 
-export function SuperAdminClientEnquiriesPage({ embedded = false }: { embedded?: boolean }) {
+const BASE_PATH = '/super-admin/contact-messages';
+
+export function SuperAdminContactMessagesPage({ embedded = false }: { embedded?: boolean }) {
   const navigate = useNavigate();
-  const basePath = useClientEnquiryBasePath();
   const [status, setStatus] = useState('all');
+  const [topic, setTopic] = useState('all');
   const { searchInput, setSearchInput, search, searchParam, clearSearch } = useDebouncedSearch();
 
-  const { data, isLoading, isError, error } = useClientEnquiries({
+  const { data, isLoading, isError, error } = useContactMessages({
     limit: 100,
     page: 1,
     ...(status !== 'all' ? { status } : {}),
+    ...(topic !== 'all' ? { topic } : {}),
     ...searchParam,
   });
 
@@ -47,13 +50,12 @@ export function SuperAdminClientEnquiriesPage({ embedded = false }: { embedded?:
           <span className="font-mono text-xs">{getValue() as string}</span>
         ),
       },
-      { accessorKey: 'companyName', header: 'Company' },
-      { accessorKey: 'contactName', header: 'Contact' },
-      { accessorKey: 'contactEmail', header: 'Email' },
+      { accessorKey: 'fullName', header: 'Name' },
+      { accessorKey: 'email', header: 'Email' },
       {
-        accessorKey: 'rolesCount',
-        header: 'Roles',
-        cell: ({ getValue }) => getValue() ?? 1,
+        accessorKey: 'topic',
+        header: 'Topic',
+        cell: ({ getValue }) => CONTACT_TOPIC_LABELS[getValue() as ContactTopicValue] ?? getValue(),
       },
       {
         accessorKey: 'status',
@@ -72,23 +74,23 @@ export function SuperAdminClientEnquiriesPage({ embedded = false }: { embedded?:
           const items: ActionMenuItem[] = [
             {
               id: 'view',
-              label: 'View enquiry',
-              onSelect: () => navigate(`${basePath}/${row.original.id}`),
+              label: 'View message',
+              onSelect: () => navigate(`${BASE_PATH}/${row.original.id}`),
             },
           ];
           return <ActionMenu items={items} label={`Actions for ${row.original.referenceCode}`} />;
         },
       },
     ],
-    [navigate, basePath],
+    [navigate],
   );
 
   const table = (
     <TanStackDataTable
-      key={`${status}-${search}`}
+      key={`${status}-${topic}-${search}`}
       columns={columns}
       data={rows}
-      searchPlaceholder="Search reference, company, contact, or email…"
+      searchPlaceholder="Search reference, name, email, or message…"
       searchValue={searchInput}
       onSearchChange={setSearchInput}
       serverSideSearch
@@ -101,6 +103,7 @@ export function SuperAdminClientEnquiriesPage({ embedded = false }: { embedded?:
         <ListingFiltersRow
           onClear={() => {
             setStatus('all');
+            setTopic('all');
             clearSearch();
           }}
         >
@@ -111,10 +114,18 @@ export function SuperAdminClientEnquiriesPage({ embedded = false }: { embedded?:
             options={[
               { value: 'all', label: 'All' },
               { value: 'SUBMITTED', label: 'Submitted' },
-              { value: 'CONTACTED', label: 'Contacted' },
-              { value: 'QUALIFIED', label: 'Qualified' },
-              { value: 'CONVERTED', label: 'Converted' },
+              { value: 'READ', label: 'Read' },
+              { value: 'REPLIED', label: 'Replied' },
               { value: 'CLOSED', label: 'Closed' },
+            ]}
+          />
+          <ListingFilterSelect
+            label="TOPIC"
+            value={topic}
+            onChange={setTopic}
+            options={[
+              { value: 'all', label: 'All' },
+              ...CONTACT_TOPICS.map((item) => ({ value: item.value, label: item.label })),
             ]}
           />
         </ListingFiltersRow>
@@ -126,14 +137,14 @@ export function SuperAdminClientEnquiriesPage({ embedded = false }: { embedded?:
     if (isLoading) {
       return (
         <div className="flex flex-1 items-center justify-center rounded-lg border border-border text-sm text-muted-foreground">
-          Loading client enquiries…
+          Loading contact messages…
         </div>
       );
     }
     if (isError) {
       return (
         <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-sm text-red-700">
-          {error instanceof Error ? error.message : 'Failed to load enquiries'}
+          {error instanceof Error ? error.message : 'Failed to load messages'}
         </div>
       );
     }
@@ -142,10 +153,10 @@ export function SuperAdminClientEnquiriesPage({ embedded = false }: { embedded?:
 
   return (
     <ListingPageShell
-      title="Client Enquiry"
-      error={isError ? (error instanceof Error ? error.message : 'Failed to load enquiries') : null}
+      title="Contact Us"
+      error={isError ? (error instanceof Error ? error.message : 'Failed to load messages') : null}
       loading={isLoading}
-      loadingLabel="Loading client enquiries…"
+      loadingLabel="Loading contact messages…"
     >
       {table}
     </ListingPageShell>

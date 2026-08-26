@@ -8,6 +8,7 @@ import { ActionMenu, type ActionMenuItem } from '../../components/super-admin/Ac
 import { useConfirmAction } from '../../components/super-admin/useConfirmAction';
 import { useAuth } from '../../contexts/AuthContext';
 import { useAdminMutations, useAdminUsers } from '../../hooks/api/useAdmin';
+import { useClientsList } from '../../hooks/api/useClients';
 import { useDebouncedSearch } from '../../hooks/useDebouncedSearch';
 import { useDemoToast } from '../../lib/use-demo-toast';
 import { isPlatformRole } from '../../lib/rbac/roles';
@@ -50,6 +51,14 @@ export function SuperAdminUsersPage() {
     isActive: true,
   });
   const mutations = useAdminMutations();
+  const { data: clientsData } = useClientsList({ limit: 100, sort: 'name' });
+  const clientStatusById = useMemo(() => {
+    const map = new Map<number, string>();
+    for (const client of clientsData?.data ?? []) {
+      map.set(client.id, client.status);
+    }
+    return map;
+  }, [clientsData?.data]);
   const rows = (data?.data ?? []) as unknown as Row[];
   const activeSuperAdminCount = (superAdminData?.data ?? []).length;
 
@@ -126,6 +135,11 @@ export function SuperAdminUsersPage() {
           const isSelf = user?.id === r.id;
           const isLastActiveSuperAdmin =
             r.role === 'SUPER_ADMIN' && r.isActive && activeSuperAdminCount <= 1;
+          const clientStatus =
+            r.role === 'CLIENT' && r.clientId != null
+              ? clientStatusById.get(r.clientId)
+              : undefined;
+          const canActivateClientUser = r.role !== 'CLIENT' || clientStatus === 'ACTIVE';
           const name = userDisplayName(r);
 
           const items: ActionMenuItem[] = [
@@ -144,6 +158,9 @@ export function SuperAdminUsersPage() {
               id: 'activate',
               label: 'Activate User',
               hidden: r.isActive,
+              disabled: !canActivateClientUser,
+              disabledReason:
+                'Activate the client account before activating client portal users',
               onSelect: () =>
                 void mutations.setUserStatus
                   .mutateAsync({ id: r.id, isActive: true })
@@ -239,6 +256,7 @@ export function SuperAdminUsersPage() {
     ],
     [
       activeSuperAdminCount,
+      clientStatusById,
       mutations,
       requestConfirm,
       show,

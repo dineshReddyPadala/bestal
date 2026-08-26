@@ -99,7 +99,7 @@ export function FreeTrialTermsPage() {
 
             <p className="mkt-faq-footer-note howitworks-body-style">
               Last Updated: August 24, 2026. Questions?{' '}
-              <Link to="/contact" className="mkt-faq-inline-link">
+              <Link to="/reach-out" className="mkt-faq-inline-link">
                 Reach out to us
               </Link>
               .

@@ -137,7 +137,7 @@ export function LegalDocumentPage({ document }: LegalDocumentPageProps) {
 
             <p className="mkt-legal-footer-note howitworks-body-style">
               Last Updated: {document.lastUpdated}. Questions?{' '}
-              <Link to="/contact" className="mkt-faq-inline-link">
+              <Link to="/reach-out" className="mkt-faq-inline-link">
                 Reach out to us
               </Link>
               .
