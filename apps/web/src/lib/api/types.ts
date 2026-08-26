@@ -411,6 +411,8 @@ export type CandidateDto = CandidateListItem & {
   resume?: CandidateDocumentDto | null;
   profileImage?: CandidateDocumentDto | null;
   introVideo?: CandidateDocumentDto | null;
+  evaluationReport?: CandidateDocumentDto | null;
+  bgvReport?: CandidateDocumentDto | null;
   skills?: CandidateSkillDto[];
 };
 

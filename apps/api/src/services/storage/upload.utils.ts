@@ -34,6 +34,21 @@ export function buildS3ObjectReference(bucket: string, key: string): string {
   return `s3://${bucket}/${key}`;
 }
 
+export function parseS3ObjectReference(
+  ref: string | null | undefined,
+): { bucket: string; key: string } | null {
+  if (!ref?.trim()) return null;
+  const trimmed = ref.trim();
+  if (!trimmed.startsWith('s3://')) return null;
+  const withoutScheme = trimmed.slice(5);
+  const slashIndex = withoutScheme.indexOf('/');
+  if (slashIndex <= 0) return null;
+  return {
+    bucket: withoutScheme.slice(0, slashIndex),
+    key: withoutScheme.slice(slashIndex + 1),
+  };
+}
+
 export async function uploadToS3(
   s3Service: S3Service,
   params: {

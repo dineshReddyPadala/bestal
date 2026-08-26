@@ -25,6 +25,7 @@ import {
   formatClientEvaluationLabel,
 } from '../../lib/client-status-labels';
 import { isBgvClear } from '../../lib/candidate-approval-gates';
+import { DocumentPreviewDialog } from '../documents/DocumentPreviewDialog';
 
 type ClientCandidateProfileViewProps = {
   profile: ClientCandidateProfile;
@@ -195,6 +196,7 @@ function ProfileAttachments({
 }: {
   attachments: readonly (ClientProfileAttachment | null | undefined)[];
 }) {
+  const [preview, setPreview] = useState<ClientProfileAttachment | null>(null);
   const items = attachments.filter(
     (item): item is ClientProfileAttachment => Boolean(item?.fileName?.trim()),
   );
@@ -208,38 +210,50 @@ function ProfileAttachments({
   }
 
   return (
-    <section className="space-y-3">
-      {items.map((attachment) => (
-        <div
-          key={attachment.fileName}
-          className="flex items-center justify-between gap-3 rounded-lg border border-border/60 bg-muted/10 px-4 py-3"
-        >
-          <div className="flex min-w-0 items-start gap-3">
-            <FileText className="mt-0.5 h-5 w-5 shrink-0 text-muted-foreground" aria-hidden="true" />
-            <div className="min-w-0">
-              <p className="truncate text-sm font-semibold text-foreground">{attachment.fileName}</p>
-              <p className="mt-0.5 text-xs text-muted-foreground">
-                {[attachment.categoryLabel, formatAttachmentSize(attachment.fileSize), formatAttachmentDate(attachment.createdAt)]
-                  .filter((part) => part && part !== 'NA')
-                  .join(' · ') || 'NA'}
-              </p>
+    <>
+      <section className="space-y-3">
+        {items.map((attachment) => (
+          <div
+            key={attachment.fileName}
+            className="flex items-center justify-between gap-3 rounded-lg border border-border/60 bg-muted/10 px-4 py-3"
+          >
+            <div className="flex min-w-0 items-start gap-3">
+              <FileText className="mt-0.5 h-5 w-5 shrink-0 text-muted-foreground" aria-hidden="true" />
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold text-foreground">{attachment.fileName}</p>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  {[attachment.categoryLabel, formatAttachmentSize(attachment.fileSize), formatAttachmentDate(attachment.createdAt)]
+                    .filter((part) => part && part !== 'NA')
+                    .join(' · ') || 'NA'}
+                </p>
+              </div>
             </div>
+            {attachment.url ? (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="shrink-0 font-semibold text-brand"
+                onClick={() => setPreview(attachment)}
+              >
+                View
+              </Button>
+            ) : (
+              <span className="shrink-0 text-sm font-medium text-muted-foreground">View</span>
+            )}
           </div>
-          {attachment.url ? (
-            <a
-              href={attachment.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="shrink-0 text-sm font-semibold text-brand hover:underline"
-            >
-              View
-            </a>
-          ) : (
-            <span className="shrink-0 text-sm font-medium text-muted-foreground">View</span>
-          )}
-        </div>
-      ))}
-    </section>
+        ))}
+      </section>
+
+      <DocumentPreviewDialog
+        open={preview != null}
+        onClose={() => setPreview(null)}
+        title={preview?.fileName ?? 'Document preview'}
+        url={preview?.url}
+        mimeType={preview?.mimeType}
+        fileName={preview?.fileName}
+      />
+    </>
   );
 }
 
@@ -357,6 +371,8 @@ export function ClientCandidateProfileView({
         <h3 className="mb-2 text-sm font-semibold text-foreground">Education</h3>
         <p className="text-sm text-muted-foreground">{textOrNa(profile.education)}</p>
       </section>
+
+      <ProfileAttachments attachments={[profile.resumeAttachment]} />
     </div>
   );
 

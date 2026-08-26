@@ -1,5 +1,5 @@
-import type { ClientCandidateProfile, ClientGroupedSkill, ClientBgvCheck } from '@bestal/mock-data';
-import type { CandidateDto } from './api/types';
+import type { ClientCandidateProfile, ClientProfileAttachment } from '@bestal/mock-data';
+import type { CandidateDocumentDto, CandidateDto } from './api/types';
 import { isTrialEligible, isBgvClear } from './candidate-approval-gates';
 import { resolveClientAvailabilityLabel } from './availability-display';
 
@@ -12,8 +12,8 @@ function splitLines(value: string | null | undefined): string[] {
 }
 
 function mapSkills(candidate: CandidateDto): {
-  primary: ClientGroupedSkill[];
-  secondary: ClientGroupedSkill[];
+  primary: ClientCandidateProfile['primarySkills'][number][];
+  secondary: ClientCandidateProfile['secondarySkills'][number][];
 } {
   const skills = (candidate.skills ?? []).map((s) => ({
     skillCommunityName: s.skillCommunityName || s.skillName || 'Skill',
@@ -28,13 +28,28 @@ function mapSkills(candidate: CandidateDto): {
   };
 }
 
-function buildClientBgvChecks(bgvStatus: string | null | undefined): ClientBgvCheck[] {
+function buildClientBgvChecks(bgvStatus: string | null | undefined) {
   const clear = isBgvClear(bgvStatus);
   return [
     { label: 'ID Check', status: clear ? 'CLEAR' : 'NA' },
     { label: 'Criminal Check', status: clear ? 'CLEAR' : 'NA' },
     { label: 'Employment Verification', status: clear ? 'CLEAR' : 'NA' },
   ];
+}
+
+function mapDocumentAttachment(
+  doc: CandidateDocumentDto | null | undefined,
+  categoryLabel: string,
+): ClientProfileAttachment | null {
+  if (!doc?.url) return null;
+  return {
+    fileName: doc.originalName || doc.fileName,
+    url: doc.url,
+    fileSize: doc.fileSize,
+    createdAt: doc.createdAt,
+    categoryLabel,
+    mimeType: doc.mimeType,
+  };
 }
 
 function availabilityCategoryFromStatus(
@@ -93,6 +108,7 @@ export function mapCandidateDtoToClientProfile(
     projects: [],
     primarySkills: primary,
     secondarySkills: secondary,
+    resumeAttachment: mapDocumentAttachment(candidate.resume, 'Resume'),
     evaluation: {
       technical: candidate.technicalScore ?? null,
       problemSolving: candidate.problemSolvingScore ?? null,
@@ -105,22 +121,14 @@ export function mapCandidateDtoToClientProfile(
         null,
       recommendation: candidate.evaluationRecommendation ?? null,
       status: evaluationStatus,
-      attachment: candidate.evaluationFileUrl
-        ? {
-            fileName: candidate.evaluationFileUrl.split('/').pop() ?? 'Tech Evaluation.pdf',
-            url: candidate.evaluationFileUrl,
-            fileSize: null,
-            createdAt: null,
-            categoryLabel: 'Resume',
-          }
-        : null,
+      attachment: mapDocumentAttachment(candidate.evaluationReport, 'Evaluation Report'),
     },
     bgv: {
       status: bgvStatus,
       completedChecks: buildClientBgvChecks(bgvStatus),
       summary: candidate.bgvSummary ?? '',
       recommendation: null,
-      attachment: null,
+      attachment: mapDocumentAttachment(candidate.bgvReport, 'BGV Report'),
     },
     availabilityDetail: {
       hoursMin: candidate.minHoursPerWeek ?? 20,
