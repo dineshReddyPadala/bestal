@@ -6,7 +6,7 @@ import {
 } from '@bestal/shared-utils';
 import { Avatar, Button, StatusBadge, TanStackDataTable } from '@bestal/ui';
 import { type ColumnDef } from '@tanstack/react-table';
-import { MoreHorizontal, FileSpreadsheet, Plus, Send } from 'lucide-react';
+import { MoreHorizontal, FileSpreadsheet, Loader2, Plus, Send } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useCandidateMutations, useCandidatesList } from '../../hooks/api/useCandidates';
@@ -158,8 +158,12 @@ function CandidateRowActionsMenu({
                 setOpen(false);
               }}
             >
-              <Send className="h-3.5 w-3.5" />
-              Submit for approval
+              {submitting ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Send className="h-3.5 w-3.5" />
+              )}
+              {submitting ? 'Submitting…' : 'Submit for approval'}
             </button>
           ) : null}
           {archivedTab ? (
@@ -545,7 +549,11 @@ export function CandidateListingView({
                       }
                       onClick={() => void submitMany(selected)}
                     >
-                      <Send className="mr-1.5 h-3.5 w-3.5" />
+                      {submitting ? (
+                        <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <Send className="mr-1.5 h-3.5 w-3.5" />
+                      )}
                       {submitting
                         ? 'Submitting…'
                         : `Submit for approval${eligibleCount > 0 ? ` (${eligibleCount})` : ''}`}

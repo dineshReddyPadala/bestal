@@ -561,7 +561,7 @@ export class CandidateService {
           summary,
           clientProfileSummary: summary,
           yearsExperience:
-            yearsExperience != null ? Math.round(yearsExperience) : undefined,
+            yearsExperience != null ? yearsExperience : undefined,
           displayName: `${firstName} ${lastName}`.trim(),
           strengths: output.strengths ?? undefined,
           weaknesses: output.weaknesses ?? undefined,

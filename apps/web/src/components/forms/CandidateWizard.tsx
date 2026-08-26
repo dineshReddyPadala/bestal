@@ -1693,6 +1693,7 @@ export function CandidateWizard({
     initialTab ?? getInitialTabForEntryMethod(entryMethod),
   );
   const [isPersisting, setIsPersisting] = useState(false);
+  const [isSubmittingApproval, setIsSubmittingApproval] = useState(false);
   const pendingUploads = useRef<CandidateWizardUploads>(initialUploads ?? {});
   const appliedHydrationKeyRef = useRef<string | null>(null);
   const {
@@ -1756,7 +1757,8 @@ export function CandidateWizard({
   const isLastTab = currentTabIndex >= WIZARD_TABS.length - 1;
   const formValues = watchedValues ?? getValues();
   const submitReady = canSubmitCandidateForApproval(formValues);
-  const isBusy = isPersisting || isSavingDraft || isSubmitting;
+  const submittingForApproval = isSubmitting || isSubmittingApproval;
+  const isBusy = isPersisting || isSavingDraft || submittingForApproval;
 
   const handleAiScreeningComplete = useCallback(
     (draftId: number, mapped: Partial<CandidateWizardFormValues>) => {
@@ -1847,7 +1849,12 @@ export function CandidateWizard({
       return;
     }
     localStorage.removeItem(DRAFT_STORAGE_KEY);
-    await onSubmitForApproval(buildCandidatePayload(parsed.data), { ...pendingUploads.current });
+    setIsSubmittingApproval(true);
+    try {
+      await onSubmitForApproval(buildCandidatePayload(parsed.data), { ...pendingUploads.current });
+    } finally {
+      setIsSubmittingApproval(false);
+    }
   }
 
   if (skillCommunitiesLoading) {
@@ -1986,7 +1993,7 @@ export function CandidateWizard({
                         : 'Complete Basic Details (with AI screening), Skills, Availability, Pricing, Evaluation, and Background Verification first'
                     }
                   >
-                    {isSubmitting ? (
+                    {submittingForApproval ? (
                       <>
                         <Loader2 className="mr-1 h-4 w-4 animate-spin" />
                         Submitting…

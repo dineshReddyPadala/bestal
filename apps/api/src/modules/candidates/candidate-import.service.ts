@@ -1138,6 +1138,8 @@ export class CandidateImportService {
         sheetName: error.sheetName,
         rowNumber: error.rowNumber,
         sourceCandidateId: error.sourceCandidateId,
+        columnName: error.columnName,
+        suppliedValue: error.suppliedValue,
         message: error.message,
       }),
     }));

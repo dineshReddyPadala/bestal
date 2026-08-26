@@ -230,6 +230,37 @@ async function main() {
   assert.equal(isImportedPricingComplete(draftReady), true);
   assert.equal(deriveImportedProfileStatus(draftReady), 'PROFILE_DRAFT');
 
+  // Missing availability fields should fail validation
+  const availabilityWorkbook = new ExcelJS.Workbook();
+  await availabilityWorkbook.xlsx.load(template as unknown as ExcelJS.Buffer);
+  const availabilitySheet = availabilityWorkbook.getWorksheet(IMPORT_WORKBOOK_SHEETS.CANDIDATE);
+  assert.ok(availabilitySheet);
+  availabilitySheet.getRow(2).getCell(
+    CANDIDATE_SHEET_COLUMNS.indexOf('availability_status') + 1,
+  ).value = '';
+  availabilitySheet.getRow(2).getCell(
+    CANDIDATE_SHEET_COLUMNS.indexOf('available_from') + 1,
+  ).value = '';
+  const missingAvailabilityBuffer = Buffer.from(await availabilityWorkbook.xlsx.writeBuffer());
+  const missingAvailabilityParsed = await parseAndValidateCandidateWorkbook(
+    missingAvailabilityBuffer,
+  );
+  assert.ok(
+    missingAvailabilityParsed.errors.some(
+      (error) =>
+        error.columnName === 'availability_status' &&
+        error.errorCode === 'MISSING_REQUIRED',
+    ),
+    'missing availability_status should produce validation error',
+  );
+  assert.ok(
+    missingAvailabilityParsed.errors.some(
+      (error) =>
+        error.columnName === 'available_from' && error.errorCode === 'MISSING_REQUIRED',
+    ),
+    'missing available_from should produce validation error',
+  );
+
   // Template sample with eval+BGV+pricing should land at PROFILE_DRAFT or BGV_COMPLETE
   const sample = parsed.candidates[0]!;
   const derived = deriveImportedProfileStatus(sample);

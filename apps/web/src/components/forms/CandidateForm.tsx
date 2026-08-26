@@ -14,7 +14,7 @@ const candidateFormSchema = z.object({
   headline: z.string().max(255).optional(),
   summary: z.string().max(5000).optional(),
   location: z.string().max(255).optional(),
-  yearsExperience: z.number().int().min(0).max(60).optional(),
+  yearsExperience: z.number().min(0).max(60).optional(),
   availableFrom: z.string().optional(),
   expectedRate: z.number().positive().optional(),
   currency: z.string().length(3).optional(),

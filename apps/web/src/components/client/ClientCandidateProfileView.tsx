@@ -421,13 +421,6 @@ export function ClientCandidateProfileView({
         </div>
       </section>
 
-      <section>
-        <h3 className="mb-2 text-sm font-medium text-muted-foreground">Recommendation</h3>
-        <p className="text-sm leading-relaxed text-muted-foreground">
-          {textOrNa(profile.bgv.recommendation ?? profile.bgv.summary)}
-        </p>
-      </section>
-
       <ProfileAttachments attachments={[profile.bgv.attachment]} />
     </div>
   );
