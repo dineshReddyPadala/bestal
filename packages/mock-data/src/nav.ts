@@ -60,7 +60,7 @@ export const superAdminNav = [
 ] as const satisfies readonly NavItem[];
 
 export const publicNav = [
-  { id: 'how-it-works', label: 'How it works', href: '/how-it-works' },
+  { id: 'how-it-works', label: 'How we assist', href: '/how-it-works' },
   { id: 'how-we-test', label: 'How we test', href: '/evaluation-standard' },
   { id: 'engineers', label: 'Pre-Vetted Talent', href: '/sample-talent' },
   { id: 'trial', label: 'Free Trial', href: '/try-for-a-week' },

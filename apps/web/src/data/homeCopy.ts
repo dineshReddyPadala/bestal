@@ -267,7 +267,7 @@ export const footerDraft = {
       heading: 'Platform',
       links: ['Find Talent', 'Skill Communities', 'How It Works', 'Time-Zone Overlap', 'Post a Job'],
     },
-    { heading: 'Company', links: ['About', 'Our Evaluation Standard', 'Enterprise', 'Contact'] },
+    { heading: 'Company', links: ['About', 'Our Evaluation Standard', 'Enterprise', 'Contact us'] },
     { heading: 'Legal', links: ['Privacy Policy', 'Terms of Service', 'Free Trial Terms', 'Cookie Policy'] },
   ],
 };
