@@ -1,4 +1,5 @@
 import type { ClientSearchRecord } from '@bestal/mock-data';
+import { resolveAvailabilityCategory } from './availability-display';
 
 export type ClientSearchFilters = {
   query: string;
@@ -75,7 +76,10 @@ export function filterClientSearchRecords(
       if (r.hourlyRate < min || (max && r.hourlyRate > max)) return false;
     }
 
-    if (filters.availability !== 'all' && r.availabilityCategory !== filters.availability) {
+    if (
+      filters.availability !== 'all' &&
+      resolveAvailabilityCategory(r) !== filters.availability
+    ) {
       return false;
     }
 
@@ -112,8 +116,8 @@ export function sortClientSearchRecords(
     case 'availability':
       sorted.sort(
         (a, b) =>
-          (AVAILABILITY_ORDER[a.availabilityCategory] ?? 9) -
-          (AVAILABILITY_ORDER[b.availabilityCategory] ?? 9),
+          (AVAILABILITY_ORDER[resolveAvailabilityCategory(a)] ?? 9) -
+          (AVAILABILITY_ORDER[resolveAvailabilityCategory(b)] ?? 9),
       );
       break;
     case 'best-match':

@@ -6,8 +6,8 @@ import { useEffect, useMemo, useState, type KeyboardEvent } from 'react';
 import { BesTalScoreStars } from './BesTalScoreStars';
 import {
   availabilityStatusClasses,
-  formatAvailabilityLabel,
   isImmediatelyAvailable,
+  resolveClientAvailabilityLabel,
 } from '../../lib/availability-display';
 
 const DEFAULT_PAGE_SIZE = 10;
@@ -25,7 +25,7 @@ export type ClientCandidateSearchTableProps = {
 function availabilityMeta(record: ClientSearchRecord) {
   const immediate = isImmediatelyAvailable(record);
   return {
-    label: immediate ? 'Available' : formatAvailabilityLabel(record.availability),
+    label: resolveClientAvailabilityLabel(record),
     classes: availabilityStatusClasses(immediate),
   };
 }

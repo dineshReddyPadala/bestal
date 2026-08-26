@@ -274,12 +274,44 @@ export class AdminService {
     return mapUserToDto(user, organizationId, org?.name ?? '', false);
   }
 
+  private async assertClientActiveForPortalUser(
+    organizationId: number,
+    clientId: number | null | undefined,
+  ) {
+    if (clientId == null) {
+      throw new BadRequestError('Client account must be linked before activation');
+    }
+
+    const client = await this.prisma.client.findFirst({
+      where: {
+        id: BigInt(clientId),
+        organizationId: BigInt(organizationId),
+        deletedAt: null,
+      },
+      select: { status: true },
+    });
+
+    if (!client) {
+      throw new BadRequestError('Client not found');
+    }
+
+    if (client.status !== 'ACTIVE') {
+      throw new BadRequestError(
+        'Cannot activate this user until the client account is activated',
+      );
+    }
+  }
+
   private async syncClientPortalAccess(
     organizationId: number,
     userId: number,
     isActive: boolean,
     clientId?: number | null,
   ) {
+    if (isActive) {
+      await this.assertClientActiveForPortalUser(organizationId, clientId);
+    }
+
     await this.prisma.membership.updateMany({
       where: {
         userId: BigInt(userId),
@@ -287,17 +319,6 @@ export class AdminService {
       },
       data: { isActive },
     });
-
-    if (isActive && clientId != null) {
-      await this.prisma.client.updateMany({
-        where: {
-          id: BigInt(clientId),
-          organizationId: BigInt(organizationId),
-          deletedAt: null,
-        },
-        data: { status: 'ACTIVE' },
-      });
-    }
   }
 
   private async syncClientUsersOnClientActivation(organizationId: number, clientId: number) {
@@ -328,6 +349,37 @@ export class AdminService {
         role: 'CLIENT',
       },
       data: { isActive: true },
+    });
+  }
+
+  private async syncClientUsersOnClientDeactivation(organizationId: number, clientId: number) {
+    const memberships = await this.prisma.membership.findMany({
+      where: {
+        organizationId: BigInt(organizationId),
+        clientId: BigInt(clientId),
+        role: 'CLIENT',
+      },
+      select: { userId: true },
+    });
+
+    if (memberships.length === 0) {
+      return;
+    }
+
+    const userIds = memberships.map((membership) => membership.userId);
+
+    await this.prisma.user.updateMany({
+      where: { id: { in: userIds }, deletedAt: null },
+      data: { isActive: false },
+    });
+
+    await this.prisma.membership.updateMany({
+      where: {
+        organizationId: BigInt(organizationId),
+        clientId: BigInt(clientId),
+        role: 'CLIENT',
+      },
+      data: { isActive: false },
     });
   }
 
@@ -450,6 +502,10 @@ export class AdminService {
     const temporaryPassword = input.temporaryPassword?.trim() || tempPassword();
     const passwordHash = await argon2.hash(temporaryPassword);
     const platformRoleId = await this.resolvePlatformRoleId(input.role);
+    if (input.role === 'CLIENT' && input.isActive !== false) {
+      await this.assertClientActiveForPortalUser(organizationId, linkedClientId);
+    }
+
     const user = await this.users.createWithMembership(organizationId, passwordHash, {
       email: input.email,
       firstName: input.firstName,
@@ -511,16 +567,6 @@ export class AdminService {
     const organizationId = requireOrganization(authUser);
     const existing = await this.getUser(authUser, id);
 
-    await this.prisma.user.update({
-      where: { id: BigInt(id) },
-      data: {
-        ...(input.firstName !== undefined ? { firstName: input.firstName } : {}),
-        ...(input.lastName !== undefined ? { lastName: input.lastName } : {}),
-        ...(input.phone !== undefined ? { phone: input.phone } : {}),
-        ...(input.isActive !== undefined ? { isActive: input.isActive } : {}),
-      },
-    });
-
     const nextRole = (input.role ?? existing.role ?? 'VIEWER') as AdminInviteRole;
     let linkedClientId = existing.clientId;
     if (input.role || input.clientId !== undefined) {
@@ -543,6 +589,20 @@ export class AdminService {
         clientId: linkedClientId,
       });
     }
+
+    if (input.isActive === true && nextRole === 'CLIENT') {
+      await this.assertClientActiveForPortalUser(organizationId, linkedClientId);
+    }
+
+    await this.prisma.user.update({
+      where: { id: BigInt(id) },
+      data: {
+        ...(input.firstName !== undefined ? { firstName: input.firstName } : {}),
+        ...(input.lastName !== undefined ? { lastName: input.lastName } : {}),
+        ...(input.phone !== undefined ? { phone: input.phone } : {}),
+        ...(input.isActive !== undefined ? { isActive: input.isActive } : {}),
+      },
+    });
 
     if (input.isActive !== undefined && nextRole === 'CLIENT') {
       await this.syncClientPortalAccess(organizationId, id, input.isActive, linkedClientId);
@@ -812,6 +872,8 @@ export class AdminService {
       if (isFirstActivation) {
         void this.sendClientActivationWelcomeEmails(organizationId, id);
       }
+    } else if (existing.status === 'ACTIVE') {
+      await this.syncClientUsersOnClientDeactivation(organizationId, id);
     }
     return updated;
   }

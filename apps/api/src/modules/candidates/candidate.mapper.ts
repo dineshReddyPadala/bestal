@@ -139,6 +139,7 @@ export async function mapCandidateToListItemAsync(
     clientBillRate: candidate.clientBillRate ? Number(candidate.clientBillRate) : null,
     currency: candidate.currency,
     availabilityStatus: candidate.availabilityStatus ?? null,
+    availableFrom: candidate.availableFrom?.toISOString().slice(0, 10) ?? null,
     timezoneOverlap: candidate.timezoneOverlap ?? null,
     hasResume: Boolean(candidate.resumeDocumentId),
     hasProfileImage: Boolean(candidate.profileImageDocumentId),

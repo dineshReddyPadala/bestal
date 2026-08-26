@@ -1,6 +1,7 @@
 import type { ClientCandidateProfile, ClientGroupedSkill, ClientBgvCheck } from '@bestal/mock-data';
 import type { CandidateDto } from './api/types';
 import { isTrialEligible, isBgvClear } from './candidate-approval-gates';
+import { resolveClientAvailabilityLabel } from './availability-display';
 
 function splitLines(value: string | null | undefined): string[] {
   if (!value?.trim()) return [];
@@ -36,6 +37,22 @@ function buildClientBgvChecks(bgvStatus: string | null | undefined): ClientBgvCh
   ];
 }
 
+function availabilityCategoryFromStatus(
+  status: string | null | undefined,
+): string {
+  switch (status) {
+    case 'AVAILABLE':
+      return 'IMMEDIATE';
+    case 'NOTICE_PERIOD':
+      return 'WITHIN_2_WEEKS';
+    case 'ENGAGED':
+    case 'UNAVAILABLE':
+      return 'NOT_AVAILABLE';
+    default:
+      return 'NOT_AVAILABLE';
+  }
+}
+
 /** Maps a live CandidateDto to the client profile view shape (already server-redacted). */
 export function mapCandidateDtoToClientProfile(
   candidate: CandidateDto,
@@ -45,6 +62,12 @@ export function mapCandidateDtoToClientProfile(
   const billRate = candidate.clientBillRate ?? candidate.expectedRate ?? 0;
   const evaluationStatus = candidate.evaluationStatus ?? 'NOT_STARTED';
   const bgvStatus = candidate.bgvStatus ?? 'NOT_STARTED';
+  const availabilityRecord = {
+    availability: candidate.availabilityStatus ?? 'Available',
+    availabilityCategory: availabilityCategoryFromStatus(candidate.availabilityStatus),
+    availableFrom: candidate.availableFrom,
+  };
+  const availabilityLabel = resolveClientAvailabilityLabel(availabilityRecord);
 
   return {
     candidateId: candidate.id,
@@ -60,7 +83,7 @@ export function mapCandidateDtoToClientProfile(
       candidate.primarySkillCommunityName ?? primary[0]?.skillCommunityName ?? '',
     education: candidate.education ?? '',
     bestalScore: candidate.bestalScore ?? 0,
-    availability: candidate.availabilityStatus ?? 'Available',
+    availability: availabilityLabel,
     billRate,
     currency: candidate.currency ?? 'USD',
     clientAiSummary:
@@ -103,7 +126,7 @@ export function mapCandidateDtoToClientProfile(
       hoursMin: candidate.minHoursPerWeek ?? 20,
       hoursMax: candidate.maxHoursPerWeek ?? 40,
       timezone: candidate.timezoneOverlap ?? 'Flexible',
-      availability: candidate.availabilityStatus ?? 'Available',
+      availability: availabilityLabel,
       startDate: candidate.availableFrom ?? '',
     },
     trialEligible: isTrialEligible({

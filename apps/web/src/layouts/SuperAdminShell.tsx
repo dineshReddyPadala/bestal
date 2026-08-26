@@ -34,7 +34,8 @@ export function SuperAdminShell() {
                 ? '/super-admin/roles'
               : pathname.startsWith('/super-admin/clients')
                 ? '/super-admin/clients'
-                : pathname.startsWith('/super-admin/client-enquiries')
+                : pathname.startsWith('/super-admin/client-enquiries') ||
+                    pathname.startsWith('/super-admin/contact-messages')
                   ? '/super-admin/client-enquiries'
                 : pathname.startsWith('/super-admin/platform-settings') ||
                     pathname.startsWith('/super-admin/settings')

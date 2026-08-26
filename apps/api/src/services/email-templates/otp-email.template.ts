@@ -58,9 +58,20 @@ function buildOtpCodeBlock(otp: string, expiresInMinutes: number): string {
           <div style="margin-top:12px;font-size:42px;line-height:1;font-weight:700;letter-spacing:0.16em;color:${BRAND.tealDark};">
             ${escapeHtml(otp)}
           </div>
-          <div style="display:inline-block;margin-top:18px;padding:8px 14px;border-radius:999px;background:${BRAND.surface};border:1px solid ${BRAND.line};font-size:13px;line-height:1.4;color:${BRAND.teal};">
-            <span style="display:inline-block;margin-right:6px;">&#128337;</span>
-            Expires in ${escapeHtml(String(expiresInMinutes))} minutes
+          <div style="margin-top:18px;">
+            <table role="presentation" cellspacing="0" cellpadding="0" align="center">
+              <tr>
+                <td
+                  align="center"
+                  style="padding:8px 14px;border-radius:999px;background:${BRAND.surface};border:1px solid ${BRAND.line};font-size:13px;line-height:1.4;color:${BRAND.teal};"
+                >
+                  <span style="display:inline-block;vertical-align:middle;margin-right:6px;line-height:1;">&#128337;</span>
+                  <span style="display:inline-block;vertical-align:middle;line-height:1.4;">
+                    Expires in ${escapeHtml(String(expiresInMinutes))} minutes
+                  </span>
+                </td>
+              </tr>
+            </table>
           </div>
         </td>
       </tr>

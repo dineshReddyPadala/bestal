@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { adminApi } from '../../lib/api/admin';
 import type { ListQuery } from '../../lib/api/client';
 import { jobRequestsApi } from '../../lib/api/job-requests';
+import { contactMessagesApi } from '../../lib/api/contact-messages';
 import { queryKeys } from './query-keys';
 
 export function useAdminDashboard() {
@@ -191,6 +192,34 @@ export function useClientEnquiryMutations() {
     update: useMutation({
       mutationFn: ({ id, body }: { id: number; body: Record<string, unknown> }) =>
         jobRequestsApi.update(id, body),
+      onSuccess: invalidate,
+    }),
+  };
+}
+
+export function useContactMessages(params?: ListQuery) {
+  return useQuery({
+    queryKey: queryKeys.contactMessages.list(params),
+    queryFn: () => contactMessagesApi.list(params),
+  });
+}
+
+export function useContactMessage(id: number) {
+  return useQuery({
+    queryKey: queryKeys.contactMessages.detail(id),
+    queryFn: () => contactMessagesApi.get(id),
+    enabled: id > 0,
+  });
+}
+
+export function useContactMessageMutations() {
+  const qc = useQueryClient();
+  const invalidate = () => qc.invalidateQueries({ queryKey: queryKeys.contactMessages.all });
+
+  return {
+    update: useMutation({
+      mutationFn: ({ id, body }: { id: number; body: Record<string, unknown> }) =>
+        contactMessagesApi.update(id, body),
       onSuccess: invalidate,
     }),
   };

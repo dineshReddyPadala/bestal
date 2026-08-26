@@ -1,4 +1,4 @@
-import { candidateListingRecords, candidates, evaluations, backgroundChecks } from '@bestal/mock-data';
+import { candidateListingRecords, candidates, evaluations, backgroundChecks, candidateAvailability } from '@bestal/mock-data';
 import type { ClientSearchRecord } from '@bestal/mock-data';
 import { isClientVisible } from './candidate-approval-overrides';
 import { isTrialEligible } from './candidate-approval-gates';
@@ -46,6 +46,10 @@ export function getClientSearchRecordsLive(): ClientSearchRecord[] {
         bestalScore: listRec.bestalScore,
         availability: listRec.availability,
         availabilityCategory: listRec.availabilityCategory,
+        availableFrom:
+          candidateAvailability.find((a) => a.candidateId === listRec.id)?.availableFrom ??
+          cand.availableFrom ??
+          null,
         timezone: listRec.timezone,
         hourlyRate: listRec.billRate,
         currency: listRec.currency,

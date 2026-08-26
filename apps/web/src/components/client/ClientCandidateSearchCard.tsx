@@ -7,8 +7,8 @@ import { ForwardArrow } from '../ui/ForwardArrow';
 import { isBgvClear } from '../../lib/candidate-approval-gates';
 import {
   availabilityStatusClasses,
-  formatAvailabilityLabel,
   isImmediatelyAvailable,
+  resolveClientAvailabilityLabel,
 } from '../../lib/availability-display';
 
 export type ClientCandidateSearchCardProps = {
@@ -118,6 +118,7 @@ export function ClientCandidateSearchCard({
     record.primarySkillCommunityName.trim() || record.community.trim();
   const availableNow = isImmediatelyAvailable(record);
   const availabilityClasses = availabilityStatusClasses(availableNow);
+  const availabilityLabel = resolveClientAvailabilityLabel(record);
 
   return (
     <article
@@ -162,7 +163,7 @@ export function ClientCandidateSearchCard({
                   availabilityClasses.dot,
                 )}
               />
-              {availableNow ? 'Available Now' : formatAvailabilityLabel(record.availability)}
+              {availabilityLabel}
             </p>
             <p className="text-xs font-bold tabular-nums text-foreground fontsize">
               {formatCurrency(record.hourlyRate, record.currency)}

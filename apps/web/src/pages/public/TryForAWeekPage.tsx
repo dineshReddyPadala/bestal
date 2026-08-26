@@ -44,7 +44,7 @@ export function TryForAWeekPage() {
             <Link to={CLIENT_LOGIN_PATH} className="mkt-btn mkt-btn-amber">
               Browse Pre-Vetted Talent <ForwardArrow />
             </Link>
-            <Link to="/contact" className="mkt-btn mkt-btn-secondary">
+            <Link to="/reach-out" className="mkt-btn mkt-btn-secondary">
               Tell us what you need
             </Link>
           </div>
@@ -55,7 +55,7 @@ export function TryForAWeekPage() {
       <section className="mkt-trial-quote-band">
         <MktShell>
           <p className="mkt-trial-quote">
-            You are getting {freeTrialHours}hrs of Evidence at no Cost.
+            You are getting {hoursLabel} of Evidence at no Cost.
           </p>
         </MktShell>
       </section>

@@ -124,12 +124,52 @@ export async function notifyJobRequestSubmitted(
   await safeNotify('job-request-submitted', () =>
     notifyWithEmailFlag(prisma, config, {
       organizationId: input.organizationId,
-      roles: ['ADMIN', 'SALES', 'SUPER_ADMIN'],
+      roles: ['SUPER_ADMIN', 'ADMIN', 'SALES'],
       type: 'GENERAL',
       title: 'New client enquiry',
       body: `${input.companyName} submitted a client enquiry for ${input.jobTitle}.`,
       actionUrl: webUrl(config, `/super-admin/client-enquiries/${input.jobRequestId}`),
       metadata: { jobRequestId: input.jobRequestId, event: 'job_request_submitted' },
+    }),
+  );
+}
+
+const CONTACT_MESSAGE_TOPIC_LABEL: Record<string, string> = {
+  GENERAL: 'general enquiry',
+  SALES: 'sales enquiry',
+  SUPPORT: 'support request',
+  PRESS: 'press enquiry',
+  PARTNERSHIPS: 'partnerships enquiry',
+  INVESTORS: 'investors enquiry',
+};
+
+export async function notifyContactMessageSubmitted(
+  prisma: PrismaClient,
+  config: AppConfig,
+  input: {
+    organizationId: number;
+    contactMessageId: number;
+    referenceCode: string;
+    fullName: string;
+    email: string;
+    topic: string;
+  },
+): Promise<void> {
+  const topicLabel = CONTACT_MESSAGE_TOPIC_LABEL[input.topic] ?? 'contact message';
+
+  await safeNotify('contact-message-submitted', () =>
+    notifyWithEmailFlag(prisma, config, {
+      organizationId: input.organizationId,
+      roles: ['SUPER_ADMIN'],
+      type: 'GENERAL',
+      title: 'New Contact Us message',
+      body: `${input.fullName} (${input.email}) submitted a ${topicLabel}. Reference: ${input.referenceCode}.`,
+      actionUrl: webUrl(config, `/super-admin/contact-messages/${input.contactMessageId}`),
+      metadata: {
+        contactMessageId: input.contactMessageId,
+        referenceCode: input.referenceCode,
+        event: 'contact_message_submitted',
+      },
     }),
   );
 }

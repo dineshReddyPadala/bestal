@@ -5,8 +5,8 @@ import { Star } from 'lucide-react';
 import { isBgvClear } from '../../lib/candidate-approval-gates';
 import {
   availabilityStatusClasses,
-  formatAvailabilityLabel,
   isImmediatelyAvailable,
+  resolveClientAvailabilityLabel,
 } from '../../lib/availability-display';
 export type ClientCandidateListRowProps = {
   record: ClientSearchRecord;
@@ -35,6 +35,7 @@ export function ClientCandidateListRow({
     record.primarySkillCommunityName.trim() || record.community.trim();
   const availableNow = isImmediatelyAvailable(record);
   const availabilityClasses = availabilityStatusClasses(availableNow);
+  const availabilityLabel = resolveClientAvailabilityLabel(record);
   return (
     <article
       className={cn(
@@ -87,7 +88,7 @@ export function ClientCandidateListRow({
           <span
             className={cn('inline-block h-2 w-2 rounded-full', availabilityClasses.dot)}
           />
-          {availableNow ? 'Available now' : formatAvailabilityLabel(record.availability)}
+          {availabilityLabel}
         </span>
       </div>
       <div className="shrink-0 text-sm font-semibold tabular-nums">

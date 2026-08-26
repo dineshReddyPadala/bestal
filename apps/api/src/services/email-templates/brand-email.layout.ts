@@ -184,12 +184,27 @@ export function buildSecurityNotice(options: {
 
 export function buildPrimaryButton(href: string, label: string): string {
   return `
-    <table role="presentation" cellspacing="0" cellpadding="0" style="margin:18px 0 8px;">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin:18px 0 8px;">
       <tr>
-        <td style="border-radius:999px;background:${BRAND.teal};">
-          <a href="${escapeHtml(href)}" style="display:inline-block;padding:12px 22px;font-size:14px;font-weight:600;color:#ffffff;text-decoration:none;">
-            ${escapeHtml(label)}
-          </a>
+        <td align="center" style="padding:0;">
+          <table role="presentation" cellspacing="0" cellpadding="0" align="center">
+            <tr>
+              <td
+                align="center"
+                bgcolor="${BRAND.teal}"
+                style="border-radius:999px;background:${BRAND.teal};mso-padding-alt:12px 22px;"
+              >
+                <a
+                  href="${escapeHtml(href)}"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style="display:inline-block;padding:12px 22px;font-size:14px;line-height:1.4;font-weight:600;color:#ffffff;text-decoration:none;border-radius:999px;"
+                >
+                  ${escapeHtml(label)}
+                </a>
+              </td>
+            </tr>
+          </table>
         </td>
       </tr>
     </table>

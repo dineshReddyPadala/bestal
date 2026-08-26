@@ -1152,6 +1152,240 @@
   background: #faf9f6;
 }
 
+.marketing-site .mkt-contact-section {
+  padding-top: 2.75rem;
+  padding-bottom: 4.5rem;
+}
+
+.marketing-site .mkt-contact-shell {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.marketing-site .mkt-contact-grid {
+  display: grid;
+  gap: 1.25rem;
+}
+
+@media (min-width: 960px) {
+  .marketing-site .mkt-contact-grid {
+    grid-template-columns: minmax(0, 1.65fr) minmax(280px, 1fr);
+    align-items: stretch;
+    gap: 1.5rem;
+  }
+}
+
+.marketing-site .mkt-contact-card {
+  background: #fff;
+  border: 1px solid #e8e6e1;
+  border-radius: 14px;
+  padding: 2rem;
+  box-sizing: border-box;
+}
+
+.marketing-site .mkt-contact-card-form,
+.marketing-site .mkt-contact-card-aside {
+  padding: 2rem;
+}
+
+.marketing-site .mkt-contact-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+}
+
+.marketing-site .mkt-contact-form-row {
+  display: grid;
+  gap: 1.1rem;
+}
+
+@media (min-width: 640px) {
+  .marketing-site .mkt-contact-form-row {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.marketing-site .mkt-contact-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.marketing-site .mkt-contact-field label {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--mkt-ink);
+}
+
+.marketing-site .mkt-contact-field input,
+.marketing-site .mkt-contact-field select,
+.marketing-site .mkt-contact-field textarea {
+  width: 100%;
+  border: 1px solid var(--mkt-line);
+  border-radius: 9px;
+  background: var(--mkt-surface);
+  padding: 0.72rem 0.9rem;
+  font-size: 15px;
+  color: var(--mkt-ink);
+  outline: none;
+}
+
+.marketing-site .mkt-contact-field select {
+  appearance: none;
+  background-color: var(--mkt-surface);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.85rem center;
+  background-size: 16px 16px;
+  padding-right: 2.5rem;
+  cursor: pointer;
+  line-height: 1.4;
+}
+
+.marketing-site .mkt-contact-field input:focus,
+.marketing-site .mkt-contact-field select:focus,
+.marketing-site .mkt-contact-field textarea:focus {
+  border-color: var(--mkt-teal);
+  box-shadow: 0 0 0 3px var(--mkt-teal-t);
+}
+
+.marketing-site .mkt-contact-field textarea {
+  min-height: 148px;
+  resize: vertical;
+}
+
+.marketing-site .mkt-contact-form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.85rem 1.25rem;
+  margin-top: 0.25rem;
+}
+
+.marketing-site .mkt-contact-form-note {
+  margin: 0;
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.marketing-site .mkt-contact-form-footnote {
+  margin: 0.35rem 0 0;
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: #6b7280;
+}
+
+.marketing-site .mkt-contact-form-error {
+  margin: 0;
+  font-size: 13.5px;
+  color: #b42318;
+}
+
+.marketing-site .mkt-contact-form-success h2 {
+  margin: 0 0 0.65rem;
+  font-size: 1.35rem;
+}
+
+.marketing-site .mkt-contact-form-success p {
+  margin: 0 0 1.25rem;
+  color: #4b5563;
+}
+
+.marketing-site .mkt-contact-link {
+  color: #0e6e76;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.marketing-site .mkt-contact-link:hover {
+  text-decoration: underline;
+}
+
+.marketing-site .mkt-contact-aside-label {
+  margin: 0 0 1.35rem;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #9ca3af;
+}
+
+.marketing-site .mkt-contact-direct-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1.35rem;
+}
+
+.marketing-site .mkt-contact-direct-item {
+  display: grid;
+  grid-template-columns: 2rem minmax(0, 1fr);
+  gap: 0.75rem;
+}
+
+.marketing-site .mkt-contact-direct-num {
+  font-size: 12px;
+  font-weight: 600;
+  color: #9ca3af;
+}
+
+.marketing-site .mkt-contact-direct-title {
+  margin: 0 0 0.2rem;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--mkt-ink);
+}
+
+.marketing-site .mkt-contact-direct-desc {
+  margin: 0.35rem 0 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: #6b7280;
+}
+
+.marketing-site .mkt-contact-address-grid {
+  display: grid;
+  gap: 1.5rem;
+}
+
+@media (min-width: 640px) {
+  .marketing-site .mkt-contact-address-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.marketing-site .mkt-contact-address-label {
+  margin: 0 0 0.45rem;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--mkt-ink);
+}
+
+.marketing-site .mkt-contact-address-line {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #374151;
+}
+
+.marketing-site .mkt-contact-address-phone {
+  margin: 0.55rem 0 0;
+  font-size: 14px;
+  color: #374151;
+}
+
+.marketing-site .mkt-contact-honeypot {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
 .marketing-site .mkt-hiw-hero-band {
   background: #fff;
 }
