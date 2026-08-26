@@ -115,9 +115,9 @@ export const buyerQuestions = {
 
 export const finalCta = {
   h2: 'Start with the evidence.',
-  body: "Browse the Skill Communities, or tell us what you need and we'll match against it.",
+  body: "Browse the Skill Communities, or describe your requirement and we'll match against it.",
   primaryCta: 'Find Talent',
-  secondaryCta: 'Create a Requirement',
+  secondaryCta: 'Describe Your Requirement',
 };
 
 export const footer = {

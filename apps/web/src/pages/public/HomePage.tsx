@@ -389,7 +389,7 @@ export function HomePage() {
             <div className="mkt-cta-copy">
               <h2>Start with the evidence.</h2>
               <p>
-                Browse the {communityCountLabel}, or tell us what you need and we&apos;ll match
+                Browse the {communityCountLabel}, or describe your requirement and we&apos;ll match
                 against it.
               </p>
               <div className="mkt-actions">
@@ -398,7 +398,7 @@ export function HomePage() {
                   <ForwardArrow />
                 </Link>
                 <Link to="/reach-out" className="mkt-btn mkt-btn-outline mkt-btn-lg">
-                  Tell us what you need
+                  Describe Your Requirement
                 </Link>
               </div>
             </div>
