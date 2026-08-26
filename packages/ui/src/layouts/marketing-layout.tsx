@@ -34,7 +34,7 @@ const defaultFooterColumns: MarketingFooterColumn[] = [
     links: [
       { label: 'Pre-Vetted Talent', href: '/sample-talent' },
       { label: 'Skill Communities', href: '/communities' },
-      { label: 'How we assist', href: '/how-it-works' },
+      { label: 'How it works', href: '/how-it-works' },
       { label: 'Time Zone Overlap', href: '/#time-zone' },
       { label: 'Pricing', href: '/rates' },
     ],

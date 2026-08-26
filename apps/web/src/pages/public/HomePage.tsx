@@ -91,7 +91,7 @@ export function HomePage() {
                <ForwardArrow />
               </Link>
               <Link to="/evaluation-standard" className="mkt-btn mkt-btn-white mkt-btn-lg">
-                See how we test
+                See how we assess
               </Link>
             </div>
             <p className="mkt-micro mt-5">
@@ -157,7 +157,7 @@ export function HomePage() {
               You don&apos;t have to believe our standard. You can read it.
             </p>
             <Link to="/evaluation-standard" className="mkt-btn mkt-btn-white mkt-btn-lg mt-8">
-              See how we test
+              See how we assess
               <ForwardArrow />
             </Link>
           </div>
