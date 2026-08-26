@@ -64,6 +64,8 @@ export interface CandidateDto {
   resume: CandidateDocumentDto | null;
   profileImage: CandidateDocumentDto | null;
   introVideo: CandidateDocumentDto | null;
+  evaluationReport?: CandidateDocumentDto | null;
+  bgvReport?: CandidateDocumentDto | null;
   skills: CandidateSkillDto[];
   createdById: number | null;
   oorwinCandidateId: string | null;

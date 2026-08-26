@@ -12,6 +12,7 @@ import {
   ClipboardList,
   EyeOff,
   Globe,
+  Loader2,
   MoreHorizontal,
   RotateCcw,
   XCircle,
@@ -21,7 +22,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useCandidateMutations, useCandidatesList } from '../../hooks/api/useCandidates';
 import { useDebouncedSearch } from '../../hooks/useDebouncedSearch';
 import type { CandidateListItem } from '../../lib/api/types';
-import { canApprove, canPublish } from '../../lib/candidate-approval-gates';
+import { canApprove, canPublish, type ApprovalGateInput } from '../../lib/candidate-approval-gates';
 import {
   ListingFilterSelect,
   ListingFiltersRow,
@@ -29,6 +30,7 @@ import {
 } from '../layout/ListingPageShell';
 import { getApiErrorMessage } from '../../lib/api/errors';
 import { useDemoToast } from '../../lib/use-demo-toast';
+import { useConfirmAction } from '../super-admin/useConfirmAction';
 
 type QueueFilter = 'pending' | 'approved' | 'published' | 'rejected';
 
@@ -76,6 +78,46 @@ function toApprovalRow(candidate: CandidateListItem): ApprovalRow {
   };
 }
 
+function toGateInput(record: ApprovalRow): ApprovalGateInput {
+  return {
+    profileStatus: record.profileStatus,
+    evaluationStatus: record.evaluationStatus,
+    bgvStatus: record.bgvStatus,
+    approvalStatus: record.approvalStatus,
+    visibility: record.visibility,
+    submittedForApprovalAt: record.submittedForApprovalAt,
+  };
+}
+
+function canUnpublish(record: ApprovalRow): boolean {
+  return record.visibility === 'CLIENT_VISIBLE';
+}
+
+const selectColumn: ColumnDef<ApprovalRow> = {
+  id: 'select',
+  header: ({ table }) => (
+    <input
+      type="checkbox"
+      className="h-4 w-4 rounded border-border accent-brand"
+      checked={table.getIsAllPageRowsSelected()}
+      onChange={table.getToggleAllPageRowsSelectedHandler()}
+      onClick={(e) => e.stopPropagation()}
+      aria-label="Select all"
+    />
+  ),
+  cell: ({ row }) => (
+    <input
+      type="checkbox"
+      className="h-4 w-4 rounded border-border accent-brand"
+      checked={row.getIsSelected()}
+      onChange={row.getToggleSelectedHandler()}
+      onClick={(e) => e.stopPropagation()}
+      aria-label="Select row"
+    />
+  ),
+  enableSorting: false,
+};
+
 function ApprovalRowActions({
   record,
   onAction,
@@ -95,14 +137,7 @@ function ApprovalRowActions({
     return () => document.removeEventListener('mousedown', close);
   }, [open]);
 
-  const gateInput = {
-    profileStatus: record.profileStatus,
-    evaluationStatus: record.evaluationStatus,
-    bgvStatus: record.bgvStatus,
-    approvalStatus: record.approvalStatus,
-    visibility: record.visibility,
-    submittedForApprovalAt: record.submittedForApprovalAt,
-  };
+  const gateInput = toGateInput(record);
   const approveGate = canApprove(gateInput);
   const publishGate = canPublish(gateInput);
 
@@ -188,7 +223,9 @@ export function CandidateApprovalQueueView({
 }: CandidateApprovalQueueViewProps) {
   const navigate = useNavigate();
   const { message, variant, show, showError, dismiss } = useDemoToast();
+  const { requestConfirm, confirmDialog } = useConfirmAction();
   const [filters, setFilters] = useState(defaultFilters);
+  const [bulkBusy, setBulkBusy] = useState(false);
   const { searchInput, setSearchInput, search, searchParam } = useDebouncedSearch();
   const evaluationsBase = candidateDetailBasePath.includes('super-admin')
     ? '/super-admin/evaluations'
@@ -282,6 +319,96 @@ export function CandidateApprovalQueueView({
     [mutations.hide, show, showError],
   );
 
+  const runBulkAction = useCallback(
+    async (
+      selected: ApprovalRow[],
+      eligible: ApprovalRow[],
+      action: 'approve' | 'publish' | 'unpublish',
+    ) => {
+      if (eligible.length === 0) {
+        showError(`None of the selected candidates can be ${action}d`);
+        return;
+      }
+
+      setBulkBusy(true);
+      let success = 0;
+      const failures: string[] = [];
+
+      for (const record of eligible) {
+        try {
+          if (action === 'approve') {
+            await mutations.approve.mutateAsync(record.id);
+          } else if (action === 'publish') {
+            await mutations.publish.mutateAsync(record.id);
+          } else {
+            await mutations.hide.mutateAsync(record.id);
+          }
+          success += 1;
+        } catch (err) {
+          failures.push(`${record.fullName}: ${getApiErrorMessage(err, 'failed')}`);
+        }
+      }
+
+      setBulkBusy(false);
+
+      const skipped = selected.length - eligible.length;
+      const actionLabel =
+        action === 'approve' ? 'Approved' : action === 'publish' ? 'Published' : 'Unpublished';
+
+      if (failures.length === 0) {
+        show(
+          `${actionLabel} ${success} candidate${success === 1 ? '' : 's'}${
+            skipped > 0 ? ` (${skipped} skipped — not eligible)` : ''
+          }`,
+        );
+      } else {
+        showError(
+          `${actionLabel} ${success}, failed ${failures.length}${
+            skipped > 0 ? `, skipped ${skipped}` : ''
+          }. ${failures[0]}`,
+        );
+      }
+    },
+    [mutations.approve, mutations.hide, mutations.publish, show, showError],
+  );
+
+  const bulkApprove = useCallback(
+    (selected: ApprovalRow[]) => {
+      const eligible = selected.filter((record) => canApprove(toGateInput(record)).allowed);
+      void runBulkAction(selected, eligible, 'approve');
+    },
+    [runBulkAction],
+  );
+
+  const bulkPublish = useCallback(
+    (selected: ApprovalRow[]) => {
+      const eligible = selected.filter((record) => canPublish(toGateInput(record)).allowed);
+      void runBulkAction(selected, eligible, 'publish');
+    },
+    [runBulkAction],
+  );
+
+  const bulkUnpublish = useCallback(
+    (selected: ApprovalRow[]) => {
+      const eligible = selected.filter(canUnpublish);
+      if (eligible.length === 0) {
+        showError('None of the selected candidates are published to clients');
+        return;
+      }
+      requestConfirm({
+        title: 'Unpublish selected candidates?',
+        description: `${eligible.length} candidate${eligible.length === 1 ? '' : 's'} will be hidden from the client portal.`,
+        confirmLabel: 'Unpublish',
+        destructive: true,
+        onConfirm: async () => {
+          await runBulkAction(selected, eligible, 'unpublish');
+        },
+        onError: showError,
+      });
+    },
+    [requestConfirm, runBulkAction, showError],
+  );
+
   const openReject = (record: ApprovalRow) => {
     setActionTarget(record);
     setReason('');
@@ -356,6 +483,7 @@ export function CandidateApprovalQueueView({
 
   const columns = useMemo<ColumnDef<ApprovalRow>[]>(
     () => [
+      selectColumn,
       {
         accessorKey: 'fullName',
         header: 'Candidate',
@@ -423,6 +551,7 @@ export function CandidateApprovalQueueView({
 
   return (
     <>
+      {confirmDialog}
       <ListingPageShell
         title="Approvals"
         message={message}
@@ -441,10 +570,79 @@ export function CandidateApprovalQueueView({
           onSearchChange={setSearchInput}
           serverSideSearch
           pageSize={12}
+          getRowId={(row) => String(row.id)}
           stickyHeader
           fillHeight
           dense
           filtersInline
+          enableRowSelection
+          bulkActions={(selected) => {
+            const approveEligible = selected.filter(
+              (record) => canApprove(toGateInput(record)).allowed,
+            );
+            const publishEligible = selected.filter(
+              (record) => canPublish(toGateInput(record)).allowed,
+            );
+            const unpublishEligible = selected.filter(canUnpublish);
+
+            return (
+              <>
+                <Button
+                  size="sm"
+                  disabled={bulkBusy || approveEligible.length === 0}
+                  title={
+                    approveEligible.length === 0
+                      ? 'Select candidates pending admin approval'
+                      : `Approve ${approveEligible.length} candidate(s)`
+                  }
+                  onClick={() => bulkApprove(selected)}
+                >
+                  {bulkBusy ? (
+                    <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <CheckCircle className="mr-1.5 h-3.5 w-3.5" />
+                  )}
+                  Approve{approveEligible.length > 0 ? ` (${approveEligible.length})` : ''}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={bulkBusy || publishEligible.length === 0}
+                  title={
+                    publishEligible.length === 0
+                      ? 'Select approved candidates ready to publish'
+                      : `Publish ${publishEligible.length} candidate(s)`
+                  }
+                  onClick={() => bulkPublish(selected)}
+                >
+                  {bulkBusy ? (
+                    <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Globe className="mr-1.5 h-3.5 w-3.5" />
+                  )}
+                  Publish{publishEligible.length > 0 ? ` (${publishEligible.length})` : ''}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={bulkBusy || unpublishEligible.length === 0}
+                  title={
+                    unpublishEligible.length === 0
+                      ? 'Select candidates published to clients'
+                      : `Unpublish ${unpublishEligible.length} candidate(s)`
+                  }
+                  onClick={() => bulkUnpublish(selected)}
+                >
+                  {bulkBusy ? (
+                    <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <EyeOff className="mr-1.5 h-3.5 w-3.5" />
+                  )}
+                  Unpublish{unpublishEligible.length > 0 ? ` (${unpublishEligible.length})` : ''}
+                </Button>
+              </>
+            );
+          }}
           filters={
             <ListingFiltersRow onClear={() => setFilters(defaultFilters)}>
               <ListingFilterSelect

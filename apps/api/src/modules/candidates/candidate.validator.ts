@@ -64,7 +64,7 @@ export const candidateSkillBodySchema = z.object({
   skillName: optionalSkillNameField,
   skillCategory: z.string().max(100).optional(),
   proficiencyLevel: proficiencyLevelEnum.optional(),
-  yearsExperience: z.coerce.number().int().min(0).max(60).optional(),
+  yearsExperience: z.coerce.number().min(0).max(60).optional(),
   isPrimary: z.boolean().optional(),
   notes: optionalTextField(),
 });
@@ -114,7 +114,7 @@ export const createCandidateBodySchema = z.object({
   headline: z.string().max(255).optional(),
   summary: optionalTextField(),
   location: z.string().max(255).optional(),
-  yearsExperience: z.coerce.number().int().min(0).max(60).optional(),
+  yearsExperience: z.coerce.number().min(0).max(60).optional(),
   availableFrom: z.string().date().optional(),
   expectedRate: optionalRateField,
   currency: z.string().length(3).optional(),

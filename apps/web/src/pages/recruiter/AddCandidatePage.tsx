@@ -71,6 +71,7 @@ export function AddCandidatePage() {
   const hydratedCandidateIdRef = useRef<number | null>(null);
 
   const [isSaving, setIsSaving] = useState(false);
+  const [isSubmittingForApproval, setIsSubmittingForApproval] = useState(false);
   const [linkedDataLoading, setLinkedDataLoading] = useState(false);
   const isImportOnlyRole = user?.role === 'ADMIN' || user?.role === 'RECRUITER';
   const importPath = `${basePath}/candidates/import`;
@@ -189,6 +190,9 @@ export function AddCandidatePage() {
   ): Promise<boolean> {
     setSubmitError(null);
     setIsSaving(true);
+    if (options.submit) {
+      setIsSubmittingForApproval(true);
+    }
     try {
       const body = mapWizardToApiCreateBody(values);
       if (options.submit) {
@@ -318,6 +322,9 @@ export function AddCandidatePage() {
       return false;
     } finally {
       setIsSaving(false);
+      if (options.submit) {
+        setIsSubmittingForApproval(false);
+      }
     }
   }
 
@@ -422,10 +429,10 @@ export function AddCandidatePage() {
                 }
                 onToast={show}
                 submitError={submitError}
-                isSavingDraft={create.isPending || update.isPending || isSaving}
-                isSubmitting={
-                  create.isPending || update.isPending || submitForApproval.isPending
+                isSavingDraft={
+                  isSaving && !isSubmittingForApproval
                 }
+                isSubmitting={isSubmittingForApproval}
               />
             </CardContent>
           </Card>

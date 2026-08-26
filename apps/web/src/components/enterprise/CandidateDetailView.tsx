@@ -26,9 +26,10 @@ import { useCandidate, useCandidateMutations } from '../../hooks/api/useCandidat
 import { usePermissions } from '../../hooks/usePermissions';
 import { useAuth } from '../../contexts/AuthContext';
 import { getApiErrorMessage } from '../../lib/api/errors';
-import type { CandidateSkillDto } from '../../lib/api/types';
+import type { CandidateDocumentDto, CandidateSkillDto } from '../../lib/api/types';
 import { useDemoToast } from '../../lib/use-demo-toast';
 import { ToastHost } from '../ui/ToastHost';
+import { DocumentPreviewDialog } from '../documents/DocumentPreviewDialog';
 import { DetailPageShell } from './DetailPageShell';
 import { SchemaFieldGrid, type SchemaFieldDef } from './SchemaFieldGrid';
 import {
@@ -98,6 +99,10 @@ export function CandidateDetailView({ candidateId, basePath }: CandidateDetailVi
   } = usePermissions();
   const { data: candidate, isLoading, isError, error, refetch } = useCandidate(candidateId);
   const mutations = useCandidateMutations();
+  const [previewDoc, setPreviewDoc] = useState<{
+    doc: CandidateDocumentDto;
+    label: string;
+  } | null>(null);
 
   const evaluationsPath = basePath.startsWith('/admin')
     ? '/admin/evaluations'
@@ -181,9 +186,12 @@ export function CandidateDetailView({ candidateId, basePath }: CandidateDetailVi
     }
   }
 
-  function openDoc(doc: { url?: string | null }, label: string) {
-    if (doc.url) window.open(doc.url, '_blank', 'noopener,noreferrer');
-    else showError(`${label} URL is not available`);
+  function openDoc(doc: CandidateDocumentDto, label: string) {
+    if (doc.url) {
+      setPreviewDoc({ doc, label });
+      return;
+    }
+    showError(`${label} URL is not available`);
   }
 
   if (isLoading) {
@@ -518,10 +526,14 @@ export function CandidateDetailView({ candidateId, basePath }: CandidateDetailVi
           <DocumentAssetRow
             label="Evaluation Report"
             description="Managed in Evaluations module"
+            doc={candidate.evaluationReport}
+            onDownload={(doc) => openDoc(doc, 'Evaluation report')}
           />
           <DocumentAssetRow
             label="BGV Report"
             description="Managed in Background Checks module"
+            doc={candidate.bgvReport}
+            onDownload={(doc) => openDoc(doc, 'BGV report')}
           />
         </div>
       </ModernSection>
@@ -624,6 +636,14 @@ export function CandidateDetailView({ candidateId, basePath }: CandidateDetailVi
 
         <div>{tabContent[activeTab]}</div>
       </DetailPageShell>
+      <DocumentPreviewDialog
+        open={previewDoc != null}
+        onClose={() => setPreviewDoc(null)}
+        title={previewDoc?.label ?? 'Document preview'}
+        url={previewDoc?.doc.url}
+        mimeType={previewDoc?.doc.mimeType}
+        fileName={previewDoc?.doc.originalName ?? previewDoc?.doc.fileName}
+      />
     </>
   );
 }

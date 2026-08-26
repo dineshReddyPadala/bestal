@@ -600,7 +600,7 @@ model Candidate {
   location                String?                 @db.VarChar(255)
   country                 String?                 @db.VarChar(100)
   timezone                String?                 @db.VarChar(100)
-  yearsExperience         Int?                    @map("years_experience")
+  yearsExperience         Decimal?                @map("years_experience") @db.Decimal(4, 1)
   currentCompany          String?                 @map("current_company") @db.VarChar(255)
   currentTitle            String?                 @map("current_title") @db.VarChar(150)
   noticePeriod            String?                 @map("notice_period") @db.VarChar(100)
@@ -684,7 +684,7 @@ model CandidateSkill {
   skillName        String           @map("skill_name") @db.VarChar(150)
   skillCategory    String?          @map("skill_category") @db.VarChar(100)
   proficiencyLevel ProficiencyLevel @default(INTERMEDIATE) @map("proficiency_level")
-  yearsExperience  Int?             @map("years_experience")
+  yearsExperience  Decimal?         @map("years_experience") @db.Decimal(4, 1)
   isPrimary        Boolean          @default(false) @map("is_primary")
   notes            String?          @db.Text
   createdAt        DateTime         @default(now()) @map("created_at")

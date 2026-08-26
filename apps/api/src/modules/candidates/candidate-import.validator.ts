@@ -80,6 +80,45 @@ function cellToString(value: ExcelJS.CellValue): string {
   return String(value).trim();
 }
 
+function buildFieldValidationMessage(
+  columnName: string,
+  detail: string,
+  opts?: { suppliedValue?: string; expected?: string },
+): string {
+  let message = `Column "${columnName}": ${detail}`;
+  if (opts?.suppliedValue !== undefined) {
+    const display = opts.suppliedValue === '' ? '(empty)' : `"${opts.suppliedValue}"`;
+    message += ` Supplied: ${display}.`;
+  }
+  if (opts?.expected) {
+    message += ` Expected: ${opts.expected}.`;
+  }
+  return message;
+}
+
+function formatNumberExpectation(opts?: {
+  min?: number;
+  max?: number;
+  integer?: boolean;
+}): string {
+  if (opts?.integer) {
+    if (opts.min != null && opts.max != null) {
+      return `whole number from ${opts.min} to ${opts.max}`;
+    }
+    return 'whole number (integer)';
+  }
+  if (opts?.min != null && opts.max != null) {
+    return `number from ${opts.min} to ${opts.max}`;
+  }
+  if (opts?.min != null) {
+    return `number >= ${opts.min}`;
+  }
+  if (opts?.max != null) {
+    return `number <= ${opts.max}`;
+  }
+  return 'numeric value';
+}
+
 function pushError(
   errors: ImportValidationError[],
   error: ImportValidationError,
@@ -196,7 +235,10 @@ function parseDate(
       columnName,
       suppliedValue: value,
       errorCode: 'INVALID_DATE',
-      message: 'Dates must use YYYY-MM-DD.',
+      message: buildFieldValidationMessage(columnName, 'Invalid date format.', {
+        suppliedValue: value,
+        expected: 'YYYY-MM-DD',
+      }),
     });
     return null;
   }
@@ -209,7 +251,10 @@ function parseDate(
       columnName,
       suppliedValue: value,
       errorCode: 'INVALID_DATE',
-      message: 'Invalid calendar date.',
+      message: buildFieldValidationMessage(columnName, 'Invalid calendar date.', {
+        suppliedValue: value,
+        expected: 'a valid YYYY-MM-DD date',
+      }),
     });
     return null;
   }
@@ -254,7 +299,10 @@ function parseNumber(
       columnName,
       suppliedValue: value,
       errorCode: 'INVALID_NUMBER',
-      message: 'Value must be numeric.',
+      message: buildFieldValidationMessage(columnName, 'Must be numeric.', {
+        suppliedValue: value,
+        expected: formatNumberExpectation(opts),
+      }),
     });
     return null;
   }
@@ -266,7 +314,10 @@ function parseNumber(
       columnName,
       suppliedValue: value,
       errorCode: 'INVALID_NUMBER',
-      message: 'Value must be an integer.',
+      message: buildFieldValidationMessage(columnName, 'Must be a whole number.', {
+        suppliedValue: value,
+        expected: formatNumberExpectation(opts),
+      }),
     });
     return null;
   }
@@ -278,7 +329,10 @@ function parseNumber(
       columnName,
       suppliedValue: value,
       errorCode: 'OUT_OF_RANGE',
-      message: `Value must be >= ${opts.min}.`,
+      message: buildFieldValidationMessage(columnName, `Must be >= ${opts.min}.`, {
+        suppliedValue: value,
+        expected: formatNumberExpectation(opts),
+      }),
     });
     return null;
   }
@@ -290,7 +344,10 @@ function parseNumber(
       columnName,
       suppliedValue: value,
       errorCode: 'OUT_OF_RANGE',
-      message: `Value must be <= ${opts.max}.`,
+      message: buildFieldValidationMessage(columnName, `Must be <= ${opts.max}.`, {
+        suppliedValue: value,
+        expected: formatNumberExpectation(opts),
+      }),
     });
     return null;
   }
@@ -348,7 +405,10 @@ function assertAllowed(
       columnName,
       suppliedValue: value,
       errorCode: 'INVALID_METADATA',
-      message: `Invalid value. Allowed: ${allowed.join(', ')}.`,
+      message: buildFieldValidationMessage(columnName, 'Invalid value.', {
+        suppliedValue: value,
+        expected: `one of: ${allowed.join(', ')}`,
+      }),
     });
     return false;
   }
@@ -424,7 +484,10 @@ function assertTimezone(
     columnName,
     suppliedValue: value,
     errorCode: 'INVALID_METADATA',
-    message: 'Invalid timezone. Choose a value from the Timezones sheet in the import template.',
+    message: buildFieldValidationMessage(columnName, 'Invalid timezone.', {
+      suppliedValue: value,
+      expected: 'a value from the Timezones sheet in the import template',
+    }),
   });
   return false;
 }
@@ -542,10 +605,44 @@ export async function parseAndValidateCandidateWorkbook(
           rowNumber,
           sourceCandidateId: sourceCandidateId || undefined,
           columnName: field,
+          suppliedValue: raw[field] ?? '',
           errorCode: 'MISSING_REQUIRED',
-          message: `Required field "${field}" is missing.`,
+          message: buildFieldValidationMessage(field, 'Required field is missing.', {
+            suppliedValue: raw[field] ?? '',
+            expected: 'non-empty text',
+          }),
         });
       }
+    }
+
+    if (!raw.availability_status?.trim()) {
+      pushError(errors, {
+        sheetName: IMPORT_WORKBOOK_SHEETS.CANDIDATE,
+        rowNumber,
+        sourceCandidateId: sourceCandidateId || undefined,
+        columnName: 'availability_status',
+        suppliedValue: raw.availability_status ?? '',
+        errorCode: 'MISSING_REQUIRED',
+        message: buildFieldValidationMessage('availability_status', 'Required field is missing.', {
+          suppliedValue: raw.availability_status ?? '',
+          expected: `one of: ${IMPORT_AVAILABILITY_STATUSES.join(', ')}`,
+        }),
+      });
+    }
+
+    if (!raw.available_from?.trim()) {
+      pushError(errors, {
+        sheetName: IMPORT_WORKBOOK_SHEETS.CANDIDATE,
+        rowNumber,
+        sourceCandidateId: sourceCandidateId || undefined,
+        columnName: 'available_from',
+        suppliedValue: raw.available_from ?? '',
+        errorCode: 'MISSING_REQUIRED',
+        message: buildFieldValidationMessage('available_from', 'Required field is missing.', {
+          suppliedValue: raw.available_from ?? '',
+          expected: 'YYYY-MM-DD',
+        }),
+      });
     }
 
     if (!sourceCandidateId) {
@@ -623,7 +720,7 @@ export async function parseAndValidateCandidateWorkbook(
       'years_experience',
       errors,
       sourceCandidateId,
-      { min: 0, max: 60, integer: true },
+      { min: 0, max: 60 },
     );
     const billRate = parseNumber(
       raw.bill_rate,
@@ -717,7 +814,10 @@ export async function parseAndValidateCandidateWorkbook(
         columnName: 'email',
         suppliedValue: raw.email,
         errorCode: 'INVALID_EMAIL',
-        message: 'Invalid email format.',
+        message: buildFieldValidationMessage('email', 'Invalid email format.', {
+          suppliedValue: raw.email,
+          expected: 'valid email address (example@company.com)',
+        }),
       });
     }
 
@@ -793,8 +893,12 @@ export async function parseAndValidateCandidateWorkbook(
         rowNumber,
         sourceCandidateId,
         columnName: 'skill_name',
+        suppliedValue: raw.skill_name ?? '',
         errorCode: 'MISSING_REQUIRED',
-        message: 'skill_name is required.',
+        message: buildFieldValidationMessage('skill_name', 'Required field is missing.', {
+          suppliedValue: raw.skill_name ?? '',
+          expected: 'non-empty skill name',
+        }),
       });
       continue;
     }
@@ -815,7 +919,7 @@ export async function parseAndValidateCandidateWorkbook(
       'years_experience',
       errors,
       sourceCandidateId,
-      { min: 0, max: 60, integer: true },
+      { min: 0, max: 60 },
     );
     const skill: NormalizedSkillRow = {
       skillName: raw.skill_name.trim().slice(0, 150),
@@ -850,8 +954,12 @@ export async function parseAndValidateCandidateWorkbook(
         rowNumber,
         sourceCandidateId,
         columnName: 'evaluator_name',
+        suppliedValue: raw.evaluator_name ?? '',
         errorCode: 'MISSING_REQUIRED',
-        message: 'evaluator_name is required.',
+        message: buildFieldValidationMessage('evaluator_name', 'Required field is missing.', {
+          suppliedValue: raw.evaluator_name ?? '',
+          expected: 'evaluator full name (text)',
+        }),
       });
       continue;
     }
@@ -866,7 +974,10 @@ export async function parseAndValidateCandidateWorkbook(
           columnName: 'evaluation_type',
           suppliedValue: raw.evaluation_type,
           errorCode: 'INVALID_VALUE',
-          message: `evaluation_type must be one of: ${IMPORT_EVALUATION_TYPES.join(', ')}.`,
+          message: buildFieldValidationMessage('evaluation_type', 'Invalid value.', {
+            suppliedValue: raw.evaluation_type,
+            expected: `one of: ${IMPORT_EVALUATION_TYPES.join(', ')}`,
+          }),
         });
         continue;
       }
@@ -883,7 +994,10 @@ export async function parseAndValidateCandidateWorkbook(
           columnName: 'recommendation',
           suppliedValue: raw.recommendation,
           errorCode: 'INVALID_VALUE',
-          message: `recommendation must be one of: ${IMPORT_RECOMMENDATION_VALUES.join(', ')}.`,
+          message: buildFieldValidationMessage('recommendation', 'Invalid value.', {
+            suppliedValue: raw.recommendation,
+            expected: `one of: ${IMPORT_RECOMMENDATION_VALUES.join(', ')}`,
+          }),
         });
         continue;
       }
@@ -990,8 +1104,12 @@ export async function parseAndValidateCandidateWorkbook(
         rowNumber,
         sourceCandidateId,
         columnName: 'bgv_status',
+        suppliedValue: raw.bgv_status ?? '',
         errorCode: 'MISSING_REQUIRED',
-        message: 'bgv_status is required.',
+        message: buildFieldValidationMessage('bgv_status', 'Required field is missing.', {
+          suppliedValue: raw.bgv_status ?? '',
+          expected: `one of: ${IMPORT_BGV_STATUSES.join(', ')}`,
+        }),
       });
       continue;
     }
@@ -1089,8 +1207,12 @@ export async function parseAndValidateCandidateWorkbook(
         rowNumber,
         sourceCandidateId,
         columnName: 'score_source',
+        suppliedValue: raw.score_source ?? '',
         errorCode: 'MISSING_REQUIRED',
-        message: 'score_source is required.',
+        message: buildFieldValidationMessage('score_source', 'Required field is missing.', {
+          suppliedValue: raw.score_source ?? '',
+          expected: `one of: ${IMPORT_SCORE_SOURCES.join(', ')}`,
+        }),
       });
       continue;
     }
