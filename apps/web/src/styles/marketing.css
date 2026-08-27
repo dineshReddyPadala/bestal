@@ -3514,12 +3514,12 @@
 
 .marketing-site .mkt-lpc-tz-name {
   margin: 0;
-  font-size: 0.8125rem;
+  font-size: 0.75rem;
   font-weight: 700;
   line-height: 1.25;
   color: var(--mkt-ink);
-  overflow-wrap: normal;
-  word-break: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .marketing-site .mkt-lpc-tz-detail {
