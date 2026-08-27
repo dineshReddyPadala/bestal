@@ -64,7 +64,7 @@ function LandingProfileCardBody({ engineer }: { engineer: DemoEngineer }) {
   const availabilityLabel = showAvailability
     ? formatLandingAvailability(engineer.availability)
     : '';
-  const timezoneLabel = engineer.zoneLabel.trim();
+  const timezoneLabel = engineer.timezone.trim();
   const showTimezone = Boolean(timezoneLabel);
 
   return (
