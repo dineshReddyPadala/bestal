@@ -1,11 +1,9 @@
 import { PageMeta } from '../../components/PageMeta';
 import { MktShell } from '../../components/marketing/MktShell';
 import { useFreeTrialHours } from '../../hooks/api/useTrialPolicy';
-import { RATE_FACTORS } from '../../lib/marketing-copy';
+import { PRICE_BANDS, RATE_FACTORS } from '../../lib/marketing-copy';
 import { formatFreeTrialHours } from '../../lib/trial-policy';
 import { PAGE_SEO } from '../../lib/marketing-seo';
-
-const PRICE_BANDS = ['Under $25', '$25–$35', '$35–$50', '$50–$75', '$75+'] as const;
 
 export function RatesPage() {
   const freeTrialHours = useFreeTrialHours();
@@ -88,7 +86,9 @@ export function RatesPage() {
           {/* <div className="mkt-fact">[FACT: published price bands per discipline]</div> */}
           <div className="mkt-rates-pills">
             {PRICE_BANDS.map((band) => (
-              <span key={band}>{band}</span>
+              <span key={band} className="mkt-rates-pill">
+                {band}
+              </span>
             ))}
           </div>
         </MktShell>

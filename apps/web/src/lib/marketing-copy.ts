@@ -370,6 +370,14 @@ export const EVALUATION_DIMENSIONS = [
   { title: 'Client readiness score', body: 'How prepared they are to start on client work — context gathering, delivery habits, and professional readiness.' },
 ] as const;
 
+export const PRICE_BANDS = [
+  'Under $25',
+  '$25–$35',
+  '$35–$50',
+  '$50–$75',
+  '$75+',
+] as const;
+
 export const RATE_FACTORS = [
   { num: '01', title: 'Skill and discipline', body: 'Scarcity differs sharply. A GenAI engineer and a QA automation engineer aren\'t priced alike.' },
   { num: '02', title: 'Experience', body: 'Depend on the experiecen level, what the test showed and what resume claimed.' },
