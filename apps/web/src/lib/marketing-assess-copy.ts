@@ -31,7 +31,8 @@ export const ASSESS_PROCESS_STEPS = [
 ] as const;
 
 export const ASSESS_SPOTLIGHT = {
-  title: 'AI-Powered. Human-Reviewed. Transparently Published.',
+  titleHighlight: 'AI-Powered',
+  titleRest: '. Human-Reviewed. Transparently Published.',
   body: 'Every assessment follows a consistent evaluation framework and undergoes a quality review before appearing on the BesTal platform.',
 } as const;
 

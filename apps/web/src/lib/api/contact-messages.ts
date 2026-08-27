@@ -1,13 +1,13 @@
 import { apiGet, apiList, apiRequest, apiUpdate, type ListQuery } from './client';
 import type { ApiDataResponse, ApiPaginatedResponse } from './types';
-import type { ContactTopicValue } from '../marketing-copy';
+import type { ContactMessageTopicValue, ContactTopicValue } from '../marketing-copy';
 
 export type ContactMessageListItem = {
   id: number;
   referenceCode: string;
   fullName: string;
   email: string;
-  topic: ContactTopicValue;
+  topic: ContactMessageTopicValue;
   status: string;
   createdAt: string;
 };
@@ -18,7 +18,7 @@ export type ContactMessageDetail = {
   referenceCode: string;
   fullName: string;
   email: string;
-  topic: ContactTopicValue;
+  topic: ContactMessageTopicValue;
   message: string;
   status: string;
   internalNotes: string | null;

@@ -346,7 +346,10 @@ export function EvaluationStandardPage() {
       >
         <MktShell className="mkt-assess-spotlight-inner">
           <div className="mkt-assess-spotlight-content">
-            <h2>{ASSESS_SPOTLIGHT.title}</h2>
+            <h2>
+              <span className="mkt-assess-spotlight-em">{ASSESS_SPOTLIGHT.titleHighlight}</span>
+              {ASSESS_SPOTLIGHT.titleRest}
+            </h2>
             <p>{ASSESS_SPOTLIGHT.body}</p>
           </div>
         </MktShell>
@@ -440,9 +443,9 @@ export function EvaluationStandardPage() {
         <MktShell>
           <div className="mkt-assess-validation-layout">
             <div className="mkt-assess-validation-copy">
-              <div className="mkt-hiw-v3-section-title-row mkt-assess-validation-hd">
+              <div className="mkt-assess-validation-hd">
                 <h2>{ASSESS_VALIDATION.title}</h2>
-                <p className="howitworks-body-style">{ASSESS_VALIDATION.intro}</p>
+                <p>{ASSESS_VALIDATION.intro}</p>
               </div>
 
               <div className="mkt-assess-trial-meter" aria-live="polite">

@@ -7,7 +7,7 @@ import { useContactMessage, useContactMessageMutations } from '../../hooks/api/u
 import { useDemoToast } from '../../lib/use-demo-toast';
 import { CONTACT_TOPIC_LABELS } from '../../lib/marketing-copy';
 import type { ContactMessageDetail } from '../../lib/api/contact-messages';
-import type { ContactTopicValue } from '../../lib/marketing-copy';
+import type { ContactMessageTopicValue } from '../../lib/marketing-copy';
 
 const STATUS_OPTIONS = [
   { value: 'SUBMITTED', label: 'Submitted' },
@@ -73,7 +73,7 @@ export function SuperAdminContactMessageDetailPage() {
             { label: 'Email', value: record.email },
             {
               label: 'Topic',
-              value: CONTACT_TOPIC_LABELS[record.topic as ContactTopicValue] ?? record.topic,
+              value: CONTACT_TOPIC_LABELS[record.topic as ContactMessageTopicValue] ?? record.topic,
             },
             {
               label: 'Submitted',
