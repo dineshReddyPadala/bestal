@@ -26,6 +26,7 @@ function LandingProfileCardSkeleton() {
             <div className="mkt-lpc-av mkt-skeleton-block" />
             <div className="mkt-skeleton-block mkt-skeleton-block-score" />
             <div className="mkt-skeleton-bar mkt-skeleton-bar-md" />
+            <div className="mkt-skeleton-bar mkt-skeleton-bar-sm" />
             <div className="mkt-skeleton-bar mkt-skeleton-bar-lg" />
           </div>
           <div className="mkt-lpc-right">

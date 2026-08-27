@@ -1,4 +1,5 @@
 import type { CommunityProfileSlide, DemoEngineer, DemoEngineerGender, ScoreRow } from './demo-engineers';
+import { isKnownMarketingTimezone, resolveMarketingTimezone } from './marketing-timezone';
 
 export type { CommunityProfileSlide };
 
@@ -168,6 +169,15 @@ function timezoneDetails(overlap: string | null | undefined): {
   const raw = overlap?.trim();
   if (!raw) {
     return { timezone: '', zoneLabel: '', zoneHours: '' };
+  }
+
+  if (isKnownMarketingTimezone(raw)) {
+    const resolved = resolveMarketingTimezone(raw);
+    return {
+      timezone: resolved.iana,
+      zoneLabel: resolved.zoneLabel,
+      zoneHours: resolved.zoneHours,
+    };
   }
 
   const lower = raw.toLowerCase();

@@ -1,5 +1,7 @@
 /** Fictional demo engineers — aligned with prototype data/engineers.ts */
 
+import { resolveMarketingTimezone } from './marketing-timezone';
+
 export type ScoreRow = {
   label: string;
   value: number;
@@ -56,13 +58,16 @@ const ENGINEER_PREVIOUS_COMPANIES: Partial<Record<string, string>> = {
 function engineer(
   data: Omit<
     DemoEngineer,
-    'meta' | 'timezoneDetail' | 'evaluation' | 'trialEligible'
+    'meta' | 'timezoneDetail' | 'evaluation' | 'trialEligible' | 'zoneLabel' | 'zoneHours'
   > & { trialEligible?: boolean },
 ): DemoEngineer {
+  const timezoneMeta = resolveMarketingTimezone(data.timezone);
   return {
     ...data,
+    zoneLabel: timezoneMeta.zoneLabel,
+    zoneHours: timezoneMeta.zoneHours,
     meta: `${data.experience} · ${data.location}`,
-    timezoneDetail: data.zoneHours,
+    timezoneDetail: timezoneMeta.zoneHours,
     evaluation: data.quote,
     trialEligible: data.trialEligible ?? true,
     previousCompany: ENGINEER_PREVIOUS_COMPANIES[data.id] ?? data.previousCompany ?? null,
@@ -81,9 +86,7 @@ export const DEMO_ENGINEERS: DemoEngineer[] = [
     location: 'Seattle, WA',
     rate: 68,
     skills: ['Java', 'Spring Boot', 'Kafka', 'PostgreSQL', 'Kubernetes'],
-    zoneLabel: 'Works US Pacific hours',
-    zoneHours: '9:00am – 6:00pm PST · full business day',
-    timezone: 'Pacific',
+    timezone: 'America/Los_Angeles',
     score: 93,
     dimensions: [
       { label: 'Technical depth', value: 9.5, tone: 'teal' },
@@ -111,9 +114,7 @@ export const DEMO_ENGINEERS: DemoEngineer[] = [
     location: 'Austin, TX',
     rate: 72,
     skills: ['Snowflake', 'Databricks', 'dbt', 'Python', 'AWS'],
-    zoneLabel: 'Works US Central hours',
-    zoneHours: '9:00am – 6:00pm CST · full business day',
-    timezone: 'Central',
+    timezone: 'America/Chicago',
     score: 91,
     dimensions: [
       { label: 'Technical depth', value: 9.4, tone: 'teal' },
@@ -141,9 +142,7 @@ export const DEMO_ENGINEERS: DemoEngineer[] = [
     location: 'Atlanta, GA',
     rate: 75,
     skills: ['ABAP', 'S/4HANA', 'Fiori', 'CDS Views', 'BTP'],
-    zoneLabel: 'Works US Eastern hours',
-    zoneHours: '9:00am – 6:00pm EST · full business day',
-    timezone: 'Eastern',
+    timezone: 'America/New_York',
     score: 90,
     dimensions: [
       { label: 'Technical depth', value: 9.3, tone: 'teal' },
@@ -171,9 +170,7 @@ export const DEMO_ENGINEERS: DemoEngineer[] = [
     location: 'Bengaluru, India',
     rate: 23,
     skills: ['PyTorch', 'RAG', 'MLOps', 'LangChain', 'Python'],
-    zoneLabel: 'Works US Eastern hours',
-    zoneHours: '9:00am – 6:00pm EST · full business day',
-    timezone: 'Eastern',
+    timezone: 'Asia/Kolkata',
     score: 89,
     dimensions: [
       { label: 'Technical depth', value: 9.1, tone: 'teal' },
@@ -200,9 +197,7 @@ export const DEMO_ENGINEERS: DemoEngineer[] = [
     location: 'Kochi, India',
     rate: 23,
     skills: ['React', 'TypeScript', 'Next.js', 'Design Systems', 'Accessibility'],
-    zoneLabel: 'Works US Pacific hours',
-    zoneHours: '9:00am – 6:00pm PST · full business day',
-    timezone: 'Pacific',
+    timezone: 'Asia/Singapore',
     score: 88,
     dimensions: [
       { label: 'Technical depth', value: 8.9, tone: 'teal' },
@@ -229,9 +224,7 @@ export const DEMO_ENGINEERS: DemoEngineer[] = [
     location: 'Chennai, India',
     rate: 23,
     skills: ['Playwright', 'Selenium', 'TypeScript', 'CI/CD', 'API Testing'],
-    zoneLabel: 'Works US Central hours',
-    zoneHours: '9:00am – 6:00pm CST · full business day',
-    timezone: 'Central',
+    timezone: 'Europe/London',
     score: 86,
     dimensions: [
       { label: 'Technical depth', value: 8.7, tone: 'gold' },
@@ -258,9 +251,7 @@ export const DEMO_ENGINEERS: DemoEngineer[] = [
     location: 'Dallas, TX',
     rate: 78,
     skills: ['AWS', 'Kubernetes', 'Terraform', 'Docker', 'CI/CD'],
-    zoneLabel: 'Works US Central hours',
-    zoneHours: '9:00am – 6:00pm CST · full business day',
-    timezone: 'Central',
+    timezone: 'Europe/Berlin',
     score: 92,
     dimensions: [
       { label: 'Technical depth', value: 9.3, tone: 'teal' },
@@ -288,9 +279,7 @@ export const DEMO_ENGINEERS: DemoEngineer[] = [
     location: 'Chicago, IL',
     rate: 70,
     skills: ['ITSM', 'ITOM', 'Flow Designer', 'Integration Hub', 'CMDB'],
-    zoneLabel: 'Works US Central hours',
-    zoneHours: '9:00am – 6:00pm CST · full business day',
-    timezone: 'Central',
+    timezone: 'America/ANY',
     score: 90,
     dimensions: [
       { label: 'Technical depth', value: 9.2, tone: 'teal' },
@@ -318,9 +307,7 @@ export const DEMO_ENGINEERS: DemoEngineer[] = [
     location: 'Hyderabad, India',
     rate: 23,
     skills: ['Apex', 'LWC', 'Flow', 'Service Cloud', 'Integration'],
-    zoneLabel: 'Works US Pacific hours',
-    zoneHours: '9:00am – 6:00pm PST · full business day',
-    timezone: 'Pacific',
+    timezone: 'Australia/Sydney',
     score: 89,
     dimensions: [
       { label: 'Technical depth', value: 9, tone: 'teal' },
@@ -347,9 +334,7 @@ export const DEMO_ENGINEERS: DemoEngineer[] = [
     location: 'Phoenix, AZ',
     rate: 74,
     skills: ['SIEM', 'IAM', 'Cloud Security', 'SOC 2', 'Pen Testing'],
-    zoneLabel: 'Works US Mountain hours',
-    zoneHours: '9:00am – 6:00pm MST · full business day',
-    timezone: 'Mountain',
+    timezone: 'UTC',
     score: 91,
     dimensions: [
       { label: 'Technical depth', value: 9.4, tone: 'teal' },

@@ -12,6 +12,7 @@ type MktSelectProps = {
   searchable?: boolean;
   searchPlaceholder?: string;
   className?: string;
+  id?: string;
   variant?: 'filter' | 'toolbar';
 };
 
@@ -42,6 +43,7 @@ export function MktSelect({
   searchable = false,
   searchPlaceholder = 'Search…',
   className,
+  id,
   variant = 'filter',
 }: MktSelectProps) {
   const [open, setOpen] = useState(false);
@@ -82,6 +84,7 @@ export function MktSelect({
     <div ref={containerRef} className={rootClass}>
       <button
         type="button"
+        id={id}
         className="mkt-select-trigger"
         onClick={() => setOpen((current) => !current)}
         aria-haspopup="listbox"

@@ -11,14 +11,14 @@ import { ActionMenu, type ActionMenuItem } from '../../components/super-admin/Ac
 import { useContactMessages } from '../../hooks/api/useAdmin';
 import { CONTACT_TOPIC_LABELS, CONTACT_TOPICS } from '../../lib/marketing-copy';
 import { useDebouncedSearch } from '../../hooks/useDebouncedSearch';
-import type { ContactTopicValue } from '../../lib/marketing-copy';
+import type { ContactMessageTopicValue } from '../../lib/marketing-copy';
 
 type Row = {
   id: number;
   referenceCode: string;
   fullName: string;
   email: string;
-  topic: ContactTopicValue;
+  topic: ContactMessageTopicValue;
   status: string;
   createdAt: string;
 };
@@ -55,7 +55,8 @@ export function SuperAdminContactMessagesPage({ embedded = false }: { embedded?:
       {
         accessorKey: 'topic',
         header: 'Topic',
-        cell: ({ getValue }) => CONTACT_TOPIC_LABELS[getValue() as ContactTopicValue] ?? getValue(),
+        cell: ({ getValue }) =>
+          CONTACT_TOPIC_LABELS[getValue() as ContactMessageTopicValue] ?? getValue(),
       },
       {
         accessorKey: 'status',

@@ -1,9 +1,7 @@
-import { Facebook, Instagram, Linkedin } from 'lucide-react';
-
 const SOCIAL_ICONS = [
-  { label: 'Facebook', Icon: Facebook },
-  { label: 'Instagram', Icon: Instagram },
-  { label: 'LinkedIn', Icon: Linkedin },
+  { label: 'LinkedIn', src: '/linkedin.png' },
+  { label: 'Facebook', src: '/facebook.png' },
+  { label: 'Instagram', src: '/instagram.png' },
 ] as const;
 
 type SocialMediaIconsProps = {
@@ -13,10 +11,8 @@ type SocialMediaIconsProps = {
 export function SocialMediaIcons({ className = 'mkt-ft-social' }: SocialMediaIconsProps) {
   return (
     <div className={className} aria-label="Social media">
-      {SOCIAL_ICONS.map(({ label, Icon }) => (
-        <span key={label} className="mkt-ft-social-icon" title={label} aria-hidden="true">
-          <Icon strokeWidth={1.75} />
-        </span>
+      {SOCIAL_ICONS.map(({ label, src }) => (
+        <img key={label} src={src} alt="" title={label} width={18} height={18} />
       ))}
     </div>
   );

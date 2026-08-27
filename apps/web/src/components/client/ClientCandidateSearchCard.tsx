@@ -165,10 +165,6 @@ export function ClientCandidateSearchCard({
               />
               {availabilityLabel}
             </p>
-            <p className="text-xs font-bold tabular-nums text-foreground fontsize">
-              {formatCurrency(record.hourlyRate, record.currency)}
-              <span className="text-[10px] font-normal text-muted-foreground">/hr</span>
-            </p>
           </div>
         </div>
 
@@ -177,21 +173,30 @@ export function ClientCandidateSearchCard({
             <h3 className="truncate text-sm font-semibold text-brand sm:text-base">{record.fullName}</h3>
 
             {record.headline ? (
-              <p className="line-clamp-2 text-xs leading-relaxed text-muted-foreground sm:text-[13px]">
+              <p className="truncate text-xs text-muted-foreground sm:text-[13px]">
                 {record.headline}
               </p>
             ) : null}
 
-            {primarySkill ? (
-              <div>
-                <p className="text-[9px] font-medium uppercase tracking-wide text-muted-foreground">
-                  Expertise
-                </p>
-                <span className="mt-0.5 inline-flex rounded-md bg-amber-50 px-1.5 py-0.5 text-[10px] font-medium text-amber-900 ring-1 ring-amber-200/80 sm:text-[11px]">
-                  {primarySkill}
-                </span>
-              </div>
-            ) : null}
+            <div className="flex items-end justify-between gap-3">
+              {primarySkill ? (
+                <div className="min-w-0 flex-1">
+                  <p className="text-[9px] font-medium uppercase tracking-wide text-muted-foreground">
+                    Expertise
+                  </p>
+                  <span className="mt-0.5 inline-flex rounded-md bg-amber-50 px-1.5 py-0.5 text-[10px] font-medium text-amber-900 ring-1 ring-amber-200/80 sm:text-[11px]">
+                    {primarySkill}
+                  </span>
+                </div>
+              ) : (
+                <div className="min-w-0 flex-1" />
+              )}
+
+              <p className="shrink-0 self-end text-right text-[14px] font-bold tabular-nums text-foreground sm:text-[16px]">
+                {formatCurrency(record.hourlyRate, record.currency)}
+                <span className="text-[10px] font-normal text-muted-foreground">/hr</span>
+              </p>
+            </div>
 
             {record.yearsExperience != null && record.yearsExperience > 0 ? (
               <p className="text-xs text-muted-foreground">

@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { CONTACT_TOPICS, type ContactTopicValue } from '../../lib/marketing-copy';
 import { contactMessagesApi } from '../../lib/api/contact-messages';
 import { ApiError } from '../../lib/api/types';
+import { MktSelect } from './MktSelect';
 
 type FormState = {
   fullName: string;
@@ -96,20 +97,18 @@ export function ContactUsForm() {
 
       <div className="mkt-contact-field">
         <label htmlFor="contact-topic">What is this about</label>
-        <select
+        <MktSelect
           id="contact-topic"
-          name="topic"
+          className="mkt-select--contact"
           value={form.topic}
-          onChange={(e) =>
-            setForm((prev) => ({ ...prev, topic: e.target.value as ContactTopicValue }))
+          onChange={(value) =>
+            setForm((prev) => ({ ...prev, topic: value as ContactTopicValue }))
           }
-        >
-          {CONTACT_TOPICS.map((topic) => (
-            <option key={topic.value} value={topic.value}>
-              {topic.label}
-            </option>
-          ))}
-        </select>
+          options={CONTACT_TOPICS.map((topic) => ({
+            value: topic.value,
+            label: topic.label,
+          }))}
+        />
       </div>
 
       <div className="mkt-contact-field">

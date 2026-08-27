@@ -25,6 +25,7 @@ import {
   TIMEZONES,
 } from '../../lib/demo-engineers';
 import { PAGE_SEO } from '../../lib/marketing-seo';
+import { engineerTimezoneRegion } from '../../lib/marketing-timezone';
 
 type Discipline = (typeof DISCIPLINES)[number];
 type ListingView = 'browse' | 'shortlist' | 'compare';
@@ -135,7 +136,9 @@ function SampleTalentListingPage({ initialDiscipline }: SampleTalentListingPageP
     const hay = `${engineer.name} ${engineer.role} ${engineer.skills.join(' ')}`.toLowerCase();
     if (q && !hay.includes(q)) return false;
     if (discipline !== 'All Disciplines' && engineer.discipline !== discipline) return false;
-    if (timezone !== 'All Timezones' && engineer.timezone !== timezone) return false;
+    if (timezone !== 'All Timezones' && engineerTimezoneRegion(engineer.timezone) !== timezone) {
+      return false;
+    }
     if (start === 'Available now' && engineer.availabilityWeeks !== 0) return false;
     if (start === 'Within 2 weeks' && engineer.availabilityWeeks > 2) return false;
     if (start === 'Within 4 weeks' && engineer.availabilityWeeks > 4) return false;

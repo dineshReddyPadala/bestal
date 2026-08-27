@@ -419,28 +419,35 @@ export const CONTACT_REASONS = [
 export const CONTACT_TOPICS = [
   { value: 'GENERAL', label: 'General Queries' },
   { value: 'SALES', label: 'Sales Inquiries' },
-  { value: 'SUPPORT', label: 'Customer Support' },
-  { value: 'PRESS', label: 'Press' },
-  { value: 'PARTNERSHIPS', label: 'Partnerships' },
-  { value: 'INVESTORS', label: 'Investors' },
+  { value: 'SUPPORT', label: 'Client Support' },
+  // { value: 'PRESS', label: 'Press' },
+  // { value: 'PARTNERSHIPS', label: 'Partnerships' },
+  // { value: 'INVESTORS', label: 'Investors' },
 ] as const;
 
 export type ContactTopicValue = (typeof CONTACT_TOPICS)[number]['value'];
+
+/** All topics stored by the API (includes legacy form options). */
+export type ContactMessageTopicValue =
+  | ContactTopicValue
+  | 'PRESS'
+  | 'PARTNERSHIPS'
+  | 'INVESTORS';
 
 export const CONTACT_DIRECT_LINES = [
   {
     num: '01',
     title: 'Sales Inquiries',
     href: 'mailto:sales@bestal.co',
-    display: 'sales@bestal.co',
+    display: 'connect@bestal.co',
     description: 'Talk to someone about building a team.',
   },
   {
     num: '02',
-    title: 'Customer Support',
-    href: 'mailto:support@bestal.co',
-    display: 'support@bestal.co',
-    description: 'Account, billing, and platform help.',
+    title: 'Careers',
+    href: 'mailto:careers@bestal.co',
+    display: 'careers@bestal.co',
+    description: 'Explore opportunities and join our team.',
   },
 ] as const;
 
@@ -456,10 +463,10 @@ export const CONTACT_ADDRESSES = [
   },
 ] as const;
 
-export const CONTACT_TOPIC_LABELS: Record<ContactTopicValue, string> = {
+export const CONTACT_TOPIC_LABELS: Record<ContactMessageTopicValue, string> = {
   GENERAL: 'General Queries',
   SALES: 'Sales Inquiries',
-  SUPPORT: 'Customer Support',
+  SUPPORT: 'Client Support',
   PRESS: 'Press',
   PARTNERSHIPS: 'Partnerships',
   INVESTORS: 'Investors',
