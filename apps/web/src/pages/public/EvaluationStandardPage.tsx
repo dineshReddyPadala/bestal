@@ -117,8 +117,8 @@ function useScrollCounter(active: boolean, from = 5, to = 10, durationMs = 900) 
 function useStaggeredReveal(
   active: boolean,
   count: number,
-  intervalMs = 450,
-  pauseMs = 800,
+  intervalMs = 1000,
+  pauseMs = 1800,
 ) {
   const [revealed, setRevealed] = useState(0);
 
@@ -300,11 +300,10 @@ export function EvaluationStandardPage() {
   const validation = useInView<HTMLElement>(0.4);
   const prevettedStepper = useInView<HTMLDivElement>(0.08, true);
   const trialValue = useScrollCounter(validation.inView, 5, freeTrialHours, 900);
-  const processFilled = useStaggeredReveal(true, ASSESS_PROCESS_STEPS.length, 450);
+  const processFilled = useStaggeredReveal(true, ASSESS_PROCESS_STEPS.length);
   const prevettedFilled = useStaggeredReveal(
     prevettedStepper.inView,
     ASSESS_PREVETTED.steps.length,
-    450,
   );
 
   const selectedDimension =

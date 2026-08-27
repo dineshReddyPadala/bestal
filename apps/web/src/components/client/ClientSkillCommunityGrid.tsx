@@ -1,4 +1,5 @@
 import { ArrowRight } from 'lucide-react';
+import type { ReactNode } from 'react';
 import { SkillCommunityIcon } from '../marketing/SkillCommunityIcon';
 import type { SkillCommunityListItem } from '../../lib/api/types';
 
@@ -11,7 +12,7 @@ export function ClientSkillCommunityCard({ community, onSelect }: ClientSkillCom
   return (
     <button
       type="button"
-      className="group flex h-full w-full flex-col rounded-xl border border-border/80 bg-card p-5 text-left shadow-sm transition hover:border-brand/30 hover:shadow-md"
+      className="shell-no-press-bg group flex h-full w-full flex-col rounded-xl border border-border/80 bg-card p-5 text-left shadow-sm transition hover:border-brand/30 hover:shadow-md active:bg-card active:text-foreground"
       onClick={() => onSelect(community)}
     >
       <div className="flex items-start gap-3">
@@ -41,24 +42,41 @@ export function ClientSkillCommunityGrid({
   communities,
   isLoading,
   onSelect,
+  searchSlot,
+  emptyMessage = 'No skill communities are available yet.',
 }: {
   communities: SkillCommunityListItem[];
   isLoading: boolean;
   onSelect: (community: SkillCommunityListItem) => void;
+  searchSlot?: ReactNode;
+  emptyMessage?: string;
 }) {
   if (isLoading) {
-    return <p className="text-sm text-muted-foreground">Loading skill communities…</p>;
+    return (
+      <div className="space-y-4">
+        {searchSlot}
+        <p className="text-sm text-muted-foreground">Loading skill communities…</p>
+      </div>
+    );
   }
 
   if (communities.length === 0) {
-    return <p className="text-sm text-muted-foreground">No skill communities are available yet.</p>;
+    return (
+      <div className="space-y-4">
+        {searchSlot}
+        <p className="text-sm text-muted-foreground">{emptyMessage}</p>
+      </div>
+    );
   }
 
   return (
-    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-      {communities.map((community) => (
-        <ClientSkillCommunityCard key={community.id} community={community} onSelect={onSelect} />
-      ))}
+    <div className="space-y-4">
+      {searchSlot}
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+        {communities.map((community) => (
+          <ClientSkillCommunityCard key={community.id} community={community} onSelect={onSelect} />
+        ))}
+      </div>
     </div>
   );
 }

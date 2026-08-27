@@ -127,9 +127,9 @@ export function ClientManagementView({
   const { searchInput, setSearchInput, search } = useDebouncedSearch();
   const mutations = useClientMutations();
 
-  const { data: accountManagersData } = useQuery({
+  const { data: accountManagersResponse } = useQuery({
     queryKey: [...queryKeys.clients.all, 'account-managers'] as const,
-    queryFn: async () => (await clientsApi.listAccountManagers()).data,
+    queryFn: () => clientsApi.listAccountManagers(),
   });
 
   const { data: editingClient } = useQuery({
@@ -183,10 +183,10 @@ export function ClientManagementView({
     return [...set].sort();
   }, [data]);
 
-  const accountManagerOptions = useMemo(
-    () => accountManagersData ?? [],
-    [accountManagersData],
-  );
+  const accountManagerOptions = useMemo(() => {
+    const managers = accountManagersResponse?.data;
+    return Array.isArray(managers) ? managers : [];
+  }, [accountManagersResponse]);
 
   const handleAction = useCallback(
     (record: ClientListItem, action: ClientAction) => {
@@ -389,7 +389,7 @@ export function ClientManagementView({
                 value={filters.status}
                 onChange={(v) => setFilters((prev) => ({ ...prev, status: v }))}
                 options={[
-                  { value: 'all', label: 'All statuses' },
+                  { value: 'all', label: 'All status' },
                   { value: 'PROSPECT', label: 'Prospect' },
                   { value: 'ACTIVE', label: 'Active' },
                   { value: 'INACTIVE', label: 'Inactive' },

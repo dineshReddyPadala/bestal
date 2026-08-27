@@ -771,7 +771,7 @@ export function BackgroundVerificationManagementView({
                 value={filters.status}
                 onChange={(v) => setFilters((prev) => ({ ...prev, status: v }))}
                 options={[
-                  { value: 'all', label: 'All statuses' },
+                  { value: 'all', label: 'All status' },
                   ...statusOptions.map((s) => ({ value: s, label: s.replace(/_/g, ' ') })),
                 ]}
               />

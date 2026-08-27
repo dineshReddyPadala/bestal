@@ -1,7 +1,11 @@
-import bestalLogo from '../asserts/New logo.png';
+/** BesTal wordmark — light theme SVG in public/ */
+export const BESTAL_LOGO_SRC = '/Light%20Theme%20Website%20logo.svg';
 
-/** BesTal full wordmark with tagline — marketing landing and portal shells */
-export const BESTAL_LOGO_SRC = bestalLogo;
+/** Browser tab icon — light theme SVG in public/ */
+export const BESTAL_FAVICON_SRC = '/Light%20Fav%20Icon.svg';
+
+/** Browser tab icon — dark theme SVG in public/ */
+export const BESTAL_FAVICON_DARK_SRC = '/Dark%20Fav%20Icon.svg';
 
 /** Client login split-layout hero */
 export const CLIENT_LOGIN_HERO_IMAGE_SRC = '/login_updated_img.png';

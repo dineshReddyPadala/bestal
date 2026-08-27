@@ -284,7 +284,7 @@ export function ClientCandidateSearchCard({
           type="button"
           variant="outline"
           size="sm"
-          className="h-9 flex-1 gap-1.5 border-brand/25 text-xs transition-colors hover:border-brand hover:bg-brand hover:text-white sm:h-10 sm:text-sm"
+          className="shell-no-press-bg h-9 flex-1 gap-1.5 border-transparent text-xs shadow-none transition-colors hover:border-transparent hover:bg-background hover:shadow-none hover:ring-0 active:border-transparent active:bg-background active:text-foreground active:ring-0 sm:h-10 sm:text-sm"
           onClick={(event) => {
             event.stopPropagation();
             onView();

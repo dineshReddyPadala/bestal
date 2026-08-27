@@ -30,7 +30,7 @@ export function ContactPage() {
               <ContactUsForm />
             </div>
 
-            <div className="mkt-contact-aside-stack">
+            <div className="mkt-contact-info-stack">
               <aside className="mkt-contact-card mkt-contact-card-aside">
                 <p className="mkt-contact-aside-label">Direct contact</p>
                 <ol className="mkt-contact-direct-list">
@@ -49,33 +49,33 @@ export function ContactPage() {
                 </ol>
               </aside>
 
-              <div className="mkt-contact-card mkt-contact-card-social">
-                <SocialMediaIcons />
+              <div className="mkt-contact-card mkt-contact-card-address">
+                <p className="mkt-contact-aside-label">Address</p>
+                <div className="mkt-contact-address-grid">
+                  {CONTACT_ADDRESSES.map((address) => (
+                    <div key={address.label} className="mkt-contact-address-block">
+                      <p className="mkt-contact-address-label">{address.label}</p>
+                      {address.lines.map((line) => (
+                        <p key={line} className="mkt-contact-address-line">
+                          {line}
+                        </p>
+                      ))}
+                      {'phone' in address && address.phone ? (
+                        <p className="mkt-contact-address-phone">
+                          Ph:{' '}
+                          <a href={address.phone.href} className="mkt-contact-link">
+                            {address.phone.display}
+                          </a>
+                        </p>
+                      ) : null}
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
-          </div>
 
-          <div className="mkt-contact-card mkt-contact-card-address">
-            <p className="mkt-contact-aside-label">Address</p>
-            <div className="mkt-contact-address-grid">
-              {CONTACT_ADDRESSES.map((address) => (
-                <div key={address.label} className="mkt-contact-address-block">
-                  <p className="mkt-contact-address-label">{address.label}</p>
-                  {address.lines.map((line) => (
-                    <p key={line} className="mkt-contact-address-line">
-                      {line}
-                    </p>
-                  ))}
-                  {'phone' in address && address.phone ? (
-                    <p className="mkt-contact-address-phone">
-                      Ph:{' '}
-                      <a href={address.phone.href} className="mkt-contact-link">
-                        {address.phone.display}
-                      </a>
-                    </p>
-                  ) : null}
-                </div>
-              ))}
+            <div className="mkt-contact-card mkt-contact-card-social">
+              <SocialMediaIcons />
             </div>
           </div>
         </MktShell>

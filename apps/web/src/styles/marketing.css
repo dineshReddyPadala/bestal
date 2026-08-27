@@ -23,7 +23,7 @@
   --mkt-ok-t: #def3e9;
   --mkt-font: Inter, system-ui, sans-serif;
   --mkt-display: 'Plus Jakarta Sans', Inter, system-ui, sans-serif;
-  --mkt-hero-card-width: 420px;
+  --mkt-hero-card-width: 460px;
   --mkt-hero-card-height: 480px;
 
   background: var(--mkt-bg);
@@ -1171,12 +1171,60 @@
 @media (min-width: 960px) {
   .marketing-site .mkt-contact-grid {
     grid-template-columns: minmax(0, 1.65fr) minmax(280px, 1fr);
-    align-items: start;
+    grid-template-areas:
+      'form info'
+      '. social';
+    align-items: stretch;
     gap: 1.5rem;
+    row-gap: 1.25rem;
+  }
+
+  .marketing-site .mkt-contact-card-form {
+    grid-area: form;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+  }
+
+  .marketing-site .mkt-contact-info-stack {
+    grid-area: info;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    height: 100%;
+    min-height: 0;
+  }
+
+  .marketing-site .mkt-contact-info-stack .mkt-contact-card-address {
+    flex: 1;
+    min-height: 0;
+  }
+
+  .marketing-site .mkt-contact-card-social {
+    grid-area: social;
+  }
+
+  .marketing-site .mkt-contact-form,
+  .marketing-site .mkt-contact-form-success {
+    flex: 1;
+    min-height: 0;
+  }
+
+  .marketing-site .mkt-contact-form .mkt-contact-field:has(textarea) {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .marketing-site .mkt-contact-form .mkt-contact-field textarea {
+    flex: 1;
+    min-height: 148px;
   }
 }
 
-.marketing-site .mkt-contact-aside-stack {
+.marketing-site .mkt-contact-info-stack {
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
@@ -1184,6 +1232,10 @@
 
 .marketing-site .mkt-contact-card-social {
   padding: 1.5rem 2rem;
+}
+
+.marketing-site .mkt-contact-card-social .mkt-ft-social-wrap {
+  margin-top: 0;
 }
 
 .marketing-site .mkt-contact-card-social .mkt-ft-social {
@@ -1368,6 +1420,12 @@
 @media (min-width: 640px) {
   .marketing-site .mkt-contact-address-grid {
     grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (min-width: 960px) {
+  .marketing-site .mkt-contact-info-stack .mkt-contact-address-grid {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -1748,7 +1806,7 @@
 @media (min-width: 1024px) {
   .marketing-site .mkt-eng-filters {
     position: sticky;
-    top: 56px;
+    top: 64px;
   }
 }
 
@@ -3344,8 +3402,8 @@
 
 .marketing-site .mkt-lpc-grid {
   display: grid;
-  grid-template-columns: 7.5rem minmax(0, 1fr);
-  gap: 1.125rem 1.25rem;
+  grid-template-columns: 6.5rem minmax(0, 1fr);
+  gap: 1.125rem 1rem;
   align-items: start;
   overflow: hidden;
 }
@@ -3456,6 +3514,8 @@
   font-weight: 700;
   line-height: 1.25;
   color: var(--mkt-ink);
+  overflow-wrap: normal;
+  word-break: normal;
 }
 
 .marketing-site .mkt-lpc-tz-detail {
@@ -3489,9 +3549,9 @@
 .marketing-site .mkt-lpc-avail-t {
   min-width: 0;
   flex: 1;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  line-height: 1.25;
+  overflow-wrap: normal;
+  word-break: normal;
 }
 
 .marketing-site .mkt-lpc-avail::before {
@@ -3532,8 +3592,8 @@
 .marketing-site .mkt-lpc-right {
   min-width: 0;
   max-width: 100%;
-  padding-right: 4.5rem;
-  overflow: hidden;
+  padding-right: 4rem;
+  overflow: visible;
 }
 
 .marketing-site .mkt-lpc-name {
@@ -3551,7 +3611,7 @@
 
 .marketing-site .mkt-lpc-role {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 0.4375rem;
   margin-top: 0.375rem;
   min-height: 1.35em;
@@ -3566,8 +3626,13 @@
   flex: 1;
   min-width: 0;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  white-space: normal;
+  overflow-wrap: normal;
+  word-break: normal;
 }
 
 .marketing-site .mkt-lpc-role svg {
@@ -3578,7 +3643,7 @@
 
 .marketing-site .mkt-lpc-expertise {
   margin-top: 0.875rem;
-  min-height: 3.125rem;
+  min-height: 0;
 }
 
 .marketing-site .mkt-lpc-expertise.is-empty {
@@ -3593,22 +3658,25 @@
 
 .marketing-site .mkt-lpc-tags {
   display: flex;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
+  align-items: flex-start;
   gap: 0.375rem;
-  max-height: 1.5rem;
-  overflow: hidden;
 }
 
 .marketing-site .mkt-lpc-tag {
   display: inline-flex;
   align-items: center;
-  padding: 0.3125rem 0.6875rem;
+  flex: 0 0 auto;
+  width: max-content;
+  max-width: 100%;
+  padding: 0.25rem 0.5625rem;
   border-radius: 999px;
   background: var(--mkt-amber-t);
   color: var(--mkt-amber-d);
-  font-size: 0.75rem;
+  font-size: 0.6875rem;
   font-weight: 600;
   line-height: 1.2;
+  white-space: nowrap;
 }
 
 .marketing-site .mkt-lpc-exp-slot {
@@ -4250,11 +4318,16 @@
   flex-shrink: 0;
 }
 
-.marketing-site .mkt-hdr .bestal-brand-image,
+.marketing-site .mkt-hdr .bestal-brand-image {
+  height: 3.5rem !important;
+  width: auto;
+  max-width: min(100%, 14rem);
+}
+
 .marketing-site .mkt-footer .bestal-brand-image {
   height: 3.25rem;
   width: auto;
-  max-width: 12.5rem;
+  max-width: min(100%, 14rem);
 }
 
 .marketing-site .bestal-brand-check {
@@ -4290,7 +4363,7 @@
 }
 
 .marketing-site .mkt-header-light {
-  background: var(--mkt-bg);
+  background: #fff;
   border-bottom: 1px solid var(--mkt-line);
 }
 
@@ -4312,7 +4385,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 3.5rem;
+  height: 64px;
 }
 
 .marketing-site .mkt-nav {
@@ -4339,7 +4412,7 @@
 }
 
 .marketing-site .mkt-header-light .mkt-nav a:hover {
-  color: var(--mkt-ink);
+  color: #0b5c63;
 }
 
 .marketing-site .mkt-header-light .mkt-nav a.is-active {
@@ -4483,17 +4556,29 @@
   color: var(--mkt-teal);
 }
 
+.marketing-site .mkt-ft-social-wrap {
+  margin-top: 1.25rem;
+}
+
+.marketing-site .mkt-ft-social-label {
+  margin: 0 0 0.625rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--mkt-ink);
+  line-height: 1.3;
+}
+
 .marketing-site .mkt-ft-social {
   display: flex;
   align-items: center;
   gap: 0.875rem;
-  margin-top: 1.25rem;
+  margin-top: 0;
 }
 
 .marketing-site .mkt-ft-social img {
   display: block;
-  width: 1.125rem;
-  height: 1.125rem;
+  width: 1.5rem;
+  height: 1.5rem;
   pointer-events: none;
 }
 
@@ -4516,7 +4601,7 @@
   .marketing-site .mkt-nav.open {
     display: flex;
     position: absolute;
-    top: 3.5rem;
+    top: 64px;
     left: 0;
     right: 0;
     z-index: 50;
@@ -4527,7 +4612,7 @@
   }
 
   .marketing-site .mkt-header-light .mkt-nav.open {
-    background: var(--mkt-bg);
+    background: #fff;
     border-bottom: 1px solid var(--mkt-line);
     box-shadow: 0 12px 24px rgba(18, 16, 14, 0.08);
   }
@@ -4767,11 +4852,11 @@
   }
 
   .marketing-site .mkt-hdr {
-    height: 3.5rem;
+    height: 64px;
   }
 
   .marketing-site .mkt-nav.open {
-    top: 3.5rem;
+    top: 64px;
   }
 
   .marketing-site .mkt-stat-v {
@@ -5780,7 +5865,7 @@
   .marketing-site.mkt-login-layout .mkt-login-page {
     flex: none;
     grid-template-columns: 1fr;
-    grid-template-rows: auto 1fr;
+    grid-template-rows: 1fr;
     overflow: visible;
     min-height: auto;
     height: auto;
@@ -5791,27 +5876,11 @@
   }
 
   .marketing-site .mkt-login-hero {
-    display: block;
-    order: 1;
-    min-height: 280px;
-    max-height: 360px;
-  }
-
-  .marketing-site .mkt-login-hero-card {
-    left: 40px;
-    right: 40px;
-    bottom: 40px;
-    transform: none;
-    padding: 1rem 1.125rem;
-  }
-
-  .marketing-site .mkt-login-hero-copy {
-    font-size: 1rem;
-    line-height: 1.5;
+    display: none;
   }
 
   .marketing-site .mkt-login-panel {
-    order: 2;
+    order: 1;
     min-height: auto;
     padding: 1.5rem 15px 2.5rem;
   }
@@ -6017,6 +6086,17 @@
   display: flex;
   justify-content: center;
   margin-bottom: 1.75rem;
+}
+
+.marketing-site .mkt-login-brand .bestal-brand {
+  justify-content: center;
+}
+
+.marketing-site .mkt-login-brand .bestal-brand-image {
+  height: 3.8rem !important;
+  width: auto;
+  max-width: 22.25rem;
+  object-position: center;
 }
 
 .marketing-site .mkt-login-brand-link {
@@ -6421,15 +6501,14 @@
 
 @media (max-width: 1023px) {
   .marketing-site.mkt-split-login-site .mkt-login-page--scroll-panel {
-    grid-template-rows: auto minmax(0, 1fr);
+    grid-template-rows: 1fr;
     height: 100svh;
     max-height: 100svh;
     overflow: hidden;
   }
 
   .marketing-site .mkt-login-page--scroll-panel .mkt-login-hero {
-    max-height: 240px;
-    min-height: 0;
+    display: none;
   }
 
   .marketing-site .mkt-login-page--scroll-panel .mkt-login-panel {
@@ -10665,7 +10744,7 @@
   border-color: #0b5a4b;
   background: #0b5a4b;
   color: #fff;
-  animation: mkt-assess-step-pop 0.28s ease;
+  animation: mkt-assess-step-pop 0.45s ease;
 }
 
 .marketing-site .mkt-assess-stepper--timeline .mkt-assess-step-check {
@@ -10747,7 +10826,7 @@
   background: #0b5a4b;
   border-color: #0b5a4b;
   color: #fff;
-  animation: mkt-assess-step-pop 0.28s ease;
+  animation: mkt-assess-step-pop 0.45s ease;
 }
 
 @keyframes mkt-assess-step-pop {
@@ -11087,8 +11166,11 @@
 .marketing-site .mkt-assess-prevetted-hd {
   display: grid;
   gap: 1rem;
-  margin-bottom: 2rem;
+  margin-bottom: 3rem;
   max-width: 52rem;
+}
+.mkt-assess-prevetted-stepper-wrap{
+  margin-bottom: 3rem;
 }
 
 .marketing-site .mkt-assess-prevetted-hd h2 {

@@ -27,7 +27,12 @@ export function PageHeader({
             <span className="hidden h-4 w-px bg-border sm:block" aria-hidden />
           </>
         ) : null}
-        <h1 className="truncate text-lg font-semibold tracking-tight text-foreground sm:text-xl">
+        <h1
+          className={cn(
+            'truncate font-semibold tracking-tight text-foreground',
+            breadcrumbs ? 'text-base' : 'text-lg sm:text-xl',
+          )}
+        >
           {title}
         </h1>
       </div>

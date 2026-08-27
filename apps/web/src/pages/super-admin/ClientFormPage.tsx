@@ -27,12 +27,12 @@ export function SuperAdminClientFormPage() {
   const { show, showError } = useDemoToast();
   const { requestConfirm, confirmDialog } = useConfirmAction();
   const { data, isLoading } = useAdminClient(clientId);
-  const { data: managersData } = useQuery({
+  const { data: managersResponse } = useQuery({
     queryKey: ['clients', 'account-managers'],
-    queryFn: async () => (await clientsApi.listAccountManagers()).data,
+    queryFn: () => clientsApi.listAccountManagers(),
   });
   const mutations = useAdminMutations();
-  const managers = managersData ?? [];
+  const managers = Array.isArray(managersResponse?.data) ? managersResponse.data : [];
 
   const [form, setForm] = useState({
     companyName: '',

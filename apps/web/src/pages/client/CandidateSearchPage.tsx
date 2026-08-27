@@ -2,7 +2,7 @@ import { mapApiCandidateToClientSearchRecord } from '../../lib/client-search-api
 import { useCandidatesList } from '../../hooks/api/useCandidates';
 import { usePublicSkillCommunitiesList } from '../../hooks/api/useSkillCommunities';
 import { cn } from '@bestal/shared-utils';
-import { Button, EmptyState, useDashboardHeaderLeading } from '@bestal/ui';
+import { Button, EmptyState, SearchInput, useDashboardHeaderLeading } from '@bestal/ui';
 import { Home, Users } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -78,6 +78,7 @@ export function CandidateSearchPage() {
     DEFAULT_CLIENT_SEARCH_SORT,
   );
   const [viewMode, setViewMode] = useState<ClientSearchViewMode>(() => readStoredViewMode());
+  const [communityQuery, setCommunityQuery] = useState('');
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [trialDialog, setTrialDialog] = useState<{
     ids: number[];
@@ -109,6 +110,20 @@ export function CandidateSearchPage() {
     const rows = filterClientSearchRecords(allRecords, filters);
     return sortClientSearchRecords(rows, sort);
   }, [allRecords, filters, sort]);
+
+  const browseCommunities = useMemo(() => {
+    const sorted = [...communities].sort((a, b) =>
+      a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }),
+    );
+    const query = communityQuery.trim().toLowerCase();
+    if (!query) return sorted;
+
+    return sorted.filter(
+      (community) =>
+        community.name.toLowerCase().includes(query) ||
+        (community.description?.toLowerCase().includes(query) ?? false),
+    );
+  }, [communities, communityQuery]);
 
   const selectCommunity = useCallback(
     (communityId: number | null, options?: { clearEntryParams?: boolean }) => {
@@ -312,9 +327,23 @@ export function CandidateSearchPage() {
 
         {!showCandidateList ? (
           <ClientSkillCommunityGrid
-            communities={communities}
+            communities={browseCommunities}
             isLoading={communitiesLoading}
             onSelect={(community) => selectCommunity(community.id)}
+            searchSlot={
+              <SearchInput
+                placeholder="Search skill communities…"
+                value={communityQuery}
+                onChange={(event) => setCommunityQuery(event.target.value)}
+                onClear={() => setCommunityQuery('')}
+                className="max-w-xl"
+              />
+            }
+            emptyMessage={
+              communityQuery.trim()
+                ? 'No skill communities match your search.'
+                : 'No skill communities are available yet.'
+            }
           />
         ) : isLoading ? (
           <p className="text-sm text-muted-foreground">Loading talent pool…</p>

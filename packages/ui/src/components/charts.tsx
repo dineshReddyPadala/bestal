@@ -17,6 +17,13 @@ import {
 
 const CHART_COLORS = ['#204ecf', '#3b6ff5', '#6b93f7', '#9bb5fa', '#c5d7fc', '#0f2d7a'];
 
+function formatChartCurrencyAxis(value: number): string {
+  const abs = Math.abs(value);
+  if (abs >= 1_000_000) return `$${(value / 1_000_000).toFixed(1)}M`;
+  if (abs >= 1_000) return `$${(value / 1_000).toFixed(abs >= 10_000 ? 0 : 1)}K`;
+  return formatCurrency(value);
+}
+
 export type ChartSeries = {
   label: string;
   value: number;
@@ -62,7 +69,7 @@ export function RevenueAreaChart({ data }: { data: readonly ChartSeries[] }) {
 
   return (
     <ResponsiveContainer width="100%" height={280}>
-      <AreaChart data={chartData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+      <AreaChart data={chartData} margin={{ top: 8, right: 8, left: 4, bottom: 0 }}>
         <defs>
           <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
             <stop offset="5%" stopColor="#204ecf" stopOpacity={0.25} />
@@ -75,7 +82,8 @@ export function RevenueAreaChart({ data }: { data: readonly ChartSeries[] }) {
           tick={{ fontSize: 12 }}
           tickLine={false}
           axisLine={false}
-          tickFormatter={(v) => `$${(v / 1_000_000).toFixed(1)}M`}
+          width={56}
+          tickFormatter={formatChartCurrencyAxis}
         />
         <Tooltip content={<ChartTooltip valueFormatter={(v) => formatCurrency(v)} />} />
         <Legend />
