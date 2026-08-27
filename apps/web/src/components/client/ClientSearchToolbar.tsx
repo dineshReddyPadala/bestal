@@ -92,8 +92,8 @@ export function ClientSearchToolbar({
 
   return (
     <div className={cn('space-y-3', className)}>
-      <div className="flex flex-wrap items-center gap-2 lg:flex-nowrap">
-        <div className="grid min-w-0 flex-1 grid-cols-2 items-center gap-2 sm:grid-cols-3 lg:grid-cols-[repeat(4,minmax(0,1fr))_minmax(10rem,1fr)]">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:gap-2">
+        <div className="grid w-full min-w-0 flex-1 grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-[repeat(4,minmax(0,1fr))_minmax(10rem,1fr)]">
           {onCommunityChange ? (
             <FilterSelect
               value={selectedCommunityId != null ? String(selectedCommunityId) : ''}
@@ -144,7 +144,7 @@ export function ClientSearchToolbar({
               })),
             ]}
           />
-          <label className="col-span-2 flex h-9 items-center gap-2 rounded-lg border border-border/80 bg-background px-3 text-sm shadow-sm sm:col-span-1 lg:col-span-1">
+          <label className="col-span-1 flex h-9 items-center gap-2 rounded-lg border border-border/80 bg-background px-3 text-sm shadow-sm sm:col-span-2 lg:col-span-1">
             <span className="shrink-0 text-muted-foreground">Score</span>
             <input
               type="range"
@@ -161,8 +161,8 @@ export function ClientSearchToolbar({
           </label>
         </div>
 
-        <div className="flex shrink-0 items-center gap-3">
-          <span className="whitespace-nowrap text-sm text-muted-foreground">
+        <div className="flex w-full items-center justify-between gap-3 border-t border-border/60 pt-3 lg:w-auto lg:shrink-0 lg:border-t-0 lg:pt-0">
+          <span className="text-sm text-muted-foreground">
             {countActiveFilters(filters) > 0 ? (
               <>
                 <span className="font-semibold text-foreground">{resultCount}</span> Candidates
@@ -200,30 +200,31 @@ export function ClientSearchToolbar({
         </div>
       ) : null}
 
-      <div className="flex flex-nowrap items-center gap-2">
+      <div className="flex flex-col gap-2 sm:flex-row sm:flex-nowrap sm:items-center">
         <SearchInput
           placeholder="Name, role, skill or any other"
           value={filters.query}
           onChange={(event) => set({ query: event.target.value })}
           onClear={() => set({ query: '' })}
-          className="min-w-0 flex-1"
+          className="min-w-0 w-full sm:flex-1"
         />
-        <FilterSelect
-          value={sort}
-          onChange={(value) =>
-            onSortChange(value as Exclude<ClientSearchSort, 'best-match'>)
-          }
-          className="w-[9.5rem] shrink-0"
-          options={CLIENT_SEARCH_SORT_OPTIONS.map((option) => ({
-            value: option.value,
-            label: option.label,
-          }))}
-        />
-        <div
-          className="flex shrink-0 overflow-hidden rounded-lg border border-border/80"
-          role="group"
-          aria-label="View mode"
-        >
+        <div className="flex min-w-0 items-center gap-2">
+          <FilterSelect
+            value={sort}
+            onChange={(value) =>
+              onSortChange(value as Exclude<ClientSearchSort, 'best-match'>)
+            }
+            className="min-w-0 flex-1 sm:w-[9.5rem] sm:flex-none"
+            options={CLIENT_SEARCH_SORT_OPTIONS.map((option) => ({
+              value: option.value,
+              label: option.label,
+            }))}
+          />
+          <div
+            className="flex shrink-0 overflow-hidden rounded-lg border border-border/80"
+            role="group"
+            aria-label="View mode"
+          >
           <button
             type="button"
             className={cn(
@@ -252,6 +253,7 @@ export function ClientSearchToolbar({
           >
             <List className="h-4 w-4" />
           </button>
+        </div>
         </div>
       </div>
     </div>
