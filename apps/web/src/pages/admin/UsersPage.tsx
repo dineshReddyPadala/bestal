@@ -156,7 +156,7 @@ export function UsersPage() {
           key={search}
           columns={columns}
           data={data?.data ?? []}
-          searchPlaceholder="Search users…"
+          searchPlaceholder="Search by email…"
           searchValue={searchInput}
           onSearchChange={setSearchInput}
           serverSideSearch

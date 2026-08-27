@@ -1,7 +1,7 @@
 import { cn } from '@bestal/shared-utils';
 import { Check, ShieldCheck } from 'lucide-react';
 
-export const DEFAULT_BESTAL_LOGO_SRC = '/bestal-logo.png';
+export const DEFAULT_BESTAL_LOGO_SRC = '/Light%20Theme%20Website%20logo.svg';
 
 export type BesTalBrandProps = {
   logoSrc?: string;
@@ -9,6 +9,7 @@ export type BesTalBrandProps = {
   variant?: 'light' | 'dark';
   className?: string;
   wordmarkClassName?: string;
+  logoClassName?: string;
 };
 
 export function BesTalWordmark({
@@ -34,6 +35,7 @@ export function BesTalBrand({
   variant = 'light',
   className,
   wordmarkClassName,
+  logoClassName,
 }: BesTalBrandProps) {
   if (logoSrc) {
     const logoImage = (
@@ -43,6 +45,7 @@ export function BesTalBrand({
         className={cn(
           'bestal-brand-image shrink-0 object-contain object-left',
           compact ? 'h-7 w-auto max-w-[7.5rem]' : 'h-2-8rem w-auto max-w-[9.5rem]',
+          logoClassName,
         )}
       />
     );
@@ -89,7 +92,8 @@ export function BrandMark({
   logoSrc,
   compact = false,
   className,
-}: Pick<BesTalBrandProps, 'logoSrc' | 'compact' | 'className'>) {
+  logoClassName,
+}: Pick<BesTalBrandProps, 'logoSrc' | 'compact' | 'className' | 'logoClassName'>) {
   const logoSize = compact ? 'h-8 w-8' : 'h-8 w-8';
 
   const logo = logoSrc ? (
@@ -99,6 +103,7 @@ export function BrandMark({
       className={cn(
         'shrink-0 object-contain object-left',
         compact ? 'h-7 w-auto max-w-[7.5rem]' : 'h-8 w-auto max-w-[9.5rem]',
+        logoClassName,
       )}
     />
   ) : (

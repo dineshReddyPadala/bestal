@@ -30,13 +30,13 @@ export function SuperAdminClientsPage() {
   const { requestConfirm, confirmDialog } = useConfirmAction();
   const { searchInput, setSearchInput, search, searchParam } = useDebouncedSearch();
   const { data, isLoading, isError, error } = useAdminClients({ limit: 100, ...searchParam });
-  const { data: managersData } = useQuery({
+  const { data: managersResponse } = useQuery({
     queryKey: ['clients', 'account-managers'],
-    queryFn: async () => (await clientsApi.listAccountManagers()).data,
+    queryFn: () => clientsApi.listAccountManagers(),
   });
   const mutations = useAdminMutations();
   const rows = (data?.data ?? []) as unknown as Row[];
-  const managerUsers = managersData ?? [];
+  const managerUsers = Array.isArray(managersResponse?.data) ? managersResponse.data : [];
 
   const [assignTarget, setAssignTarget] = useState<Row | null>(null);
   const [selectedManagerId, setSelectedManagerId] = useState('');

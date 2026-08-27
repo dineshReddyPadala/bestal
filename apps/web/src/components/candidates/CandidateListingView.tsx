@@ -569,7 +569,7 @@ export function CandidateListingView({
                 value={filters.status}
                 onChange={(v) => setFilters((prev) => ({ ...prev, status: v }))}
                 options={[
-                  { value: 'all', label: 'All statuses' },
+                  { value: 'all', label: 'All status' },
                   { value: 'NEW', label: 'New' },
                   { value: 'ACTIVE', label: 'Active' },
                   { value: 'INACTIVE', label: 'Inactive' },

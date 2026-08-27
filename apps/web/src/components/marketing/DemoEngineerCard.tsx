@@ -1,7 +1,6 @@
 import { cn } from '@bestal/shared-utils';
 import { MAX_COMPARE } from '../../hooks/useSampleTalentShortlist';
 import type { DemoEngineer } from '../../lib/demo-engineers';
-import { resolveMarketingTimezone } from '../../lib/marketing-timezone';
 import { formatDimensionScoreDisplay } from '../../lib/score-display';
 
 type DemoEngineerCardProps = {
@@ -65,9 +64,8 @@ function LandingProfileCardBody({ engineer }: { engineer: DemoEngineer }) {
   const availabilityLabel = showAvailability
     ? formatLandingAvailability(engineer.availability)
     : '';
-  const timezoneMeta = resolveMarketingTimezone(engineer.timezone);
-  const timezoneName = timezoneMeta.iana;
-  const showTimezone = Boolean(timezoneName);
+  const timezoneLabel = engineer.zoneLabel.trim();
+  const showTimezone = Boolean(timezoneLabel);
 
   return (
     <div className="mkt-lpc">
@@ -114,8 +112,8 @@ function LandingProfileCardBody({ engineer }: { engineer: DemoEngineer }) {
             {showTimezone ? (
               <div className="mkt-lpc-tz-block">
                 <div className="mkt-lpc-tz-l">Timezone</div>
-                <p className="mkt-lpc-tz-name" title={timezoneName}>
-                  {timezoneName}
+                <p className="mkt-lpc-tz-name" title={timezoneLabel}>
+                  {timezoneLabel}
                 </p>
               </div>
             ) : null}

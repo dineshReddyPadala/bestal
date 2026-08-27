@@ -289,7 +289,7 @@ export function SuperAdminUsersPage() {
           key={search}
           columns={columns}
           data={rows}
-          searchPlaceholder="Search users…"
+          searchPlaceholder="Search by email…"
           searchValue={searchInput}
           onSearchChange={setSearchInput}
           serverSideSearch

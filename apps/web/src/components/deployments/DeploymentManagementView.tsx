@@ -471,7 +471,7 @@ export function DeploymentManagementView({
                 value={filters.status}
                 onChange={(v) => updateFilter('status', v)}
                 options={[
-                  { value: 'all', label: 'All statuses' },
+                  { value: 'all', label: 'All status' },
                   ...statusOptions.map((s) => ({
                     value: s,
                     label: s.replace(/_/g, ' '),

@@ -285,7 +285,7 @@ export function SuperAdminTrialsPage() {
             onChange={(e) => setStatusFilter(e.target.value)}
             className="h-9 w-[11rem] text-sm"
           >
-            <option value="all">All statuses</option>
+            <option value="all">All status</option>
             {TRIAL_STATUSES.map((s) => (
               <option key={s} value={s}>
                 {s.replace(/_/g, ' ')}

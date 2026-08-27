@@ -45,6 +45,8 @@ export type DashboardLayoutProps = {
   collapseStorageKey?: string;
   /** Optional logo image URL (e.g. imported JPG from the web app assets folder). */
   brandLogoSrc?: string;
+  /** Optional classes for the logo image (e.g. larger client portal sidebar mark). */
+  brandLogoClassName?: string;
 };
 
 type DashboardChromeContextValue = {
@@ -91,11 +93,13 @@ function writeCollapsed(key: string, value: boolean) {
 function BrandMark({
   compact = false,
   logoSrc,
+  logoClassName,
 }: {
   compact?: boolean;
   logoSrc?: string;
+  logoClassName?: string;
 }) {
-  return <BesTalBrand compact={compact} logoSrc={logoSrc} />;
+  return <BesTalBrand compact={compact} logoSrc={logoSrc} logoClassName={logoClassName} />;
 }
 
 function NavLink({
@@ -254,6 +258,7 @@ export function DashboardLayout({
   collapsible = false,
   collapseStorageKey = DEFAULT_COLLAPSE_KEY,
   brandLogoSrc,
+  brandLogoClassName,
 }: DashboardLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(() =>
@@ -299,7 +304,7 @@ export function DashboardLayout({
             )}
           >
             <div className={cn('flex min-w-0 items-center', desktopCollapsed && 'lg:hidden')}>
-              <BrandMark logoSrc={brandLogoSrc} />
+              <BrandMark logoSrc={brandLogoSrc} logoClassName={brandLogoClassName} />
             </div>
             {desktopCollapsed ? (
               <button
@@ -309,7 +314,11 @@ export function DashboardLayout({
                 aria-label="Expand sidebar"
                 title="Expand sidebar"
               >
-                <BrandMark compact logoSrc={brandLogoSrc} />
+                <BrandMark
+                  compact
+                  logoSrc={brandLogoSrc}
+                  logoClassName={brandLogoClassName ? 'h-8 w-auto max-w-[8rem]' : undefined}
+                />
                 <ChevronsRight className="h-3.5 w-3.5" />
               </button>
             ) : collapsible ? (

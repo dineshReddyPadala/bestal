@@ -57,7 +57,9 @@ export function ClientForm({
 
   const accountManagers = useMemo(() => {
     if (accountManagersProp?.length) return accountManagersProp;
-    return (managersData?.data ?? []).map((m) => ({
+    const managers = managersData?.data;
+    const rows = Array.isArray(managers) ? managers : [];
+    return rows.map((m) => ({
       id: m.id,
       label: m.label || `${m.firstName} ${m.lastName}`.trim() || m.email,
     }));
