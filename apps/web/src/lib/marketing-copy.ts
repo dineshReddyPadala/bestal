@@ -444,14 +444,12 @@ export type ContactMessageTopicValue =
 
 export const CONTACT_DIRECT_LINES = [
   {
-    num: '01',
     title: 'Sales Inquiries',
     href: 'mailto:sales@bestal.co',
     display: 'connect@bestal.co',
     description: 'Talk to someone about building a team.',
   },
   {
-    num: '02',
     title: 'Careers',
     href: 'mailto:careers@bestal.co',
     display: 'careers@bestal.co',

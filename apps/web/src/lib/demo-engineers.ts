@@ -10,6 +10,30 @@ export type ScoreRow = {
 
 export type DemoEngineerGender = 'female' | 'male';
 
+const FEMALE_FIRST_NAME_HINTS = new Set([
+  'amanda',
+  'anita',
+  'divya',
+  'emily',
+  'jaya',
+  'jessica',
+  'kavita',
+  'lakshmi',
+  'maria',
+  'neha',
+  'priya',
+  'sarah',
+  'shiva',
+  'sneha',
+]);
+
+/** Infer avatar gender from the first token of a display name. */
+export function inferGenderFromName(name: string): DemoEngineerGender {
+  const firstToken = name.trim().split(/[\s.]+/)[0]?.toLowerCase() ?? '';
+  if (!firstToken) return 'male';
+  return FEMALE_FIRST_NAME_HINTS.has(firstToken) ? 'female' : 'male';
+}
+
 export type DemoEngineer = {
   id: string;
   initials: string;
@@ -53,6 +77,12 @@ const ENGINEER_PREVIOUS_COMPANIES: Partial<Record<string, string>> = {
   'arjun-t': 'Meta',
   'vikram-r': 'Salesforce',
   'lakshmi-v': 'Oracle',
+  'divya-k': 'Capgemini',
+  'shiva-g': 'Atlassian',
+  'sai-k': 'Amazon',
+  'saran-p': 'Uber',
+  'jaya-k': 'Stripe',
+  'prashanth-k': 'Nvidia',
 };
 
 function engineer(
@@ -361,7 +391,7 @@ export const DEMO_ENGINEERS: DemoEngineer[] = [
     experience: '5 years',
     location: 'San Francisco, CA',
     rate: 20,
-    skills: ['ETL & Data Warehouse Testing', 'Data Quality Assurance', 'API Testing'],
+    skills: ['Selenium', 'Test Automation', 'Performance Testing'],
     timezone: 'America/Los_Angeles',
     score: 90,
     dimensions: [
@@ -379,12 +409,12 @@ export const DEMO_ENGINEERS: DemoEngineer[] = [
     confirmed: 'Confirmed 1 day ago',
   }),
   engineer({
-    id: 'shivlila-g',
+    id: 'shiva-g',
     initials: 'SG',
-    name: 'Shivlila G',
+    name: 'Shiva G',
     role: 'Frontend Engineer',
     discipline: 'Frontend',
-    gender: 'female',
+    gender: 'male',
     experience: '4 years',
     location: 'New York, NY',
     rate: 22,
@@ -487,9 +517,9 @@ export const DEMO_ENGINEERS: DemoEngineer[] = [
     confirmed: 'Confirmed 7 hours ago',
   }),
   engineer({
-    id: 'pra-k',
+    id: 'prashanth-k',
     initials: 'PK',
-    name: 'Pra K',
+    name: 'Prashanth K',
     role: 'Senior Data Engineer',
     discipline: 'Machine Learning',
     gender: 'male',
@@ -609,7 +639,7 @@ const LANDING_ENGINEER_IDS: Array<{ community: string; description: string; id: 
   {
     community: 'Frontend',
     description: 'Frontend development, React, Angular, and UI/UX engineering',
-    id: 'shivlila-g',
+    id: 'shiva-g',
   },
   {
     community: 'Data Engineering',
@@ -634,7 +664,7 @@ const LANDING_ENGINEER_IDS: Array<{ community: string; description: string; id: 
   {
     community: 'Machine Learning',
     description: 'Generative AI, agentic AI, and machine learning engineering',
-    id: 'pra-k',
+    id: 'prashanth-k',
   },
   {
     community: 'Data & AI',
@@ -677,12 +707,12 @@ function withEngineerTimezone(engineer: DemoEngineer, timezone: string): DemoEng
 /** Homepage slider — one distinct IANA timezone per featured card. */
 const LANDING_PROFILE_TIMEZONES: Record<string, string> = {
   'divya-k': 'America/ANY',
-  'shivlila-g': 'Asia/Kolkata',
+  'shiva-g': 'Asia/Kolkata',
   'sai-k': 'America/New_York',
   'saran-p': 'America/Chicago',
   'jaya-k': 'America/Los_Angeles',
   'amanda-l': 'Europe/London',
-  'pra-k': 'Europe/Berlin',
+  'prashanth-k': 'Europe/Berlin',
   'emily-r': 'Asia/Singapore',
   'michael-t': 'Australia/Sydney',
   'jessica-m': 'UTC',

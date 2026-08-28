@@ -95,7 +95,7 @@ export function ContactUsForm() {
         </div>
       </div>
 
-      <div className="mkt-contact-field">
+      <div className="mkt-contact-field mkt-contact-field--topic">
         <label htmlFor="contact-topic">What is this about</label>
         <MktSelect
           id="contact-topic"

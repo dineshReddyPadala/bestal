@@ -1,18 +1,17 @@
 import { cn } from '@bestal/shared-utils';
+import { Info } from 'lucide-react';
+import { liveProfile } from '../../data/homeCopy';
 import { MAX_COMPARE } from '../../hooks/useSampleTalentShortlist';
 import type { DemoEngineer } from '../../lib/demo-engineers';
-import { formatDimensionScoreDisplay } from '../../lib/score-display';
+import { DemoEngineerGenderAvatar } from './DemoEngineerGenderAvatar';
 
 type DemoEngineerCardProps = {
   engineer: DemoEngineer;
   className?: string;
-  compact?: boolean;
-  hideScorecard?: boolean;
-  communityLabel?: string;
   hideCommunityLabel?: boolean;
-  hideSecondaryActions?: boolean;
   shellless?: boolean;
   variant?: 'default' | 'landing';
+  communityLabel?: string;
   showTalentActions?: boolean;
   isShortlisted?: boolean;
   isInCompare?: boolean;
@@ -52,7 +51,29 @@ function formatLandingAvailability(value: string): string {
   return value;
 }
 
-function LandingProfileCardBody({ engineer }: { engineer: DemoEngineer }) {
+type LandingProfileCardBodyProps = {
+  engineer: DemoEngineer;
+  primaryButtonLabel?: string;
+  showFootNote?: boolean;
+  showTalentActions?: boolean;
+  isShortlisted?: boolean;
+  isInCompare?: boolean;
+  compareDisabled?: boolean;
+  onShortlist?: () => void;
+  onCompare?: () => void;
+};
+
+function LandingProfileCardBody({
+  engineer,
+  primaryButtonLabel,
+  showFootNote = false,
+  showTalentActions = false,
+  isShortlisted = false,
+  isInCompare = false,
+  compareDisabled = false,
+  onShortlist,
+  onCompare,
+}: LandingProfileCardBodyProps) {
   const expertise = engineer.skills.slice(0, 2);
   const previousCompany = engineer.previousCompany?.trim();
   const showScore = engineer.score > 0;
@@ -66,19 +87,28 @@ function LandingProfileCardBody({ engineer }: { engineer: DemoEngineer }) {
     : '';
   const timezoneLabel = engineer.timezone.trim();
   const showTimezone = Boolean(timezoneLabel);
+  const resolvedPrimaryLabel =
+    primaryButtonLabel ??
+    (engineer.trialEligible ? 'Free Trial' : 'Request availability');
 
   return (
     <div className="mkt-lpc">
-      {showRate ? (
-        <div className="mkt-lpc-rate">
-          ${engineer.rate}
-          <span className="mkt-lpc-rate-s">/hr</span>
-        </div>
-      ) : null}
-
       <div className="mkt-lpc-grid">
         <div className="mkt-lpc-left">
-          <div className="mkt-lpc-av">{engineer.initials}</div>
+          <div className="mkt-lpc-av-wrap">
+            <DemoEngineerGenderAvatar gender={engineer.gender} name={engineer.name} />
+            <span className="mkt-lpc-av-badge" aria-hidden="true">
+              <svg viewBox="0 0 12 12" fill="none">
+                <path
+                  d="M2.5 6.25 4.75 8.5 9.5 3.75"
+                  stroke="currentColor"
+                  strokeWidth="1.75"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </span>
+          </div>
 
           <div className={cn('mkt-lpc-score-slot', !showScore && 'is-empty')}>
             {showScore ? (
@@ -90,31 +120,6 @@ function LandingProfileCardBody({ engineer }: { engineer: DemoEngineer }) {
                   </span>
                   {engineer.score}
                 </div>
-              </div>
-            ) : null}
-          </div>
-
-          <div className={cn('mkt-lpc-avail-slot', !showAvailability && 'is-empty')}>
-            {showAvailability ? (
-              <div
-                className={cn(
-                  'mkt-lpc-avail',
-                  /^available now$/i.test(engineer.availability.trim()) && 'is-now',
-                )}
-                title={availabilityLabel}
-              >
-                <span className="mkt-lpc-avail-t">{availabilityLabel}</span>
-              </div>
-            ) : null}
-          </div>
-
-          <div className={cn('mkt-lpc-tz-slot', !showTimezone && 'is-empty')}>
-            {showTimezone ? (
-              <div className="mkt-lpc-tz-block">
-                <div className="mkt-lpc-tz-l">Timezone</div>
-                <p className="mkt-lpc-tz-name" title={timezoneLabel}>
-                  {timezoneLabel}
-                </p>
               </div>
             ) : null}
           </div>
@@ -164,6 +169,14 @@ function LandingProfileCardBody({ engineer }: { engineer: DemoEngineer }) {
             ) : null}
           </div>
 
+          <div className={cn('mkt-lpc-tz-slot', !showTimezone && 'is-empty')}>
+            {showTimezone ? (
+              <div className="mkt-lpc-exp mkt-lpc-tz-inline" title={`Timezone : ${timezoneLabel}`}>
+                Timezone : <strong>{timezoneLabel}</strong>
+              </div>
+            ) : null}
+          </div>
+
           <div className="mkt-lpc-verify">
             <div className="mkt-lpc-verify-row">
               <span>Tested By Experts</span>
@@ -181,13 +194,86 @@ function LandingProfileCardBody({ engineer }: { engineer: DemoEngineer }) {
         </div>
       </div>
 
+      {showRate || showAvailability ? (
+        <div className={cn('mkt-lpc-pricing', !showRate && 'mkt-lpc-pricing--avail-only')}>
+          {showRate ? (
+            <div className="mkt-lpc-rate">
+              ${engineer.rate}
+              <span className="mkt-lpc-rate-s">/hr</span>
+            </div>
+          ) : (
+            <span aria-hidden="true" />
+          )}
+          {showAvailability ? (
+            <div
+              className={cn(
+                'mkt-lpc-avail',
+                /^available now$/i.test(engineer.availability.trim()) && 'is-now',
+              )}
+              title={availabilityLabel}
+            >
+              <span className="mkt-lpc-avail-t">{availabilityLabel}</span>
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+
       <div className="mkt-lpc-foot">
-        <button type="button" className="mkt-lpc-btn mkt-lpc-btn-primary">
-          Free Trial
-        </button>
-        <button type="button" className="mkt-lpc-btn mkt-lpc-btn-secondary">
-          Resume
-        </button>
+        <div className="mkt-lpc-foot-btns">
+          <button type="button" className="mkt-lpc-btn mkt-lpc-btn-primary">
+            {resolvedPrimaryLabel}
+          </button>
+          <button type="button" className="mkt-lpc-btn mkt-lpc-btn-secondary">
+            Resume
+          </button>
+        </div>
+
+        {showTalentActions ? (
+          <div className="mkt-lpc-talent-actions">
+            <button
+              type="button"
+              className={cn(
+                'mkt-lpc-btn mkt-lpc-btn-secondary',
+                isShortlisted && 'is-active',
+              )}
+              onClick={onShortlist}
+              aria-pressed={isShortlisted}
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
+              </svg>
+              {isShortlisted ? 'Shortlisted' : 'Shortlist'}
+            </button>
+            <button
+              type="button"
+              className={cn(
+                'mkt-lpc-btn mkt-lpc-btn-secondary',
+                isInCompare && 'is-active',
+              )}
+              onClick={onCompare}
+              disabled={compareDisabled}
+              aria-pressed={isInCompare}
+              title={
+                compareDisabled
+                  ? `Compare up to ${MAX_COMPARE} engineers — remove one to add another`
+                  : undefined
+              }
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                <rect x="3" y="4" width="7" height="16" rx="1.5" />
+                <rect x="14" y="4" width="7" height="16" rx="1.5" />
+              </svg>
+              {isInCompare ? 'In compare' : 'Compare'}
+            </button>
+          </div>
+        ) : null}
+
+        {showFootNote ? (
+          <div className="mkt-lpc-foot-note">
+            <Info className="mkt-lpc-foot-note-icon" aria-hidden="true" />
+            <span>{liveProfile.caption}</span>
+          </div>
+        ) : null}
       </div>
     </div>
   );
@@ -196,11 +282,8 @@ function LandingProfileCardBody({ engineer }: { engineer: DemoEngineer }) {
 export function DemoEngineerCard({
   engineer,
   className,
-  compact,
-  hideScorecard = false,
   communityLabel,
   hideCommunityLabel = false,
-  hideSecondaryActions = false,
   shellless = false,
   variant = 'default',
   showTalentActions = false,
@@ -210,159 +293,19 @@ export function DemoEngineerCard({
   onShortlist,
   onCompare,
 }: DemoEngineerCardProps) {
-  if (variant === 'landing') {
-    const landingBody = <LandingProfileCardBody engineer={engineer} />;
-
-    if (shellless) {
-      return landingBody;
-    }
-
-    return (
-      <article className={cn('mkt-prof mkt-prof-landing', className)}>
-        {!hideCommunityLabel && (communityLabel ?? engineer.discipline) ? (
-          <div className="mkt-dtag">{communityLabel ?? engineer.discipline}</div>
-        ) : null}
-        {landingBody}
-      </article>
-    );
-  }
-
+  const isHomeLanding = variant === 'landing' && !showTalentActions;
   const body = (
-    <div className="mkt-pb">
-      <div className="mkt-ptop">
-        <div className="mkt-av">{engineer.initials}</div>
-        <div>
-          <div className="mkt-pnm">{engineer.name}</div>
-          <div className="mkt-prl">{engineer.role}</div>
-          <div className="mkt-pmt">{engineer.meta}</div>
-        </div>
-        <div className="mkt-rt">
-          <div className="mkt-rt-n">${engineer.rate}</div>
-          <div className="mkt-rt-l">/ hour</div>
-        </div>
-      </div>
-
-      <div className="mkt-chips">
-        {engineer.skills.map((skill) => (
-          <span key={skill} className="mkt-chip">
-            {skill}
-          </span>
-        ))}
-      </div>
-
-      <div className="mkt-bdgs">
-        <span className="mkt-bdg mkt-bdg-verified">Tested by Experts</span>
-        <span className="mkt-bdg mkt-bdg-verified">Background Verified</span>
-        <span className="mkt-bdg mkt-bdg-verified">Identity Verified</span>
-      </div>
-
-      <div className="mkt-tz-row">
-        <div className="mkt-tz-ic">◷</div>
-        <div>
-          <div className="mkt-tz-l">{engineer.zoneLabel}</div>
-          <div className="mkt-tz-s">{engineer.zoneHours}</div>
-        </div>
-      </div>
-
-      {!hideScorecard && !compact && (
-        <div className="mkt-sc">
-          <div className="mkt-sch">
-            <span className="mkt-sch-l">Test Results</span>
-            <span className="mkt-sch-t">
-              {engineer.score}
-              <span className="mkt-sch-max">/100</span>
-            </span>
-          </div>
-          {engineer.dimensions.map((dim) => (
-            <div key={dim.label} className="mkt-scr">
-              <span className="mkt-scr-n">{dim.label}</span>
-              <span className="mkt-tr">
-                <span
-                  className={cn('mkt-fl', dim.tone === 'gold' && 'mkt-fl-amber')}
-                  style={{ width: `${dim.value * 10}%` }}
-                />
-              </span>
-              <span className="mkt-scr-v">{formatDimensionScoreDisplay(dim.value)}</span>
-            </div>
-          ))}
-          <p className="mkt-evl">
-            {engineer.quoteIsPlaceholder ? (
-              <span className="italic">{engineer.quote}</span>
-            ) : (
-              <>“{engineer.quote}”</>
-            )}
-            <br />
-            <span className="mkt-evl-meta">— External Specialist, tested {engineer.testedOn}</span>
-          </p>
-        </div>
-      )}
-
-      <div className="mkt-avl">
-        <span className="mkt-avl-s">{engineer.availability}</span>
-        <span className="mkt-avl-confirmed">{engineer.confirmed}</span>
-      </div>
-
-      {!compact && (
-        <div className="mkt-pacts">
-          {engineer.trialEligible ? (
-            <span className="mkt-btn mkt-btn-amber mkt-btn-sm">Free trial</span>
-          ) : (
-            <span className="mkt-btn mkt-btn-primary mkt-btn-sm">Request availability</span>
-          )}
-          {showTalentActions ? (
-            <>
-              <button
-                type="button"
-                className={cn(
-                  'mkt-btn mkt-btn-sm',
-                  isShortlisted ? 'mkt-btn-primary' : 'mkt-btn-secondary',
-                )}
-                onClick={onShortlist}
-                aria-pressed={isShortlisted}
-              >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-                  <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
-                </svg>
-                {isShortlisted ? 'Shortlisted' : 'Shortlist'}
-              </button>
-              <button
-                type="button"
-                className={cn(
-                  'mkt-btn mkt-btn-sm',
-                  isInCompare ? 'mkt-btn-primary' : 'mkt-btn-secondary',
-                )}
-                onClick={onCompare}
-                disabled={compareDisabled}
-                aria-pressed={isInCompare}
-                title={compareDisabled ? `Compare up to ${MAX_COMPARE} engineers — remove one to add another` : undefined}
-              >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-                  <rect x="3" y="4" width="7" height="16" rx="1.5" />
-                  <rect x="14" y="4" width="7" height="16" rx="1.5" />
-                </svg>
-                {isInCompare ? 'In compare' : 'Compare'}
-              </button>
-            </>
-          ) : !hideSecondaryActions ? (
-            <>
-              <span className="mkt-btn mkt-btn-secondary mkt-btn-sm">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-                  <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
-                </svg>
-                Shortlist
-              </span>
-              <span className="mkt-btn mkt-btn-secondary mkt-btn-sm">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-                  <rect x="3" y="4" width="7" height="16" rx="1.5" />
-                  <rect x="14" y="4" width="7" height="16" rx="1.5" />
-                </svg>
-                Compare
-              </span>
-            </>
-          ) : null}
-        </div>
-      )}
-    </div>
+    <LandingProfileCardBody
+      engineer={engineer}
+      primaryButtonLabel={isHomeLanding ? 'Free Trial' : undefined}
+      showFootNote={isHomeLanding}
+      showTalentActions={showTalentActions}
+      isShortlisted={isShortlisted}
+      isInCompare={isInCompare}
+      compareDisabled={compareDisabled}
+      onShortlist={onShortlist}
+      onCompare={onCompare}
+    />
   );
 
   if (shellless) {
@@ -372,7 +315,7 @@ export function DemoEngineerCard({
   return (
     <article
       className={cn(
-        'mkt-prof',
+        'mkt-prof mkt-prof-landing',
         showTalentActions && isShortlisted && 'is-shortlisted',
         showTalentActions && isInCompare && 'is-in-compare',
         className,
