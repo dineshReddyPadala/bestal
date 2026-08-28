@@ -8,7 +8,7 @@ export const STATIC_EVALUATION_EXTRACTION: EvaluationExtractionResponse = {
   extractedText:
     'Technical interview evaluation for senior full-stack role. Strong system design and communication. Minor gaps in platform-specific tooling.',
   evaluatorName: 'Dr. Alan Wright',
-  evaluatorCompany: 'Amnet Digital',
+  evaluatorCompany: 'BesTal',
   evaluationType: 'Live Technical Interview',
   evaluationDate: new Date().toISOString().slice(0, 10),
   technicalScore: 88,

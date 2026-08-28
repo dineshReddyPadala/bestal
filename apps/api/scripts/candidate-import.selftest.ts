@@ -1,10 +1,11 @@
 import assert from 'node:assert/strict';
 import {
   CANDIDATE_SHEET_COLUMNS,
-  IMPORT_SKILL_COMMUNITIES,
   IMPORT_TEMPLATE_SHEETS,
   IMPORT_UPLOAD_REQUIRED_SHEETS,
   IMPORT_WORKBOOK_SHEETS,
+  resolveImportedSkillCommunityId,
+  resolveImportedSkillCommunityName,
 } from '@bestal/shared-utils';
 import {
   deriveImportedProfileStatus,
@@ -16,6 +17,19 @@ import {
   IMPORT_LIMITS,
   parseAndValidateCandidateWorkbook,
 } from '../src/modules/candidates/candidate-import.validator.js';
+
+const TEST_SKILL_COMMUNITIES = [
+  'Full Stack',
+  'Frontend Development',
+  'Product Design',
+  'Scrum Master',
+] as const;
+
+function parseWorkbook(buffer: Buffer) {
+  return parseAndValidateCandidateWorkbook(buffer, {
+    skillCommunities: TEST_SKILL_COMMUNITIES,
+  });
+}
 
 function baseCandidate(
   overrides: Partial<NormalizedCandidateImport> = {},
@@ -71,10 +85,12 @@ async function main() {
   assert.equal(IMPORT_LIMITS.chunkSize, 100);
   assert.equal(IMPORT_LIMITS.rowConcurrency, 5);
 
-  const template = await buildCandidateImportTemplate();
+  const template = await buildCandidateImportTemplate({
+    skillCommunities: TEST_SKILL_COMMUNITIES,
+  });
   assert.ok(template.length > 1000, 'template should be generated');
 
-  const parsed = await parseAndValidateCandidateWorkbook(template);
+  const parsed = await parseWorkbook(template);
   assert.equal(parsed.candidates.length, 1);
   assert.equal(parsed.candidates[0]?.sourceCandidateId, '1001');
   assert.equal(parsed.candidates[0]?.skills.length, 1);
@@ -82,12 +98,35 @@ async function main() {
   assert.ok(parsed.candidates[0]?.bgv);
   assert.equal(parsed.candidates[0]?.scores.length, 1);
   assert.equal(parsed.errors.length, 0, JSON.stringify(parsed.errors, null, 2));
+  assert.equal(parsed.candidates[0]?.timezone, 'Europe/London');
 
   assert.equal(IMPORT_UPLOAD_REQUIRED_SHEETS.length, 5);
   assert.equal(IMPORT_TEMPLATE_SHEETS.length, 20);
   assert.equal(CANDIDATE_SHEET_COLUMNS[0], 'candidate_id');
-  assert.ok(IMPORT_SKILL_COMMUNITIES.includes('Full Stack'));
+  assert.ok(TEST_SKILL_COMMUNITIES.includes('Full Stack'));
   assert.equal(IMPORT_WORKBOOK_SHEETS.CANDIDATE, 'Candidate');
+
+  assert.equal(
+    resolveImportedSkillCommunityName('Frontend Engineering', TEST_SKILL_COMMUNITIES),
+    'Frontend Development',
+  );
+  assert.equal(
+    resolveImportedSkillCommunityName('product design', TEST_SKILL_COMMUNITIES),
+    'Product Design',
+  );
+  assert.equal(
+    resolveImportedSkillCommunityName('Scrum Master', TEST_SKILL_COMMUNITIES),
+    'Scrum Master',
+  );
+
+  const communityIds = new Map<string, bigint>([
+    ['Frontend Development', 11n],
+    ['Product Design', 22n],
+    ['Scrum Master', 33n],
+  ]);
+  assert.equal(resolveImportedSkillCommunityId('Frontend Engineering', communityIds), 11n);
+  assert.equal(resolveImportedSkillCommunityId('Product Design', communityIds), 22n);
+  assert.equal(resolveImportedSkillCommunityId('scrum master', communityIds), 33n);
 
   // Missing sheet detection
   const ExcelJS = (await import('exceljs')).default;
@@ -96,6 +135,30 @@ async function main() {
   const brokenBuffer = Buffer.from(await broken.xlsx.writeBuffer());
   const brokenParsed = await parseAndValidateCandidateWorkbook(brokenBuffer);
   assert.ok(brokenParsed.errors.some((e) => e.errorCode === 'MISSING_SHEET'));
+
+  const aliasWorkbook = new ExcelJS.Workbook();
+  await aliasWorkbook.xlsx.load(template);
+  const candidateSheet = aliasWorkbook.getWorksheet(IMPORT_WORKBOOK_SHEETS.CANDIDATE);
+  assert.ok(candidateSheet);
+  const skillCommunityCol = CANDIDATE_SHEET_COLUMNS.indexOf('skill_community') + 1;
+  candidateSheet.getRow(2).getCell(skillCommunityCol).value = 'Frontend Engineering';
+  const extraCommunityWorkbook = new ExcelJS.Workbook();
+  await extraCommunityWorkbook.xlsx.load(template);
+  const extraCandidateSheet = extraCommunityWorkbook.getWorksheet(IMPORT_WORKBOOK_SHEETS.CANDIDATE);
+  assert.ok(extraCandidateSheet);
+  extraCandidateSheet.getRow(2).getCell(skillCommunityCol).value = 'Product Design';
+
+  const aliasParsed = await parseWorkbook(
+    Buffer.from(await aliasWorkbook.xlsx.writeBuffer()),
+  );
+  assert.equal(aliasParsed.errors.length, 0, JSON.stringify(aliasParsed.errors, null, 2));
+  assert.equal(aliasParsed.candidates[0]?.skillCommunity, 'Frontend Development');
+
+  const extraParsed = await parseWorkbook(
+    Buffer.from(await extraCommunityWorkbook.xlsx.writeBuffer()),
+  );
+  assert.equal(extraParsed.errors.length, 0, JSON.stringify(extraParsed.errors, null, 2));
+  assert.equal(extraParsed.candidates[0]?.skillCommunity, 'Product Design');
 
   // Pipeline derivation matrix
   assert.equal(deriveImportedProfileStatus(baseCandidate()), 'IMPORTED');
@@ -242,7 +305,7 @@ async function main() {
     CANDIDATE_SHEET_COLUMNS.indexOf('available_from') + 1,
   ).value = '';
   const missingAvailabilityBuffer = Buffer.from(await availabilityWorkbook.xlsx.writeBuffer());
-  const missingAvailabilityParsed = await parseAndValidateCandidateWorkbook(
+  const missingAvailabilityParsed = await parseWorkbook(
     missingAvailabilityBuffer,
   );
   assert.ok(

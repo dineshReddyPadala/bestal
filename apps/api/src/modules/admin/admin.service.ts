@@ -18,7 +18,7 @@ import { EmailService } from '../../services/email.service.js';
 import { StorageService } from '../../services/storage.service.js';
 import { UPLOAD_CATEGORIES } from '../../services/storage/storage.constants.js';
 import { buildS3ObjectReference } from '../../services/storage/upload.utils.js';
-import { notifyCandidateApproved, notifyCandidateSentBack } from '../../services/notification-events.js';
+import { notifyCandidateSentBack } from '../../services/notification-events.js';
 import { buildPaginationMeta } from '../../validators/common.validator.js';
 import { AuthRepository } from '../auth/auth.repository.js';
 import { CandidateService } from '../candidates/candidate.service.js';
@@ -1150,19 +1150,12 @@ export class AdminService {
     mode: 'internal' | 'publish' = 'internal',
     ctx?: { ipAddress?: string | null; userAgent?: string | null },
   ) {
-    const organizationId = requireOrganization(authUser);
+    requireOrganization(authUser);
     const result =
       mode === 'internal'
         ? await this.candidates.approveInternal(authUser, id)
         : await this.candidates.approveAndPublish(authUser, id);
     await this.auditWrite(authUser, 'APPROVE', 'Candidate', id, `Approved candidate ${id} (${mode})`, { mode }, ctx);
-    void notifyCandidateApproved(this.prisma, this.fastify.config, {
-      organizationId,
-      candidateId: id,
-      candidateName: `${result.firstName} ${result.lastName}`.trim(),
-      approvedById: authUser.id,
-      createdById: result.createdById,
-    });
     return result;
   }
 

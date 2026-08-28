@@ -120,6 +120,12 @@ export class N8nClient {
       workflowName: input.workflowName,
       workflowVersion: input.workflowVersion,
     };
+    if (input.fileName?.trim()) {
+      body.fileName = input.fileName;
+    }
+    if (input.mimeType?.trim()) {
+      body.mimeType = input.mimeType;
+    }
     if (input.candidateId != null) {
       body.candidateId = input.candidateId;
     }

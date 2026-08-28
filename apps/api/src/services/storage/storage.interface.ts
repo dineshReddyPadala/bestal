@@ -14,6 +14,8 @@ export interface UploadResult {
 export interface SignedUrlOptions {
   expiresInSeconds?: number;
   contentType?: string;
+  contentDisposition?: 'inline' | 'attachment';
+  fileName?: string;
 }
 
 export interface StorageAdapter {

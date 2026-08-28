@@ -16,3 +16,16 @@ export const TIMEZONE_OPTIONS = [
 export const IMPORT_TIMEZONE_VALUES = TIMEZONE_OPTIONS.map((option) => option.value);
 
 export type TimezoneOption = (typeof TIMEZONE_OPTIONS)[number];
+
+/** Human-readable timezone for client cards and profile headers. */
+export function formatTimezoneLabel(value: string | null | undefined): string {
+  const raw = value?.trim();
+  if (!raw) return '';
+  if (raw.toLowerCase() === 'flexible') return '';
+  const match = TIMEZONE_OPTIONS.find(
+    (option) =>
+      option.value.toLowerCase() === raw.toLowerCase() ||
+      option.label.toLowerCase() === raw.toLowerCase(),
+  );
+  return match?.label ?? raw.replace(/_/g, ' ');
+}

@@ -443,7 +443,7 @@ export function buildDocumentPayload(
     entityId,
     originalName: form.fileName,
     s3Key: `uploads/${entityType}/${entityId}/${form.fileName}`,
-    s3Bucket: 'amnet-digital',
+    s3Bucket: 'bestal',
     mimeType: 'application/octet-stream',
     fileSize: 0,
     status: 'UPLOADED',

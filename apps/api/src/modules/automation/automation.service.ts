@@ -95,12 +95,17 @@ export class AutomationService {
     jobType: (typeof AUTOMATION_JOB_TYPES)[keyof typeof AUTOMATION_JOB_TYPES],
   ): N8nWorkflowTriggerInput {
     const defaults = DEFAULT_AUTOMATION_WORKFLOW_IDENTITIES[jobType];
+    const ref = input.inputReference ?? {};
+    const fileName = typeof ref.fileName === 'string' ? ref.fileName : undefined;
+    const mimeType = typeof ref.mimeType === 'string' ? ref.mimeType : undefined;
     return {
       jobId: job.id,
       candidateId: input.candidateId,
       documentId: input.documentId,
       requestedBy: input.requestedBy,
       documentUrl: input.documentUrl,
+      fileName,
+      mimeType,
       workflowName: job.workflowName ?? defaults.name,
       workflowVersion: job.workflowVersion ?? defaults.version,
       previousBestalScore: input.previousBestalScore ?? null,

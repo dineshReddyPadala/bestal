@@ -1,5 +1,5 @@
 import type { ClientSearchRecord } from '@bestal/mock-data';
-import { cn, formatCurrency, initials } from '@bestal/shared-utils';
+import { cn, formatCurrency, formatTimezoneLabel, initials } from '@bestal/shared-utils';
 import { Avatar, Button } from '@bestal/ui';
 import { Star } from 'lucide-react';
 import { isBgvClear } from '../../lib/candidate-approval-gates';
@@ -36,6 +36,7 @@ export function ClientCandidateListRow({
   const availableNow = isImmediatelyAvailable(record);
   const availabilityClasses = availabilityStatusClasses(availableNow);
   const availabilityLabel = resolveClientAvailabilityLabel(record);
+  const timezoneLabel = formatTimezoneLabel(record.timezone);
   return (
     <article
       className={cn(
@@ -90,6 +91,11 @@ export function ClientCandidateListRow({
           />
           {availabilityLabel}
         </span>
+        {timezoneLabel ? (
+          <p className="mt-0.5 truncate text-muted-foreground" title={timezoneLabel}>
+            Timezone: {timezoneLabel}
+          </p>
+        ) : null}
       </div>
       <div className="shrink-0 text-sm font-semibold tabular-nums">
         {formatCurrency(record.hourlyRate, record.currency)}

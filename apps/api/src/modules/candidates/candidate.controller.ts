@@ -55,6 +55,41 @@ export class CandidateController {
     return reply.status(200).send({ data });
   };
 
+  previewWordHtml = async (request: FastifyRequest, reply: FastifyReply) => {
+    const { documentId } = request.params as { documentId: number };
+    const data = await this.candidateService.previewWordHtml(
+      request.authUser!,
+      documentId,
+    );
+    return reply.status(200).send({ data });
+  };
+
+  streamDocumentFile = async (request: FastifyRequest, reply: FastifyReply) => {
+    const { documentId } = request.params as { documentId: number };
+    const file = await this.candidateService.getDocumentFile(request.authUser!, documentId);
+    const safeName = file.fileName.replace(/["\r\n]/g, '_').slice(0, 180);
+    reply.header('Content-Type', file.mimeType || 'application/octet-stream');
+    reply.header('Content-Disposition', `inline; filename="${safeName}"`);
+    return reply.status(200).send(file.buffer);
+  };
+
+  previewWordHtmlUpload = async (request: FastifyRequest, reply: FastifyReply) => {
+    const file = await request.file();
+    if (!file) {
+      throw new BadRequestError('Word document is required');
+    }
+    const buffer = await file.toBuffer();
+    const data = await this.candidateService.previewWordHtmlFromUpload(
+      request.authUser!,
+      {
+        buffer,
+        originalName: file.filename,
+        mimeType: file.mimetype,
+      },
+    );
+    return reply.status(200).send({ data });
+  };
+
   update = async (request: FastifyRequest, reply: FastifyReply) => {
     const { id } = request.params as { id: number };
     const data = await this.candidateService.update(

@@ -25,6 +25,7 @@ export type ClientProfileAttachment = {
   readonly createdAt?: string | null;
   readonly categoryLabel?: string;
   readonly mimeType?: string | null;
+  readonly documentId?: number | null;
 };
 
 export type ClientCandidateProfile = {

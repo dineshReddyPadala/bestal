@@ -39,9 +39,13 @@ import {
   maybeAutoSubmitSuperAdminCandidate,
   syncImportedCandidateProfileStatus,
 } from './candidate-profile-sync.js';
-import { notifyCandidatePendingApproval, notifyCandidateSentBack } from '../../services/notification-events.js';
+import { notifyCandidateApproved, notifyCandidatePendingApproval, notifyCandidatePublished, notifyCandidateSentBack } from '../../services/notification-events.js';
 import { StorageService } from '../../services/storage.service.js';
-import { normalizeUploadToPdf } from '../../services/document-pdf-normalizer.js';
+import {
+  convertWordToPreviewHtml,
+  resolveN8nPdfUrl,
+} from '../../services/document-pdf-normalizer.js';
+import { readStoredDocumentBuffer } from '../../services/document-buffer.util.js';
 import type { UploadCategory } from '../../services/storage/storage.constants.js';
 import {
   AuthorizationError,
@@ -204,7 +208,7 @@ export class CandidateService {
       throw new BadRequestError(N8N_AUTOMATION_REQUIRED_MESSAGE);
     }
 
-    const uploadFile = await normalizeUploadToPdf(file);
+    const uploadFile = file;
 
     if (existingCandidateId != null && existingCandidateId > 0) {
       const existing = await this.getCandidateOrThrow(
@@ -222,14 +226,22 @@ export class CandidateService {
           uploadCategory,
         });
 
+        const n8n = await this.n8nPayloadForStoredUpload({
+          organizationId,
+          entityId: existingCandidateId,
+          uploadCategory,
+          original: uploadFile,
+          originalSignedUrl: uploaded.signedUrl,
+        });
+
         return this.enqueueResumeScreeningJob({
           authUser,
           organizationId,
           candidateId: existingCandidateId,
           documentId: uploaded.documentId,
-          documentUrl: uploaded.signedUrl,
-          fileName: uploadFile.originalName,
-          mimeType: uploadFile.mimeType,
+          documentUrl: n8n.documentUrl,
+          fileName: n8n.fileName,
+          mimeType: n8n.mimeType,
         });
       } catch (error) {
         throw error instanceof BadRequestError || error instanceof ConflictError
@@ -248,14 +260,21 @@ export class CandidateService {
         file: uploadFile,
         uploadCategory,
       });
+      const n8n = await this.n8nPayloadForStoredUpload({
+        organizationId,
+        entityId: 0,
+        uploadCategory,
+        original: uploadFile,
+        originalSignedUrl: uploaded.signedUrl,
+      });
       return await this.enqueueResumeScreeningJob({
         authUser,
         organizationId,
         candidateId: null,
         documentId: uploaded.documentId,
-        documentUrl: uploaded.signedUrl,
-        fileName: uploadFile.originalName,
-        mimeType: uploadFile.mimeType,
+        documentUrl: n8n.documentUrl,
+        fileName: n8n.fileName,
+        mimeType: n8n.mimeType,
       });
     } catch (error) {
       if (uploaded?.documentId) {
@@ -272,6 +291,50 @@ export class CandidateService {
   }
 
   /** Creates AutomationJob and triggers n8n; does not wait for OpenAI. */
+  private async n8nPayloadForStoredUpload(params: {
+    organizationId: number;
+    entityId: number;
+    uploadCategory: UploadCategory;
+    original: UploadAssetInput;
+    originalSignedUrl: string;
+  }): Promise<{ documentUrl: string; fileName: string; mimeType: string }> {
+    return resolveN8nPdfUrl({
+      original: params.original,
+      originalSignedUrl: params.originalSignedUrl,
+      uploadConvertedPdf: async (pdf) => {
+        const key = this.storageService.buildCandidateAssetKey(
+          params.organizationId,
+          params.entityId,
+          params.uploadCategory,
+          pdf.originalName,
+        );
+        const uploaded = await this.storageService.upload(
+          key,
+          {
+            buffer: pdf.buffer,
+            originalName: pdf.originalName,
+            mimeType: pdf.mimeType,
+            size: pdf.size,
+          },
+          {
+            category: params.uploadCategory,
+            organizationId: params.organizationId,
+            entityId: params.entityId,
+          },
+        );
+        return (
+          (await this.storageService.resolveFileUrl(
+            uploaded.key,
+            uploaded.bucket,
+            pdf.mimeType,
+          )) ??
+          uploaded.url ??
+          `s3://${uploaded.bucket}/${uploaded.key}`
+        );
+      },
+    });
+  }
+
   private async enqueueResumeScreeningJob(params: {
     authUser: AuthenticatedUser;
     organizationId: number;
@@ -992,6 +1055,127 @@ export class CandidateService {
     return this.toDto(candidate, authUser);
   }
 
+  async previewWordHtml(
+    authUser: AuthenticatedUser,
+    documentId: number,
+  ): Promise<{ html: string }> {
+    const organizationId = this.requireOrganization(authUser);
+    const document = await this.candidateRepository.findDocumentById(BigInt(documentId));
+    if (!document || Number(document.organizationId) !== organizationId) {
+      throw new NotFoundError('Document not found');
+    }
+
+    await this.assertCanPreviewDocument(authUser, organizationId, document);
+
+    const file = await readStoredDocumentBuffer(
+      document,
+      this.fastify.config,
+      this.storageService,
+    );
+    const html = await convertWordToPreviewHtml({
+      buffer: file.buffer,
+      originalName: file.fileName,
+      mimeType: file.mimeType,
+    });
+    return { html };
+  }
+
+  async getDocumentFile(
+    authUser: AuthenticatedUser,
+    documentId: number,
+  ): Promise<{ buffer: Buffer; fileName: string; mimeType: string }> {
+    const organizationId = this.requireOrganization(authUser);
+    const document = await this.candidateRepository.findDocumentById(BigInt(documentId));
+    if (!document || Number(document.organizationId) !== organizationId) {
+      throw new NotFoundError('Document not found');
+    }
+
+    await this.assertCanPreviewDocument(authUser, organizationId, document);
+
+    return readStoredDocumentBuffer(document, this.fastify.config, this.storageService);
+  }
+
+  async previewWordHtmlFromUpload(
+    authUser: AuthenticatedUser,
+    file: { buffer: Buffer; originalName: string; mimeType: string },
+  ): Promise<{ html: string }> {
+    this.requireOrganization(authUser);
+    const html = await convertWordToPreviewHtml(file);
+    return { html };
+  }
+
+  private async assertCanPreviewDocument(
+    authUser: AuthenticatedUser,
+    organizationId: number,
+    document: {
+      id: bigint;
+      entityType: string;
+      entityId: bigint;
+    },
+  ): Promise<void> {
+    const candidateId = await this.resolveCandidateIdForDocument(
+      organizationId,
+      document,
+    );
+
+    if (authUser.role === ROLES.CLIENT) {
+      if (candidateId == null) {
+        throw new NotFoundError('Document not found');
+      }
+      await this.getById(authUser, candidateId);
+      return;
+    }
+
+    if (candidateId != null) {
+      await this.getCandidateOrThrow(organizationId, candidateId);
+    }
+  }
+
+  private async resolveCandidateIdForDocument(
+    organizationId: number,
+    document: { id: bigint; entityType: string; entityId: bigint },
+  ): Promise<number | null> {
+    const orgId = BigInt(organizationId);
+
+    if (document.entityType === 'CANDIDATE') {
+      return Number(document.entityId);
+    }
+
+    if (document.entityType === 'EVALUATION') {
+      const evaluation = await this.prisma.evaluation.findFirst({
+        where: { id: document.entityId, organizationId: orgId, deletedAt: null },
+        select: { candidateId: true },
+      });
+      return evaluation ? Number(evaluation.candidateId) : null;
+    }
+
+    if (document.entityType === 'BACKGROUND_CHECK') {
+      const check = await this.prisma.backgroundCheck.findFirst({
+        where: {
+          organizationId: orgId,
+          deletedAt: null,
+          OR: [{ id: document.entityId }, { reportDocumentId: document.id }],
+        },
+        select: { candidateId: true },
+      });
+      return check ? Number(check.candidateId) : null;
+    }
+
+    const linked = await this.prisma.candidate.findFirst({
+      where: {
+        organizationId: orgId,
+        deletedAt: null,
+        OR: [
+          { resumeDocumentId: document.id },
+          { profileImageDocumentId: document.id },
+          { introVideoDocumentId: document.id },
+        ],
+      },
+      select: { id: true },
+    });
+    return linked ? Number(linked.id) : null;
+  }
+
   async uploadAsset(
     authUser: AuthenticatedUser,
     id: number,
@@ -1119,7 +1303,14 @@ export class CandidateService {
 
     const updated = await this.candidateRepository.publish(organizationId, id);
     await this.writeCandidateAudit(authUser, 'UPDATE', id, 'Published candidate to client portal');
-    return this.toDto(updated, authUser);
+    const dto = await this.toDto(updated, authUser);
+    await notifyCandidatePublished(this.prisma, this.fastify.config, {
+      organizationId,
+      candidateId: id,
+      candidateName: `${dto.firstName} ${dto.lastName}`.trim(),
+      createdById: dto.createdById,
+    });
+    return dto;
   }
 
   async hide(authUser: AuthenticatedUser, id: number): Promise<CandidateDto> {
@@ -1165,7 +1356,15 @@ export class CandidateService {
       id,
       'Approved candidate profile (internal only)',
     );
-    return this.toDto(updated, authUser);
+    const dto = await this.toDto(updated, authUser);
+    await notifyCandidateApproved(this.prisma, this.fastify.config, {
+      organizationId,
+      candidateId: id,
+      candidateName: `${dto.firstName} ${dto.lastName}`.trim(),
+      approvedById: authUser.id,
+      createdById: dto.createdById,
+    });
+    return dto;
   }
 
   async approveAndPublish(authUser: AuthenticatedUser, id: number): Promise<CandidateDto> {
@@ -1185,7 +1384,22 @@ export class CandidateService {
       id,
       'Approved and published candidate to client portal',
     );
-    return this.toDto(updated, authUser);
+    const dto = await this.toDto(updated, authUser);
+    const candidateName = `${dto.firstName} ${dto.lastName}`.trim();
+    await notifyCandidateApproved(this.prisma, this.fastify.config, {
+      organizationId,
+      candidateId: id,
+      candidateName,
+      approvedById: authUser.id,
+      createdById: dto.createdById,
+    });
+    await notifyCandidatePublished(this.prisma, this.fastify.config, {
+      organizationId,
+      candidateId: id,
+      candidateName,
+      createdById: dto.createdById,
+    });
+    return dto;
   }
 
   /** Admin sign-off only — does not publish to the client portal. */

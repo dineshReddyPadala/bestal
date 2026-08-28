@@ -18,7 +18,7 @@ import { StorageService } from '../../services/storage.service.js';
 import { readStoredDocumentBuffer, type DocumentDownloadPayload } from '../../services/document-buffer.util.js';
 import { UPLOAD_CATEGORIES } from '../../services/storage/storage.constants.js';
 import { buildS3ObjectReference, parseS3ObjectReference } from '../../services/storage/upload.utils.js';
-import { normalizeUploadToPdf } from '../../services/document-pdf-normalizer.js';
+import { resolveN8nPdfUrl } from '../../services/document-pdf-normalizer.js';
 import { AutomationService } from '../automation/automation.service.js';
 import type { EvaluationAnalysisOutput } from '../automation/dto/evaluation-analysis.dto.js';
 import { N8nClient } from '../automation/n8n.client.js';
@@ -420,7 +420,7 @@ export class EvaluationService {
       originalName: file.originalName,
     });
 
-    const uploadFile = await normalizeUploadToPdf(file);
+    const uploadFile = file;
 
     const storageKey = this.storageService.buildEvaluationAssetKey(
       organizationId,
@@ -654,7 +654,7 @@ export class EvaluationService {
       originalName: file.originalName,
     });
 
-    const uploadFile = await normalizeUploadToPdf(file);
+    const uploadFile = file;
 
     let evaluationId: number | null = null;
     let documentId: number | null = null;
@@ -720,6 +720,41 @@ export class EvaluationService {
         evaluationFileUrl: storedFileUrl,
       });
 
+      const n8n = await resolveN8nPdfUrl({
+        original: uploadFile,
+        originalSignedUrl: signedUrl,
+        uploadConvertedPdf: async (pdf) => {
+          const pdfKey = this.storageService.buildEvaluationAssetKey(
+            organizationId,
+            evaluationId!,
+            pdf.originalName,
+          );
+          const pdfUpload = await this.storageService.upload(
+            pdfKey,
+            {
+              buffer: pdf.buffer,
+              originalName: pdf.originalName,
+              mimeType: pdf.mimeType,
+              size: pdf.size,
+            },
+            {
+              category: UPLOAD_CATEGORIES.EVALUATION,
+              organizationId,
+              entityId: evaluationId!,
+            },
+          );
+          return (
+            (await this.storageService.resolveFileUrl(
+              pdfUpload.key,
+              pdfUpload.bucket,
+              pdf.mimeType,
+            )) ??
+            pdfUpload.url ??
+            buildS3ObjectReference(pdfUpload.bucket, pdfUpload.key)
+          );
+        },
+      });
+
       const automation = new AutomationService(this.fastify);
       const candidateRow = await this.prisma.candidate.findFirst({
         where: {
@@ -735,14 +770,14 @@ export class EvaluationService {
         candidateId,
         documentId,
         requestedBy: authUser.id,
-        documentUrl: signedUrl,
+        documentUrl: n8n.documentUrl,
         previousBestalScore,
         inputReference: {
           candidateId,
           documentId,
           evaluationId,
-          fileName: uploadFile.originalName,
-          mimeType: uploadFile.mimeType,
+          fileName: n8n.fileName,
+          mimeType: n8n.mimeType,
           previousBestalScore,
         },
       });

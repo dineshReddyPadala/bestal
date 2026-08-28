@@ -16,7 +16,6 @@ import {
   IMPORT_PROFICIENCY_LEVELS,
   IMPORT_RECOMMENDATION_VALUES,
   IMPORT_SCORE_SOURCES,
-  IMPORT_SKILL_COMMUNITIES,
   IMPORT_TIMEZONES,
   IMPORT_WORKBOOK_SHEETS,
   SCORES_SHEET_COLUMNS,
@@ -146,8 +145,7 @@ export type CandidateImportTemplateOptions = {
 export async function buildCandidateImportTemplate(
   options: CandidateImportTemplateOptions = {},
 ): Promise<Buffer> {
-  const skillCommunities =
-    options.skillCommunities?.length ? options.skillCommunities : IMPORT_SKILL_COMMUNITIES;
+  const skillCommunities = options.skillCommunities ?? [];
   const timezones = options.timezones?.length ? options.timezones : IMPORT_TIMEZONES;
   const currencies = options.currencies?.length ? options.currencies : IMPORT_CURRENCIES;
 
@@ -369,6 +367,7 @@ export async function buildCandidateImportTemplate(
   instructions.views = [{ state: 'frozen', ySplit: 1 }];
 
   for (const column of candidateDropdownColumns) {
+    if (column === 'skill_community' && skillCommunities.length === 0) continue;
     const sourceSheet =
       column === 'source'
         ? IMPORT_WORKBOOK_SHEETS.CANDIDATE_SOURCES

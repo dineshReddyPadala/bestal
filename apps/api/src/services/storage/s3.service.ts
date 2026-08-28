@@ -32,6 +32,9 @@ export interface SignedUrlParams {
   bucket?: string;
   expiresInSeconds?: number;
   contentType?: string;
+  /** Defaults to inline so the browser opens the file instead of forcing a save. */
+  contentDisposition?: 'inline' | 'attachment';
+  fileName?: string;
 }
 
 export class S3Service {
@@ -140,10 +143,17 @@ export class S3Service {
     const expiresIn = params.expiresInSeconds ?? this.defaultExpiry;
 
     try {
+      const fileName = params.fileName
+        ?.replace(/["\r\n]/g, '_')
+        .slice(0, 180);
+      const disposition = params.contentDisposition === 'attachment' ? 'attachment' : 'inline';
       const command = new GetObjectCommand({
         Bucket: bucket,
         Key: params.key,
         ResponseContentType: params.contentType,
+        ResponseContentDisposition: fileName
+          ? `${disposition}; filename="${fileName}"`
+          : disposition,
       });
 
       return await getSignedUrl(this.client, command, { expiresIn });

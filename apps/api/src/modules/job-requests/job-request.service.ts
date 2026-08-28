@@ -37,7 +37,7 @@ import type {
   UpdateJobRequestBody,
 } from './job-request.validator.js';
 
-const DEFAULT_INTAKE_ORG_SLUG = 'amnet-digital';
+const DEFAULT_INTAKE_ORG_SLUG = 'bestal';
 
 export class JobRequestService {
   private readonly jobRequestRepository: JobRequestRepository;

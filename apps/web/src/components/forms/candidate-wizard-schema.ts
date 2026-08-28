@@ -545,7 +545,7 @@ export const USER_FIELD_LABELS: Record<keyof CandidateWizardFormValues, string> 
   currentCompany: 'Current Company',
   education: 'Education',
   summary: 'Summary',
-  aiSummary: 'AI Summary',
+  aiSummary: 'Candidate Summary',
   clientProfileSummary: 'Client Profile Summary',
   strengths: 'Strengths',
   weaknesses: 'Weaknesses',

@@ -4,10 +4,7 @@ import type { ApiDataResponse, LoginRequest, TokenPair } from './types';
 const BASE_URL =
   import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, '') ?? '/api/v1';
 
-export async function downloadAuthenticatedBlob(
-  path: string,
-  fallbackName: string,
-): Promise<void> {
+async function fetchAuthenticatedResponse(path: string): Promise<Response> {
   const headers: Record<string, string> = { Accept: '*/*' };
   const token = getAccessToken();
   if (token) headers.Authorization = `Bearer ${token}`;
@@ -34,6 +31,22 @@ export async function downloadAuthenticatedBlob(
     }
   }
 
+  return response;
+}
+
+export async function fetchAuthenticatedArrayBuffer(path: string): Promise<ArrayBuffer> {
+  const response = await fetchAuthenticatedResponse(path);
+  if (!response.ok) {
+    throw new Error('Unable to load this document for preview.');
+  }
+  return response.arrayBuffer();
+}
+
+export async function downloadAuthenticatedBlob(
+  path: string,
+  fallbackName: string,
+): Promise<void> {
+  const response = await fetchAuthenticatedResponse(path);
   if (!response.ok) {
     throw new Error('Failed to download file');
   }
