@@ -663,10 +663,44 @@ const LANDING_ENGINEER_IDS: Array<{ community: string; description: string; id: 
   },
 ];
 
+function withEngineerTimezone(engineer: DemoEngineer, timezone: string): DemoEngineer {
+  const timezoneMeta = resolveMarketingTimezone(timezone);
+  return {
+    ...engineer,
+    timezone: timezoneMeta.iana,
+    zoneLabel: timezoneMeta.zoneLabel,
+    zoneHours: timezoneMeta.zoneHours,
+    timezoneDetail: timezoneMeta.zoneHours,
+  };
+}
+
+/** Homepage slider — one distinct IANA timezone per featured card. */
+const LANDING_PROFILE_TIMEZONES: Record<string, string> = {
+  'divya-k': 'America/ANY',
+  'shivlila-g': 'Asia/Kolkata',
+  'sai-k': 'America/New_York',
+  'saran-p': 'America/Chicago',
+  'jaya-k': 'America/Los_Angeles',
+  'amanda-l': 'Europe/London',
+  'pra-k': 'Europe/Berlin',
+  'emily-r': 'Asia/Singapore',
+  'michael-t': 'Australia/Sydney',
+  'jessica-m': 'UTC',
+  'david-w': 'America/New_York',
+  'james-h': 'America/Chicago',
+};
+
 export const LANDING_PROFILE_SLIDES: CommunityProfileSlide[] = LANDING_ENGINEER_IDS.map(
-  ({ community, description, id }) => ({
-    community,
-    description,
-    engineer: DEMO_ENGINEERS.find((engineer) => engineer.id === id)!,
-  }),
+  ({ community, description, id }) => {
+    const base = DEMO_ENGINEERS.find((engineer) => engineer.id === id)!;
+    const timezone = LANDING_PROFILE_TIMEZONES[id] ?? base.timezone;
+    const slideEngineer =
+      timezone === base.timezone ? base : withEngineerTimezone(base, timezone);
+
+    return {
+      community,
+      description,
+      engineer: slideEngineer,
+    };
+  },
 );
