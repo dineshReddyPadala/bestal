@@ -75,7 +75,7 @@ export function HomePage() {
 
       <section className="mkt-hero">
         <MktShell className="mkt-g2">
-          <div>
+          <div className="mkt-hero-copy">
             <h1>
               Proven Talent.
               <br />
