@@ -9,6 +9,8 @@ import { CandidateImportService } from './candidate-import.service.js';
 import { CandidateService } from './candidate.service.js';
 import {
   candidateIdParamSchema,
+  documentIdParamSchema,
+  wordPreviewHtmlResponseSchema,
   candidateListResponseSchema,
   candidateResponseSchema,
   createCandidateBodySchema,
@@ -238,6 +240,50 @@ export async function candidateRoutes(fastify: FastifyInstance): Promise<void> {
       },
     },
     candidateController.list,
+  );
+
+  app.get(
+    '/documents/:documentId/preview-html',
+    {
+      preHandler: [authenticate, requirePermission(PERMISSIONS.CANDIDATES_READ)],
+      schema: {
+        tags: ['Candidates'],
+        summary: 'Render a stored Word document as HTML for in-app preview (no download)',
+        security: [{ bearerAuth: [] }],
+        params: documentIdParamSchema,
+        response: { 200: wordPreviewHtmlResponseSchema },
+      },
+    },
+    candidateController.previewWordHtml,
+  );
+
+  app.get(
+    '/documents/:documentId/file',
+    {
+      preHandler: [authenticate, requirePermission(PERMISSIONS.CANDIDATES_READ)],
+      schema: {
+        tags: ['Candidates'],
+        summary: 'Stream a stored document for in-app preview (inline, no attachment)',
+        security: [{ bearerAuth: [] }],
+        params: documentIdParamSchema,
+      },
+    },
+    candidateController.streamDocumentFile,
+  );
+
+  app.post(
+    '/documents/preview-html',
+    {
+      preHandler: [authenticate, requirePermission(PERMISSIONS.CANDIDATES_READ)],
+      schema: {
+        tags: ['Candidates'],
+        summary: 'Convert an uploaded Word file to HTML for in-app preview (no download)',
+        security: [{ bearerAuth: [] }],
+        consumes: ['multipart/form-data'],
+        response: { 200: wordPreviewHtmlResponseSchema },
+      },
+    },
+    candidateController.previewWordHtmlUpload,
   );
 
   app.get(

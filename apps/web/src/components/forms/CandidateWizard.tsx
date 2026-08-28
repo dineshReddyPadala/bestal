@@ -458,7 +458,7 @@ function ProfessionalDetailsTab() {
             />
           </FormField>
           <div className="sm:col-span-2">
-            <FormField label="AI Summary" name="aiSummary">
+            <FormField label="Candidate Summary" name="aiSummary">
               <textarea id="aiSummary" rows={5} className={textareaClass} {...register('aiSummary')} />
             </FormField>
           </div>
@@ -1541,7 +1541,7 @@ function ReviewTab({ canEditVisibility }: { canEditVisibility: boolean }) {
           ) : null}
           {values.aiSummary?.trim() ? (
             <div className="sm:col-span-2">
-              <dt className="text-muted-foreground">AI Summary</dt>
+              <dt className="text-muted-foreground">Candidate Summary</dt>
               <dd className="font-medium whitespace-pre-wrap">{values.aiSummary}</dd>
             </div>
           ) : null}

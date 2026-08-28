@@ -391,21 +391,17 @@ export async function notifyCandidateApproved(
 ): Promise<void> {
   await safeNotify('candidate-approved', async () => {
     const settings = await readNotificationsSettings(prisma);
-    const receiverIds = [
-      ...(input.createdById ? [input.createdById] : []),
-    ];
-    if (receiverIds.length > 0) {
-      await notifyUsers(prisma, config, {
-        organizationId: input.organizationId,
-        userIds: receiverIds,
-        type: 'SYSTEM',
-        title: 'Candidate approved',
-        body: `${input.candidateName} was approved and is ready for the next step.`,
-        actionUrl: webUrl(config, `/recruiter/candidates/${input.candidateId}`),
-        sendEmail: settings.emailEnabled,
-        metadata: { candidateId: input.candidateId, event: 'candidate_approved' },
-      });
-    }
+    await notifyOrgRoles(prisma, config, {
+      organizationId: input.organizationId,
+      roles: ['RECRUITER'],
+      includeUserIds: input.createdById ? [input.createdById] : undefined,
+      type: 'SYSTEM',
+      title: 'Candidate approved',
+      body: `${input.candidateName} was approved and is ready to publish.`,
+      actionUrl: webUrl(config, `/recruiter/candidates/${input.candidateId}`),
+      metadata: { candidateId: input.candidateId, event: 'candidate_approved' },
+      sendEmail: settings.emailEnabled,
+    });
     await notifyUsers(prisma, config, {
       organizationId: input.organizationId,
       userIds: [input.approvedById],
@@ -427,6 +423,32 @@ export async function notifyCandidateApproved(
           ? webUrl(config, `/super-admin/candidates/${input.candidateId}`)
           : webUrl(config, '/admin/candidate-approvals'),
       metadata: { candidateId: input.candidateId, event: 'candidate_approved_staff' },
+      sendEmail: settings.emailEnabled,
+    });
+  });
+}
+
+export async function notifyCandidatePublished(
+  prisma: PrismaClient,
+  config: AppConfig,
+  input: {
+    organizationId: number;
+    candidateId: number;
+    candidateName: string;
+    createdById?: number | null;
+  },
+): Promise<void> {
+  await safeNotify('candidate-published', async () => {
+    const settings = await readNotificationsSettings(prisma);
+    await notifyOrgRoles(prisma, config, {
+      organizationId: input.organizationId,
+      roles: ['RECRUITER'],
+      includeUserIds: input.createdById ? [input.createdById] : undefined,
+      type: 'SYSTEM',
+      title: 'Candidate published',
+      body: `${input.candidateName} was published and is now visible to clients.`,
+      actionUrl: webUrl(config, `/recruiter/candidates/${input.candidateId}`),
+      metadata: { candidateId: input.candidateId, event: 'candidate_published' },
       sendEmail: settings.emailEnabled,
     });
   });

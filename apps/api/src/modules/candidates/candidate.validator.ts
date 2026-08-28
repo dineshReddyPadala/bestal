@@ -186,6 +186,16 @@ export const candidateIdParamSchema = z.object({
   id: z.coerce.number().int().positive(),
 });
 
+export const documentIdParamSchema = z.object({
+  documentId: z.coerce.number().int().positive(),
+});
+
+export const wordPreviewHtmlResponseSchema = z.object({
+  data: z.object({
+    html: z.string(),
+  }),
+});
+
 export type CreateCandidateBody = z.infer<typeof createCandidateBodySchema>;
 export type UpdateCandidateBody = z.infer<typeof updateCandidateBodySchema>;
 export type ListCandidatesQuery = z.infer<typeof listCandidatesQuerySchema>;

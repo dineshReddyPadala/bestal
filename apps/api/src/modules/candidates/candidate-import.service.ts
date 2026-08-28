@@ -1,9 +1,8 @@
 import { createHash } from 'node:crypto';
 import type { FastifyInstance } from 'fastify';
 import {
-  IMPORT_SKILL_COMMUNITIES,
   resolveBgvResultSummaryForImport,
-  slugifySkillCommunity,
+  resolveImportedSkillCommunityId,
 } from '@bestal/shared-utils';
 import type {
   BackgroundCheckStatus,
@@ -155,7 +154,6 @@ export class CandidateImportService {
 
   async getTemplateBuffer(): Promise<Buffer> {
     this.assertPrismaImportReady();
-    await this.ensureSkillCommunities();
     const skillCommunities = await this.listSkillCommunityNames();
     const pricing = await readPricingSettings(this.fastify.prisma);
     return buildCandidateImportTemplate({
@@ -701,7 +699,7 @@ export class CandidateImportService {
 
       const organizationId = bigintToNumber(batch.organizationId);
       const actorId = bigintToNumber(batch.createdById);
-      const communities = await this.ensureSkillCommunities();
+      const communities = await this.loadActiveSkillCommunities();
 
       let created = 0;
       let updated = 0;
@@ -859,9 +857,7 @@ export class CandidateImportService {
       return 'SKIP';
     }
 
-    const communityId = payload.skillCommunity
-      ? communities.get(payload.skillCommunity) ?? null
-      : null;
+    const communityId = resolveImportedSkillCommunityId(payload.skillCommunity, communities);
     const profileStatus = deriveImportedProfileStatus(payload);
     const grossMargin =
       payload.billRate != null && payload.payRate != null
@@ -883,6 +879,7 @@ export class CandidateImportService {
       location: payload.location,
       country: payload.country,
       timezone: payload.timezone,
+      timezoneOverlap: payload.timezone,
       yearsExperience: payload.yearsExperience,
       currentCompany: payload.currentCompany,
       currentTitle: payload.currentTitle,
@@ -963,7 +960,7 @@ export class CandidateImportService {
         data: payload.skills.map((skill) => ({
           candidateId: candidateId!,
           skillCommunityId:
-            (skill.skillCommunityName && communities.get(skill.skillCommunityName)) ||
+            resolveImportedSkillCommunityId(skill.skillCommunityName, communities) ||
             communityId,
           skillName: skill.skillName,
           skillCategory: skill.skillCategory,
@@ -1412,7 +1409,6 @@ export class CandidateImportService {
   }
 
   private async listSkillCommunityNames(): Promise<string[]> {
-    await this.ensureSkillCommunities();
     const rows = await this.fastify.prisma.skillCommunity.findMany({
       where: { deletedAt: null, isActive: true },
       orderBy: { name: 'asc' },
@@ -1421,17 +1417,11 @@ export class CandidateImportService {
     return rows.map((row) => row.name);
   }
 
-  private async ensureSkillCommunities(): Promise<Map<string, bigint>> {
-    const map = new Map<string, bigint>();
-    for (const name of IMPORT_SKILL_COMMUNITIES) {
-      const slug = slugifySkillCommunity(name);
-      const community = await this.fastify.prisma.skillCommunity.upsert({
-        where: { slug },
-        update: { name, isActive: true, deletedAt: null },
-        create: { name, slug, description: `${name} skill community` },
-      });
-      map.set(name, community.id);
-    }
-    return map;
+  private async loadActiveSkillCommunities(): Promise<Map<string, bigint>> {
+    const rows = await this.fastify.prisma.skillCommunity.findMany({
+      where: { deletedAt: null, isActive: true },
+      select: { id: true, name: true },
+    });
+    return new Map(rows.map((row) => [row.name, row.id]));
   }
 }

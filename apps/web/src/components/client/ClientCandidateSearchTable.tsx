@@ -1,5 +1,5 @@
 import type { ClientSearchRecord } from '@bestal/mock-data';
-import { cn, formatCurrency, initials } from '@bestal/shared-utils';
+import { cn, formatCurrency, formatTimezoneLabel, initials } from '@bestal/shared-utils';
 import { Avatar, Button } from '@bestal/ui';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useEffect, useMemo, useState, type KeyboardEvent } from 'react';
@@ -52,6 +52,7 @@ function ClientCandidateSearchTableRow({
   const availability = availabilityMeta(record);
   const tags = skillTags(record);
   const designation = record.currentTitle?.trim() || record.role;
+  const timezoneLabel = formatTimezoneLabel(record.timezone);
 
   function handleRowKeyDown(event: KeyboardEvent<HTMLTableRowElement>) {
     if (event.key === 'Enter' || event.key === ' ') {
@@ -131,6 +132,9 @@ function ClientCandidateSearchTableRow({
           {availability.label}
         </span>
       </td>
+      <td className="hidden max-w-[10rem] truncate px-3 py-3 text-sm text-muted-foreground xl:table-cell">
+        {timezoneLabel ? `Timezone: ${timezoneLabel}` : '—'}
+      </td>
     </tr>
   );
 }
@@ -205,13 +209,19 @@ export function ClientCandidateSearchTable({
                 className="hidden px-3 py-2.5 text-xs font-semibold text-muted-foreground xl:table-cell"
                 scope="col"
               >
-                Status
+                Previously…
               </th>
               <th
                 className="hidden px-3 py-2.5 text-xs font-semibold text-muted-foreground lg:table-cell"
                 scope="col"
               >
-                Previously…
+                Availability
+              </th>
+              <th
+                className="hidden px-3 py-2.5 text-xs font-semibold text-muted-foreground xl:table-cell"
+                scope="col"
+              >
+                Timezone
               </th>
             </tr>
           </thead>

@@ -75,7 +75,7 @@ export function DocumentAssetRow({
   doc,
   accept,
   canUpload = false,
-  onDownload,
+  onPreview,
   onUpload,
 }: {
   label: string;
@@ -83,7 +83,7 @@ export function DocumentAssetRow({
   doc?: CandidateDocumentDto | null;
   accept?: string;
   canUpload?: boolean;
-  onDownload?: (doc: CandidateDocumentDto) => void;
+  onPreview?: (doc: CandidateDocumentDto) => void;
   onUpload?: (file: File) => void;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
@@ -129,8 +129,8 @@ export function DocumentAssetRow({
             </Button>
           </>
         ) : null}
-        {doc && onDownload ? (
-          <Button variant="ghost" size="sm" onClick={() => onDownload(doc)}>
+        {doc && onPreview ? (
+          <Button variant="ghost" size="sm" onClick={() => onPreview(doc)}>
             <Eye className="mr-1.5 h-3.5 w-3.5" />
             Preview
           </Button>

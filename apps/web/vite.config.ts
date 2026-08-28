@@ -29,4 +29,7 @@ export default defineConfig({
       '@bestal/shared-utils': path.resolve(workspaceRoot, 'packages/shared-utils/src/index.ts'),
     },
   },
+  optimizeDeps: {
+    include: ['docx-preview'],
+  },
 });

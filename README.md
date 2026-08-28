@@ -114,10 +114,11 @@ npm run dev
 
 | Role | Email | Password | Portal |
 |------|-------|----------|--------|
-| Admin | admin@bestal.com | Password123! | `/admin/login` |
-| Recruiter | recruiter@bestal.com | Password123! | `/recruiter/login` |
-| Sales | sales@bestal.com | Password123! | — |
-| Client | client@bestal.com | Password123! | `/client/login` |
+| Super Admin | superadmin@bestal.co | Password123! | `/login` |
+| Admin | admin@bestal.co | Password123! | `/admin/login` |
+| Recruiter | recruiter@bestal.co | Password123! | `/recruiter/login` |
+| Sales | sales@bestal.co | Password123! | — |
+| Client | client@bestal.co | Password123! | `/client/login` |
 
 API docs (Swagger UI): `http://localhost:3000/docs`
 

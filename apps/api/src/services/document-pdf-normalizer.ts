@@ -36,7 +36,10 @@ function isDocx(mimeType: string, originalName: string): boolean {
 
 function isLegacyDoc(mimeType: string, originalName: string): boolean {
   const lower = originalName.toLowerCase();
-  return mimeType === 'application/msword' || lower.endsWith('.doc');
+  return (
+    mimeType === 'application/msword' ||
+    (lower.endsWith('.doc') && !lower.endsWith('.docx'))
+  );
 }
 
 function isImage(mimeType: string): boolean {
@@ -45,7 +48,8 @@ function isImage(mimeType: string): boolean {
 
 export function pdfFileName(originalName: string): string {
   const base = path.basename(originalName, path.extname(originalName)) || 'document';
-  return `${base}.pdf`;
+  const withoutPrefix = base.replace(/^ai-extract-/i, '');
+  return `ai-extract-${withoutPrefix}.pdf`;
 }
 
 /** pdf-lib StandardFonts use WinAnsi — map/strip characters outside that set. */
@@ -146,25 +150,76 @@ async function textToPdf(text: string): Promise<Buffer> {
   return Buffer.from(await pdfDoc.save());
 }
 
-async function convertWithLibreOffice(buffer: Buffer, extension: string): Promise<Buffer> {
+async function convertWithLibreOffice(
+  buffer: Buffer,
+  outputExtension: string,
+  sourceExtension: string,
+): Promise<Buffer> {
   try {
-    const pdf = await libreConvert(buffer, '.pdf', extension);
-    if (!pdf?.length) {
-      throw new Error('LibreOffice returned an empty PDF');
+    const converted = await libreConvert(buffer, outputExtension, undefined);
+    if (!converted?.length) {
+      throw new Error(`LibreOffice returned an empty ${outputExtension} file`);
     }
-    return Buffer.from(pdf);
+    return Buffer.from(converted);
   } catch (error) {
     throw new BadRequestError(
-      `Unable to convert ${extension} to PDF. Install LibreOffice on the API host or upload a PDF instead.${
+      `Unable to convert ${sourceExtension} to ${outputExtension}. Install LibreOffice on the API host or upload a PDF instead.${
         error instanceof Error && error.message ? ` (${error.message})` : ''
       }`,
     );
   }
 }
 
+function extractHtmlBody(html: string): string {
+  const match = html.match(/<body[^>]*>([\s\S]*)<\/body>/i);
+  return (match?.[1] ?? html).trim();
+}
+
+async function docxBufferToHtml(buffer: Buffer): Promise<string> {
+  const result = await mammoth.convertToHtml({ buffer });
+  const html = result.value?.trim();
+  if (!html) {
+    throw new BadRequestError('Preview is not available for this Word document.');
+  }
+  return html;
+}
+
+/**
+ * Converts Word uploads to HTML for in-app preview (not a download).
+ * `.docx` uses mammoth; `.doc` uses LibreOffice HTML (or DOCX then mammoth).
+ */
+export async function convertWordToPreviewHtml(file: {
+  buffer: Buffer;
+  originalName: string;
+  mimeType: string;
+}): Promise<string> {
+  if (isDocx(file.mimeType, file.originalName)) {
+    return docxBufferToHtml(file.buffer);
+  }
+
+  if (!isLegacyDoc(file.mimeType, file.originalName)) {
+    throw new BadRequestError('Preview is not available for this file type.');
+  }
+
+  try {
+    const htmlBuffer = await convertWithLibreOffice(file.buffer, '.html', '.doc');
+    const html = extractHtmlBody(htmlBuffer.toString('utf8'));
+    if (html) return html;
+  } catch {
+    // Fall through to DOCX conversion.
+  }
+
+  try {
+    const docxBuffer = await convertWithLibreOffice(file.buffer, '.docx', '.doc');
+    return await docxBufferToHtml(docxBuffer);
+  } catch {
+    throw new BadRequestError('Preview is not available for this Word document.');
+  }
+}
+
 async function docxToPdf(buffer: Buffer): Promise<Buffer> {
   try {
-    return await convertWithLibreOffice(buffer, '.docx');
+    return await convertWithLibreOffice(buffer, '.pdf', '.docx');
   } catch {
     const result = await mammoth.extractRawText({ buffer });
     const text = result.value?.trim();
@@ -219,7 +274,7 @@ export async function normalizeUploadToPdf(file: NormalizableUpload): Promise<No
   let pdfBuffer: Buffer;
 
   if (isLegacyDoc(file.mimeType, file.originalName)) {
-    pdfBuffer = await convertWithLibreOffice(file.buffer, '.doc');
+    pdfBuffer = await convertWithLibreOffice(file.buffer, '.pdf', '.doc');
   } else if (isDocx(file.mimeType, file.originalName)) {
     pdfBuffer = await docxToPdf(file.buffer);
   } else if (isImage(file.mimeType)) {
@@ -236,5 +291,38 @@ export async function normalizeUploadToPdf(file: NormalizableUpload): Promise<No
     originalName,
     mimeType: 'application/pdf',
     size: pdfBuffer.length,
+  };
+}
+
+export function needsPdfConversionForAi(
+  file: Pick<NormalizableUpload, 'mimeType' | 'originalName'>,
+): boolean {
+  return !isPdf(file.mimeType, file.originalName);
+}
+
+/**
+ * Keep the stored upload in its original format. Convert a PDF copy only for n8n.
+ * Callers must upload the sidecar without creating a Document row — the original
+ * file remains the source of truth for preview and download.
+ */
+export async function resolveN8nPdfUrl(params: {
+  original: NormalizableUpload;
+  originalSignedUrl: string;
+  uploadConvertedPdf: (pdf: NormalizableUpload) => Promise<string>;
+}): Promise<{ documentUrl: string; fileName: string; mimeType: string }> {
+  const { original, originalSignedUrl, uploadConvertedPdf } = params;
+  if (!needsPdfConversionForAi(original)) {
+    return {
+      documentUrl: originalSignedUrl,
+      fileName: original.originalName,
+      mimeType: original.mimeType,
+    };
+  }
+  const pdf = await normalizeUploadToPdf(original);
+  const documentUrl = await uploadConvertedPdf(pdf);
+  return {
+    documentUrl,
+    fileName: pdf.originalName,
+    mimeType: pdf.mimeType,
   };
 }

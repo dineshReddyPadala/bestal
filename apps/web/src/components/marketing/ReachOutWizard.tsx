@@ -12,6 +12,7 @@ import {
   firstReachOutStepWithErrors,
   formatReachOutFieldLabel,
 } from '../../lib/reach-out-validation';
+import { TIMEZONE_OPTIONS } from '../../lib/timezones';
 import { ForwardArrow } from '../ui/ForwardArrow';
 
 const WHAT_HAPPENS_NEXT = [
@@ -44,14 +45,9 @@ const RESOURCE_OPTIONS = [
   { value: '5+', label: '5+' },
 ];
 
-const TIMEZONE_OPTIONS = [
+const TIMEZONE_SELECT_OPTIONS = [
   { value: '', label: 'Select time zone' },
-  { value: 'Eastern', label: 'US Eastern Time (ET)' },
-  { value: 'Central', label: 'US Central Time (CT)' },
-  { value: 'Mountain', label: 'US Mountain Time (MT)' },
-  { value: 'Pacific', label: 'US Pacific Time (PT)' },
-  { value: 'Alaska', label: 'US Alaska Time (AKT)' },
-  { value: 'Hawaii', label: 'US Hawaii Time (HT)' },
+  ...TIMEZONE_OPTIONS,
 ];
 
 const MAX_FILE_BYTES = 10 * 1024 * 1024;
@@ -533,7 +529,7 @@ export function ReachOutWizard() {
                   onChange={(e) => update({ timezone: e.target.value })}
                   className="mkt-reach-out-select"
                 >
-                  {TIMEZONE_OPTIONS.map((opt) => (
+                  {TIMEZONE_SELECT_OPTIONS.map((opt) => (
                     <option key={opt.value || 'empty'} value={opt.value} disabled={!opt.value}>
                       {opt.label}
                     </option>

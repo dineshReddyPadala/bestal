@@ -1,5 +1,5 @@
 import type { ClientSearchRecord } from '@bestal/mock-data';
-import { cn, formatCurrency, initials } from '@bestal/shared-utils';
+import { cn, formatCurrency, formatTimezoneLabel, initials } from '@bestal/shared-utils';
 import { Button } from '@bestal/ui';
 import { CheckCircle2, Loader2, Star } from 'lucide-react';
 import { useEffect, useState, type ReactNode } from 'react';
@@ -119,6 +119,7 @@ export function ClientCandidateSearchCard({
   const availableNow = isImmediatelyAvailable(record);
   const availabilityClasses = availabilityStatusClasses(availableNow);
   const availabilityLabel = resolveClientAvailabilityLabel(record);
+  const timezoneLabel = formatTimezoneLabel(record.timezone);
 
   return (
     <article
@@ -165,6 +166,15 @@ export function ClientCandidateSearchCard({
               />
               {availabilityLabel}
             </p>
+            {timezoneLabel ? (
+              <p
+                className="text-[10px] leading-tight text-muted-foreground"
+                title={timezoneLabel}
+              >
+                Timezone:{' '}
+                <span className="font-medium text-foreground">{timezoneLabel}</span>
+              </p>
+            ) : null}
           </div>
         </div>
 

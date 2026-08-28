@@ -13,7 +13,7 @@ import { StorageService } from '../../services/storage.service.js';
 import { readStoredDocumentBuffer, type DocumentDownloadPayload } from '../../services/document-buffer.util.js';
 import { UPLOAD_CATEGORIES } from '../../services/storage/storage.constants.js';
 import { buildS3ObjectReference } from '../../services/storage/upload.utils.js';
-import { normalizeUploadToPdf } from '../../services/document-pdf-normalizer.js';
+import { resolveN8nPdfUrl } from '../../services/document-pdf-normalizer.js';
 import {
   formatBgvAiSummaryJson,
   formatBgvCheckStatusesSummary,
@@ -1073,7 +1073,7 @@ export class BackgroundCheckService {
       originalName: file.originalName,
     });
 
-    const uploadFile = await normalizeUploadToPdf(file);
+    const uploadFile = file;
 
     let backgroundCheckId: number | null = null;
     let documentId: number | null = null;
@@ -1139,18 +1139,53 @@ export class BackgroundCheckService {
         reportDocumentId: documentId,
       });
 
+      const n8n = await resolveN8nPdfUrl({
+        original: uploadFile,
+        originalSignedUrl: signedUrl,
+        uploadConvertedPdf: async (pdf) => {
+          const pdfKey = this.storageService.buildBackgroundCheckAssetKey(
+            organizationId,
+            backgroundCheckId!,
+            pdf.originalName,
+          );
+          const pdfUpload = await this.storageService.upload(
+            pdfKey,
+            {
+              buffer: pdf.buffer,
+              originalName: pdf.originalName,
+              mimeType: pdf.mimeType,
+              size: pdf.size,
+            },
+            {
+              category: UPLOAD_CATEGORIES.BACKGROUND_CHECK,
+              organizationId,
+              entityId: backgroundCheckId!,
+            },
+          );
+          return (
+            (await this.storageService.resolveFileUrl(
+              pdfUpload.key,
+              pdfUpload.bucket,
+              pdf.mimeType,
+            )) ??
+            pdfUpload.url ??
+            buildS3ObjectReference(pdfUpload.bucket, pdfUpload.key)
+          );
+        },
+      });
+
       const automation = new AutomationService(this.fastify);
       const job = await automation.enqueueBgvAnalysis({
         candidateId,
         documentId,
         requestedBy: authUser.id,
-        documentUrl: signedUrl,
+        documentUrl: n8n.documentUrl,
         inputReference: {
           candidateId,
           documentId,
           backgroundCheckId,
-          fileName: uploadFile.originalName,
-          mimeType: uploadFile.mimeType,
+          fileName: n8n.fileName,
+          mimeType: n8n.mimeType,
         },
       });
 
@@ -1204,72 +1239,58 @@ export class BackgroundCheckService {
       this.storageService,
     );
 
-    const uploadFile = await normalizeUploadToPdf({
-      buffer: downloaded.buffer,
-      originalName: reportDoc.originalName || reportDoc.fileName || 'bgv-report.pdf',
-      mimeType: reportDoc.mimeType || 'application/pdf',
-      size: downloaded.buffer.length,
-    });
+    const original: DocumentDownloadPayload = downloaded;
+    const originalSignedUrl =
+      (await this.storageService.resolveFileUrl(
+        reportDoc.s3Key,
+        reportDoc.s3Bucket,
+        reportDoc.mimeType,
+      )) ?? buildS3ObjectReference(reportDoc.s3Bucket, reportDoc.s3Key);
 
-    let documentId = bigintToNumber(existing.reportDocumentId!);
-    let signedUrl: string;
-
-    const alreadyPdf =
-      uploadFile.mimeType === 'application/pdf' &&
-      reportDoc.mimeType === 'application/pdf' &&
-      uploadFile.size === downloaded.buffer.length;
-
-    if (alreadyPdf) {
-      signedUrl =
-        (await this.storageService.resolveFileUrl(
-          reportDoc.s3Key,
-          reportDoc.s3Bucket,
-          uploadFile.mimeType,
-        )) ?? buildS3ObjectReference(reportDoc.s3Bucket, reportDoc.s3Key);
-    if (!signedUrl) {
+    if (!originalSignedUrl) {
       throw new BadRequestError('Unable to resolve signed URL for BGV report');
     }
-    } else {
-      const storageKey = this.storageService.buildBackgroundCheckAssetKey(
-        organizationId,
-        backgroundCheckId,
-        uploadFile.originalName,
-      );
-      const uploadResult = await this.storageService.upload(
-        storageKey,
-        {
-          buffer: uploadFile.buffer,
-          originalName: uploadFile.originalName,
-          mimeType: uploadFile.mimeType,
-          size: uploadFile.size,
-        },
-        {
-          category: UPLOAD_CATEGORIES.BACKGROUND_CHECK,
-          organizationId,
-          entityId: backgroundCheckId,
-        },
-      );
-      const storedFileUrl = buildS3ObjectReference(uploadResult.bucket, uploadResult.key);
-      signedUrl =
-        (await this.storageService.resolveFileUrl(
-          uploadResult.key,
-          uploadResult.bucket,
-          uploadFile.mimeType,
-        )) ?? storedFileUrl;
 
-      await this.prisma.document.update({
-        where: { id: reportDoc.id },
-        data: {
-          fileName: uploadResult.key.split('/').pop() ?? uploadFile.originalName,
-          originalName: uploadFile.originalName,
-          s3Key: uploadResult.key,
-          s3Bucket: uploadResult.bucket,
-          fileUrl: storedFileUrl,
-          mimeType: uploadFile.mimeType,
-          fileSize: BigInt(uploadFile.size),
-        },
-      });
-    }
+    const documentId = bigintToNumber(existing.reportDocumentId!);
+    const n8n = await resolveN8nPdfUrl({
+      original: {
+        buffer: original.buffer,
+        originalName: reportDoc.originalName || reportDoc.fileName || 'bgv-report.pdf',
+        mimeType: reportDoc.mimeType || 'application/pdf',
+        size: original.buffer.length,
+      },
+      originalSignedUrl,
+      uploadConvertedPdf: async (pdf) => {
+        const pdfKey = this.storageService.buildBackgroundCheckAssetKey(
+          organizationId,
+          backgroundCheckId,
+          pdf.originalName,
+        );
+        const pdfUpload = await this.storageService.upload(
+          pdfKey,
+          {
+            buffer: pdf.buffer,
+            originalName: pdf.originalName,
+            mimeType: pdf.mimeType,
+            size: pdf.size,
+          },
+          {
+            category: UPLOAD_CATEGORIES.BACKGROUND_CHECK,
+            organizationId,
+            entityId: backgroundCheckId,
+          },
+        );
+        return (
+          (await this.storageService.resolveFileUrl(
+            pdfUpload.key,
+            pdfUpload.bucket,
+            pdf.mimeType,
+          )) ??
+          pdfUpload.url ??
+          buildS3ObjectReference(pdfUpload.bucket, pdfUpload.key)
+        );
+      },
+    });
 
     const candidateId = bigintToNumber(existing.candidateId);
 
@@ -1278,13 +1299,13 @@ export class BackgroundCheckService {
       candidateId,
       documentId,
       requestedBy: authUser.id,
-      documentUrl: signedUrl,
+      documentUrl: n8n.documentUrl,
       inputReference: {
         candidateId,
         documentId,
         backgroundCheckId,
-        fileName: uploadFile.originalName,
-        mimeType: uploadFile.mimeType,
+        fileName: n8n.fileName,
+        mimeType: n8n.mimeType,
       },
     });
 

@@ -121,7 +121,10 @@ export class StorageService {
     contentType?: string,
   ): Promise<string | null> {
     if (await this.isS3Driver()) {
-      return this.getSignedDownloadUrl(key, bucket, { contentType });
+      return this.getSignedDownloadUrl(key, bucket, {
+        contentType,
+        contentDisposition: 'inline',
+      });
     }
     return this.getPublicUrl(key, bucket);
   }

@@ -3,7 +3,7 @@ import type {
   ClientGroupedSkill,
   ClientProfileAttachment,
 } from '@bestal/mock-data';
-import { COLLABORATION_CULTURAL_FIT_LABEL, cn, formatCurrency, initials } from '@bestal/shared-utils';
+import { COLLABORATION_CULTURAL_FIT_LABEL, cn, formatCurrency, formatTimezoneLabel, initials } from '@bestal/shared-utils';
 import { Button, Tabs } from '@bestal/ui';
 import {
   BadgeCheck,
@@ -14,6 +14,7 @@ import {
   FlaskConical,
   Globe,
   Laptop,
+  MapPin,
   Star,
 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
@@ -228,7 +229,7 @@ function ProfileAttachments({
                 </p>
               </div>
             </div>
-            {attachment.url ? (
+            {attachment.url || attachment.documentId ? (
               <Button
                 type="button"
                 variant="ghost"
@@ -252,6 +253,7 @@ function ProfileAttachments({
         url={preview?.url}
         mimeType={preview?.mimeType}
         fileName={preview?.fileName}
+        documentId={preview?.documentId}
       />
     </>
   );
@@ -280,9 +282,7 @@ export function ClientCandidateProfileView({
   const deployEnabled =
     Boolean(onRequestDeployment) && canRequestDeployment && !deploymentBlockReason;
   const companyLine = [profile.currentCompany, profile.currentTitle].filter(Boolean).join(' | ');
-  const timezoneLabel =
-    profile.availabilityDetail.timezone.replace(/_/g, ' ') || profile.location;
-  const locationLine = profile.location ? `${timezoneLabel}` : timezoneLabel;
+  const timezoneLabel = formatTimezoneLabel(profile.availabilityDetail.timezone);
   const primarySkill =
     profile.primarySkillCommunityName.trim() ||
     profile.primarySkills[0]?.skillCommunityName ||
@@ -475,8 +475,13 @@ export function ClientCandidateProfileView({
                     icon={Clock}
                     label={`${profile.yearsExperience} Years Experience`}
                   />
-                  <MetadataItem icon={Globe} label={locationLine} />
+                  {profile.location ? (
+                    <MetadataItem icon={MapPin} label={profile.location} />
+                  ) : null}
                   <MetadataItem icon={Calendar} label={profile.availability} />
+                  {timezoneLabel ? (
+                    <MetadataItem icon={Globe} label={`Timezone: ${timezoneLabel}`} />
+                  ) : null}
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2">

@@ -70,8 +70,11 @@ export const IMPORT_REQUIRED_SHEETS = IMPORT_TEMPLATE_SHEETS;
 /** Common ATS / legacy labels mapped to canonical DB skill community names. */
 export const IMPORT_SKILL_COMMUNITY_ALIASES: Record<string, string> = {
   'DevOps & Cloud': 'Cloud / DevOps',
-  'Machine Learning': 'AI / GenAI',
   'Mobile Development': 'Mobile',
+  Frontend: 'Frontend Development',
+  'Frontend Engineering': 'Frontend Development',
+  Backend: 'Backend Development',
+  Other: 'Others',
 };
 
 export const CANDIDATE_SHEET_COLUMNS = [
@@ -174,21 +177,6 @@ export const CANDIDATE_REQUIRED_FIELDS = [
   'years_experience',
   'primary_role',
   'source',
-] as const;
-
-export const IMPORT_SKILL_COMMUNITIES = [
-  'Data Engineering',
-  'AI / GenAI',
-  'Cloud / DevOps',
-  'QA Automation',
-  'Frontend',
-  'Backend',
-  'Full Stack',
-  'Mobile',
-  'Cybersecurity',
-  'SAP',
-  'Salesforce',
-  'ServiceNow',
 ] as const;
 
 export const IMPORT_AVAILABILITY_STATUSES = [
@@ -335,7 +323,6 @@ export const IMPORT_INSTRUCTIONS = [
   'The template is generic and supports any ATS.',
 ] as const;
 
-export type ImportSkillCommunity = (typeof IMPORT_SKILL_COMMUNITIES)[number];
 export type ImportAvailabilityStatus = (typeof IMPORT_AVAILABILITY_STATUSES)[number];
 export type ImportEvaluationType = (typeof IMPORT_EVALUATION_TYPES)[number];
 export type ImportRecommendationValue = (typeof IMPORT_RECOMMENDATION_VALUES)[number];
@@ -355,4 +342,38 @@ export function slugifySkillCommunity(name: string): string {
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '');
+}
+
+function findByLowerCase(haystack: readonly string[], value: string): string | undefined {
+  const needle = value.trim().toLowerCase();
+  return haystack.find((item) => item.toLowerCase() === needle);
+}
+
+/**
+ * Maps a workbook `skill_community` value onto an allowlist name.
+ * Aliases are applied first, then case-insensitive match against `allowed`.
+ */
+export function resolveImportedSkillCommunityName(
+  value: string,
+  allowed: readonly string[],
+): string {
+  const trimmed = value.trim();
+  if (!trimmed) return trimmed;
+
+  const aliasKey = findByLowerCase(Object.keys(IMPORT_SKILL_COMMUNITY_ALIASES), trimmed);
+  if (aliasKey) {
+    const aliasTarget = IMPORT_SKILL_COMMUNITY_ALIASES[aliasKey];
+    return findByLowerCase(allowed, aliasTarget) ?? aliasTarget;
+  }
+
+  return findByLowerCase(allowed, trimmed) ?? trimmed;
+}
+
+export function resolveImportedSkillCommunityId<T>(
+  value: string | null | undefined,
+  communities: Map<string, T>,
+): T | null {
+  if (!value?.trim()) return null;
+  const resolved = resolveImportedSkillCommunityName(value, [...communities.keys()]);
+  return communities.get(resolved) ?? null;
 }

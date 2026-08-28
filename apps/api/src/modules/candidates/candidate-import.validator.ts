@@ -17,9 +17,7 @@ import {
   IMPORT_PREFERRED_SHIFTS,
   IMPORT_PROFICIENCY_LEVELS,
   IMPORT_RECOMMENDATION_VALUES,
-  IMPORT_SKILL_COMMUNITY_ALIASES,
   IMPORT_SCORE_SOURCES,
-  IMPORT_SKILL_COMMUNITIES,
   IMPORT_TIMEZONES,
   IMPORT_UPLOAD_REQUIRED_SHEETS,
   IMPORT_WORKBOOK_SHEETS,
@@ -27,6 +25,7 @@ import {
   SKILLS_SHEET_COLUMNS,
   normalizeEvaluationRecommendation,
   normalizeEvaluationType,
+  resolveImportedSkillCommunityName,
 } from '@bestal/shared-utils';
 import type {
   CandidateAvailabilityStatus,
@@ -415,18 +414,6 @@ function assertAllowed(
   return true;
 }
 
-function resolveSkillCommunityName(
-  value: string,
-  allowed: readonly string[],
-): string {
-  const trimmed = value.trim();
-  const alias = IMPORT_SKILL_COMMUNITY_ALIASES[trimmed];
-  if (alias && allowed.includes(alias)) {
-    return alias;
-  }
-  return trimmed;
-}
-
 function assertSkillCommunity(
   value: string,
   allowed: readonly string[],
@@ -437,7 +424,7 @@ function assertSkillCommunity(
   sourceCandidateId?: string,
 ): string | null {
   if (!value.trim()) return null;
-  const resolved = resolveSkillCommunityName(value, allowed);
+  const resolved = resolveImportedSkillCommunityName(value, allowed);
   assertAllowed(
     resolved,
     allowed,
@@ -511,8 +498,7 @@ export async function parseAndValidateCandidateWorkbook(
   fileBuffer: Buffer,
   options?: { skillCommunities?: readonly string[] },
 ): Promise<ParsedWorkbook> {
-  const allowedSkillCommunities =
-    options?.skillCommunities?.length ? options.skillCommunities : IMPORT_SKILL_COMMUNITIES;
+  const allowedSkillCommunities = options?.skillCommunities ?? [];
   const errors: ImportValidationError[] = [];
   const workbook = new ExcelJS.Workbook();
   await workbook.xlsx.load(fileBuffer as unknown as ExcelJS.Buffer);

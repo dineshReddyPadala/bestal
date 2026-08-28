@@ -30,7 +30,6 @@ import {
   DEFAULT_CLIENT_SEARCH_SORT,
   filterClientSearchRecords,
   sortClientSearchRecords,
-  uniqueSorted,
   type ClientSearchFilters,
   type ClientSearchSort,
 } from '../../lib/client-search';
@@ -100,11 +99,6 @@ export function CandidateSearchPage() {
   const allRecords = useMemo(() => {
     return (apiCandidates?.data ?? []).map(mapApiCandidateToClientSearchRecord);
   }, [apiCandidates]);
-
-  const timezoneOptions = useMemo(
-    () => uniqueSorted(allRecords.map((r) => r.timezone).filter((tz) => tz !== 'Flexible')),
-    [allRecords],
-  );
 
   const filtered = useMemo(() => {
     const rows = filterClientSearchRecords(allRecords, filters);
@@ -316,7 +310,6 @@ export function CandidateSearchPage() {
             viewMode={viewMode}
             onViewModeChange={setViewMode}
             resultCount={filtered.length}
-            timezoneOptions={timezoneOptions}
             communities={communities}
             selectedCommunityId={selectedCommunityId}
             onCommunityChange={selectCommunity}

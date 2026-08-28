@@ -1,3 +1,4 @@
+import { TIMEZONE_OPTIONS } from '../../lib/timezones';
 import { cn } from '@bestal/shared-utils';
 import { Button, SearchInput } from '@bestal/ui';
 import { ChevronDown, LayoutGrid, List, RotateCcw, X } from 'lucide-react';
@@ -21,7 +22,6 @@ type ClientSearchToolbarProps = {
   viewMode: ClientSearchViewMode;
   onViewModeChange: (mode: ClientSearchViewMode) => void;
   resultCount: number;
-  timezoneOptions?: readonly string[];
   communities?: readonly { id: number; name: string }[];
   selectedCommunityId?: number | null;
   onCommunityChange?: (communityId: number | null) => void;
@@ -75,7 +75,6 @@ export function ClientSearchToolbar({
   viewMode,
   onViewModeChange,
   resultCount,
-  timezoneOptions = [],
   communities = [],
   selectedCommunityId = null,
   onCommunityChange,
@@ -84,11 +83,6 @@ export function ClientSearchToolbar({
 }: ClientSearchToolbarProps) {
   const set = (patch: Partial<ClientSearchFilters>) => onChange({ ...filters, ...patch });
   const chips = getActiveFilterChips(filters);
-
-  const timezoneSelectOptions =
-    timezoneOptions.length > 0
-      ? timezoneOptions
-      : ['UTC', 'EST', 'PST', 'CET', 'IST', 'SGT', 'AEST'];
 
   return (
     <div className={cn('space-y-3', className)}>
@@ -138,9 +132,9 @@ export function ClientSearchToolbar({
             onChange={(value) => set({ timezone: value })}
             options={[
               { value: 'all', label: 'All timezones' },
-              ...timezoneSelectOptions.map((timezone) => ({
-                value: timezone,
-                label: timezone.replace(/_/g, ' '),
+              ...TIMEZONE_OPTIONS.map((timezone) => ({
+                value: timezone.value,
+                label: timezone.label,
               })),
             ]}
           />

@@ -1,3 +1,4 @@
+import { TIMEZONE_OPTIONS } from '../../lib/timezones';
 import { cn } from '@bestal/shared-utils';
 import { Button, SearchInput, Select } from '@bestal/ui';
 import { ChevronDown, RotateCcw } from 'lucide-react';
@@ -12,7 +13,6 @@ type PremiumSearchFiltersProps = {
   onChange: (filters: ClientSearchFilters) => void;
   resultCount: number;
   communityOptions?: readonly string[];
-  timezoneOptions?: readonly string[];
   /** `panel` = stacked left sidebar; `inline` = horizontal wrap (legacy). */
   layout?: 'panel' | 'inline';
   className?: string;
@@ -56,13 +56,11 @@ function FilterFields({
   filters,
   set,
   communityOptions,
-  timezoneOptions,
   stacked,
 }: {
   filters: ClientSearchFilters;
   set: (patch: Partial<ClientSearchFilters>) => void;
   communityOptions: readonly string[];
-  timezoneOptions: readonly string[];
   stacked: boolean;
 }) {
   return (
@@ -113,21 +111,19 @@ function FilterFields({
           { value: 'NOT_AVAILABLE', label: 'Not available' },
         ]}
       />
-      {timezoneOptions.length > 0 ? (
-        <FilterSelect
-          label="Timezone"
-          value={filters.timezone}
-          onChange={(v) => set({ timezone: v })}
-          fullWidth={stacked}
-          options={[
-            { value: 'all', label: 'All timezones' },
-            ...timezoneOptions.map((tz) => ({
-              value: tz,
-              label: tz.replace(/_/g, ' '),
-            })),
-          ]}
-        />
-      ) : null}
+      <FilterSelect
+        label="Timezone"
+        value={filters.timezone}
+        onChange={(v) => set({ timezone: v })}
+        fullWidth={stacked}
+        options={[
+          { value: 'all', label: 'All timezones' },
+          ...TIMEZONE_OPTIONS.map((tz) => ({
+            value: tz.value,
+            label: tz.label,
+          })),
+        ]}
+      />
       <label className={cn('flex flex-col gap-1', stacked ? 'w-full' : 'min-w-[140px] flex-1')}>
         <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
           BesTal Score
@@ -154,7 +150,6 @@ export function PremiumSearchFilters({
   onChange,
   resultCount,
   communityOptions = [],
-  timezoneOptions = [],
   layout = 'panel',
   className,
 }: PremiumSearchFiltersProps) {
@@ -213,7 +208,6 @@ export function PremiumSearchFilters({
             filters={filters}
             set={set}
             communityOptions={communityOptions}
-            timezoneOptions={timezoneOptions}
             stacked={false}
           />
         </div>
@@ -261,7 +255,6 @@ export function PremiumSearchFilters({
             filters={filters}
             set={set}
             communityOptions={communityOptions}
-            timezoneOptions={timezoneOptions}
             stacked
           />
         </div>

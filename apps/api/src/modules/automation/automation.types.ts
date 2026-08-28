@@ -75,7 +75,10 @@ export type N8nWorkflowTriggerInput = {
   candidateId?: number | null;
   documentId: number;
   requestedBy: number;
+  /** Signed URL of the PDF sidecar (or original if already PDF). */
   documentUrl: string;
+  fileName?: string;
+  mimeType?: string;
   workflowName: string;
   workflowVersion: string;
   /** Candidate BesTal score before evaluation (resume screening); used to recalculate. */
