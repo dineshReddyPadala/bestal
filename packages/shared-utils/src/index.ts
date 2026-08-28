@@ -68,6 +68,7 @@ export function initials(name: string) {
 export {
   TIMEZONE_OPTIONS,
   IMPORT_TIMEZONE_VALUES,
+  formatTimezoneLabel,
   type TimezoneOption,
 } from './timezones.js';
 
@@ -111,7 +112,6 @@ export {
   SCORES_SHEET_COLUMNS,
   DEPRECATED_SCORES_SHEET_COLUMNS,
   CANDIDATE_REQUIRED_FIELDS,
-  IMPORT_SKILL_COMMUNITIES,
   IMPORT_AVAILABILITY_STATUSES,
   IMPORT_EVALUATION_TYPES,
   IMPORT_BGV_STATUSES,
@@ -130,7 +130,8 @@ export {
   IMPORT_SCORE_SOURCES,
   IMPORT_INSTRUCTIONS,
   slugifySkillCommunity,
-  type ImportSkillCommunity,
+  resolveImportedSkillCommunityName,
+  resolveImportedSkillCommunityId,
   type ImportAvailabilityStatus,
   type ImportEvaluationType,
   type ImportBgvStatus,

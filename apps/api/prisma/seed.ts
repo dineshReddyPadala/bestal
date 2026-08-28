@@ -189,27 +189,62 @@ async function seedPlatformRoles(): Promise<Map<string, bigint>> {
   return roleIds;
 }
 
+const BESTAL_ORG_NAME = 'BesTal';
+const BESTAL_ORG_SLUG = 'bestal';
+const LEGACY_ORG_SLUGS = ['amnet-digital', 'bestal-demo'] as const;
+
+async function ensureBestalOrganization() {
+  const bestal = await prisma.organization.findFirst({
+    where: { slug: BESTAL_ORG_SLUG },
+  });
+
+  if (bestal) {
+    const organization = await prisma.organization.update({
+      where: { id: bestal.id },
+      data: { name: BESTAL_ORG_NAME, slug: BESTAL_ORG_SLUG, isActive: true, deletedAt: null },
+    });
+    await prisma.organization.updateMany({
+      where: {
+        slug: { in: [...LEGACY_ORG_SLUGS] },
+        id: { not: organization.id },
+      },
+      data: { isActive: false, deletedAt: new Date() },
+    });
+    return organization;
+  }
+
+  const legacy = await prisma.organization.findFirst({
+    where: { slug: { in: [...LEGACY_ORG_SLUGS] } },
+    orderBy: { id: 'asc' },
+  });
+
+  if (legacy) {
+    const organization = await prisma.organization.update({
+      where: { id: legacy.id },
+      data: { name: BESTAL_ORG_NAME, slug: BESTAL_ORG_SLUG, isActive: true, deletedAt: null },
+    });
+    await prisma.organization.updateMany({
+      where: {
+        slug: { in: [...LEGACY_ORG_SLUGS] },
+        id: { not: organization.id },
+      },
+      data: { isActive: false, deletedAt: new Date() },
+    });
+    return organization;
+  }
+
+  return prisma.organization.create({
+    data: { name: BESTAL_ORG_NAME, slug: BESTAL_ORG_SLUG },
+  });
+}
+
 async function main() {
   await assertSchemaReady();
 
   const passwordHash = await argon2.hash('Password123!');
   const platformRoleIds = await seedPlatformRoles();
 
-  let organization = await prisma.organization.findFirst({
-    where: { slug: { in: ['amnet-digital', 'bestal-demo'] } },
-  });
-
-  if (organization) {
-    organization = await prisma.organization.update({
-      where: { id: organization.id },
-      data: { name: 'Amnet Digital', slug: 'amnet-digital', isActive: true },
-    });
-  } else {
-    organization = await prisma.organization.create({
-      data: { name: 'Amnet Digital', slug: 'amnet-digital' },
-    });
-  }
-
+  const organization = await ensureBestalOrganization();
   const orgId = organization.id;
 
   const skillCommunitySeed = [
@@ -217,118 +252,169 @@ async function main() {
     { name: 'AI / GenAI', slug: 'ai-genai', description: 'LLM, GenAI, MLOps, and applied AI specialists.', displayOrder: 2 },
     { name: 'Cloud / DevOps', slug: 'cloud-devops', description: 'Kubernetes, Terraform, AWS, GCP, and site reliability engineering experts.', displayOrder: 3 },
     { name: 'QA Automation', slug: 'qa-automation', description: 'Cypress, Playwright, Selenium, and quality engineering leaders.', displayOrder: 4 },
-    { name: 'Frontend', slug: 'frontend', description: 'React, Angular, Vue, and modern UI engineers.', displayOrder: 5 },
-    { name: 'Backend', slug: 'backend', description: 'Node.js, Java, .NET, Python, and API platform engineers.', displayOrder: 6 },
+    { name: 'Frontend Development', slug: 'frontend-development', description: 'React, Angular, Vue, and modern UI engineers.', displayOrder: 5, aliases: ['frontend', 'Frontend'] },
+    { name: 'Backend Development', slug: 'backend-development', description: 'Node.js, Java, .NET, Python, and API platform engineers.', displayOrder: 6, aliases: ['backend', 'Backend'] },
     { name: 'Full Stack', slug: 'full-stack', description: 'End-to-end product engineers spanning frontend and backend.', displayOrder: 7 },
     { name: 'Mobile', slug: 'mobile', description: 'React Native, Flutter, Swift, and Kotlin mobile engineers.', displayOrder: 8 },
     { name: 'Cybersecurity', slug: 'cybersecurity', description: 'Security architects, penetration testers, and compliance specialists.', displayOrder: 9 },
     { name: 'SAP', slug: 'sap', description: 'SAP functional and technical consultants.', displayOrder: 10 },
     { name: 'Salesforce', slug: 'salesforce', description: 'Salesforce admins, developers, and architects.', displayOrder: 11 },
     { name: 'ServiceNow', slug: 'servicenow', description: 'ServiceNow developers and platform consultants.', displayOrder: 12 },
+    { name: 'Machine Learning', slug: 'machine-learning', description: 'Classical ML, deep learning, model training, and applied data science specialists.', displayOrder: 13 },
+    { name: 'Scrum Master', slug: 'scrum-master', description: 'Agile delivery leads, Scrum Masters, and iteration coaches.', displayOrder: 14 },
+    { name: 'Product Design', slug: 'product-design', description: 'Product designers, UX/UI, research, and design systems specialists.', displayOrder: 15 },
+    { name: 'Others', slug: 'others', description: 'Roles and skills that do not fit another skill community.', displayOrder: 16, aliases: ['other', 'Other'] },
   ] as const;
 
   for (const community of skillCommunitySeed) {
-    await prisma.skillCommunity.upsert({
-      where: { slug: community.slug },
-      update: {
-        name: community.name,
-        description: community.description,
-        displayOrder: community.displayOrder,
-        isActive: true,
+    const existing = await prisma.skillCommunity.findFirst({
+      where: {
         deletedAt: null,
-      },
-      create: {
-        name: community.name,
-        slug: community.slug,
-        description: community.description,
-        displayOrder: community.displayOrder,
+        OR: [
+          { slug: community.slug },
+          { name: community.name },
+          ...('aliases' in community ? community.aliases.flatMap((alias) => [{ slug: alias }, { name: alias }]) : []),
+        ],
       },
     });
+    if (existing) {
+      await prisma.skillCommunity.update({
+        where: { id: existing.id },
+        data: {
+          name: community.name,
+          slug: community.slug,
+          description: community.description,
+          displayOrder: community.displayOrder,
+          isActive: true,
+          deletedAt: null,
+        },
+      });
+    } else {
+      await prisma.skillCommunity.create({
+        data: {
+          name: community.name,
+          slug: community.slug,
+          description: community.description,
+          displayOrder: community.displayOrder,
+        },
+      });
+    }
   }
 
   console.log(`Seeded ${skillCommunitySeed.length} skill communities.`);
 
   const users = [
-    { email: 'superadmin@bestal.com', firstName: 'Super', lastName: 'Admin', role: Role.SUPER_ADMIN },
-    { email: 'admin@bestal.com', firstName: 'Platform', lastName: 'Admin', role: Role.ADMIN },
-    { email: 'recruiter@bestal.com', firstName: 'Demo', lastName: 'Recruiter', role: Role.RECRUITER },
-    { email: 'sales@bestal.com', firstName: 'Demo', lastName: 'Sales', role: Role.SALES },
-    { email: 'client@bestal.com', firstName: 'Jennifer', lastName: 'Walsh', role: Role.CLIENT },
+    { email: 'superadmin@bestal.co', firstName: 'Super', lastName: 'Admin', role: Role.SUPER_ADMIN },
+    { email: 'admin@bestal.co', firstName: 'Platform', lastName: 'Admin', role: Role.ADMIN },
+    { email: 'recruiter@bestal.co', firstName: 'Demo', lastName: 'Recruiter', role: Role.RECRUITER },
+    { email: 'sales@bestal.co', firstName: 'Demo', lastName: 'Sales', role: Role.SALES },
+    { email: 'client@bestal.co', firstName: 'Jennifer', lastName: 'Walsh', role: Role.CLIENT },
   ] as const;
 
   const userIds: Record<string, bigint> = {};
 
   for (const entry of users) {
-    const user = await prisma.user.upsert({
-      where: { email: entry.email },
-      update: {
-        firstName: entry.firstName,
-        lastName: entry.lastName,
-        ...(entry.role !== Role.CLIENT ? { mustChangePassword: true } : {}),
-      },
-      create: {
-        email: entry.email,
-        passwordHash,
-        firstName: entry.firstName,
-        lastName: entry.lastName,
-        mustChangePassword: entry.role !== Role.CLIENT,
-      },
+    const legacyEmail = entry.email.replace(/@bestal\.co$/i, '@bestal.com');
+    const existingUser = await prisma.user.findFirst({
+      where: { email: { in: [entry.email, legacyEmail] } },
     });
+    const user = existingUser
+      ? await prisma.user.update({
+          where: { id: existingUser.id },
+          data: {
+            email: entry.email,
+            firstName: entry.firstName,
+            lastName: entry.lastName,
+            deletedAt: null,
+            ...(entry.role !== Role.CLIENT ? { mustChangePassword: true } : {}),
+          },
+        })
+      : await prisma.user.create({
+          data: {
+            email: entry.email,
+            passwordHash,
+            firstName: entry.firstName,
+            lastName: entry.lastName,
+            mustChangePassword: entry.role !== Role.CLIENT,
+          },
+        });
 
     userIds[entry.email] = user.id;
 
     const platformRoleId = platformRoleIds.get(entry.role);
 
-    await prisma.membership.upsert({
+    const existingMembership = await prisma.membership.findUnique({
       where: {
         userId_organizationId: {
           userId: user.id,
           organizationId: orgId,
         },
       },
-      update: {
-        role: entry.role,
-        platformRoleId: platformRoleId ?? null,
-        isActive: true,
-      },
-      create: {
-        userId: user.id,
-        organizationId: orgId,
-        role: entry.role,
-        platformRoleId: platformRoleId ?? null,
-      },
     });
+    if (existingMembership) {
+      await prisma.membership.update({
+        where: { id: existingMembership.id },
+        data: {
+          role: entry.role,
+          platformRoleId: platformRoleId ?? null,
+          isActive: true,
+        },
+      });
+    } else {
+      await prisma.membership.create({
+        data: {
+          userId: user.id,
+          organizationId: orgId,
+          role: entry.role,
+          platformRoleId: platformRoleId ?? null,
+        },
+      });
+    }
 
     console.log(`${entry.role}: ${entry.email} / Password123!`);
   }
 
-  const salesUserId = userIds['sales@bestal.com'];
-  const recruiterUserId = userIds['recruiter@bestal.com'];
+  const salesUserId = userIds['sales@bestal.co'];
+  const recruiterUserId = userIds['recruiter@bestal.co'];
 
-  const client = await prisma.client.upsert({
+  const existingClient = await prisma.client.findFirst({
     where: {
-      organizationId_slug: { organizationId: orgId, slug: 'jpmorgan-chase' },
-    },
-    update: {
-      contactEmail: 'client@bestal.com',
-      accountManagerId: salesUserId,
-    },
-    create: {
       organizationId: orgId,
-      accountManagerId: salesUserId,
-      name: 'JPMorgan Chase',
-      slug: 'jpmorgan-chase',
-      status: ClientStatus.ACTIVE,
-      industry: 'Financial Services',
-      contactEmail: 'client@bestal.com',
-      contactPhone: '+1 (212) 555-0100',
-      city: 'New York',
-      state: 'NY',
-      country: 'US',
+      OR: [
+        { slug: 'jpmorgan-chase' },
+        { contactEmail: 'client@bestal.co' },
+        { contactEmail: 'client@bestal.com' },
+      ],
+      deletedAt: null,
     },
   });
+  const client = existingClient
+    ? await prisma.client.update({
+        where: { id: existingClient.id },
+        data: {
+          contactEmail: 'client@bestal.co',
+          accountManagerId: salesUserId,
+          status: ClientStatus.ACTIVE,
+          deletedAt: null,
+        },
+      })
+    : await prisma.client.create({
+        data: {
+          organizationId: orgId,
+          accountManagerId: salesUserId,
+          name: 'AmnetDigital',
+          slug: 'Amnet-digital',
+          status: ClientStatus.ACTIVE,
+          industry: 'Financial Services',
+          contactEmail: 'client@bestal.co',
+          contactPhone: '+1 (212) 555-0100',
+          city: 'New York',
+          state: 'NY',
+          country: 'US',
+        },
+      });
 
-  const clientUserId = userIds['client@bestal.com'];
+  const clientUserId = userIds['client@bestal.co'];
   if (clientUserId) {
     await prisma.membership.updateMany({
       where: {
@@ -345,41 +431,49 @@ async function main() {
     select: { id: true },
   });
 
-  const candidate = await prisma.candidate.upsert({
+  const existingCandidate = await prisma.candidate.findFirst({
     where: {
-      organizationId_email: { organizationId: orgId, email: 'alexandra.petrov@demo.bestal.com' },
-    },
-    update: {
-      displayName: 'Alexandra Petrov',
-      profileStatus: CandidateProfileStatus.ADMIN_APPROVED,
-      aiScreeningStatus: AiScreeningStatus.COMPLETED,
-      evaluationStatus: 'COMPLETE',
-      bgvStatus: 'CLEAR',
-    },
-    create: {
       organizationId: orgId,
-      createdById: recruiterUserId,
-      primarySkillCommunityId: fullStackCommunity?.id,
-      firstName: 'Alexandra',
-      lastName: 'Petrov',
-      displayName: 'Alexandra Petrov',
       email: 'alexandra.petrov@demo.bestal.com',
-      status: CandidateStatus.ACTIVE,
-      visibility: CandidateVisibility.CLIENT_VISIBLE,
-      approvalStatus: CandidateApprovalStatus.APPROVED,
-      profileStatus: CandidateProfileStatus.ADMIN_APPROVED,
-      aiScreeningStatus: AiScreeningStatus.COMPLETED,
-      evaluationStatus: 'COMPLETE',
-      bgvStatus: 'CLEAR',
-      source: CandidateSource.LINKEDIN,
-      headline: 'Senior Full-Stack Engineer',
-      location: 'San Francisco, CA',
-      yearsExperience: 8,
-      publishedAt: new Date(),
-      approvedAt: new Date(),
-      approvedById: userIds['admin@bestal.com'],
     },
   });
+  const candidate = existingCandidate
+    ? await prisma.candidate.update({
+        where: { id: existingCandidate.id },
+        data: {
+          displayName: 'Alexandra Petrov',
+          profileStatus: CandidateProfileStatus.ADMIN_APPROVED,
+          aiScreeningStatus: AiScreeningStatus.COMPLETED,
+          evaluationStatus: 'COMPLETE',
+          bgvStatus: 'CLEAR',
+          deletedAt: null,
+        },
+      })
+    : await prisma.candidate.create({
+        data: {
+          organizationId: orgId,
+          createdById: recruiterUserId,
+          primarySkillCommunityId: fullStackCommunity?.id,
+          firstName: 'Alexandra',
+          lastName: 'Petrov',
+          displayName: 'Alexandra Petrov',
+          email: 'alexandra.petrov@demo.bestal.com',
+          status: CandidateStatus.ACTIVE,
+          visibility: CandidateVisibility.CLIENT_VISIBLE,
+          approvalStatus: CandidateApprovalStatus.APPROVED,
+          profileStatus: CandidateProfileStatus.ADMIN_APPROVED,
+          aiScreeningStatus: AiScreeningStatus.COMPLETED,
+          evaluationStatus: 'COMPLETE',
+          bgvStatus: 'CLEAR',
+          source: CandidateSource.LINKEDIN,
+          headline: 'Senior Full-Stack Engineer',
+          location: 'San Francisco, CA',
+          yearsExperience: 8,
+          publishedAt: new Date(),
+          approvedAt: new Date(),
+          approvedById: userIds['admin@bestal.co'],
+        },
+      });
 
   const existingTrial = await prisma.trialRequest.findFirst({
     where: {
@@ -395,7 +489,7 @@ async function main() {
     organizationId: orgId,
     candidateId: candidate.id,
     clientId: client.id,
-    requestedById: userIds['client@bestal.com'],
+    requestedById: userIds['client@bestal.co'],
     assignedRecruiterId: recruiterUserId,
     status: TrialRequestStatus.REQUESTED,
     roleTitle: 'Senior Backend Engineer — Payments',
@@ -414,6 +508,7 @@ async function main() {
     await prisma.trialRequest.create({ data: trialData });
   }
 
+  console.log(`Organization: ${organization.name} (${organization.slug})`);
   console.log('Seed completed with demo client, candidate, and trial.');
 }
 

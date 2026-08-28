@@ -66,6 +66,8 @@ export class S3StorageAdapter implements StorageAdapter {
       bucket,
       expiresInSeconds: options?.expiresInSeconds,
       contentType: options?.contentType,
+      contentDisposition: options?.contentDisposition ?? 'inline',
+      fileName: options?.fileName,
     });
   }
 

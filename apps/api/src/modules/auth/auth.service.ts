@@ -83,7 +83,12 @@ export class AuthService {
       input.email,
     );
 
-    if (!credentialUser) {
+    if (input.portal === PORTALS.CLIENT) {
+      if (!credentialUser) {
+        throw new AuthenticationError('Email not found. Please signup.');
+      }
+      this.assertClientPortalLoginAllowed(credentialUser);
+    } else if (!credentialUser) {
       throw new AuthenticationError('Invalid email or password');
     }
 
@@ -96,13 +101,14 @@ export class AuthService {
       throw new AuthenticationError('Invalid email or password');
     }
 
-    if (input.portal === PORTALS.CLIENT) {
-      this.assertClientPortalLoginAllowed(credentialUser);
-    }
-
     const user = await this.authRepository.findUserByEmail(input.email);
 
     if (!user) {
+      if (input.portal === PORTALS.CLIENT) {
+        throw new AuthenticationError(
+          'Your client account is inactivated. Please contact the support team (Improwise).',
+        );
+      }
       throw new AuthenticationError('Invalid email or password');
     }
 
@@ -339,22 +345,25 @@ export class AuthService {
   }
 
   private assertClientPortalLoginAllowed(credentialUser: UserWithMembershipsForLogin): void {
-    if (!credentialUser.isActive) {
-      throw new AuthenticationError('Your account is pending activation');
-    }
-
     const allowedRoles = PORTAL_ALLOWED_ROLES[PORTALS.CLIENT];
     const clientMembership = credentialUser.memberships.find((membership) =>
       allowedRoles.includes(membership.role as (typeof allowedRoles)[number]),
     );
 
-    if (!clientMembership || !clientMembership.isActive) {
-      throw new AuthenticationError('Your account is pending activation');
+    if (!clientMembership) {
+      throw new AuthenticationError('Email not found. Please signup.');
     }
 
-    if (clientMembership.client?.status !== 'ACTIVE') {
+    const clientStatus = clientMembership.client?.status;
+    const inactivated =
+      !credentialUser.isActive ||
+      !clientMembership.isActive ||
+      clientStatus == null ||
+      clientStatus !== 'ACTIVE';
+
+    if (inactivated) {
       throw new AuthenticationError(
-        'Your client account is not active. Contact BesTal support.',
+        'Your client account is inactivated. Please contact the support team (Improwise).',
       );
     }
   }

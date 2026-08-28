@@ -24,7 +24,7 @@ import type {
   UpdateContactMessageBody,
 } from './contact-message.validator.js';
 
-const DEFAULT_INTAKE_ORG_SLUG = 'amnet-digital';
+const DEFAULT_INTAKE_ORG_SLUG = 'bestal';
 
 function generateReferenceCode(): string {
   const suffix = String(Math.floor(Math.random() * 9000) + 1000);

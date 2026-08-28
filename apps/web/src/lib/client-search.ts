@@ -1,3 +1,4 @@
+import { TIMEZONE_OPTIONS } from '@bestal/shared-utils';
 import type { ClientSearchRecord } from '@bestal/mock-data';
 import { resolveAvailabilityCategory } from './availability-display';
 
@@ -183,9 +184,12 @@ export function getActiveFilterChips(filters: ClientSearchFilters): ClientSearch
     chips.push({ key: 'rate', label: RATE_LABELS[filters.rate] ?? filters.rate });
   }
   if (filters.timezone !== 'all') {
+    const timezoneLabel =
+      TIMEZONE_OPTIONS.find((option) => option.value === filters.timezone)?.label ??
+      filters.timezone;
     chips.push({
       key: 'timezone',
-      label: filters.timezone.replace(/_/g, ' '),
+      label: timezoneLabel,
     });
   }
   if (filters.availability !== 'all') {

@@ -1,4 +1,4 @@
-import { formatDate } from '@bestal/shared-utils';
+import { COLLABORATION_CULTURAL_FIT_LABEL, formatDate } from '@bestal/shared-utils';
 import {
   Avatar,
   Badge,
@@ -187,11 +187,11 @@ export function CandidateDetailView({ candidateId, basePath }: CandidateDetailVi
   }
 
   function openDoc(doc: CandidateDocumentDto, label: string) {
-    if (doc.url) {
+    if (doc.url || doc.id) {
       setPreviewDoc({ doc, label });
       return;
     }
-    showError(`${label} URL is not available`);
+    showError(`${label} is not available`);
   }
 
   if (isLoading) {
@@ -317,7 +317,14 @@ export function CandidateDetailView({ candidateId, basePath }: CandidateDetailVi
 
   const evalFields: SchemaFieldDef[] = [
     { key: 'technical', label: 'Technical Score', value: candidate.technicalScore },
+    { key: 'problemSolving', label: 'Problem Solving', value: candidate.problemSolvingScore },
+    {
+      key: 'collaboration',
+      label: COLLABORATION_CULTURAL_FIT_LABEL,
+      value: candidate.collaborationCulturalFitScore,
+    },
     { key: 'communication', label: 'Communication', value: candidate.communicationScore },
+    { key: 'clientReadiness', label: 'Client Readiness', value: candidate.clientReadinessScore },
     {
       key: 'status',
       label: 'Evaluation Status',
@@ -381,11 +388,16 @@ export function CandidateDetailView({ candidateId, basePath }: CandidateDetailVi
   const tabContent: Record<TabId, React.ReactNode> = {
     overview: (
       <div className="space-y-6">
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <ModernScoreTile label="BesTal Score" value={candidate.bestalScore} />
           <ModernScoreTile label="Technical" value={candidate.technicalScore} accent="emerald" />
+          <ModernScoreTile label="Problem Solving" value={candidate.problemSolvingScore} />
+          <ModernScoreTile
+            label={COLLABORATION_CULTURAL_FIT_LABEL}
+            value={candidate.collaborationCulturalFitScore}
+          />
           <ModernScoreTile label="Communication" value={candidate.communicationScore} accent="amber" />
-          <ModernScoreTile label="Reliability" value={candidate.reliabilityScore} />
+          <ModernScoreTile label="Client Readiness" value={candidate.clientReadinessScore} />
         </div>
 
         <div className="grid gap-6 lg:grid-cols-2">
@@ -409,38 +421,28 @@ export function CandidateDetailView({ candidateId, basePath }: CandidateDetailVi
           </ModernSection>
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-2">
-          <ModernSection
-            title="AI Summary"
-            action={
-              canRunAiScreening ? (
-                <Button variant="ghost" size="sm" onClick={() => void handleAction('run-ai')}>
-                  <Sparkles className="mr-1.5 h-3.5 w-3.5" />
-                  Run AI
-                </Button>
-              ) : null
-            }
-          >
-            <p className="text-sm leading-relaxed text-muted-foreground">
-              {candidate.aiSummary || candidate.summary || 'No AI summary yet.'}
-            </p>
-          </ModernSection>
-          <ModernSection title="Client Summary">
-            <p className="text-sm leading-relaxed text-muted-foreground">
-              {candidate.clientProfileSummary || candidate.summary || 'No client summary yet.'}
-            </p>
-          </ModernSection>
-        </div>
+        <ModernSection
+          title="Candidate Summary"
+          action={
+            canRunAiScreening ? (
+              <Button variant="ghost" size="sm" onClick={() => void handleAction('run-ai')}>
+                <Sparkles className="mr-1.5 h-3.5 w-3.5" />
+                Run AI
+              </Button>
+            ) : null
+          }
+        >
+          <p className="text-sm leading-relaxed text-muted-foreground">
+            {candidate.aiSummary || candidate.summary || 'No candidate summary yet.'}
+          </p>
+        </ModernSection>
 
-        <div className="grid gap-6 lg:grid-cols-3">
+        <div className="grid gap-6 lg:grid-cols-2">
           <ModernSection title="Strengths">
             <BulletList items={splitLines(candidate.strengths)} />
           </ModernSection>
           <ModernSection title="Weaknesses">
             <BulletList items={splitLines(candidate.weaknesses)} />
-          </ModernSection>
-          <ModernSection title="Risk Flags">
-            <BulletList items={splitLines(candidate.riskFlags)} variant="risk" />
           </ModernSection>
         </div>
       </div>
@@ -462,10 +464,16 @@ export function CandidateDetailView({ candidateId, basePath }: CandidateDetailVi
     ),
     evaluation: (
       <div className="space-y-6">
-        <div className="grid gap-4 sm:grid-cols-3">
-          <ModernScoreTile label="Technical" value={candidate.technicalScore} />
-          <ModernScoreTile label="Communication" value={candidate.communicationScore} accent="emerald" />
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <ModernScoreTile label="BesTal Score" value={candidate.bestalScore} accent="amber" />
+          <ModernScoreTile label="Technical" value={candidate.technicalScore} />
+          <ModernScoreTile label="Problem Solving" value={candidate.problemSolvingScore} />
+          <ModernScoreTile
+            label={COLLABORATION_CULTURAL_FIT_LABEL}
+            value={candidate.collaborationCulturalFitScore}
+          />
+          <ModernScoreTile label="Communication" value={candidate.communicationScore} accent="emerald" />
+          <ModernScoreTile label="Client Readiness" value={candidate.clientReadinessScore} />
         </div>
         <ModernSection
           title="Evaluation Details"
@@ -511,29 +519,29 @@ export function CandidateDetailView({ candidateId, basePath }: CandidateDetailVi
             label="Resume"
             description="PDF or Word resume"
             doc={candidate.resume}
-            onDownload={(doc) => openDoc(doc, 'Resume')}
+            onPreview={(doc) => openDoc(doc, 'Resume')}
           />
           <DocumentAssetRow
             label="Profile Photo"
             doc={candidate.profileImage}
-            onDownload={(doc) => openDoc(doc, 'Profile photo')}
+            onPreview={(doc) => openDoc(doc, 'Profile photo')}
           />
           <DocumentAssetRow
             label="Intro Video"
             doc={candidate.introVideo}
-            onDownload={(doc) => openDoc(doc, 'Intro video')}
+            onPreview={(doc) => openDoc(doc, 'Intro video')}
           />
           <DocumentAssetRow
             label="Evaluation Report"
             description="Managed in Evaluations module"
             doc={candidate.evaluationReport}
-            onDownload={(doc) => openDoc(doc, 'Evaluation report')}
+            onPreview={(doc) => openDoc(doc, 'Evaluation report')}
           />
           <DocumentAssetRow
             label="BGV Report"
             description="Managed in Background Checks module"
             doc={candidate.bgvReport}
-            onDownload={(doc) => openDoc(doc, 'BGV report')}
+            onPreview={(doc) => openDoc(doc, 'BGV report')}
           />
         </div>
       </ModernSection>
@@ -643,6 +651,7 @@ export function CandidateDetailView({ candidateId, basePath }: CandidateDetailVi
         url={previewDoc?.doc.url}
         mimeType={previewDoc?.doc.mimeType}
         fileName={previewDoc?.doc.originalName ?? previewDoc?.doc.fileName}
+        documentId={previewDoc?.doc.id}
       />
     </>
   );

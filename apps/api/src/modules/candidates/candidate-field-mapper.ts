@@ -159,7 +159,7 @@ export function mapCandidateExtendedDto(candidate: {
     candidatePayRate: candidate.candidatePayRate ? Number(candidate.candidatePayRate) : null,
     grossMargin: candidate.grossMargin ? Number(candidate.grossMargin) : null,
     availabilityStatus: candidate.availabilityStatus,
-    timezoneOverlap: candidate.timezoneOverlap,
+    timezoneOverlap: candidate.timezone ?? candidate.timezoneOverlap ?? null,
     preferredShift: candidate.preferredShift,
     minHoursPerWeek: candidate.minHoursPerWeek,
     maxHoursPerWeek: candidate.maxHoursPerWeek,

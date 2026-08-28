@@ -1,5 +1,5 @@
 import { apiAction, apiCreate, apiDelete, apiGet, apiList, apiRequest, apiUpdate, type ListQuery } from './client';
-import { downloadAuthenticatedBlob } from './download-blob';
+import { downloadAuthenticatedBlob, fetchAuthenticatedArrayBuffer } from './download-blob';
 import type { PublicFeaturedCandidate } from '../landing-featured-candidates';
 import type { CandidateDto, CandidateListItem } from './types';
 import type { ResumeExtractionResponse } from './ai/resume-extraction.types';
@@ -258,6 +258,15 @@ export type CandidateImportErrorItem = {
 export const candidatesApi = {
   list: (query?: ListQuery) => apiList<CandidateListItem>('/candidates', query),
   get: (id: number) => apiGet<CandidateDto>(`/candidates/${id}`),
+  getDocumentFile: (documentId: number) =>
+    fetchAuthenticatedArrayBuffer(`/candidates/documents/${documentId}/file`),
+  previewWordHtml: (documentId: number) =>
+    apiGet<{ html: string }>(`/candidates/documents/${documentId}/preview-html`),
+  previewWordHtmlFromFile: async (file: Blob, fileName: string) => {
+    const form = new FormData();
+    form.append('file', file, fileName);
+    return apiCreate<{ html: string }>('/candidates/documents/preview-html', form);
+  },
   create: (body: Record<string, unknown>) => apiCreate<CandidateDto>('/candidates', body),
   update: (id: number, body: Record<string, unknown>) =>
     apiUpdate<CandidateDto>(`/candidates/${id}`, body),

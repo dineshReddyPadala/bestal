@@ -41,7 +41,7 @@ function mapDocumentAttachment(
   doc: CandidateDocumentDto | null | undefined,
   categoryLabel: string,
 ): ClientProfileAttachment | null {
-  if (!doc?.url) return null;
+  if (!doc?.url && !doc?.id) return null;
   return {
     fileName: doc.originalName || doc.fileName,
     url: doc.url,
@@ -49,6 +49,7 @@ function mapDocumentAttachment(
     createdAt: doc.createdAt,
     categoryLabel,
     mimeType: doc.mimeType,
+    documentId: doc.id,
   };
 }
 
@@ -133,7 +134,7 @@ export function mapCandidateDtoToClientProfile(
     availabilityDetail: {
       hoursMin: candidate.minHoursPerWeek ?? 20,
       hoursMax: candidate.maxHoursPerWeek ?? 40,
-      timezone: candidate.timezoneOverlap ?? 'Flexible',
+      timezone: candidate.timezoneOverlap ?? candidate.timezone ?? '',
       availability: availabilityLabel,
       startDate: candidate.availableFrom ?? '',
     },
