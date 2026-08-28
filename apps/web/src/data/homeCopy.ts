@@ -83,7 +83,7 @@ export const timeZone = {
 export const liveProfile = {
   h2: 'This is what a profile looks like',
   sub: 'Not a summary of a profile. The profile.',
-  caption: 'Demo profile — fictional professional, illustrative evidence.',
+  caption: 'Sample Profile',
   button: 'See more sample talent',
 };
 
