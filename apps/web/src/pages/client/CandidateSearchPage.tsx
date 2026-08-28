@@ -3,7 +3,7 @@ import { useCandidatesList } from '../../hooks/api/useCandidates';
 import { usePublicSkillCommunitiesList } from '../../hooks/api/useSkillCommunities';
 import { cn } from '@bestal/shared-utils';
 import { Button, EmptyState, SearchInput, useDashboardHeaderLeading } from '@bestal/ui';
-import { Home, Users } from 'lucide-react';
+import { Home, Users, ChevronRight } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ClientCandidateSearchCard } from '../../components/client/ClientCandidateSearchCard';
@@ -195,7 +195,7 @@ export function CandidateSearchPage() {
       () => (
         <nav className="flex min-w-0 items-center gap-2 text-sm text-muted-foreground">
           <Home className="h-4 w-4 shrink-0" aria-hidden />
-          <span className="text-muted-foreground/60">/</span>
+          <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground/60" aria-hidden />
           {selectedCommunity ? (
             <>
               <button
@@ -205,7 +205,7 @@ export function CandidateSearchPage() {
               >
                 Browse Talents
               </button>
-              <span className="text-muted-foreground/60">/</span>
+              <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground/60" aria-hidden />
               <span className="truncate font-semibold text-foreground">{selectedCommunity.name}</span>
             </>
           ) : (
