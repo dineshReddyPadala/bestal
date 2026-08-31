@@ -5,8 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "nodemon",
+    "predev": "npm run build --prefix ../../packages/shared-utils",
     "dev:tsx": "tsx watch src/main.ts",
-    "build": "tsc && node --input-type=module -e \"import { cpSync, mkdirSync, existsSync } from 'node:fs'; if (existsSync('src/assets')) { mkdirSync('dist/assets', { recursive: true }); cpSync('src/assets', 'dist/assets', { recursive: true }); }\"",
+    "build": "npm run build --prefix ../../packages/shared-utils && tsc && node --input-type=module -e \"import { cpSync, mkdirSync, existsSync } from 'node:fs'; if (existsSync('src/assets')) { mkdirSync('dist/assets', { recursive: true }); cpSync('src/assets', 'dist/assets', { recursive: true }); }\"",
     "start": "node dist/main.js",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",

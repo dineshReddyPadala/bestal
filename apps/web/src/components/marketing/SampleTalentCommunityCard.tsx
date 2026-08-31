@@ -17,7 +17,7 @@ export function SampleTalentCommunityCard({
   return (
     <button type="button" className="mkt-st-comm-card" onClick={onClick}>
       <div className="mkt-st-comm-card-hd">
-        <SkillCommunityIcon iconUrl={iconUrl} />
+        <SkillCommunityIcon name={name} iconUrl={iconUrl} />
         <h3>{name}</h3>
         <span className="mkt-st-comm-card-arrow" aria-hidden="true">
           <ArrowRight strokeWidth={2.25} />

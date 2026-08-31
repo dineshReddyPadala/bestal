@@ -15,7 +15,7 @@ import {
   LANDING_PROFILE_SLIDES,
   type CommunityProfileSlide,
 } from '../../lib/demo-engineers';
-import { usePublicSkillCommunitiesList } from '../../hooks/api/useSkillCommunities';
+import { PUBLIC_SKILL_COMMUNITIES } from '../../data/publicSkillCommunities';
 import { images } from '../../data/homeCopy';
 import { PAGE_SEO } from '../../lib/marketing-seo';
 import { cn } from '@bestal/shared-utils';
@@ -33,15 +33,11 @@ const TIMEZONE_CHIPS = [
 export function HomePage() {
   const [openFaq, setOpenFaq] = useState(0);
   const freeTrialHours = useFreeTrialHours();
-  const {
-    data: skillCommunities = [],
-    isLoading: communitiesLoading,
-    isError: communitiesError,
-  } = usePublicSkillCommunitiesList();
+  const skillCommunities = PUBLIC_SKILL_COMMUNITIES;
 
   const homeFaqItems = useMemo(() => getHomeFaqItems(), []);
 
-  const topCommunities = useMemo(() => skillCommunities.slice(0, 8), [skillCommunities]);
+  const topCommunities = skillCommunities;
 
   const homeStats = useMemo(
     () => buildHomeStats(freeTrialHours, topCommunities.length > 0 ? topCommunities.length : undefined),
@@ -320,26 +316,12 @@ export function HomePage() {
             </p>
           </div>
           <div className="mkt-g3">
-            {communitiesLoading ? (
-              <p className="mkt-lead howitworks-body-style col-span-full">
-                Loading communities…
-              </p>
-            ) : communitiesError ? (
-              <p className="mkt-lead howitworks-body-style col-span-full">
-                Unable to load skill communities right now. Please try again shortly.
-              </p>
-            ) : topCommunities.length === 0 ? (
-              <p className="mkt-lead howitworks-body-style col-span-full">
-                No skill communities are available yet.
-              </p>
-            ) : (
-              topCommunities.map((community) => (
-                <div key={community.id} className="mkt-comm mkt-comm--static">
-                  <h3>{community.name}</h3>
-                  <p>{community.description ?? ''}</p>
-                </div>
-              ))
-            )}
+            {topCommunities.map((community) => (
+              <div key={community.id} className="mkt-comm mkt-comm--static">
+                <h3>{community.name}</h3>
+                <p>{community.description ?? ''}</p>
+              </div>
+            ))}
           </div>
         </MktShell>
       </section>

@@ -202,7 +202,10 @@ function ProtectedSalesShell() {
   );
 }
 
-const marketingNav = publicNav.map(({ label, href }) => ({ label, href }));
+const marketingNav = publicNav.map(({ label, href }) => ({
+  label,
+  href,
+}));
 
 function useMarketingAuthLayoutProps() {
   const { isAuthenticated, logout } = useAuth();
