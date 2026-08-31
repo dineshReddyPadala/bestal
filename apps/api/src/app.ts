@@ -1,4 +1,4 @@
-import Fastify, { LogController } from 'fastify';
+import Fastify from 'fastify';
 import {
   serializerCompiler,
   validatorCompiler,
@@ -23,7 +23,7 @@ export async function buildApp(config: AppConfig) {
     logger: buildFastifyLoggerConfig(config),
     trustProxy: config.isProduction,
     requestIdHeader: 'x-request-id',
-    logController: new LogController({ disableRequestLogging: true }),
+    disableRequestLogging: true,
   }).withTypeProvider<ZodTypeProvider>();
 
   app.setValidatorCompiler(validatorCompiler);
