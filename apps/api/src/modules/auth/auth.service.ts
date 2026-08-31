@@ -92,10 +92,19 @@ export class AuthService {
       throw new AuthenticationError('Invalid email or password');
     }
 
-    const isValidPassword = await argon2.verify(
-      credentialUser.passwordHash,
-      input.password,
-    );
+    let isValidPassword = false;
+    try {
+      isValidPassword = await argon2.verify(
+        credentialUser.passwordHash,
+        input.password,
+      );
+    } catch (error) {
+      this.fastify.log.warn(
+        { err: error, userId: credentialUser.id.toString() },
+        'Password hash could not be verified',
+      );
+      throw new AuthenticationError('Invalid email or password');
+    }
 
     if (!isValidPassword) {
       throw new AuthenticationError('Invalid email or password');
