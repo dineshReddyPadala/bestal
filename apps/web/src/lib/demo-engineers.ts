@@ -707,7 +707,7 @@ function withEngineerTimezone(engineer: DemoEngineer, timezone: string): DemoEng
 /** Homepage slider — one distinct IANA timezone per featured card. */
 const LANDING_PROFILE_TIMEZONES: Record<string, string> = {
   'divya-k': 'America/ANY',
-  'shiva-g': 'Asia/Kolkata',
+  'shiva-g': 'America/New_York',
   'sai-k': 'America/New_York',
   'saran-p': 'America/Chicago',
   'jaya-k': 'America/Los_Angeles',
