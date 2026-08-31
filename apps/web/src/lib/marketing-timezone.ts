@@ -100,6 +100,20 @@ export function resolveMarketingTimezone(iana: string): MarketingTimezoneMeta {
   };
 }
 
+export function formatUsTimezoneShortLabel(iana: string): string {
+  const { region, zoneLabel } = resolveMarketingTimezone(iana);
+  if (region !== 'Other') {
+    return `US ${region}`;
+  }
+
+  const match = zoneLabel.match(/US (Pacific|Eastern|Central|Mountain)/i);
+  if (match) {
+    return `US ${match[1]}`;
+  }
+
+  return zoneLabel.replace(/^Works /, '').replace(/ hours$/, '').trim();
+}
+
 export function engineerTimezoneRegion(iana: string): MarketingTimezoneRegion {
   return resolveMarketingTimezone(iana).region;
 }
