@@ -59,6 +59,30 @@ function mapPrismaError(
   return formatAppError(conflict, instance);
 }
 
+function sendProblem(reply: FastifyReply, problem: ProblemDetail): FastifyReply {
+  const payload = JSON.stringify(problem);
+  reply.status(problem.status);
+  reply.header('Content-Type', 'application/problem+json; charset=utf-8');
+  reply.serializer((body: unknown) =>
+    typeof body === 'string' ? body : JSON.stringify(body),
+  );
+
+  try {
+    return reply.send(payload);
+  } catch {
+    if (!reply.raw.headersSent) {
+      reply.raw.writeHead(problem.status, {
+        'Content-Type': 'application/problem+json; charset=utf-8',
+        'Content-Length': Buffer.byteLength(payload),
+      });
+    }
+    if (!reply.raw.writableEnded) {
+      reply.raw.end(payload);
+    }
+    return reply;
+  }
+}
+
 async function errorHandlerPlugin(fastify: FastifyInstance): Promise<void> {
   fastify.setErrorHandler(
     (error: FastifyError | AppError | ZodError | Prisma.PrismaClientKnownRequestError, request: FastifyRequest, reply: FastifyReply) => {
@@ -67,7 +91,7 @@ async function errorHandlerPlugin(fastify: FastifyInstance): Promise<void> {
       if (error instanceof ZodError) {
         const problem = formatZodError(error);
         request.log.warn({ err: error, problem }, 'Validation error');
-        return reply.status(problem.status).type('application/problem+json').send(problem);
+        return sendProblem(reply, problem);
       }
 
       if (error instanceof AppError) {
@@ -79,17 +103,14 @@ async function errorHandlerPlugin(fastify: FastifyInstance): Promise<void> {
           request.log.error({ err: error, problem }, 'Non-operational error');
         }
 
-        return reply.status(problem.status).type('application/problem+json').send(problem);
+        return sendProblem(reply, problem);
       }
 
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
         const prismaError = mapPrismaError(error, instance);
         if (prismaError) {
           request.log.warn({ err: error, problem: prismaError }, 'Prisma constraint error');
-          return reply
-            .status(prismaError.status)
-            .type('application/problem+json')
-            .send(prismaError);
+          return sendProblem(reply, prismaError);
         }
       }
 
@@ -106,7 +127,7 @@ async function errorHandlerPlugin(fastify: FastifyInstance): Promise<void> {
         };
 
         request.log.warn({ err: error, problem }, 'Fastify validation error');
-        return reply.status(problem.status).type('application/problem+json').send(problem);
+        return sendProblem(reply, problem);
       }
 
       const statusCode = fastifyError.statusCode ?? HTTP_STATUS.INTERNAL_SERVER_ERROR;
@@ -123,7 +144,7 @@ async function errorHandlerPlugin(fastify: FastifyInstance): Promise<void> {
       };
 
       request.log.error({ err: error, problem }, 'Unhandled error');
-      return reply.status(problem.status).type('application/problem+json').send(problem);
+      return sendProblem(reply, problem);
     },
   );
 
@@ -137,7 +158,7 @@ async function errorHandlerPlugin(fastify: FastifyInstance): Promise<void> {
       code: ERROR_CODES.NOT_FOUND,
     };
 
-    return reply.status(problem.status).type('application/problem+json').send(problem);
+    return sendProblem(reply, problem);
   });
 }
 
