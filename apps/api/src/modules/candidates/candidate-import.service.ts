@@ -1189,7 +1189,9 @@ export class CandidateImportService {
           matchedBySource.firstName === candidate.firstName &&
           matchedBySource.lastName === candidate.lastName &&
           (matchedBySource.email?.toLowerCase() ?? null) === candidate.email &&
-          (matchedBySource.yearsExperience ?? null) === candidate.yearsExperience &&
+          (matchedBySource.yearsExperience != null
+            ? Number(matchedBySource.yearsExperience)
+            : null) === candidate.yearsExperience &&
           (matchedBySource.primaryRole ?? null) === candidate.primaryRole &&
           (matchedBySource.aiSummary ?? null) === candidate.aiSummary &&
           (matchedBySource.strengths ?? null) === candidate.strengths &&
