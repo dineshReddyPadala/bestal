@@ -704,28 +704,27 @@ function withEngineerTimezone(engineer: DemoEngineer, timezone: string): DemoEng
   };
 }
 
-/** Homepage slider — one distinct IANA timezone per featured card. */
+/** Homepage slider — US business-hour overlap per featured card (landing order). */
 const LANDING_PROFILE_TIMEZONES: Record<string, string> = {
-  'divya-k': 'America/ANY',
-  'shiva-g': 'Asia/Kolkata',
-  'sai-k': 'America/New_York',
-  'saran-p': 'America/Chicago',
-  'jaya-k': 'America/Los_Angeles',
-  'amanda-l': 'Europe/London',
-  'prashanth-k': 'Europe/Berlin',
-  'emily-r': 'Asia/Singapore',
-  'michael-t': 'Australia/Sydney',
-  'jessica-m': 'UTC',
-  'david-w': 'America/New_York',
-  'james-h': 'America/Chicago',
+  'divya-k': 'America/Los_Angeles', // Divya K — US Pacific
+  'shiva-g': 'America/New_York', // Shiva G — US Eastern
+  'sai-k': 'America/Chicago', // Sai K — US Central
+  'saran-p': 'America/New_York', // Saran P — US Eastern
+  'jaya-k': 'America/Los_Angeles', // Jaya K — US Pacific
+  'amanda-l': 'America/Chicago', // Amanda L — US Central
+  'prashanth-k': 'America/Chicago', // Prashanth K — US Central
+  'emily-r': 'America/Chicago', // Emily R — US Central
+  'michael-t': 'America/Chicago', // Michael T — US Central
+  'jessica-m': 'America/Los_Angeles', // Jessica M — US Pacific
+  'david-w': 'America/New_York', // David W — US Eastern
+  'james-h': 'UTC', // James H — US Mountain
 };
 
 export const LANDING_PROFILE_SLIDES: CommunityProfileSlide[] = LANDING_ENGINEER_IDS.map(
   ({ community, description, id }) => {
     const base = DEMO_ENGINEERS.find((engineer) => engineer.id === id)!;
     const timezone = LANDING_PROFILE_TIMEZONES[id] ?? base.timezone;
-    const slideEngineer =
-      timezone === base.timezone ? base : withEngineerTimezone(base, timezone);
+    const slideEngineer = withEngineerTimezone(base, timezone);
 
     return {
       community,

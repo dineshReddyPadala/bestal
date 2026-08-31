@@ -10,7 +10,7 @@ const FOOTER_LINK_HREF: Record<string, string> = {
   'Time-Zone Overlap': '/#time-zone',
   'Post a Job': '/reach-out',
   About: '/about',
-  'Our Evaluation Standard': '/evaluation-standard',
+  'How we assess': '/evaluation-standard',
   Enterprise: '/enterprise',
   'Contact us': '/contact',
   'Privacy Policy': '/privacy-policy',
