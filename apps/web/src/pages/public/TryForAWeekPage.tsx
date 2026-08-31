@@ -1,6 +1,5 @@
 import { Link } from 'react-router-dom';
 import { useMemo } from 'react';
-import { CLIENT_LOGIN_PATH } from '../../lib/login-portals';
 import { PageMeta } from '../../components/PageMeta';
 import { MktShell } from '../../components/marketing/MktShell';
 import { useFreeTrialHours } from '../../hooks/api/useTrialPolicy';
@@ -41,7 +40,7 @@ export function TryForAWeekPage() {
             No recruiter calls. No sourcing cycle. No commitment for {formatFirstFreeTrialHours(freeTrialHours)}.
           </p>
           <div className="mkt-actions">
-            <Link to={CLIENT_LOGIN_PATH} className="mkt-btn mkt-btn-amber">
+            <Link to="/sample-talent" className="mkt-btn mkt-btn-amber">
               Browse Pre-Vetted Talent <ForwardArrow />
             </Link>
             <Link to="/reach-out" className="mkt-btn mkt-btn-secondary">
