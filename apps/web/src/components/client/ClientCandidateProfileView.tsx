@@ -3,7 +3,7 @@ import type {
   ClientGroupedSkill,
   ClientProfileAttachment,
 } from '@bestal/mock-data';
-import { COLLABORATION_CULTURAL_FIT_LABEL, cn, formatCurrency, formatTimezoneLabel, initials } from '@bestal/shared-utils';
+import { COLLABORATION_CULTURAL_FIT_LABEL, cn, formatCurrency, formatTimezoneLabel } from '@bestal/shared-utils';
 import { Button, Tabs } from '@bestal/ui';
 import {
   BadgeCheck,
@@ -17,8 +17,10 @@ import {
   MapPin,
   Star,
 } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { ForwardArrow } from '../ui/ForwardArrow';
+import { GENDER_AVATAR_SRC } from '../marketing/DemoEngineerGenderAvatar';
+import { inferGenderFromName } from '../../lib/demo-engineers';
 import {
   clientBgvStatusText,
   clientEvaluationStatusText,
@@ -55,29 +57,19 @@ function skillLabel(skill: ClientGroupedSkill): string {
   return skill.skillName?.trim() || skill.skillCommunityName;
 }
 
-function ProfilePhoto({ name, src }: { name: string; src?: string | null }) {
-  const [failed, setFailed] = useState(false);
-  const imageSrc = src?.trim();
-  const showImage = Boolean(imageSrc) && !failed;
-
-  useEffect(() => {
-    setFailed(false);
-  }, [imageSrc]);
+function ProfilePhoto({ name }: { name: string }) {
+  const gender = inferGenderFromName(name);
 
   return (
-    <div className="h-28 w-28 shrink-0 overflow-hidden rounded-xl bg-muted ring-1 ring-border/60 sm:h-32 sm:w-32">
-      {showImage ? (
-        <img
-          src={imageSrc}
-          alt={name}
-          className="h-full w-full object-cover object-top"
-          onError={() => setFailed(true)}
-        />
-      ) : (
-        <div className="flex h-full w-full items-center justify-center bg-brand-light text-2xl font-semibold text-brand">
-          {initials(name)}
-        </div>
-      )}
+    <div className="h-28 w-28 shrink-0 overflow-hidden rounded-[0.875rem] bg-[#e8f4f8] ring-1 ring-border/60 sm:h-32 sm:w-32">
+      <img
+        src={GENDER_AVATAR_SRC[gender]}
+        alt=""
+        aria-label={name}
+        className="h-full w-full object-cover"
+        loading="lazy"
+        decoding="async"
+      />
     </div>
   );
 }
@@ -447,7 +439,7 @@ export function ClientCandidateProfileView({
         <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6">
           <div className="flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between">
             <div className="flex min-w-0 flex-col gap-5 sm:flex-row sm:items-start">
-              <ProfilePhoto name={profile.fullName} src={profile.photoUrl} />
+              <ProfilePhoto name={profile.fullName} />
 
               <div className="min-w-0 space-y-3">
                 <div className="flex flex-wrap items-center gap-2">

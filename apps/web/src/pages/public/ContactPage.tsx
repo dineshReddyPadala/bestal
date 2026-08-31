@@ -33,10 +33,9 @@ export function ContactPage() {
             <div className="mkt-contact-info-stack">
               <aside className="mkt-contact-card mkt-contact-card-aside">
                 <p className="mkt-contact-aside-label">Direct contact</p>
-                <ol className="mkt-contact-direct-list">
+                <ul className="mkt-contact-direct-list">
                   {CONTACT_DIRECT_LINES.map((line) => (
-                    <li key={line.num} className="mkt-contact-direct-item">
-                      <span className="mkt-contact-direct-num">{line.num}</span>
+                    <li key={line.title} className="mkt-contact-direct-item">
                       <div>
                         <p className="mkt-contact-direct-title">{line.title}</p>
                         <a href={line.href} className="mkt-contact-link">
@@ -46,7 +45,7 @@ export function ContactPage() {
                       </div>
                     </li>
                   ))}
-                </ol>
+                </ul>
               </aside>
 
               <div className="mkt-contact-card mkt-contact-card-address">

@@ -1,9 +1,11 @@
 import type { ClientSearchRecord } from '@bestal/mock-data';
-import { cn, formatCurrency, formatTimezoneLabel, initials } from '@bestal/shared-utils';
+import { cn, formatCurrency, formatTimezoneLabel } from '@bestal/shared-utils';
 import { Button } from '@bestal/ui';
 import { CheckCircle2, Loader2, Star } from 'lucide-react';
-import { useEffect, useState, type ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { ForwardArrow } from '../ui/ForwardArrow';
+import { GENDER_AVATAR_SRC } from '../marketing/DemoEngineerGenderAvatar';
+import { inferGenderFromName } from '../../lib/demo-engineers';
 import { isBgvClear } from '../../lib/candidate-approval-gates';
 import {
   availabilityStatusClasses,
@@ -49,42 +51,35 @@ function StatusRow({
   );
 }
 
-function ProfilePhoto({
-  name,
-  src,
-  verified,
-}: {
-  name: string;
-  src?: string | null;
-  verified?: boolean;
-}) {
-  const [failed, setFailed] = useState(false);
-  const imageSrc = src?.trim();
-  const showImage = Boolean(imageSrc) && !failed;
-
-  useEffect(() => {
-    setFailed(false);
-  }, [imageSrc]);
+function ProfilePhoto({ name, verified }: { name: string; verified?: boolean }) {
+  const gender = inferGenderFromName(name);
 
   return (
-    <div className="relative h-[80px] w-[80px] shrink-0 sm:h-[84px] sm:w-[84px]">
-      <div className="h-full w-full overflow-hidden rounded-lg bg-muted">
-        {showImage ? (
-          <img
-            src={imageSrc}
-            alt={name}
-            className="h-full w-full object-cover object-top"
-            onError={() => setFailed(true)}
-          />
-        ) : (
-          <div className="flex h-full w-full items-center justify-center bg-brand-light text-lg font-semibold text-brand">
-            {initials(name)}
-          </div>
-        )}
+    <div className="relative h-[88px] w-[88px] shrink-0 sm:h-[92px] sm:w-[92px]">
+      <div className="h-full w-full overflow-hidden rounded-[0.875rem] bg-[#e8f4f8]">
+        <img
+          src={GENDER_AVATAR_SRC[gender]}
+          alt=""
+          aria-label={name}
+          className="h-full w-full object-cover"
+          loading="lazy"
+          decoding="async"
+        />
       </div>
       {verified ? (
-        <span className="absolute -bottom-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500 text-white ring-2 ring-white">
-          <CheckCircle2 className="h-2.5 w-2.5" />
+        <span
+          className="absolute -bottom-0.5 -left-0.5 flex h-5 w-5 items-center justify-center rounded-[0.3125rem] border-2 border-white bg-brand text-white shadow-[0_1px_3px_rgba(11,90,75,0.18)]"
+          aria-hidden="true"
+        >
+          <svg viewBox="0 0 12 12" fill="none" className="h-2.5 w-2.5">
+            <path
+              d="M2.5 6.25 4.75 8.5 9.5 3.75"
+              stroke="currentColor"
+              strokeWidth="1.75"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
         </span>
       ) : null}
     </div>
@@ -140,84 +135,59 @@ export function ClientCandidateSearchCard({
       ) : null}
 
       <div className="flex min-h-0 flex-1 items-start gap-3.5 pr-5 sm:gap-4">
-        <div className="flex w-[88px] shrink-0 flex-col items-center gap-2.5 sm:w-[92px] sm:gap-3">
-          <ProfilePhoto
-            name={record.fullName}
-            src={record.photoUrl}
-            verified={bgvClear && evaluationDone}
-          />
-          <div className="w-full space-y-1.5 text-left">
-          <p className="text-[10px] leading-tight text-muted-foreground">BesTal Score</p>
-            <p className="flex items-center justify-left gap-0.5 text-[11px] font-medium text-foreground">
-              <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
+        <div className="flex w-[88px] shrink-0 flex-col items-start gap-2.5 sm:w-[92px] sm:gap-3">
+          <ProfilePhoto name={record.fullName} verified={bgvClear && evaluationDone} />
+          <div className="w-full space-y-1 text-left">
+            <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+              BesTal Score
+            </p>
+            <p className="flex items-center gap-0.5 text-[18px] font-bold leading-none text-foreground">
+              <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
               <span className="tabular-nums">{record.bestalScore}</span>
             </p>
-            <p
-              className={cn(
-                'flex items-center justify-left gap-1 text-[10px]',
-                availabilityClasses.text,
-              )}
-            >
-              <span
-                className={cn(
-                  'inline-block h-2 w-2 rounded-full',
-                  availabilityClasses.dot,
-                )}
-              />
-              {availabilityLabel}
+          </div>
+          <div className="w-full pt-0.5">
+            <p className="text-[10px] leading-tight text-muted-foreground">Previously worked at</p>
+            <p className="mt-0.5 truncate text-xs font-semibold text-foreground" title={companyLabel(record)}>
+              {companyLabel(record)}
             </p>
-            {timezoneLabel ? (
-              <p
-                className="text-[10px] leading-tight text-muted-foreground"
-                title={timezoneLabel}
-              >
-                Timezone:{' '}
-                <span className="font-medium text-foreground">{timezoneLabel}</span>
-              </p>
-            ) : null}
           </div>
         </div>
 
-        <div className="flex min-w-0 flex-1 flex-col justify-between space-y-2 sm:space-y-2.5">
-          <div className="space-y-1.5">
-            <h3 className="truncate text-sm font-semibold text-brand sm:text-base">{record.fullName}</h3>
+        <div className="flex min-w-0 flex-1 flex-col space-y-1.5 sm:space-y-2">
+          <h3 className="truncate text-sm font-semibold text-brand sm:text-base">{record.fullName}</h3>
 
-            {record.headline ? (
-              <p className="truncate text-xs text-muted-foreground sm:text-[13px]">
-                {record.headline}
+          {record.headline ? (
+            <p className="truncate text-xs text-muted-foreground sm:text-[13px]">{record.headline}</p>
+          ) : null}
+
+          {primarySkill ? (
+            <div className="min-w-0">
+              <p className="text-[9px] font-medium uppercase tracking-wide text-muted-foreground">
+                Expertise
               </p>
-            ) : null}
-
-            <div className="flex items-end justify-between gap-3">
-              {primarySkill ? (
-                <div className="min-w-0 flex-1">
-                  <p className="text-[9px] font-medium uppercase tracking-wide text-muted-foreground">
-                    Expertise
-                  </p>
-                  <span className="mt-0.5 inline-flex rounded-md bg-amber-50 px-1.5 py-0.5 text-[10px] font-medium text-amber-900 ring-1 ring-amber-200/80 sm:text-[11px]">
-                    {primarySkill}
-                  </span>
-                </div>
-              ) : (
-                <div className="min-w-0 flex-1" />
-              )}
-
-              <p className="shrink-0 self-end text-right text-[14px] font-bold tabular-nums text-foreground sm:text-[16px]">
-                {formatCurrency(record.hourlyRate, record.currency)}
-                <span className="text-[10px] font-normal text-muted-foreground">/hr</span>
-              </p>
+              <span className="mt-0.5 inline-flex rounded-full bg-amber-50 px-1.5 py-0.5 text-[10px] font-medium text-amber-900 ring-1 ring-amber-200/80 sm:text-[11px]">
+                {primarySkill}
+              </span>
             </div>
+          ) : null}
 
-            {record.yearsExperience != null && record.yearsExperience > 0 ? (
-              <p className="text-xs text-muted-foreground">
-                Experience:{' '}
-                <span className="font-medium text-foreground">
-                  {record.yearsExperience} {record.yearsExperience === 1 ? 'year' : 'years'}
-                </span>
-              </p>
-            ) : null}
+          {record.yearsExperience != null && record.yearsExperience > 0 ? (
+            <p className="text-xs text-muted-foreground">
+              Experience:{' '}
+              <span className="font-medium text-foreground">
+                {record.yearsExperience} {record.yearsExperience === 1 ? 'year' : 'years'}
+              </span>
+            </p>
+          ) : null}
 
-            <div className="space-y-1 pt-0.5">
+          {timezoneLabel ? (
+            <p className="truncate text-xs text-muted-foreground" title={timezoneLabel}>
+              Timezone: <span className="font-medium text-foreground">{timezoneLabel}</span>
+            </p>
+          ) : null}
+
+          <div className="space-y-1 pt-0.5">
             {evaluationDone ? (
               <StatusRow
                 tone="success"
@@ -255,20 +225,26 @@ export function ClientCandidateSearchCard({
                 label="BGV Pending"
               />
             )}
-            </div>
-          </div>
-
-          <div className="pb-0.5 pt-1">
-            <p className="text-[9px] font-medium uppercase tracking-wide text-muted-foreground">
-              Previously worked at
-            </p>
-            <div className="mt-0.5">
-              <span className="truncate text-xs font-semibold text-foreground">
-                {companyLabel(record)}
-              </span>
-            </div>
           </div>
         </div>
+      </div>
+
+      <div className="mt-3 flex items-center justify-between gap-3 border-t border-border/50 py-3 sm:mt-3.5 sm:py-3.5">
+        <p className="text-[22px] font-bold leading-none tabular-nums text-brand sm:text-[26px]">
+          {formatCurrency(record.hourlyRate, record.currency)}
+          <span className="text-[13px] font-semibold text-brand/90">/hr</span>
+        </p>
+        <p
+          className={cn(
+            'flex items-center gap-1.5 text-xs font-medium',
+            availabilityClasses.text,
+          )}
+        >
+          <span
+            className={cn('inline-block h-2 w-2 shrink-0 rounded-full', availabilityClasses.dot)}
+          />
+          {availabilityLabel}
+        </p>
       </div>
 
       <div className="mt-auto flex shrink-0 gap-2 border-t border-border/50 pt-3.5 sm:gap-2.5 sm:pt-4">

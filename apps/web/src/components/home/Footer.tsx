@@ -5,7 +5,7 @@ import { Logo } from './Logo';
 
 const FOOTER_LINK_HREF: Record<string, string> = {
   'Find Talent': '/sample-talent',
-  'Skill Communities': '/communities',
+  'Skill Communities': '/sample-talent',
   'How It Works': '/how-it-works',
   'Time-Zone Overlap': '/#time-zone',
   'Post a Job': '/reach-out',

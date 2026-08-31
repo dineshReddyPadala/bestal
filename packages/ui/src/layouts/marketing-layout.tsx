@@ -33,7 +33,7 @@ const defaultFooterColumns: MarketingFooterColumn[] = [
     title: 'Platform',
     links: [
       { label: 'Pre-Vetted Talent', href: '/sample-talent' },
-      { label: 'Skill Communities', href: '/communities' },
+      { label: 'Skill Communities', href: '/sample-talent' },
       { label: 'How it works', href: '/how-it-works' },
       { label: 'Time Zone Overlap', href: '/#time-zone' },
       { label: 'Pricing', href: '/rates' },
@@ -45,7 +45,6 @@ const defaultFooterColumns: MarketingFooterColumn[] = [
       { label: 'About', href: '/about' },
       { label: 'FAQ', href: '/faq' },
       { label: 'Our Evaluation Standard', href: '/evaluation-standard' },
-      { label: 'Enterprise', href: '/enterprise' },
       { label: 'Contact us', href: '/contact' },
     ],
   },
@@ -116,6 +115,25 @@ export function MarketingLayout({
                   {item.label}
                 </NavLink>
               ))}
+
+              {isAuthenticated ? (
+                <button
+                  type="button"
+                  className="mkt-nav-login"
+                  onClick={() => void handleLogout()}
+                  disabled={loggingOut}
+                >
+                  {loggingOut ? 'Logging out…' : 'Log out'}
+                </button>
+              ) : (
+                <Link
+                  to={loginHref}
+                  className="mkt-nav-login"
+                  onClick={() => setNavOpen(false)}
+                >
+                  Log in
+                </Link>
+              )}
             </nav>
 
             <div className="mkt-hdr-cta">

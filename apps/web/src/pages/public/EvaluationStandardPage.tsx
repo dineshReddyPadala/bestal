@@ -238,7 +238,14 @@ function AssessStepper({
         const isLast = index === steps.length - 1;
         const MetaIcon = stepIcons?.[step.id];
         return (
-          <div key={step.id} className="mkt-assess-stepper-col">
+          <div
+            key={step.id}
+            className={cn(
+              'mkt-assess-stepper-col',
+              checked && 'is-hovered',
+              isFilled && 'is-filled',
+            )}
+          >
             <div
               className={cn(
                 'mkt-assess-stepper-track-col',
@@ -264,7 +271,7 @@ function AssessStepper({
               ) : null}
             </div>
             <article
-              className="mkt-assess-stepper-card"
+              className={cn('mkt-assess-stepper-card', checked && 'is-hovered')}
               onMouseEnter={() => onHover(step.id)}
               onMouseLeave={() => onHover(null)}
               onFocus={() => onHover(step.id)}
@@ -358,7 +365,7 @@ export function EvaluationStandardPage() {
         <MktShell>
           <div className="mkt-assess-section-hd mkt-assess-dimensions-hd">
             <h2>{ASSESS_WHAT_WE_ASSESS.title}</h2>
-            <p className="howitworks-body-style">{ASSESS_WHAT_WE_ASSESS.intro}</p>
+            <p className="">{ASSESS_WHAT_WE_ASSESS.intro}</p>
           </div>
 
           <div className="mkt-assess-dimensions-layout">
@@ -413,7 +420,7 @@ export function EvaluationStandardPage() {
         <MktShell>
           <div className="mkt-assess-section-hd mkt-assess-prevetted-hd">
             <h2>{ASSESS_PREVETTED.title}</h2>
-            <p className="howitworks-body-style">{ASSESS_PREVETTED.intro}</p>
+            <p >{ASSESS_PREVETTED.intro}</p>
           </div>
 
           <div ref={prevettedStepper.ref} className="mkt-assess-prevetted-stepper-wrap">
@@ -430,7 +437,7 @@ export function EvaluationStandardPage() {
 
           <div className="mkt-assess-prevetted-footer">
             {ASSESS_PREVETTED.footer.map((paragraph) => (
-              <p key={paragraph.slice(0, 24)} className="howitworks-body-style">
+              <p key={paragraph.slice(0, 24)} >
                 {paragraph}
               </p>
             ))}

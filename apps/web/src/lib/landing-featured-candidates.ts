@@ -1,4 +1,5 @@
-import type { CommunityProfileSlide, DemoEngineer, DemoEngineerGender, ScoreRow } from './demo-engineers';
+import type { CommunityProfileSlide, DemoEngineer, ScoreRow } from './demo-engineers';
+import { inferGenderFromName } from './demo-engineers';
 import { isKnownMarketingTimezone, resolveMarketingTimezone } from './marketing-timezone';
 
 export type { CommunityProfileSlide };
@@ -238,7 +239,7 @@ export function mapFeaturedCandidateToDemoEngineer(
     name: formatDisplayName(candidate.firstName, candidate.lastName),
     role,
     discipline: candidate.primarySkillCommunityName?.trim() ?? '',
-    gender: 'female' satisfies DemoEngineerGender,
+    gender: inferGenderFromName(formatDisplayName(candidate.firstName, candidate.lastName)),
     experience,
     location,
     meta: [experience, location].filter(Boolean).join(' · '),

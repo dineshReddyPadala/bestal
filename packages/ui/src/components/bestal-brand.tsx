@@ -1,7 +1,7 @@
 import { cn } from '@bestal/shared-utils';
 import { Check, ShieldCheck } from 'lucide-react';
 
-export const DEFAULT_BESTAL_LOGO_SRC = '/Light%20Theme%20Website%20logo.svg';
+export const DEFAULT_BESTAL_LOGO_SRC = '/Light%20Theme%20WebsiteTransparent%20%20logo.svg';
 
 export type BesTalBrandProps = {
   logoSrc?: string;

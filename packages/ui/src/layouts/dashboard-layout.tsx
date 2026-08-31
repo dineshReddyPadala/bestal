@@ -123,7 +123,7 @@ function NavLink({
       title={collapsed ? item.label : undefined}
       aria-label={item.label}
       className={cn(
-        'flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-[13px] font-medium transition-colors',
+        'flex items-center gap-2 rounded-lg px-2.5 py-2 text-[13px] font-medium transition-colors',
         collapsed && 'lg:justify-center lg:px-2',
         isActive
           ? 'bg-[var(--shell-button-active)] text-white'
@@ -227,7 +227,6 @@ function ProfileMenu({
           <div className="border-b border-border px-3 py-2">
             <p className="truncate text-sm font-medium text-foreground">{user.name}</p>
             <p className="truncate text-xs text-muted-foreground">{user.email}</p>
-            <p className="mt-0.5 truncate text-xs text-muted-foreground">{user.role}</p>
           </div>
           {onLogout && (
             <button
@@ -249,7 +248,7 @@ function ProfileMenu({
 
 export function DashboardLayout({
   navItems,
-  portalName: _portalName,
+  portalName,
   user,
   children,
   currentPath = '',
@@ -343,6 +342,16 @@ export function DashboardLayout({
           </div>
 
           <nav className="scrollbar-thin flex flex-1 flex-col justify-start gap-0.5 overflow-y-auto overflow-x-hidden px-1.5 py-2">
+            {portalName ? (
+              <p
+                className={cn(
+                  'mb-1.5 px-2.5 text-[12px] font-semibold text-muted-foreground',
+                  desktopCollapsed && 'lg:hidden',
+                )}
+              >
+                {portalName}
+              </p>
+            ) : null}
             {navItems.map((item) => (
               <div key={item.href} className="relative">
                 <NavLink

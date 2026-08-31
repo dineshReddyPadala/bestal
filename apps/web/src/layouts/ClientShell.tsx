@@ -20,7 +20,7 @@ export function ClientShell() {
   return (
     <DashboardLayout
       navItems={clientNavItems}
-      portalName="Client Portal"
+      portalName="Amnet Digital"
       user={user}
       currentPath={currentPath}
       onLogout={handleLogout}

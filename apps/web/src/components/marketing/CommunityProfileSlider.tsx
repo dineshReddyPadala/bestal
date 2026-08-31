@@ -23,10 +23,10 @@ function LandingProfileCardSkeleton() {
       <div className="mkt-lpc">
         <div className="mkt-lpc-grid">
           <div className="mkt-lpc-left">
-            <div className="mkt-lpc-av mkt-skeleton-block" />
+            <div className="mkt-lpc-av-wrap">
+              <div className="mkt-lpc-av mkt-skeleton-block" />
+            </div>
             <div className="mkt-skeleton-block mkt-skeleton-block-score" />
-            <div className="mkt-skeleton-bar mkt-skeleton-bar-md" />
-            <div className="mkt-skeleton-bar mkt-skeleton-bar-sm" />
             <div className="mkt-skeleton-bar mkt-skeleton-bar-lg" />
           </div>
           <div className="mkt-lpc-right">
@@ -35,8 +35,10 @@ function LandingProfileCardSkeleton() {
             <div className="mkt-skeleton-bar mkt-skeleton-bar-sm" />
             <div className="mkt-skeleton-bar mkt-skeleton-bar-md" />
             <div className="mkt-skeleton-bar mkt-skeleton-bar-sm" />
+            <div className="mkt-skeleton-bar mkt-skeleton-bar-md" />
           </div>
         </div>
+        <div className="mkt-lpc-pricing mkt-skeleton-bar mkt-skeleton-bar-md" />
         <div className="mkt-lpc-foot">
           <div className="mkt-skeleton-block mkt-skeleton-block-btn" />
           <div className="mkt-skeleton-block mkt-skeleton-block-btn" />
@@ -71,17 +73,23 @@ export function CommunityProfileSlider({
   const panelRefs = useRef<Array<HTMLDivElement | null>>([]);
 
   const syncViewportHeight = useCallback(() => {
+    const activePanel = panelRefs.current[active];
+    if (activePanel) {
+      setViewportHeight(activePanel.offsetHeight);
+      return;
+    }
+
     const heights = panelRefs.current
       .filter((panel): panel is HTMLDivElement => panel != null)
       .map((panel) => panel.offsetHeight);
 
     if (heights.length === 0) return;
     setViewportHeight(Math.max(...heights));
-  }, []);
+  }, [active]);
 
   useLayoutEffect(() => {
     syncViewportHeight();
-  }, [slides, syncViewportHeight]);
+  }, [slides, active, syncViewportHeight]);
 
   useEffect(() => {
     const panels = panelRefs.current.filter((panel): panel is HTMLDivElement => panel != null);
@@ -92,7 +100,7 @@ export function CommunityProfileSlider({
     });
     panels.forEach((panel) => observer.observe(panel));
     return () => observer.disconnect();
-  }, [slides, syncViewportHeight]);
+  }, [slides, active, syncViewportHeight]);
 
   useEffect(() => {
     setActive(0);
@@ -142,6 +150,7 @@ export function CommunityProfileSlider({
       <article className="mkt-prof mkt-prof-landing mkt-community-slider-card">
         <div
           className="mkt-community-slider-viewport"
+          data-has-height={viewportHeight ? 'true' : undefined}
           style={viewportHeight ? { height: viewportHeight } : undefined}
           aria-live="polite"
           aria-atomic="true"
