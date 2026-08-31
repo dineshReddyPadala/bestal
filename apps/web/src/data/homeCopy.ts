@@ -51,7 +51,7 @@ export const evidence: EvidencePoint[] = [
 
 export const differentiation = {
   h2: 'Everyone claims the top 3%. We show you the test.',
-  link: 'Our Evaluation Standard',
+  link: 'How we assess',
 };
 
 export const skillCommunities = {
@@ -267,7 +267,7 @@ export const footerDraft = {
       heading: 'Platform',
       links: ['Find Talent', 'Skill Communities', 'How It Works', 'Time-Zone Overlap', 'Post a Job'],
     },
-    { heading: 'Company', links: ['About', 'Our Evaluation Standard', 'Enterprise', 'Contact us'] },
+    { heading: 'Company', links: ['About', 'How we assess', 'Enterprise', 'Contact us'] },
     { heading: 'Legal', links: ['Privacy Policy', 'Terms of Service', 'Free Trial Terms', 'Cookie Policy'] },
   ],
 };

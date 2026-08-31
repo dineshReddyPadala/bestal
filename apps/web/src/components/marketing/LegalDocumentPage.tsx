@@ -21,7 +21,7 @@ function LegalBlocks({ blocks }: { blocks: LegalBlock[] }) {
       {blocks.map((block, index) => {
         if (block.type === 'paragraph') {
           return (
-            <p key={index} className="mkt-legal-paragraph howitworks-body-style">
+            <p key={index} className="mkt-legal-paragraph">
               {block.text.split('\n').map((line, lineIndex, lines) => (
                 <span key={lineIndex}>
                   {line}
@@ -100,7 +100,7 @@ export function LegalDocumentPage({ document }: LegalDocumentPageProps) {
         <MktShell>
           <div className="mkt-hiw-label">Legal</div>
           <h1>{document.title}</h1>
-          <p className="mkt-legal-meta howitworks-body-style">
+          <p className="mkt-legal-meta">
             Effective Date: {document.effectiveDate}
           </p>
         </MktShell>
@@ -135,7 +135,7 @@ export function LegalDocumentPage({ document }: LegalDocumentPageProps) {
 
             {document.outro ? <LegalBlocks blocks={document.outro} /> : null}
 
-            <p className="mkt-legal-footer-note howitworks-body-style">
+            <p className="mkt-legal-footer-note">
               Last Updated: {document.lastUpdated}. Questions?{' '}
               <Link to="/reach-out" className="mkt-faq-inline-link">
                 Reach out to us
