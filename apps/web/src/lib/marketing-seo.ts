@@ -24,7 +24,7 @@ export const PAGE_SEO = {
       'Complete example profiles in the production format: external evaluation scorecards, verification status, hourly rate, availability and US time-zone overlap. Fictional professionals, real structure.',
   },
   evaluationStandard: {
-    title: 'Our Evaluation Standard — How BesTal Assesses Technology Talent',
+    title: 'How we assess — How BesTal Assesses Technology Talent',
     description:
       'Five assessed dimensions, independent external evaluators, published scorecards including reservations. How BesTal\'s technical evaluation works and what the scores mean.',
   },
