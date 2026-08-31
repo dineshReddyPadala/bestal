@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
 import { BesTalBrand } from '../components/bestal-brand.js';
 import { SocialMediaIcons } from '../components/social-media-icons.js';
@@ -6,6 +6,7 @@ import { SocialMediaIcons } from '../components/social-media-icons.js';
 export type MarketingNavItem = {
   label: string;
   href: string;
+  children?: MarketingNavItem[];
 };
 
 export type MarketingFooterColumn = {
@@ -27,6 +28,109 @@ export type MarketingLayoutProps = {
   loginHref?: string;
   onLogout?: () => void | Promise<void>;
 };
+
+function navItemKey(item: MarketingNavItem) {
+  return `${item.href}-${item.label}`;
+}
+
+const HOW_IT_WORKS_DROPDOWN_META: Record<string, string> = {
+  '/how-it-works': 'From onboarding to engagement',
+  '/evaluation-standard': 'See our evaluation standard',
+  '/try-for-a-week': 'Try talent before you commit',
+  '/rates': 'Transparent hourly rates',
+  '/trust': 'Verification and compliance',
+};
+
+function MarketingNavDropdown({
+  item,
+  isActive,
+  onNavigate,
+  navOpen,
+  isTouchViewport,
+}: {
+  item: MarketingNavItem;
+  isActive: boolean;
+  onNavigate: () => void;
+  navOpen: boolean;
+  isTouchViewport: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const children = item.children ?? [];
+
+  useEffect(() => {
+    if (!isTouchViewport) return;
+    setOpen(navOpen);
+  }, [isTouchViewport, navOpen]);
+
+  return (
+    <div
+      className={`mkt-nav-dropdown${open ? ' is-open' : ''}${isActive ? ' is-active' : ''}`}
+      onMouseEnter={() => {
+        if (!isTouchViewport) setOpen(true);
+      }}
+      onMouseLeave={() => {
+        if (!isTouchViewport) setOpen(false);
+      }}
+    >
+      <div className="mkt-nav-dropdown-trigger">
+        <button
+          type="button"
+          className={isActive ? 'is-active' : undefined}
+          aria-expanded={open}
+          onClick={() => setOpen((value) => !value)}
+        >
+          {item.label}
+        </button>
+        <button
+          type="button"
+          className="mkt-nav-dropdown-toggle"
+          aria-expanded={open}
+          aria-label={`${item.label} menu`}
+          onClick={() => setOpen((value) => !value)}
+        >
+          <svg viewBox="0 0 12 12" fill="none" aria-hidden="true">
+            <path
+              d="M2.5 4.5 6 8 9.5 4.5"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </button>
+      </div>
+      <div className="mkt-nav-dropdown-menu" role="menu" aria-label={`${item.label} pages`}>
+        <div className="mkt-nav-dropdown-items">
+          {children.map((child) => {
+            const description = HOW_IT_WORKS_DROPDOWN_META[child.href];
+
+            return (
+              <NavLink
+                key={navItemKey(child)}
+                to={child.href}
+                role="menuitem"
+                className={({ isActive: childActive }) =>
+                  `mkt-nav-dropdown-item${childActive ? ' is-active' : ''}`
+                }
+                onClick={() => {
+                  setOpen(false);
+                  onNavigate();
+                }}
+              >
+                <span className="mkt-nav-dropdown-copy">
+                  <span className="mkt-nav-dropdown-item-label">{child.label}</span>
+                  {description ? (
+                    <span className="mkt-nav-dropdown-item-desc">{description}</span>
+                  ) : null}
+                </span>
+              </NavLink>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 const defaultFooterColumns: MarketingFooterColumn[] = [
   {
@@ -75,11 +179,39 @@ export function MarketingLayout({
 }: MarketingLayoutProps) {
   const [navOpen, setNavOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
+  const [isTouchViewport, setIsTouchViewport] = useState(false);
   const location = useLocation();
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(max-width: 1024px)');
+    const update = () => setIsTouchViewport(mediaQuery.matches);
+
+    update();
+    mediaQuery.addEventListener('change', update);
+    return () => mediaQuery.removeEventListener('change', update);
+  }, []);
+
+  useEffect(() => {
+    setNavOpen(false);
+  }, [location.pathname]);
 
   function isNavItemActive(item: MarketingNavItem, isActive: boolean) {
     if (isActive) return true;
-    return item.href === '/sample-talent' && location.pathname === '/talent';
+    if (item.href === '/sample-talent' && location.pathname === '/talent') return true;
+    if (
+      item.children?.some(
+        (child) =>
+          location.pathname === child.href ||
+          location.pathname.startsWith(`${child.href}/`),
+      )
+    ) {
+      return true;
+    }
+    return false;
+  }
+
+  function closeNav() {
+    setNavOpen(false);
   }
 
   async function handleLogout() {
@@ -94,7 +226,9 @@ export function MarketingLayout({
   }
 
   return (
-    <div className={`marketing-site flex min-h-screen flex-col ${layoutClassName}`.trim()}>
+    <div
+      className={`marketing-site flex min-h-screen flex-col${isTouchViewport ? ' mkt-touch-viewport' : ''} ${layoutClassName}`.trim()}
+    >
       <header className="mkt-header mkt-header-light relative">
         <div className="mkt-shell">
           <div className="mkt-hdr">
@@ -103,18 +237,30 @@ export function MarketingLayout({
             </Link>
 
             <nav className={`mkt-nav ${navOpen ? 'open' : ''}`} aria-label="Primary">
-              {navItems.map((item) => (
-                <NavLink
-                  key={item.href}
-                  to={item.href}
-                  onClick={() => setNavOpen(false)}
-                  className={({ isActive }) =>
-                    isNavItemActive(item, isActive) ? 'is-active' : undefined
-                  }
-                >
-                  {item.label}
-                </NavLink>
-              ))}
+              {navItems.map((item) =>
+                item.children?.length ? (
+                  <MarketingNavDropdown
+                    key={navItemKey(item)}
+                    item={item}
+                    isActive={isNavItemActive(item, location.pathname === item.href)}
+                    onNavigate={closeNav}
+                    navOpen={navOpen}
+                    isTouchViewport={isTouchViewport}
+                  />
+                ) : (
+                  <NavLink
+                    key={navItemKey(item)}
+                    to={item.href}
+                    end={item.href === '/'}
+                    onClick={closeNav}
+                    className={({ isActive }) =>
+                      isNavItemActive(item, isActive) ? 'is-active' : undefined
+                    }
+                  >
+                    {item.label}
+                  </NavLink>
+                ),
+              )}
 
               {isAuthenticated ? (
                 <button

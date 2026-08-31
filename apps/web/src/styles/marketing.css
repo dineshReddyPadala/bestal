@@ -2338,144 +2338,1552 @@
   border-radius: 0.375rem;
 }
 
-.marketing-site .mkt-rates-page {
-  background: #faf9f6;
+/* Pricing page */
+.marketing-site .mkt-pricing-page {
+  background: #f9f9f7;
+  overflow-x: clip;
 }
 
-.marketing-site .mkt-rates-hero {
-  padding-top: 4.25rem;
-  padding-bottom: 3.5rem;
-  text-align: left;
+.marketing-site:has(.mkt-pricing-page) main {
+  overflow-x: clip;
 }
 
-.marketing-site .mkt-rates-label {
-  font-size: 12.5px;
-  font-weight: 600;
-  color: #0e6e76;
+.marketing-site .mkt-pricing-em {
+  color: #0b5a4b;
 }
 
-.marketing-site .mkt-rates-hero h1 {
-  margin-top: 0.75rem;
-  font-size: 32px;
-  line-height: 1.15;
-  font-weight: 800;
-  color: #121417;
-  text-align: left;
-}
-
-.marketing-site .mkt-rates-hero .mkt-lead {
-  margin-top: 1.25rem;
-  max-width: auto;
-  font-size: 14px;
-  line-height: 1.8;
-  color: #4f5e64;
-  text-align: left;
-}
-
-.marketing-site .mkt-rates-hero .mkt-rates-sub {
-  margin-top: 1rem;
-}
-
-.marketing-site .mkt-rates-page h2 {
-  font-size: 28px;
-  line-height: 1.2;
-  font-weight: 800;
-  color: #12100e;
-}
-
-.marketing-site .mkt-rates-factors,
-.marketing-site .mkt-rates-cost,
-.marketing-site .mkt-rates-bands {
-  background: #faf9f6;
-}
-
-.marketing-site .mkt-rates-includes {
+.marketing-site .mkt-pricing-hero-band {
   background: #fff;
 }
 
-.marketing-site .mkt-rates-factors,
-.marketing-site .mkt-rates-includes,
-.marketing-site .mkt-rates-cost,
-.marketing-site .mkt-rates-bands {
-  padding-top: 3.5rem;
-  padding-bottom: 3.5rem;
-}
-
-.marketing-site .mkt-rates-hero + .mkt-rates-factors {
-  padding-top: 1.5rem;
-}
-
-.marketing-site .mkt-rates-cost {
+.marketing-site .mkt-pricing-hero {
+  padding-top: 4.25rem;
   padding-bottom: 2.5rem;
 }
 
-.marketing-site .mkt-rates-bands {
-  padding-top: 2.5rem;
-}
-
-.marketing-site .mkt-rates-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1.25rem;
-  margin-top: 2rem;
-  align-items: stretch;
-}
-
-.marketing-site .mkt-rates-card {
-  background: #fff;
-  border: 1px solid #eceae3;
-  border-radius: 0.875rem;
-  padding: 1.5rem 1.375rem 1.625rem;
-  box-shadow: 0 1px 2px rgba(18, 22, 28, 0.03);
-}
-
-.marketing-site .mkt-rates-num {
-  width: auto;
-  height: auto;
-  border-radius: 0.25rem;
-  background: #e8f3ef;
-  color: #0b3d33;
-  font-size: 11px;
+.marketing-site .mkt-pricing-hero-label {
+  margin: 0 0 0.75rem;
+  font-size: 0.6875rem;
   font-weight: 600;
-  letter-spacing: 0;
-  display: inline-flex;
-  padding: 0.25rem 0.5rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--mkt-teal);
 }
 
-.marketing-site .mkt-rates-card h3 {
-  margin-top: 1.5rem;
-  font-size: 14.5px;
-  font-weight: 700;
-  color: #12100e;
+.marketing-site .mkt-pricing-hero-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
+  gap: 2.5rem;
+  align-items: start;
 }
 
-.marketing-site .mkt-rates-card p {
-  margin-top: 0.75rem;
-  font-size: 12.5px;
-  line-height: 1.7;
+.marketing-site .mkt-pricing-hero-copy {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+}
+
+.marketing-site .mkt-pricing-hero-title {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  max-width: none;
+  font-size: clamp(2.5rem, 4vw, 3.5rem);
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+  font-weight: 800;
+  color: var(--mkt-ink);
+}
+
+.marketing-site .mkt-pricing-hero-title-line {
+  display: block;
+}
+
+@media (min-width: 640px) {
+  .marketing-site .mkt-pricing-hero-title-line {
+    white-space: nowrap;
+  }
+}
+
+.marketing-site .mkt-pricing-hero-title-line.mkt-pricing-em {
+  color: #0b5a4b;
+}
+
+.marketing-site .mkt-pricing-hero-aside p {
+  margin: 0;
+  max-width: 34rem;
+  font-size: 14px;
+  line-height: 1.75;
   color: #5b656c;
 }
 
-.marketing-site .mkt-rates-includes p,
-.marketing-site .mkt-rates-cost p {
-  max-width: 44rem;
-  margin-top: 1.25rem;
+.marketing-site .mkt-pricing-hero-bullets {
+  margin: 2.25rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.marketing-site .mkt-pricing-hero-bullets li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.625rem;
+  padding: 0.875rem 0;
+  border-bottom: 1px solid #e6e2d7;
   font-size: 14px;
-  line-height: 1.8;
-  color: #4f5e64;
+  line-height: 1.65;
+  color: #5b656c;
+  transition:
+    color 0.2s ease,
+    border-color 0.2s ease;
 }
 
-.marketing-site .mkt-rates-includes h2 + p,
-.marketing-site .mkt-rates-cost h2 + p {
-  margin-top: 1.375rem;
+.marketing-site .mkt-pricing-hero-bullets li:first-child {
+  border-top: 1px solid #e6e2d7;
 }
 
-.marketing-site .mkt-rates-page .mkt-fact {
+.marketing-site .mkt-pricing-bullet-mark {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 1.125rem;
+  height: 1.125rem;
+  color: #0b5a4b;
+}
+
+.marketing-site .mkt-pricing-bullet-mark svg {
+  width: 0.875rem;
+  height: 0.875rem;
+}
+
+.marketing-site .mkt-pricing-subnav-band {
+  background: #041e21;
+}
+
+.marketing-site .mkt-pricing-subnav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 1.375rem;
+  padding-block: 1.375rem;
+}
+
+.marketing-site .mkt-pricing-subnav-item {
+  position: relative;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  font-size: clamp(1rem, 1.8vw, 1.375rem);
+  line-height: 1.35;
+  letter-spacing: -0.02em;
+  font-weight: 700;
+  color: #fff;
+  cursor: pointer;
+  text-align: left;
+  transition: color 0.2s ease, transform 0.2s ease;
+}
+
+.pricing-mkt-bodytext {
+  max-width: 100% !important;
+  margin-bottom: 1.25rem !important;
+}
+
+.marketing-site .mkt-pricing-subnav-item:hover,
+.marketing-site .mkt-pricing-subnav-item:focus-visible {
+  color: #fff;
+  transform: translateY(-1px);
+}
+
+.marketing-site .mkt-pricing-subnav-item:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.5);
+  outline-offset: 4px;
+}
+
+.marketing-site .mkt-pricing-hero-pillars {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  margin-top: 0;
+  padding: 0 0 2.75rem;
+}
+
+.marketing-site .mkt-pricing-hero-pillar {
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  font-size: clamp(1.125rem, 2vw, 1.625rem);
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  font-weight: 800;
+  color: var(--mkt-ink);
+  cursor: pointer;
+  text-align: left;
+  transition:
+    color 0.2s ease,
+    transform 0.2s ease,
+    opacity 0.2s ease;
+}
+
+.marketing-site .mkt-pricing-hero-pillar:nth-child(2) {
+  text-align: center;
+}
+
+.marketing-site .mkt-pricing-hero-pillar:nth-child(3) {
+  text-align: right;
+}
+
+.marketing-site .mkt-pricing-hero-pillar.is-em {
+  color: #0b5a4b;
+}
+
+.marketing-site .mkt-pricing-transparent {
+  background: var(--mkt-bg);
+}
+
+.marketing-site .mkt-pricing-bands-section {
+  background: #fff;
+}
+
+.marketing-site .mkt-pricing-factors-section {
+  background: var(--mkt-bg);
+}
+
+.marketing-site .mkt-pricing-perspective-section,
+.marketing-site .mkt-pricing-trial-section {
+  background: #fff;
+}
+
+.marketing-site .mkt-pricing-transparent,
+.marketing-site .mkt-pricing-bands-section,
+.marketing-site .mkt-pricing-factors-section,
+.marketing-site .mkt-pricing-perspective-section,
+.marketing-site .mkt-pricing-trial-section {
+  scroll-margin-top: 5rem;
+}
+
+@media (max-width: 1024px) {
+  .marketing-site .mkt-pricing-hero-grid,
+  .marketing-site .mkt-pricing-split,
+  .marketing-site .mkt-pricing-split--perspective {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+
+  .marketing-site .mkt-pricing-factors-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .marketing-site .mkt-pricing-hero-title {
+    max-width: none;
+  }
+
+  .marketing-site .mkt-pricing-hero-pillars {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+    padding-bottom: 1.25rem;
+  }
+
+  .marketing-site .mkt-pricing-subnav {
+    gap: 0.25rem 0.375rem;
+    padding-bottom: 1.25rem;
+  }
+
+  .marketing-site .mkt-pricing-page h2.mkt-pricing-section-title,
+  .marketing-site .mkt-pricing-page h2.mkt-pricing-perspective-title {
+    max-width: none;
+    white-space: normal;
+  }
+
+  .marketing-site .mkt-pricing-trial-head {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .marketing-site .mkt-pricing-trial-btn {
+    width: 100%;
+    justify-content: center;
+    white-space: normal;
+    text-align: center;
+  }
+}
+
+@media (max-width: 768px) {
+  .marketing-site .mkt-pricing-hero {
+    padding-top: 2.75rem;
+    padding-bottom: 2rem;
+  }
+
+  .marketing-site .mkt-pricing-hero-grid {
+    gap: 1.5rem;
+  }
+
+  .marketing-site .mkt-pricing-hero-aside {
+    margin-top: 0 !important;
+  }
+
+  .marketing-site .mkt-pricing-subnav {
+    padding-block: 1rem;
+  }
+
+  .marketing-site .mkt-pricing-subnav-item {
+    font-size: 1rem;
+  }
+
+  .marketing-site .mkt-pricing-rate-segment {
+    padding: 0.875rem 0.75rem;
+    font-size: 0.8125rem;
+  }
+
+  .marketing-site .mkt-pricing-rate-bar {
+    min-height: 4.75rem;
+  }
+
+  .marketing-site .mkt-pricing-perspective-quote {
+    margin-top: 1.5rem;
+    padding: 1.75rem 1.25rem;
+  }
+
+  .marketing-site .mkt-pricing-perspective-quote p {
+    font-size: 1.125rem;
+  }
+
+  .marketing-site .mkt-pricing-trial-foot {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .marketing-site .mkt-pricing-footer-cta-copy .mkt-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .marketing-site .mkt-pricing-footer-cta-copy .mkt-actions .mkt-btn,
+  .marketing-site .mkt-pricing-footer-cta-copy .mkt-actions .mkt-pricing-footer-link {
+    width: 100%;
+  }
+}
+
+@media (max-width: 768px) {
+  .marketing-site .mkt-pricing-factors-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .marketing-site .mkt-pricing-bands-head {
+    grid-template-columns: 1fr;
+  }
+
+  .marketing-site .mkt-pricing-accordion-btn {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0.75rem;
+  }
+
+  .marketing-site .mkt-pricing-accordion-item.is-open .mkt-pricing-accordion-btn {
+    grid-template-columns: 1fr;
+  }
+
+  .marketing-site .mkt-pricing-accordion-item.is-open .mkt-pricing-accordion-value {
+    grid-column: 1 / -1;
+    text-align: left;
+  }
+
+  .marketing-site .mkt-pricing-accordion-item.is-open .mkt-pricing-accordion-icon {
+    position: absolute;
+    top: 1rem;
+    right: 1.125rem;
+  }
+
+  .marketing-site .mkt-pricing-accordion-item.is-open .mkt-pricing-accordion-btn {
+    position: relative;
+    padding-right: 2.75rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .marketing-site .mkt-pricing-hero-title {
+    font-size: clamp(1.875rem, 8vw, 2.375rem);
+  }
+
+  .marketing-site .mkt-pricing-page h2,
+  .marketing-site .mkt-pricing-page h2.mkt-pricing-section-title,
+  .marketing-site .mkt-pricing-page h2.mkt-pricing-perspective-title,
+  .marketing-site .mkt-pricing-page h2.mkt-pricing-factors-title {
+    font-size: clamp(1.375rem, 6vw, 1.75rem);
+    white-space: normal;
+  }
+
+  .marketing-site .mkt-pricing-em-line {
+    font-size: 1rem;
+  }
+
+  .marketing-site .mkt-pricing-rate-bar {
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .marketing-site .mkt-pricing-rate-segment {
+    width: 100%;
+    min-height: 3.25rem;
+    border-left: none !important;
+    border-top: 1px solid #d9e4e1;
+  }
+
+  .marketing-site .mkt-pricing-rate-segment:first-child {
+    border-top: none;
+  }
+
+  .marketing-site .mkt-pricing-includes-item {
+    padding: 0.875rem 1rem;
+  }
+
+  .marketing-site .mkt-pricing-factor-card {
+    padding: 1.125rem 1rem 1.25rem;
+  }
+}
+
+.marketing-site .mkt-pricing-split {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  gap: 3rem;
+  align-items: start;
+}
+
+.marketing-site .mkt-pricing-eyebrow {
+  margin: 0 0 0.75rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #0b5a4b;
+}
+
+.marketing-site .mkt-pricing-eyebrow--dash {
+  color: var(--mkt-teal);
+  font-weight: 500;
+}
+
+.marketing-site .mkt-pricing-split--story {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.marketing-site .mkt-pricing-split--story .mkt-pricing-split-eyebrow {
+  margin-bottom: 0.75rem;
+}
+
+.marketing-site .mkt-pricing-split--story-row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2rem;
+  align-items: start;
+}
+
+.marketing-site .mkt-pricing-split--story .mkt-pricing-split-panel {
+  padding-left: 0;
+  border-left: none;
+}
+
+@media (min-width: 1100px) {
+  .marketing-site .mkt-pricing-split--story-row {
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+    gap: 3rem;
+  }
+
+  .marketing-site .mkt-pricing-split--story .mkt-pricing-split-panel {
+    padding-left: 2.5rem;
+    border-left: 1px solid #e6e2d7;
+  }
+}
+
+.marketing-site .mkt-pricing-side-note {
+  margin: 1.25rem 0 0;
+  padding: 0 0 0 1rem;
+  max-width: 22rem;
+  border: none;
+  border-left: 2px solid #d9e4e1;
+  font-size: 14px;
+  line-height: 1.75;
+  font-weight: 400;
+  color: #5b656c;
+}
+
+.marketing-site .mkt-pricing-split--story .mkt-pricing-split-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.marketing-site .mkt-pricing-split--story .mkt-pricing-side-note {
+  margin-top: 1.25rem;
+  padding-top: 0;
   max-width: none;
-  margin-top: 1.5rem;
-  background: #fdf3e4;
-  border: 1px dashed #e0a04a;
-  color: #c47a12;
+}
+
+@media (min-width: 1100px) {
+  .marketing-site .mkt-pricing-split--story .mkt-pricing-side-note {
+    max-width: 22rem;
+  }
+}
+
+.marketing-site .mkt-pricing-includes-label {
+  margin: 0 0 1.25rem;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: #8a929c;
+}
+
+.marketing-site .mkt-pricing-split--story .mkt-pricing-includes-label {
+  margin-top: 0;
+}
+
+.marketing-site .mkt-pricing-includes-list {
+  display: grid;
+  gap: 0;
+}
+
+.marketing-site .mkt-pricing-includes-item {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+  margin: 0;
+  padding: 0.875rem 0;
+  border: none;
+  border-bottom: 1px solid #e6e2d7;
+  background: transparent;
+  text-align: left;
+  transition:
+    background-color 0.22s ease,
+    border-radius 0.22s ease,
+    padding 0.22s ease,
+    margin 0.22s ease,
+    box-shadow 0.22s ease;
+}
+
+.marketing-site .mkt-pricing-includes-item:first-child {
+  border-top: 1px solid #e6e2d7;
+}
+
+.marketing-site .mkt-pricing-includes-item.is-active {
+  margin: 0.25rem 0;
+  padding: 0.875rem 1rem;
+  border: none;
+  border-radius: 0.625rem;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(18, 16, 14, 0.06);
+}
+
+.marketing-site .mkt-pricing-includes-item.is-active + .mkt-pricing-includes-item {
+  border-top: none;
+}
+
+.marketing-site .mkt-pricing-includes-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #9ca3af;
+  font-variant-numeric: tabular-nums;
+  transition:
+    background-color 0.22s ease,
+    color 0.22s ease,
+    width 0.22s ease,
+    height 0.22s ease;
+}
+
+.marketing-site .mkt-pricing-includes-item.is-active .mkt-pricing-includes-num {
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 999px;
+  background: #0b5a4b;
+  color: #fff;
+  animation: mkt-assess-step-pop 0.45s ease;
+}
+
+.marketing-site .mkt-pricing-includes-text {
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: var(--mkt-ink);
+  transition: color 0.22s ease;
+}
+
+.marketing-site .mkt-pricing-includes-arrow {
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
+  color: #0b5a4b;
+}
+
+.marketing-site .mkt-pricing-tech-stack-label {
+  margin: 0 0 1.25rem;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: #8a929c;
+}
+
+.marketing-site .mkt-pricing-tech-stack-list {
+  display: grid;
+  gap: 0;
+}
+
+.marketing-site .mkt-pricing-tech-stack-item {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 0.625rem;
+  width: 100%;
+  padding: 0.875rem 0;
+  border: none;
+  border-bottom: 1px solid #e6e2d7;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease,
+    border-radius 0.2s ease,
+    padding 0.2s ease;
+}
+
+.marketing-site .mkt-pricing-tech-stack-item:first-child {
+  border-top: 1px solid #e6e2d7;
+}
+
+.marketing-site .mkt-pricing-tech-stack-item.is-active {
+  margin: 0.375rem 0;
+  padding: 0.75rem 0.875rem;
+  border: none;
+  border-radius: 0.5rem;
+  background: #0b5a4b;
+  gap: 0.5rem;
+}
+
+.marketing-site .mkt-pricing-tech-stack-item.is-active + .mkt-pricing-tech-stack-item {
+  border-top: none;
+}
+
+.marketing-site .mkt-pricing-tech-stack-check {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.125rem;
+  height: 1.125rem;
+  color: #b0bab5;
+}
+
+.marketing-site .mkt-pricing-tech-stack-item.is-active .mkt-pricing-tech-stack-check {
+  color: #fff;
+}
+
+.marketing-site .mkt-pricing-tech-stack-check svg {
+  width: 0.875rem;
+  height: 0.875rem;
+}
+
+.marketing-site .mkt-pricing-tech-stack-text {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #8a929c;
+  transition: color 0.2s ease;
+}
+
+.marketing-site .mkt-pricing-tech-stack-item.is-active .mkt-pricing-tech-stack-text {
+  color: #fff;
+}
+
+.marketing-site .mkt-pricing-tech-stack-arrow {
+  width: 0.75rem;
+  height: 0.75rem;
+  flex-shrink: 0;
+  color: #fff;
+  opacity: 0.9;
+}
+
+.marketing-site .mkt-pricing-tech-stack-item:not(.is-active):hover,
+.marketing-site .mkt-pricing-tech-stack-item:not(.is-active):focus-visible {
+  padding-inline: 0.75rem;
+  border-radius: 0.375rem;
+  background: rgba(11, 90, 75, 0.06);
+}
+
+.marketing-site .mkt-pricing-tech-stack-item:not(.is-active):hover .mkt-pricing-tech-stack-text,
+.marketing-site .mkt-pricing-tech-stack-item:not(.is-active):focus-visible .mkt-pricing-tech-stack-text {
+  color: #0b5a4b;
+}
+
+.marketing-site .mkt-pricing-page h2 {
+  margin: 0;
+  font-size: 1.75rem;
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+  font-weight: 800;
+  color: var(--mkt-ink);
+}
+
+.marketing-site .mkt-pricing-page h2.mkt-pricing-section-title {
+  white-space: normal;
+}
+
+@media (min-width: 1025px) {
+  .marketing-site .mkt-pricing-page h2.mkt-pricing-section-title {
+    white-space: nowrap;
+  }
+}
+
+.marketing-site .mkt-pricing-em-line {
+  margin: 0.75rem 0 0;
+  font-size: clamp(1.125rem, 1.8vw, 1.375rem);
+  line-height: 1.35;
+  font-weight: 700;
+}
+
+.marketing-site .mkt-pricing-body {
+  margin: 0;
+  max-width: 28rem;
+  font-size: 14px;
+  line-height: 1.75;
+  color: #5b656c;
+}
+
+.marketing-site .mkt-pricing-accordion {
+  display: grid;
+  gap: 0.625rem;
+}
+
+.marketing-site .mkt-pricing-accordion-item {
+  border: 1px solid #e6e2d7;
+  border-radius: 0.625rem;
+  background: #fff;
+  overflow: hidden;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.marketing-site .mkt-pricing-accordion-item.is-open {
+  border-color: #0b5a4b;
+  box-shadow: 0 0 0 1px rgba(11, 90, 75, 0.08);
+}
+
+.marketing-site .mkt-pricing-accordion-btn {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+  padding: 1rem 1.125rem;
+  border: none;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.marketing-site .mkt-pricing-accordion-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--mkt-ink);
+  transition: color 0.2s ease;
+}
+
+.marketing-site .mkt-pricing-accordion-value {
+  font-size: 0.8125rem;
+  color: #5b656c;
+  text-align: right;
+}
+
+.marketing-site .mkt-pricing-accordion-item:not(.is-open) .mkt-pricing-accordion-value {
+  display: none;
+}
+
+.marketing-site .mkt-pricing-accordion-icon {
+  width: 1rem;
+  height: 1rem;
+  color: #8a929c;
+  transition: transform 0.18s ease;
+}
+
+.marketing-site .mkt-pricing-accordion-item.is-open .mkt-pricing-accordion-icon {
+  transform: rotate(180deg);
+  color: #0b5a4b;
+}
+
+.marketing-site .mkt-pricing-eyebrow--muted {
+  color: #8a929c;
+  font-weight: 500;
+}
+
+.marketing-site .mkt-pricing-bands {
+  display: flex;
+  flex-direction: column;
+}
+
+.marketing-site .mkt-pricing-bands-eyebrow {
+  margin-bottom: 0.75rem;
+}
+
+.marketing-site .mkt-pricing-bands-head {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2rem;
+  align-items: start;
+}
+
+@media (min-width: 1100px) {
+  .marketing-site .mkt-pricing-bands-head {
+    grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+    gap: 2.5rem;
+  }
+}
+
+.marketing-site .mkt-pricing-bands-head-copy {
+  display: flex;
+  flex-direction: column;
+}
+
+.marketing-site .mkt-pricing-bands-head-copy h2 {
+  max-width: none;
+}
+
+.marketing-site .mkt-pricing-rate-chart {
+  width: 100%;
+  min-width: 0;
+}
+
+.marketing-site .mkt-pricing-rate-scale {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.625rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #8a929c;
+}
+
+.marketing-site .mkt-pricing-rate-bar {
+  display: flex;
+  align-items: stretch;
+  min-height: 5.5rem;
+  border-radius: 0.625rem;
+  overflow: hidden;
+  border: 1px solid #d9e4e1;
+}
+
+.marketing-site .mkt-pricing-rate-segment {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 1rem 1.25rem;
+  text-align: left;
+  font-size: clamp(0.875rem, 1.5vw, 1.125rem);
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  position: relative;
+  transition:
+    background-color 0.22s ease,
+    color 0.22s ease;
+}
+
+.marketing-site .mkt-pricing-rate-segment.is-dark,
+.marketing-site .mkt-pricing-rate-segment.is-mid,
+.marketing-site .mkt-pricing-rate-segment.is-light {
+  background: #f4f1e9;
+  color: var(--mkt-ink);
+}
+
+.marketing-site .mkt-pricing-rate-segment.is-mid,
+.marketing-site .mkt-pricing-rate-segment.is-light {
+  border-left: 1px solid #d9e4e1;
+}
+
+.marketing-site .mkt-pricing-rate-segment.is-active {
+  background: #0b5a4b;
+  color: #fff;
+  z-index: 1;
+}
+
+.marketing-site .mkt-pricing-rate-axis {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  margin: 0.625rem 0 0;
+}
+
+.marketing-site .mkt-pricing-rate-axis-line {
+  flex: 1;
+  height: 1px;
+  background: #d9e4e1;
+}
+
+.marketing-site .mkt-pricing-rate-axis-label {
+  flex-shrink: 0;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  color: #8a929c;
+  text-transform: lowercase;
+}
+
+.marketing-site .mkt-pricing-bands-columns {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+  margin-top: 2rem;
+  padding-top: 2rem;
+  border-top: 1px solid #eceae3;
+}
+
+@media (min-width: 1100px) {
+  .marketing-site .mkt-pricing-bands-columns {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 2.5rem;
+  }
+}
+
+.marketing-site .mkt-pricing-bands-columns p,
+.marketing-site .mkt-pricing-bands-columns .mkt-pricing-body {
+  margin: 0;
+  max-width: none;
+  font-size: 14px;
+  line-height: 1.75;
+  color: #5b656c;
+}
+
+.marketing-site .mkt-pricing-page h2.mkt-pricing-factors-title {
+  text-align: left;
+  margin: 0 0 0.8rem;
+}
+
+.marketing-site .mkt-pricing-factors-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1.25rem;
+  margin-top: 0;
+}
+
+.marketing-site .mkt-pricing-factor-card {
+  background: #fff;
+  border: 1px solid #eceae3;
+  border-radius: 0.875rem;
+  padding: 1.375rem 1.25rem 1.5rem;
+  box-shadow: 0 1px 2px rgba(18, 22, 28, 0.03);
+  transition:
+    border-color 0.22s ease,
+    box-shadow 0.22s ease,
+    transform 0.22s ease;
+}
+
+.marketing-site .mkt-pricing-factor-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2rem;
+  height: 2rem;
+  padding: 0 0.375rem;
+  border: 1px solid #c5ddd6;
+  border-radius: 0.375rem;
+  background: #f3f8f7;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  color: #0b5a4b;
+  transition:
+    background-color 0.22s ease,
+    border-color 0.22s ease,
+    color 0.22s ease;
+}
+
+.marketing-site .mkt-pricing-factor-card h3 {
+  margin: 1rem 0 0;
+  font-size: 1rem;
+  line-height: 1.35;
+  font-weight: 700;
+  color: var(--mkt-ink);
+}
+
+.marketing-site .mkt-pricing-factor-card p {
+  margin: 0.75rem 0 0;
+  font-size: 14px;
+  line-height: 1.75;
+  color: #5b656c;
+}
+
+.marketing-site .mkt-pricing-perspective-intro {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2rem;
+  align-items: start;
+}
+
+@media (min-width: 1100px) {
+  .marketing-site .mkt-pricing-perspective-intro {
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+    gap: 2.5rem;
+  }
+}
+
+.marketing-site .mkt-pricing-perspective-intro-copy {
+  display: flex;
+  flex-direction: column;
+}
+
+.marketing-site .mkt-pricing-page h2.mkt-pricing-perspective-title {
+  margin: 0;
+  max-width: none;
+  font-size: 1.75rem;
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+  font-weight: 800;
+  color: var(--mkt-ink);
+  white-space: normal;
+}
+
+@media (min-width: 1025px) {
+  .marketing-site .mkt-pricing-page h2.mkt-pricing-perspective-title {
+    white-space: nowrap;
+  }
+}
+
+.marketing-site .mkt-pricing-perspective-notes {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.25rem;
+}
+
+@media (min-width: 1100px) {
+  .marketing-site .mkt-pricing-perspective-notes {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.5rem;
+  }
+}
+
+.marketing-site .mkt-pricing-perspective-note {
+  position: relative;
+  padding-top: 0.875rem;
+  border-top: 1px solid #e6e2d7;
+  transition: color 0.22s ease;
+}
+
+.marketing-site .mkt-pricing-perspective-note::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  margin-top: -1px;
+  background: #0b5a4b;
+  opacity: 0;
+  transition: opacity 0.22s ease;
+}
+
+.marketing-site .mkt-pricing-perspective-note:hover::after,
+.marketing-site .mkt-pricing-perspective-note:focus-within::after {
+  opacity: 1;
+}
+
+.marketing-site .mkt-pricing-perspective-note p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.75;
+  color: var(--mkt-ink);
+  transition: color 0.22s ease;
+}
+
+.marketing-site .mkt-pricing-perspective-note:hover p,
+.marketing-site .mkt-pricing-perspective-note:focus-within p {
+  color: #0b5a4b;
+}
+
+.marketing-site .mkt-pricing-perspective-note strong {
+  font-weight: 700;
+  color: inherit;
+}
+
+.marketing-site .mkt-pricing-perspective-quote {
+  margin: 2rem 0 0;
+  padding: 2.5rem 2rem;
+  border: none;
+  border-radius: 1.25rem;
+  background: var(--mkt-bg);
+  text-align: center;
+  transition:
+    box-shadow 0.22s ease,
+    transform 0.22s ease;
+}
+
+.marketing-site .mkt-pricing-perspective-quote p {
+  margin: 0 auto;
+  max-width: 46rem;
+  font-size: clamp(1.25rem, 2.2vw, 1.75rem);
+  line-height: 1.45;
+  font-weight: 500;
+  color: #5b656c;
+}
+
+.marketing-site .mkt-pricing-perspective-quote .mkt-pricing-em {
+  font-family: var(--mkt-display);
+  font-weight: 700;
+  color: #0b5a4b;
+}
+
+.marketing-site .mkt-pricing-perspective-quote footer {
+  margin-top: 1rem;
+  font-size: 0.8125rem;
+  line-height: 1.6;
+  color: #8a929c;
+}
+
+.marketing-site .mkt-pricing-trial-marker {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.marketing-site .mkt-pricing-trial-marker-num {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: #0b5a4b;
+}
+
+.marketing-site .mkt-pricing-trial-marker-line {
+  width: 2.5rem;
+  height: 2px;
+  background: #0b5a4b;
+}
+
+.marketing-site .mkt-pricing-trial-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 2rem;
+}
+
+.marketing-site .mkt-pricing-trial-head-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.marketing-site .mkt-pricing-trial-head-copy h2 {
+  margin: 0;
+}
+
+.marketing-site .mkt-pricing-trial-subtitle {
+  margin: 0;
+  max-width: 34rem;
+  font-size: 14px;
+  line-height: 1.75;
+  color: #5b656c;
+}
+
+.marketing-site .mkt-pricing-trial-subtitle-em {
+  color: #4a90a4;
+  font-weight: 600;
+}
+
+.marketing-site .mkt-pricing-trial-nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+}
+
+.marketing-site .mkt-pricing-trial-nav-item-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.marketing-site .mkt-pricing-trial-nav-sep {
+  color: #c5cdd2;
+  font-size: 0.875rem;
+}
+
+.marketing-site .mkt-pricing-trial-nav-item {
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #000;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.marketing-site .mkt-pricing-trial-nav-item.is-active {
+  color: var(--mkt-ink);
+  font-weight: 700;
+}
+
+.marketing-site .mkt-pricing-trial-btn {
+  flex-shrink: 0;
+  white-space: nowrap;
+  padding: 0.875rem 1.5rem;
+  border-radius: 0.5rem;
+  transition:
+    background-color 0.2s ease,
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.marketing-site .mkt-pricing-trial-timeline {
+  position: relative;
+  margin: 2rem 0 0;
+  padding-top: 0.25rem;
+}
+
+.marketing-site .mkt-pricing-trial-timeline-track {
+  display: none;
+}
+
+.marketing-site .mkt-pricing-trial-timeline-track-fill {
+  display: block;
+  height: 100%;
+  background: #0b5a4b;
+  opacity: 0.55;
+  transition: width 0.18s ease;
+}
+
+.marketing-site .mkt-pricing-trial-timeline-steps {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+.marketing-site .mkt-pricing-trial-timeline-step {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 0.875rem;
+  text-align: left;
+  transition: transform 0.2s ease;
+}
+
+.marketing-site .mkt-pricing-trial-timeline-label {
+  margin-top: 0.375rem;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  color: #5b656c;
+  transition: color 0.2s ease;
+}
+
+@media (min-width: 1100px) {
+  .marketing-site .mkt-pricing-trial-timeline-track {
+    display: block;
+    position: absolute;
+    top: 1.125rem;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: #e6e2d7;
+    overflow: hidden;
+  }
+
+  .marketing-site .mkt-pricing-trial-timeline-steps {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 0.75rem;
+  }
+
+  .marketing-site .mkt-pricing-trial-timeline-step {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .marketing-site .mkt-pricing-trial-timeline-label {
+    margin-top: 0.875rem;
+  }
+}
+
+.marketing-site .mkt-pricing-trial-timeline-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 999px;
+  border: 1px solid #d9e4e1;
+  background: #fff;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: #8a929c;
+  position: relative;
+  z-index: 1;
+  transition:
+    border-color 0.18s ease,
+    color 0.18s ease,
+    background-color 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.marketing-site .mkt-pricing-trial-timeline-num.is-active {
+  border-color: #0b5a4b;
+  background: #0b5a4b;
+  color: #fff;
+  animation: mkt-assess-step-pop 0.45s ease;
+}
+
+.marketing-site .mkt-pricing-trial-foot {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  margin-top: 2rem;
+  padding: 1rem 1.125rem;
+  border-radius: 0.5rem;
+  background: #f4f1e9;
+  transition:
+    background-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.marketing-site .mkt-pricing-trial-foot-icon-wrap {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.375rem;
+  background: #0b5a4b;
+}
+
+.marketing-site .mkt-pricing-trial-foot-icon {
+  width: 1rem;
+  height: 1rem;
+  color: #fff;
+}
+
+.marketing-site .mkt-pricing-trial-foot p {
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: #5b656c;
+}
+
+.marketing-site .mkt-pricing-trial-foot .mkt-pricing-em {
+  font-weight: 700;
+  color: #0b5a4b;
+}
+
+.marketing-site .mkt-pricing-footer-cta {
+  background: #041e21;
+  color: #fff;
+  padding: clamp(4rem, 8vw, 5.5rem) 0 clamp(2.5rem, 5vw, 3.5rem);
+}
+
+.marketing-site .mkt-pricing-footer-cta-inner {
+  display: grid;
+  gap: clamp(3rem, 6vw, 4.5rem);
+}
+
+.marketing-site .mkt-pricing-footer-cta-copy {
+  text-align: center;
+  margin-inline: auto;
+}
+
+.marketing-site .mkt-pricing-footer-cta-copy h2 {
+  margin: 0;
+  color: #fff;
+  font-size: clamp(2rem, 4vw, 2.75rem);
+  line-height: 1.15;
+  letter-spacing: -0.03em;
+}
+
+.marketing-site .mkt-pricing-footer-cta-copy p {
+  margin: 1rem auto 0;
+  max-width: 42rem;
+  font-size: 14px;
+  line-height: 1.75;
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.marketing-site .mkt-pricing-footer-cta-copy .mkt-actions {
+  margin-top: 2rem;
+  justify-content: center;
+  align-items: center;
+  gap: 1.25rem 1.75rem;
+}
+
+.marketing-site .mkt-pricing-footer-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.875rem 1.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  border-radius: 0.5rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: #fff;
+  text-decoration: none;
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.marketing-site .mkt-pricing-footer-link:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: #fff;
+  color: #fff;
+  text-decoration: none;
+}
+
+.marketing-site .mkt-pricing-footer-pillars {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.75rem;
+  align-items: start;
+}
+
+.marketing-site .mkt-pricing-footer-pillars span {
+  font-size: clamp(0.875rem, 3.2vw, 1rem);
+  line-height: 1.35;
+  letter-spacing: -0.01em;
+  font-weight: 700;
+  color: #fff;
+  text-align: center;
+}
+
+.marketing-site .mkt-pricing-footer-pillars span:first-child,
+.marketing-site .mkt-pricing-footer-pillars span:last-child {
+  text-align: center;
+}
+
+@media (min-width: 1100px) {
+  .marketing-site .mkt-pricing-footer-pillars {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1rem;
+  }
+
+  .marketing-site .mkt-pricing-footer-pillars span {
+    font-size: clamp(1.125rem, 2vw, 1.625rem);
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+    font-weight: 800;
+  }
+
+  .marketing-site .mkt-pricing-footer-pillars span:first-child {
+    text-align: left;
+  }
+
+  .marketing-site .mkt-pricing-footer-pillars span:last-child {
+    text-align: right;
+  }
+}
+
+/* Pricing page — hover & focus states */
+.marketing-site .mkt-pricing-hero-pillar:hover,
+.marketing-site .mkt-pricing-hero-pillar:focus-visible {
+  color: #0b5a4b;
+  transform: translateY(-2px);
+}
+
+.marketing-site .mkt-pricing-hero-pillar:focus-visible {
+  outline: 2px solid #0b5a4b;
+  outline-offset: 4px;
+}
+
+.marketing-site .mkt-pricing-hero-pillar.is-em:hover,
+.marketing-site .mkt-pricing-hero-pillar.is-em:focus-visible {
+  color: #087a65;
+}
+
+.marketing-site .mkt-pricing-hero-bullets li:hover {
+  color: var(--mkt-ink);
+  border-color: #d9e4e1;
+}
+
+.marketing-site .mkt-pricing-hero-bullets li:hover .mkt-pricing-bullet-mark {
+  color: #087a65;
+}
+
+.marketing-site .mkt-pricing-accordion-item:not(.is-open):hover {
+  border-color: #c5ddd6;
+  box-shadow: 0 4px 14px rgba(11, 90, 75, 0.06);
+}
+
+.marketing-site .mkt-pricing-accordion-btn:hover .mkt-pricing-accordion-label,
+.marketing-site .mkt-pricing-accordion-btn:focus-visible .mkt-pricing-accordion-label {
+  color: #0b5a4b;
+}
+
+.marketing-site .mkt-pricing-accordion-btn:hover .mkt-pricing-accordion-icon,
+.marketing-site .mkt-pricing-accordion-btn:focus-visible .mkt-pricing-accordion-icon {
+  color: #0b5a4b;
+}
+
+.marketing-site .mkt-pricing-factor-card:hover,
+.marketing-site .mkt-pricing-factor-card:focus-within {
+  border-color: #c9e8dc;
+  box-shadow:
+    0 8px 28px rgba(14, 110, 118, 0.12),
+    0 2px 8px rgba(14, 110, 118, 0.06);
+  transform: translateY(-3px);
+}
+
+.marketing-site .mkt-pricing-factor-card:hover .mkt-pricing-factor-num,
+.marketing-site .mkt-pricing-factor-card:focus-within .mkt-pricing-factor-num {
+  background: #0b5a4b;
+  border-color: #0b5a4b;
+  color: #fff;
+}
+
+/* .marketing-site .mkt-pricing-perspective-quote:hover {
+  box-shadow: 0 10px 32px rgba(11, 90, 75, 0.08);
+  transform: translateY(-2px);
+} */
+
+.marketing-site .mkt-pricing-trial-nav-item:not(.is-active):hover,
+.marketing-site .mkt-pricing-trial-nav-item:not(.is-active):focus-visible {
+  color: #0b5a4b;
+}
+
+.marketing-site .mkt-pricing-trial-nav-item:focus-visible {
+  outline: 2px solid #0b5a4b;
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+.marketing-site .mkt-pricing-trial-btn:hover,
+.marketing-site .mkt-pricing-trial-btn:focus-visible {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(11, 90, 75, 0.22);
+}
+
+.marketing-site .mkt-pricing-trial-timeline-step:hover {
+  transform: translateY(-3px);
+}
+
+.marketing-site .mkt-pricing-trial-timeline-step:hover .mkt-pricing-trial-timeline-num,
+.marketing-site .mkt-pricing-trial-timeline-step:focus-within .mkt-pricing-trial-timeline-num {
+  border-color: #0b5a4b;
+  color: #fff;
+  background: #0b5a4b;
+  box-shadow: 0 4px 12px rgba(11, 90, 75, 0.18);
+}
+
+.marketing-site .mkt-pricing-trial-timeline-step.is-hovered .mkt-pricing-trial-timeline-label,
+.marketing-site .mkt-pricing-trial-timeline-step:hover .mkt-pricing-trial-timeline-label {
+  color: var(--mkt-ink);
+  font-weight: 600;
+}
+
+.marketing-site .mkt-pricing-trial-foot:hover {
+  background: #ebe6dc;
+  box-shadow: 0 4px 16px rgba(11, 90, 75, 0.06);
+}
+
+.marketing-site .mkt-pricing-footer-cta .mkt-btn-white:hover,
+.marketing-site .mkt-pricing-footer-cta .mkt-btn-white:focus-visible {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
 }
 
 .marketing-site .mkt-rates-quote {
@@ -2487,29 +3895,6 @@
   font-weight: 700;
   line-height: 1.45;
   color: #12100e;
-}
-
-.marketing-site .mkt-rates-pills {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.625rem;
-  margin-top: 1.5rem;
-}
-
-.marketing-site .mkt-rates-pill {
-  display: inline-flex;
-  flex-shrink: 0;
-  align-items: center;
-  white-space: nowrap;
-  background: #fff;
-  border: 1px solid #d8d6cf;
-  border-radius: 0.375rem;
-  padding: 0.4375rem 0.875rem;
-  font-size: 12.5px;
-  font-weight: 600;
-  letter-spacing: -0.01em;
-  color: #12100e;
-  box-shadow: 0 1px 2px rgba(18, 22, 28, 0.04);
 }
 
 .marketing-site .mkt-trust-page {
@@ -2748,7 +4133,7 @@
   .marketing-site .mkt-test-hero h1,
   .marketing-site .mkt-eng-hero h1,
   .marketing-site .mkt-trial-hero h1,
-  .marketing-site .mkt-rates-hero h1,
+  .marketing-site .mkt-pricing-hero-title,
   .marketing-site .mkt-trust-hero h1 {
     font-size: 40px;
   }
@@ -2756,7 +4141,7 @@
   .marketing-site .mkt-test-scoring h2,
   .marketing-site .mkt-test-read h2,
   .marketing-site .mkt-test-dark h2,
-  .marketing-site .mkt-rates-page h2 {
+  .marketing-site .mkt-pricing-page h2 {
     font-size: 32px;
   }
 
@@ -4487,6 +5872,40 @@
   z-index: 100;
 }
 
+.marketing-site .mkt-header .mkt-shell {
+  --mkt-header-gutter: 12px;
+  max-width: min(100%, 1440px);
+  padding-left: var(--mkt-header-gutter);
+  padding-right: var(--mkt-header-gutter);
+}
+
+@media (min-width: 640px) {
+  .marketing-site .mkt-header .mkt-shell {
+    --mkt-header-gutter: 16px;
+  }
+}
+
+@media (min-width: 1280px) {
+  .marketing-site .mkt-header .mkt-shell {
+    --mkt-header-gutter: 24px;
+  }
+}
+
+@media (min-width: 1025px) and (max-width: 1180px) {
+  .marketing-site .mkt-nav {
+    gap: 1.125rem;
+  }
+
+  .marketing-site .mkt-nav a,
+  .marketing-site .mkt-nav-dropdown-trigger > button:first-child {
+    font-size: 0.8125rem;
+  }
+
+  .marketing-site .mkt-hdr-cta {
+    gap: 0.625rem;
+  }
+}
+
 .marketing-site .mkt-header-light {
   background: #fff;
   border-bottom: 1px solid var(--mkt-line);
@@ -4536,21 +5955,215 @@
   display: none;
 }
 
-.marketing-site .mkt-header-light .mkt-nav a {
+.marketing-site .mkt-nav-dropdown {
+  position: relative;
+  display: inline-flex;
+  align-items: stretch;
+}
+
+.marketing-site .mkt-nav-dropdown-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.125rem;
+}
+
+.marketing-site .mkt-nav-dropdown-trigger > button:first-child {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 0.84375rem;
+  line-height: 1;
+  font-weight: 450;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.marketing-site .mkt-nav-dropdown-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.25rem;
+  height: 1.25rem;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.marketing-site .mkt-nav-dropdown-toggle svg {
+  width: 0.75rem;
+  height: 0.75rem;
+  display: block;
+  transition: transform 0.15s ease;
+}
+
+.marketing-site .mkt-nav-dropdown.is-open .mkt-nav-dropdown-toggle svg {
+  transform: rotate(180deg);
+}
+
+.marketing-site .mkt-nav-dropdown.is-open > .mkt-nav-dropdown-trigger > button:first-child,
+.marketing-site .mkt-nav-dropdown:hover > .mkt-nav-dropdown-trigger > button:first-child,
+.marketing-site .mkt-nav-dropdown.is-open > .mkt-nav-dropdown-trigger > a,
+.marketing-site .mkt-nav-dropdown:hover > .mkt-nav-dropdown-trigger > a {
+  color: var(--mkt-teal-d);
+}
+
+.marketing-site .mkt-nav-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 0.25rem);
+  left: 50%;
+  z-index: 120;
+  display: none;
+  width: 16.5rem;
+  padding: 0.5rem;
+  border: 1px solid var(--mkt-line);
+  border-radius: 0.875rem;
+  background: #fff;
+  box-shadow:
+    0 18px 40px rgba(18, 16, 14, 0.1),
+    0 4px 12px rgba(18, 16, 14, 0.05);
+  transform: translateX(-38%);
+  transform-origin: top center;
+}
+
+.marketing-site .mkt-nav-dropdown-menu::before {
+  content: '';
+  position: absolute;
+  top: -0.625rem;
+  left: 0;
+  right: 0;
+  height: 0.625rem;
+}
+
+.marketing-site .mkt-nav-dropdown.is-open .mkt-nav-dropdown-menu,
+.marketing-site .mkt-nav-dropdown:hover .mkt-nav-dropdown-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  animation: mkt-nav-dropdown-in 0.18s ease;
+}
+
+@keyframes mkt-nav-dropdown-in {
+  from {
+    opacity: 0;
+    transform: translateX(-38%) translateY(-0.375rem);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(-38%) translateY(0);
+  }
+}
+
+.marketing-site .mkt-nav-dropdown-items {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.marketing-site .mkt-nav-dropdown-item {
+  display: block;
+  padding: 0.5625rem 0.75rem !important;
+  border-radius: 0.5625rem;
+  text-decoration: none;
+  border-bottom: 1px solid var(--mkt-line);
+}
+
+.marketing-site .mkt-nav-dropdown-item:last-child {
+  border-bottom: none;
+}
+
+.marketing-site .mkt-nav-dropdown-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.marketing-site .mkt-nav-dropdown-item-label {
+  font-size: 0.8125rem;
+  font-weight: 550;
+  line-height: 1.25;
+  color: var(--mkt-ink);
+}
+
+.marketing-site .mkt-nav-dropdown-item-desc {
+  font-size: 0.6875rem;
+  font-weight: 450;
+  line-height: 1.35;
+  color: var(--mkt-ink-f);
+}
+
+.marketing-site .mkt-nav-dropdown-menu a::after {
+  display: none !important;
+}
+
+.marketing-site .mkt-nav-dropdown-item:hover {
+  background: #dbeced;
+}
+
+.marketing-site .mkt-nav-dropdown-item.is-active {
+  background: #dbeced;
+}
+
+.marketing-site .mkt-nav-dropdown-item.is-active .mkt-nav-dropdown-item-label {
+  color: var(--mkt-teal-d);
+  font-weight: 600;
+}
+
+.marketing-site .mkt-nav-dropdown-menu a {
+  white-space: normal;
+}
+
+.marketing-site .mkt-header-light .mkt-nav-dropdown.is-active > .mkt-nav-dropdown-trigger > a,
+.marketing-site .mkt-header-light .mkt-nav-dropdown.is-active > .mkt-nav-dropdown-trigger > button:first-child,
+.marketing-site .mkt-header-light .mkt-nav-dropdown.is-active > .mkt-nav-dropdown-trigger > button {
+  color: var(--mkt-ink);
+}
+
+.marketing-site .mkt-header-light .mkt-nav-dropdown.is-active > .mkt-nav-dropdown-trigger > a,
+.marketing-site .mkt-header-light .mkt-nav-dropdown.is-active > .mkt-nav-dropdown-trigger > button:first-child {
+  font-weight: 500;
+}
+
+.marketing-site .mkt-header-light .mkt-nav-dropdown.is-active > .mkt-nav-dropdown-trigger > a::after,
+.marketing-site .mkt-header-light .mkt-nav-dropdown.is-active > .mkt-nav-dropdown-trigger > button:first-child::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 2px;
+  background: var(--mkt-teal);
+  border-radius: 999px;
+}
+
+.marketing-site .mkt-header-light .mkt-nav a,
+.marketing-site .mkt-header-light .mkt-nav-dropdown-trigger > button:first-child {
   color: var(--mkt-ink-d);
   padding: 1.125rem 0;
 }
 
-.marketing-site .mkt-header-light .mkt-nav a:hover {
+.marketing-site .mkt-header-light .mkt-nav a:hover,
+.marketing-site .mkt-header-light .mkt-nav-dropdown-trigger > button:first-child:hover {
   color: #0b5c63;
 }
 
-.marketing-site .mkt-header-light .mkt-nav a.is-active {
+.marketing-site .mkt-header-light .mkt-nav a.is-active,
+.marketing-site .mkt-header-light .mkt-nav-dropdown-trigger > button:first-child.is-active {
   color: var(--mkt-ink);
   font-weight: 500;
 }
 
-.marketing-site .mkt-header-light .mkt-nav a.is-active::after {
+.marketing-site .mkt-header-light .mkt-nav a.is-active::after,
+.marketing-site .mkt-header-light .mkt-nav-dropdown-trigger > button:first-child.is-active::after {
   content: '';
   position: absolute;
   left: 0;
@@ -4872,7 +6485,7 @@
     z-index: 50;
     flex-direction: column;
     align-items: stretch;
-    padding: 0.75rem 15px 1.125rem;
+    padding: 0.75rem var(--mkt-header-gutter, 12px) 1.125rem;
     gap: 0;
   }
 
@@ -4892,6 +6505,79 @@
 
   .marketing-site .mkt-header-light .mkt-nav.open a.is-active {
     font-weight: 600;
+  }
+
+  .marketing-site .mkt-nav-dropdown {
+    display: block;
+    width: 100%;
+  }
+
+  .marketing-site .mkt-nav-dropdown-trigger {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .marketing-site .mkt-nav-dropdown-trigger > a,
+  .marketing-site .mkt-nav-dropdown-trigger > button:first-child {
+    flex: 1;
+  }
+
+  .marketing-site .mkt-nav-dropdown-menu {
+    position: static;
+    display: none;
+    width: 100%;
+    margin: 0.25rem 0 0.5rem;
+    padding: 0.375rem 0 0.375rem 0.875rem;
+    border: none;
+    border-left: 2px solid var(--mkt-line);
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    transform: none;
+    animation: none;
+  }
+
+  .marketing-site .mkt-nav-dropdown-menu::before {
+    display: none;
+  }
+
+  .marketing-site .mkt-nav-dropdown.is-open .mkt-nav-dropdown-menu {
+    display: flex;
+    animation: mkt-nav-dropdown-mobile-in 0.22s ease;
+  }
+
+  @keyframes mkt-nav-dropdown-mobile-in {
+    from {
+      opacity: 0;
+      transform: translateY(-0.25rem);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .marketing-site .mkt-nav-dropdown:hover .mkt-nav-dropdown-menu {
+    display: none;
+  }
+
+  .marketing-site .mkt-nav-dropdown.is-open:hover .mkt-nav-dropdown-menu {
+    display: flex;
+  }
+
+  .marketing-site .mkt-nav-dropdown-item {
+    padding: 0.5rem 0 !important;
+    border-radius: 0;
+    background: transparent !important;
+  }
+
+  .marketing-site .mkt-nav-dropdown-item.is-active {
+    background: transparent !important;
+  }
+
+  .marketing-site .mkt-nav-dropdown-item.is-active .mkt-nav-dropdown-item-label {
+    color: var(--mkt-teal-d);
   }
 
   .marketing-site .mkt-header-dark .mkt-nav.open {
@@ -4968,8 +6654,8 @@
 
 @media (min-width: 640px) and (max-width: 1023px) {
   .marketing-site .mkt-nav.open {
-    padding-left: 20px;
-    padding-right: 20px;
+    padding-left: var(--mkt-header-gutter, 16px);
+    padding-right: var(--mkt-header-gutter, 16px);
   }
 }
 
@@ -5055,7 +6741,7 @@
 @media (max-width: 640px) {
   .marketing-site .mkt-g3,
   .marketing-site .mkt-g6,
-  .marketing-site .mkt-rates-grid {
+  .marketing-site .mkt-pricing-factors-grid {
     grid-template-columns: 1fr;
   }
 
@@ -7495,7 +9181,7 @@
 
 .marketing-site .mkt-st-comm-orbit {
   position: relative;
-  width: min(100%, 23rem);
+  width: min(100%, 26rem);
   aspect-ratio: 1;
   margin-left: auto;
   margin-right: 0;
@@ -7532,10 +9218,10 @@
   z-index: 2;
   display: grid;
   place-items: center;
-  width: 180px;
-  height: 180px;
-  margin-top: -90px;
-  margin-left: -90px;
+  width: 196px;
+  height: 196px;
+  margin-top: -98px;
+  margin-left: -98px;
   border-radius: 50%;
   overflow: hidden;
   border: 5px solid #fff;
@@ -7543,20 +9229,28 @@
   background: var(--mkt-teal-t);
 }
 
+.marketing-site .mkt-st-comm-orbit-photo-frame {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
 .marketing-site .mkt-st-comm-orbit-photo {
   display: block;
-  width: 180px;
-  height: 180px;
+  width: 100%;
+  height: 100%;
+  max-width: none;
   object-fit: cover;
-  object-position: center top;
+  object-position: right;
+  image-rendering: auto;
 }
 
 .marketing-site .mkt-st-comm-orbit-initials {
   display: none;
   align-items: center;
   justify-content: center;
-  width: 180px;
-  height: 180px;
+  width: 196px;
+  height: 196px;
   font-family: var(--mkt-display);
   font-size: 2rem;
   font-weight: 700;
@@ -7597,26 +9291,37 @@
 }
 
 .marketing-site .mkt-st-comm-orbit-pill--1 {
-  top: 8%;
+  top: 4%;
   left: 50%;
   translate: -50% 0;
 }
 
 .marketing-site .mkt-st-comm-orbit-pill--2 {
-  top: 50%;
-  right: 0;
-  translate: 0 -50%;
+  top: 22%;
+  right: -2%;
+  translate: 0 0;
 }
 
 .marketing-site .mkt-st-comm-orbit-pill--3 {
-  bottom: 10%;
-  left: 4%;
+  bottom: 18%;
+  right: 2%;
 }
 
 .marketing-site .mkt-st-comm-orbit-pill--4 {
-  top: 42%;
-  left: 0;
-  translate: -8% -50%;
+  bottom: 4%;
+  left: 50%;
+  translate: -50% 0;
+}
+
+.marketing-site .mkt-st-comm-orbit-pill--5 {
+  bottom: 18%;
+  left: 2%;
+}
+
+.marketing-site .mkt-st-comm-orbit-pill--6 {
+  top: 22%;
+  left: -2%;
+  translate: 0 0;
 }
 
 .marketing-site .mkt-st-comm-cards {
@@ -7776,7 +9481,12 @@
   }
 
   .marketing-site .mkt-st-comm-orbit-pill--4 {
-    translate: 0 -50%;
+    translate: -50% 0;
+  }
+
+  .marketing-site .mkt-st-comm-orbit-pill--5,
+  .marketing-site .mkt-st-comm-orbit-pill--6 {
+    translate: 0 0;
   }
 }
 
@@ -7793,13 +9503,9 @@
     border-width: 4px;
   }
 
-  .marketing-site .mkt-st-comm-orbit-photo,
   .marketing-site .mkt-st-comm-orbit-initials {
     width: 140px;
     height: 140px;
-  }
-
-  .marketing-site .mkt-st-comm-orbit-initials {
     font-size: 1.625rem;
   }
 
@@ -7822,21 +9528,33 @@
   }
 
   .marketing-site .mkt-st-comm-orbit-pill--1 {
-    top: 6%;
+    top: 2%;
   }
 
   .marketing-site .mkt-st-comm-orbit-pill--2 {
-    right: -6%;
+    top: 20%;
+    right: -4%;
   }
 
   .marketing-site .mkt-st-comm-orbit-pill--3 {
-    bottom: 8%;
-    left: 0;
+    bottom: 16%;
+    right: -2%;
   }
 
   .marketing-site .mkt-st-comm-orbit-pill--4 {
-    left: -6%;
-    translate: 0 -50%;
+    bottom: 2%;
+    left: 50%;
+    translate: -50% 0;
+  }
+
+  .marketing-site .mkt-st-comm-orbit-pill--5 {
+    bottom: 16%;
+    left: -2%;
+  }
+
+  .marketing-site .mkt-st-comm-orbit-pill--6 {
+    top: 20%;
+    left: -4%;
   }
 }
 
@@ -11963,5 +13681,46 @@
 
   .marketing-site .mkt-assess-prevetted-section .mkt-assess-stepper--timeline .mkt-assess-stepper-track-col::after {
     display: none;
+  }
+}
+
+/* Touch viewports (mobile + tablet): automated interactions without hover */
+@media (max-width: 1024px) {
+  .marketing-site .mkt-about-card--hover .mkt-about-card-reveal,
+  .marketing-site .mkt-about-card--hover:focus-within .mkt-about-card-reveal {
+    grid-template-rows: 1fr;
+  }
+
+  .marketing-site .mkt-about-card--hover .mkt-about-card-reveal-inner p,
+  .marketing-site .mkt-about-card--hover .mkt-about-card-reveal-inner .mkt-about-tags {
+    opacity: 1;
+  }
+
+  .marketing-site .mkt-about-card--hover .mkt-about-card-reveal-inner .mkt-about-tags {
+    margin-top: 1.25rem;
+  }
+
+  .marketing-site .mkt-about-card--hover::before {
+    opacity: 1;
+  }
+
+  .marketing-site .mkt-about-card--hover .mkt-about-tag {
+    background: #0e6e76;
+    color: #fff;
+    border-color: #0e6e76;
+  }
+
+  .marketing-site .mkt-assess-spotlight h2 {
+    transform: scale(1.08);
+  }
+
+  .marketing-site .mkt-assess-validation-cell-line-fill {
+    transform: scaleX(1);
+  }
+
+  .marketing-site .mkt-assess-prevetted-section .mkt-assess-stepper-col.is-filled .mkt-assess-stepper-card {
+    border-color: #c5ddd6;
+    background: #f3f8f7;
+    box-shadow: 0 4px 14px rgba(11, 90, 75, 0.08);
   }
 }
