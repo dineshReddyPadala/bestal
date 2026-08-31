@@ -3,6 +3,7 @@ import { Info } from 'lucide-react';
 import { liveProfile } from '../../data/homeCopy';
 import { MAX_COMPARE } from '../../hooks/useSampleTalentShortlist';
 import type { DemoEngineer } from '../../lib/demo-engineers';
+import { formatUsTimezoneShortLabel } from '../../lib/marketing-timezone';
 import { DemoEngineerGenderAvatar } from './DemoEngineerGenderAvatar';
 
 type DemoEngineerCardProps = {
@@ -51,6 +52,10 @@ function formatLandingAvailability(value: string): string {
   return value;
 }
 
+function formatLandingTimezoneLabel(engineer: DemoEngineer): string {
+  return formatUsTimezoneShortLabel(engineer.timezone);
+}
+
 type LandingProfileCardBodyProps = {
   engineer: DemoEngineer;
   primaryButtonLabel?: string;
@@ -85,7 +90,7 @@ function LandingProfileCardBody({
   const availabilityLabel = showAvailability
     ? formatLandingAvailability(engineer.availability)
     : '';
-  const timezoneLabel = engineer.timezone.trim();
+  const timezoneLabel = formatLandingTimezoneLabel(engineer);
   const showTimezone = Boolean(timezoneLabel);
   const resolvedPrimaryLabel =
     primaryButtonLabel ??
