@@ -25,14 +25,14 @@ export function FreeTrialTermsPage() {
   const [openId, setOpenId] = useState(firstItem ? freeTrialItemId(firstItem.title) : '');
 
   return (
-    <div className="mkt-faq-page">
+    <div className="mkt-faq-page mkt-free-trial-terms-page">
       <PageMeta title={PAGE_SEO.freeTrialTerms.title} description={PAGE_SEO.freeTrialTerms.description} />
 
       <section className="mkt-white mkt-section mkt-faq-hero">
         <MktShell>
           <div className="mkt-hiw-label">Legal</div>
           <h1>Free Trial Terms</h1>
-          <p className="mkt-faq-hero-note howitworks-body-style">
+          <p className="mkt-faq-hero-note">
             Effective Date: August 24, 2026
           </p>
         </MktShell>
@@ -62,7 +62,7 @@ export function FreeTrialTermsPage() {
           </aside>
 
           <div className="mkt-faq-content">
-            <p className="mkt-legal-paragraph howitworks-body-style">{FREE_TRIAL_TERMS_INTRO}</p>
+            <p className="mkt-legal-paragraph">{FREE_TRIAL_TERMS_INTRO}</p>
 
             <div className="mkt-faq-accordion">
               {termsItems.map((item) => {
@@ -95,9 +95,9 @@ export function FreeTrialTermsPage() {
               })}
             </div>
 
-            <p className="mkt-legal-paragraph howitworks-body-style">{FREE_TRIAL_TERMS_CLOSING}</p>
+            <p className="mkt-legal-paragraph">{FREE_TRIAL_TERMS_CLOSING}</p>
 
-            <p className="mkt-faq-footer-note howitworks-body-style">
+            <p className="mkt-faq-footer-note">
               Last Updated: August 24, 2026. Questions?{' '}
               <Link to="/reach-out" className="mkt-faq-inline-link">
                 Reach out to us

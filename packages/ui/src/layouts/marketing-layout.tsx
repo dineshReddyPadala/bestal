@@ -200,7 +200,7 @@ const defaultFooterColumns: MarketingFooterColumn[] = [
     links: [
       { label: 'About', href: '/about' },
       { label: 'FAQ', href: '/faq' },
-      { label: 'Our Evaluation Standard', href: '/evaluation-standard' },
+      { label: 'How we assess', href: '/evaluation-standard' },
       { label: 'Contact us', href: '/contact' },
     ],
   },
