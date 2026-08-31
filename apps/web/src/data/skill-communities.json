@@ -1,0 +1,102 @@
+{
+  "heroOrbitPills": [
+    "AI/ML",
+    "DevOps & cloud",
+    "Data Engineering",
+    "Full stack",
+    "Salesforce",
+    "SAP"
+  ],
+  "communities": [
+    {
+      "id": 1,
+      "name": "AI/ML",
+      "slug": "ai-ml",
+      "description": "LLM, GenAI, MLOps, and applied AI specialists. PyTorch, TensorFlow, NLP, computer vision, and MLOps practitioners.",
+      "iconUrl": null,
+      "displayOrder": 1
+    },
+    {
+      "id": 3,
+      "name": "Data Engineering",
+      "slug": "data-engineering",
+      "description": "Spark, Kafka, Snowflake, dbt, and real-time pipeline architects.",
+      "iconUrl": null,
+      "displayOrder": 2
+    },
+    {
+      "id": 4,
+      "name": "DevOps & Cloud",
+      "slug": "devops-cloud",
+      "description": "Kubernetes, Terraform, AWS, GCP, and site reliability engineering experts.",
+      "iconUrl": null,
+      "displayOrder": 3
+    },
+    {
+      "id": 5,
+      "name": "Full Stack",
+      "slug": "full-stack",
+      "description": "End-to-end product engineers spanning frontend and backend.",
+      "iconUrl": null,
+      "displayOrder": 4
+    },
+    {
+      "id": 6,
+      "name": "SAP",
+      "slug": "sap",
+      "description": "SAP functional and technical consultants.",
+      "iconUrl": null,
+      "displayOrder": 5
+    },
+    {
+      "id": 7,
+      "name": "Salesforce",
+      "slug": "salesforce",
+      "description": "Salesforce admins, developers, and architects.",
+      "iconUrl": null,
+      "displayOrder": 6
+    },
+    {
+      "id": 8,
+      "name": "ServiceNow",
+      "slug": "servicenow",
+      "description": "ServiceNow developers and platform consultants.",
+      "iconUrl": null,
+      "displayOrder": 7
+    },
+    {
+      "id": 9,
+      "name": "Others",
+      "slug": "others",
+      "description": "Other Skill Communities.",
+      "iconUrl": null,
+      "displayOrder": 8
+    }
+  ],
+  "othersCommunities": [
+    {
+      "name": "Backend",
+      "description": "Node.js, Java, .NET, Python, and API platform engineers."
+    },
+    {
+      "name": "Frontend",
+      "description": "React, Angular, Vue, and modern UI engineers."
+    },
+    {
+      "name": "Mobile Development",
+      "description": "React Native, Flutter, Swift, and Kotlin mobile engineers."
+    },
+    {
+      "name": "Scrum Master",
+      "description": "Facilitating Scrum events (Daily Stand-ups, Sprint Planning, Retrospectives, and Reviews)."
+    },
+    {
+      "name": "Product Design",
+      "description": "UX/UI designers, design system leads, and user research experts."
+    },
+    {
+      "name": "QA Automation",
+      "description": "Cypress, Playwright, Selenium, and quality engineering leaders."
+    }
+  ]
+}

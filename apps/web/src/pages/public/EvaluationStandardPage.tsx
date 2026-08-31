@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { cn } from '@bestal/shared-utils';
 import {
@@ -34,6 +34,11 @@ import {
   type AssessDimensionId,
 } from '../../lib/marketing-assess-copy';
 import { PAGE_SEO } from '../../lib/marketing-seo';
+import {
+  useAutoCycleIndex,
+  useMarketingTouchViewport,
+} from '../../hooks/useMarketingTouchViewport';
+import { useMarketingInView, useStaggeredReveal } from '../../hooks/useMarketingReveal';
 
 const DIMENSION_ICONS = {
   'technical-depth': Code2,
@@ -49,44 +54,6 @@ const VALIDATION_ICONS = {
   challenges: Globe,
   hours: Clock,
 } as const;
-
-function useInView<T extends HTMLElement>(threshold = 0.15, once = false) {
-  const ref = useRef<T | null>(null);
-  const [inView, setInView] = useState(false);
-
-  useEffect(() => {
-    const node = ref.current;
-    if (!node) return undefined;
-
-    const markVisible = () => {
-      setInView(true);
-    };
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          markVisible();
-          if (once) observer.disconnect();
-        } else if (!once) {
-          setInView(false);
-        }
-      },
-      { threshold: [0, threshold], rootMargin: '0px 0px -8% 0px' },
-    );
-
-    observer.observe(node);
-
-    const rect = node.getBoundingClientRect();
-    if (rect.top < window.innerHeight * 0.92 && rect.bottom > 0) {
-      markVisible();
-      if (once) observer.disconnect();
-    }
-
-    return () => observer.disconnect();
-  }, [threshold, once]);
-
-  return { ref, inView };
-}
 
 function useScrollCounter(active: boolean, from = 5, to = 10, durationMs = 900) {
   const [value, setValue] = useState(from);
@@ -112,60 +79,6 @@ function useScrollCounter(active: boolean, from = 5, to = 10, durationMs = 900) 
   }, [active, from, to, durationMs]);
 
   return value;
-}
-
-function useStaggeredReveal(
-  active: boolean,
-  count: number,
-  intervalMs = 1000,
-  pauseMs = 1800,
-) {
-  const [revealed, setRevealed] = useState(0);
-
-  useEffect(() => {
-    if (!active || count <= 0) return undefined;
-
-    let cancelled = false;
-    let timeoutId = 0;
-    let step = 0;
-    let filling = true;
-
-    const schedule = (delay: number) => {
-      timeoutId = window.setTimeout(tick, delay);
-    };
-
-    const tick = () => {
-      if (cancelled) return;
-
-      if (filling) {
-        setRevealed(step + 1);
-        step += 1;
-
-        if (step >= count) {
-          filling = false;
-          step = 0;
-          schedule(pauseMs);
-        } else {
-          schedule(intervalMs);
-        }
-        return;
-      }
-
-      setRevealed(0);
-      filling = true;
-      schedule(0);
-    };
-
-    setRevealed(0);
-    schedule(0);
-
-    return () => {
-      cancelled = true;
-      window.clearTimeout(timeoutId);
-    };
-  }, [active, count, intervalMs, pauseMs]);
-
-  return revealed;
 }
 
 const PROCESS_STEP_ICONS: Record<string, LucideIcon> = {
@@ -299,19 +212,46 @@ function AssessStepper({
 
 export function EvaluationStandardPage() {
   const freeTrialHours = useFreeTrialHours();
+  const isTouchViewport = useMarketingTouchViewport();
   const [hoveredProcess, setHoveredProcess] = useState<string | null>(null);
   const [activeDimension, setActiveDimension] = useState<AssessDimensionId>('technical-depth');
   const [hoveredPrevetted, setHoveredPrevetted] = useState<string | null>(null);
   const [spotlightHovered, setSpotlightHovered] = useState(false);
 
-  const validation = useInView<HTMLElement>(0.4);
-  const prevettedStepper = useInView<HTMLDivElement>(0.08, true);
+  const validation = useMarketingInView<HTMLElement>(0.4);
+  const prevettedStepper = useMarketingInView<HTMLDivElement>(0.08, true);
   const trialValue = useScrollCounter(validation.inView, 5, freeTrialHours, 900);
   const processFilled = useStaggeredReveal(true, ASSESS_PROCESS_STEPS.length);
   const prevettedFilled = useStaggeredReveal(
     prevettedStepper.inView,
     ASSESS_PREVETTED.steps.length,
   );
+  const dimensionCycleIndex = useAutoCycleIndex(
+    ASSESS_DIMENSIONS.length,
+    4500,
+    isTouchViewport,
+  );
+
+  useEffect(() => {
+    if (!isTouchViewport || processFilled <= 0) return;
+    const activeStep = ASSESS_PROCESS_STEPS[processFilled - 1];
+    if (activeStep) setHoveredProcess(activeStep.id);
+  }, [isTouchViewport, processFilled]);
+
+  useEffect(() => {
+    if (!isTouchViewport || prevettedFilled <= 0) return;
+    const activeStep = ASSESS_PREVETTED.steps[prevettedFilled - 1];
+    if (activeStep) setHoveredPrevetted(activeStep.id);
+  }, [isTouchViewport, prevettedFilled]);
+
+  useEffect(() => {
+    if (!isTouchViewport) return;
+    setActiveDimension(ASSESS_DIMENSIONS[dimensionCycleIndex]?.id ?? 'technical-depth');
+  }, [isTouchViewport, dimensionCycleIndex]);
+
+  useEffect(() => {
+    if (isTouchViewport) setSpotlightHovered(true);
+  }, [isTouchViewport]);
 
   const selectedDimension =
     ASSESS_DIMENSIONS.find((item) => item.id === activeDimension) ?? ASSESS_DIMENSIONS[0];
@@ -383,6 +323,7 @@ export function EvaluationStandardPage() {
                       className={cn('mkt-assess-dimensions-nav-item', isActive && 'is-active')}
                       onMouseEnter={() => setActiveDimension(item.id)}
                       onFocus={() => setActiveDimension(item.id)}
+                      onClick={() => setActiveDimension(item.id)}
                     >
                       <span className="mkt-assess-dimensions-nav-marker" aria-hidden="true" />
                       <span className="mkt-assess-dimensions-nav-num">{item.num}</span>

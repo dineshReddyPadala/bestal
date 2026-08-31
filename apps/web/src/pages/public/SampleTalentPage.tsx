@@ -13,7 +13,7 @@ import { PageMeta } from '../../components/PageMeta';
 import { ToastHost } from '../../components/ui/ToastHost';
 import { ForwardArrow } from '../../components/ui/ForwardArrow';
 import { useAuth } from '../../contexts/AuthContext';
-import { usePublicSkillCommunitiesList } from '../../hooks/api/useSkillCommunities';
+import { PUBLIC_SKILL_COMMUNITIES } from '../../data/publicSkillCommunities';
 import { MAX_COMPARE, useSampleTalentShortlist } from '../../hooks/useSampleTalentShortlist';
 import { useDemoToast } from '../../lib/use-demo-toast';
 import { communityToDiscipline } from '../../lib/community-discipline';
@@ -42,7 +42,7 @@ type SampleTalentBrowsePageProps = {
 };
 
 function SampleTalentBrowsePage({ onDisciplineClick }: SampleTalentBrowsePageProps) {
-  const { data: communities = [], isLoading, isError } = usePublicSkillCommunitiesList();
+  const communities = PUBLIC_SKILL_COMMUNITIES;
 
   return (
     <>
@@ -64,36 +64,26 @@ function SampleTalentBrowsePage({ onDisciplineClick }: SampleTalentBrowsePagePro
             </p>
           </div>
           <div className="mkt-st-comm-orbit-wrap">
-            <SampleTalentCommunitiesHero communities={isLoading ? undefined : communities} />
+            <SampleTalentCommunitiesHero />
           </div>
         </MktShell>
       </section>
 
       <section className="mkt-cream mkt-section mkt-st-comm-cards">
         <MktShell>
-          {isLoading ? (
-            <p className="mkt-lead howitworks-body-style">Loading communities…</p>
-          ) : isError ? (
-            <p className="mkt-lead howitworks-body-style">
-              Unable to load skill communities right now. Please try again shortly.
-            </p>
-          ) : communities.length === 0 ? (
-            <p className="mkt-lead howitworks-body-style">No skill communities are available yet.</p>
-          ) : (
-            <div className="mkt-st-comm-grid">
-              {communities.map((community) => (
-                <SampleTalentCommunityCard
-                  key={community.id}
-                  name={community.name}
-                  body={community.description ?? ''}
-                  iconUrl={community.iconUrl}
-                  onClick={() =>
-                    onDisciplineClick(communityToDiscipline(community.name))
-                  }
-                />
-              ))}
-            </div>
-          )}
+          <div className="mkt-st-comm-grid">
+            {communities.map((community) => (
+              <SampleTalentCommunityCard
+                key={community.id}
+                name={community.name}
+                body={community.description ?? ''}
+                iconUrl={community.iconUrl}
+                onClick={() =>
+                  onDisciplineClick(communityToDiscipline(community.name))
+                }
+              />
+            ))}
+          </div>
         </MktShell>
       </section>
     </>
