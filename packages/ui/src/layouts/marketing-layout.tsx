@@ -1,7 +1,59 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useState, type MouseEvent, type ReactNode } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
 import { BesTalBrand } from '../components/bestal-brand.js';
 import { SocialMediaIcons } from '../components/social-media-icons.js';
+
+function parseFooterHref(href: string): { pathname: string; hash: string } {
+  const hashIndex = href.indexOf('#');
+  if (hashIndex === -1) {
+    return { pathname: href, hash: '' };
+  }
+
+  return {
+    pathname: href.slice(0, hashIndex) || '/',
+    hash: href.slice(hashIndex + 1),
+  };
+}
+
+function isSameMarketingPage(currentPathname: string, targetPathname: string): boolean {
+  if (targetPathname === '/') {
+    return currentPathname === '/';
+  }
+
+  if (targetPathname === '/sample-talent') {
+    return currentPathname === '/sample-talent' || currentPathname === '/talent';
+  }
+
+  return (
+    currentPathname === targetPathname || currentPathname.startsWith(`${targetPathname}/`)
+  );
+}
+
+function scrollMarketingPageTo(href: string) {
+  const { hash } = parseFooterHref(href);
+
+  if (hash) {
+    const target = document.getElementById(decodeURIComponent(hash));
+    if (target) {
+      target.scrollIntoView({ behavior: 'instant', block: 'start' });
+      return;
+    }
+  }
+
+  window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+}
+
+function handleSamePageFooterLink(
+  event: MouseEvent<HTMLAnchorElement>,
+  href: string,
+  currentPathname: string,
+) {
+  const { pathname } = parseFooterHref(href);
+  if (!isSameMarketingPage(currentPathname, pathname)) return;
+
+  event.preventDefault();
+  scrollMarketingPageTo(href);
+}
 
 export type MarketingNavItem = {
   label: string;
@@ -298,8 +350,7 @@ export function MarketingLayout({
                 </Link>
               )}
               <Link to={ctaHref} className="mkt-btn mkt-btn-primary mkt-btn-sm">
-                <span className="hidden min-[480px]:inline">{ctaLabel}</span>
-                <span className="min-[480px]:hidden">Contact</span>
+                {ctaLabel}
               </Link>
               <button
                 type="button"
@@ -321,7 +372,11 @@ export function MarketingLayout({
         <div className="mkt-shell">
           <div className="mkt-ftg">
             <div>
-              <Link to="/" aria-label="BesTal home">
+              <Link
+                to="/"
+                aria-label="BesTal home"
+                onClick={(event) => handleSamePageFooterLink(event, '/', location.pathname)}
+              >
                 <BesTalBrand variant="light" logoSrc={brandLogoSrc} />
               </Link>
               <p className="mt-[18px] max-w-xs text-[15px] text-[var(--mkt-ink-d)]">{footerTagline}</p>
@@ -333,7 +388,14 @@ export function MarketingLayout({
                 <ul>
                   {column.links.map((link) => (
                     <li key={link.href + link.label}>
-                      <Link to={link.href}>{link.label}</Link>
+                      <Link
+                        to={link.href}
+                        onClick={(event) =>
+                          handleSamePageFooterLink(event, link.href, location.pathname)
+                        }
+                      >
+                        {link.label}
+                      </Link>
                     </li>
                   ))}
                 </ul>
