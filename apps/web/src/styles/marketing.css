@@ -2720,7 +2720,7 @@
   }
 
   .marketing-site .mkt-pricing-rate-bar {
-    flex-direction: column;
+    flex-direction: row;
     min-height: 0;
   }
 
