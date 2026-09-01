@@ -29,7 +29,11 @@ export function StaffPortalLoginForm({
 
   return (
     <form className="mkt-login-form" onSubmit={onSubmit}>
-      {error ? <div className="mkt-login-error">{error}</div> : null}
+      {error ? (
+        <div className="mkt-login-error" role="alert" aria-live="polite">
+          {error}
+        </div>
+      ) : null}
 
       <label className="mkt-login-field">
         <span className="mkt-login-label">Email</span>
@@ -38,7 +42,9 @@ export function StaffPortalLoginForm({
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           autoComplete="email"
+          placeholder="name@company.com"
           required
+          aria-invalid={error ? true : undefined}
           className="mkt-login-input"
         />
       </label>
@@ -50,11 +56,12 @@ export function StaffPortalLoginForm({
           onChange={(e) => setPassword(e.target.value)}
           autoComplete="current-password"
           required
+          aria-invalid={error ? true : undefined}
         />
       </label>
 
       <p className="mkt-login-forgot">
-        <Link to={forgotPasswordPath}>Forgot password ?</Link>
+        <Link to={forgotPasswordPath}>Forgot password?</Link>
       </p>
 
       <button

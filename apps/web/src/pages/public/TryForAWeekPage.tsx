@@ -25,7 +25,7 @@ export function TryForAWeekPage() {
     <div className="mkt-trial-page">
       <PageMeta title={pageSeo.title} description={pageSeo.description} />
 
-      <div className="mkt-white">
+      <section className="mkt-trial-hero-band mkt-white">
         <MktShell className="mkt-trial-hero">
           <div className="mkt-trial-label">Trial</div>
           <h1>
@@ -48,8 +48,7 @@ export function TryForAWeekPage() {
             </Link>
           </div>
         </MktShell>
-        
-      </div>
+      </section>
 
       <section className="mkt-trial-quote-band">
         <MktShell>

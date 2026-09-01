@@ -21,7 +21,7 @@ export function MarketingPasswordInput({
         className="mkt-login-password-toggle"
         onClick={() => setVisible((value) => !value)}
         aria-label={visible ? 'Hide password' : 'Show password'}
-        tabIndex={-1}
+        aria-pressed={visible}
       >
         {visible ? <EyeOff className="h-4 w-4" aria-hidden /> : <Eye className="h-4 w-4" aria-hidden />}
       </button>
