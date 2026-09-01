@@ -4735,6 +4735,7 @@
   .marketing-site .mkt-test-hero h1,
   .marketing-site .mkt-eng-hero h1,
   .marketing-site .mkt-trial-hero h1,
+  .marketing-site .mkt-careers-hero h1,
   .marketing-site .mkt-pricing-hero-title,
   .marketing-site .mkt-trust-hero h1 {
     font-size: 40px;
@@ -16753,45 +16754,32 @@
   color: var(--mkt-ink);
 }
 
-/* Hero — white banner, no background image */
-.marketing-site .mkt-careers-hero {
+/* Hero — white banner, matches HIW / Assess */
+.marketing-site .mkt-careers-hero-band {
   background: #fff;
-  color: var(--mkt-ink);
 }
 
-.marketing-site .mkt-careers-hero-inner {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  min-height: clamp(18rem, 42vw, 28rem);
-  padding-top: clamp(3rem, 8vw, 5.5rem);
-  padding-bottom: clamp(2rem, 5vw, 3rem);
+.marketing-site .mkt-careers-hero {
+  text-align: left;
 }
 
 .marketing-site .mkt-careers-hero h1 {
-  margin: 0;
+  margin-top: 0.75rem;
+  margin-bottom: 1.25rem;
   max-width: 14ch;
   font-family: var(--mkt-display);
-  font-size: clamp(2rem, 5vw, 3.25rem);
+  font-size: 32px;
+  line-height: 1.15;
   font-weight: 800;
-  line-height: 1.12;
-  color: var(--mkt-ink);
+  color: #121417;
 }
 
-.marketing-site .mkt-careers-hero p {
-  margin: 1.25rem 0 0;
+.marketing-site .mkt-careers-hero .mkt-lead {
+  margin-top: 0;
   max-width: 42rem;
-  font-size: clamp(0.9375rem, 1.8vw, 1.0625rem);
-  line-height: 1.75;
+  font-size: 18px;
+  line-height: 1.4;
   color: var(--mkt-ink-d);
-}
-
-.marketing-site .mkt-careers-hero-label {
-  margin: 0 0 0.75rem;
-  font-size: 0.875rem;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  color: var(--mkt-teal);
 }
 
 /* Why BesTal — black tabbed section */
@@ -16813,7 +16801,8 @@
 .marketing-site .mkt-careers-why h2 {
   margin: 0;
   font-family: var(--mkt-display);
-  font-size: clamp(1.75rem, 3.5vw, 2.25rem);
+  font-size: 1.75rem;
+  line-height: 1.25;
   font-weight: 800;
   color: #fff;
 }
@@ -16830,7 +16819,7 @@
   border-bottom: 2px solid transparent;
   background: transparent;
   font: inherit;
-  font-size: 0.9375rem;
+  font-size: 14px;
   font-weight: 500;
   color: rgba(255, 255, 255, 0.72);
   cursor: pointer;
@@ -16874,7 +16863,8 @@
 
 .marketing-site .mkt-careers-why-copy h3 {
   margin: 0;
-  font-size: clamp(1.25rem, 2.5vw, 1.625rem);
+  font-size: 1rem;
+  line-height: 1.4;
   font-weight: 700;
   color: #fff;
 }
@@ -16882,7 +16872,7 @@
 .marketing-site .mkt-careers-why-copy p {
   margin: 1rem 0 0;
   max-width: 34rem;
-  font-size: 0.9375rem;
+  font-size: 14px;
   line-height: 1.75;
   color: rgba(255, 255, 255, 0.82);
 }
@@ -16897,10 +16887,10 @@
   margin: 0 0 clamp(2rem, 4vw, 3rem);
   text-align: center;
   font-family: var(--mkt-display);
-  font-size: clamp(1.5rem, 3vw, 2rem);
+  font-size: 1.75rem;
+  line-height: 1.25;
   font-weight: 800;
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
+  letter-spacing: -0.02em;
   color: var(--mkt-ink);
 }
 
@@ -16941,7 +16931,8 @@
 
 .marketing-site .mkt-careers-value-card h3 {
   margin: 0;
-  font-size: 1.0625rem;
+  font-size: 1rem;
+  line-height: 1.4;
   font-weight: 700;
   color: var(--mkt-ink);
 }
@@ -16949,9 +16940,9 @@
 .marketing-site .mkt-careers-value-card p {
   margin: 0.625rem 0 0;
   max-width: 18rem;
-  font-size: 0.875rem;
-  line-height: 1.65;
-  color: var(--mkt-ink-d);
+  font-size: 14px;
+  line-height: 1.75;
+  color: #5b656c;
 }
 
 /* Equal rights */
@@ -16965,10 +16956,10 @@
   max-width: 52rem;
   text-align: center;
   font-family: var(--mkt-display);
-  font-size: clamp(1.125rem, 2.5vw, 1.5rem);
+  font-size: 1.75rem;
+  line-height: 1.25;
   font-weight: 800;
-  letter-spacing: 0.04em;
-  line-height: 1.35;
+  letter-spacing: -0.02em;
   color: var(--mkt-ink);
 }
 
@@ -16976,9 +16967,9 @@
   margin: 0 auto clamp(2rem, 4vw, 3rem);
   max-width: 46rem;
   text-align: center;
-  font-size: 0.9375rem;
+  font-size: 14px;
   line-height: 1.75;
-  color: var(--mkt-ink-d);
+  color: #5b656c;
 }
 
 .marketing-site .mkt-careers-equal-grid {
@@ -17021,9 +17012,9 @@
 
 .marketing-site .mkt-careers-equal-item p {
   margin: 0.75rem 0 0;
-  font-size: 0.9375rem;
-  line-height: 1.7;
-  color: var(--mkt-ink-d);
+  font-size: 14px;
+  line-height: 1.75;
+  color: #5b656c;
 }
 
 /* Current openings */
@@ -17041,7 +17032,7 @@
 }
 
 .marketing-site .mkt-careers-openings-filter-label {
-  font-size: 0.9375rem;
+  font-size: 14px;
   font-weight: 700;
   color: var(--mkt-ink);
 }
@@ -17116,9 +17107,9 @@
 .marketing-site .mkt-careers-job-card h3 {
   margin: 0.5rem 0 0;
   flex: 1;
-  font-size: 1.0625rem;
+  font-size: 1rem;
   font-weight: 700;
-  line-height: 1.35;
+  line-height: 1.4;
   color: var(--mkt-ink);
 }
 
@@ -17144,11 +17135,13 @@
   border: 1px solid var(--mkt-amber);
   border-radius: 4px;
   background: #fff;
+  font: inherit;
   font-size: 0.8125rem;
   font-weight: 600;
   color: var(--mkt-amber-d);
   text-decoration: none;
   white-space: nowrap;
+  cursor: pointer;
   transition: background 0.2s ease, color 0.2s ease;
 }
 
@@ -17440,12 +17433,8 @@
 
 /* Careers — responsive UX (below 1200px only) */
 @media (max-width: 1199px) {
-  .marketing-site .mkt-careers-hero-inner {
-    min-height: auto;
-  }
-
   .marketing-site .mkt-careers-hero h1,
-  .marketing-site .mkt-careers-hero p {
+  .marketing-site .mkt-careers-hero .mkt-lead {
     max-width: none;
     width: 100%;
   }
@@ -17491,7 +17480,22 @@
   }
 }
 
-@media (max-width: 767px) {
+@media (max-width: 640px) {
+  .marketing-site .mkt-careers-page .howitworks-body-style {
+    font-size: 1rem !important;
+    line-height: 1.65 !important;
+  }
+
+  .marketing-site .mkt-careers-hero h1 {
+    font-size: 1.75rem;
+  }
+
+  .marketing-site .mkt-careers-why h2,
+  .marketing-site .mkt-careers-section-title,
+  .marketing-site .mkt-careers-equal-title {
+    font-size: 1.375rem;
+  }
+
   .marketing-site .mkt-careers-why-body,
   .marketing-site .mkt-careers-equal-grid,
   .marketing-site .mkt-careers-workspace-grid,
@@ -17558,5 +17562,218 @@
 @media (max-width: 414px) {
   .marketing-site .mkt-careers-equal-title {
     letter-spacing: 0.02em;
+  }
+}
+
+/* Careers — job description dialog */
+.marketing-site .mkt-careers-jd-dialog {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem;
+  background: rgba(18, 20, 23, 0.48);
+  backdrop-filter: blur(2px);
+}
+
+.marketing-site .mkt-careers-jd-card {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 42rem;
+  max-height: min(90vh, 52rem);
+  overflow: hidden;
+  border: 1px solid #e8e6df;
+  border-radius: 0.875rem;
+  background: #fff;
+  box-shadow: 0 24px 64px rgba(18, 20, 23, 0.16);
+}
+
+.marketing-site .mkt-careers-jd-hd {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.25rem 1.25rem 1rem;
+  border-bottom: 1px solid #eceae3;
+}
+
+.marketing-site .mkt-careers-jd-eyebrow {
+  margin: 0 0 0.375rem;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #0e6e76;
+}
+
+.marketing-site .mkt-careers-jd-hd h2 {
+  margin: 0;
+  font-family: var(--mkt-display);
+  font-size: 1.375rem;
+  line-height: 1.3;
+  font-weight: 800;
+  color: var(--mkt-ink);
+}
+
+.marketing-site .mkt-careers-jd-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 2rem;
+  height: 2rem;
+  border: none;
+  border-radius: 999px;
+  color: #6b7280;
+  background: #f3f4f6;
+  cursor: pointer;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+
+.marketing-site .mkt-careers-jd-close:hover {
+  color: #121417;
+  background: #eceff1;
+}
+
+.marketing-site .mkt-careers-jd-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1.25rem 1.25rem 0.5rem;
+}
+
+.marketing-site .mkt-careers-jd-section {
+  margin-bottom: 1.5rem;
+}
+
+.marketing-site .mkt-careers-jd-section h3 {
+  margin: 0 0 0.625rem;
+  font-size: 1rem;
+  line-height: 1.4;
+  font-weight: 700;
+  color: var(--mkt-ink);
+}
+
+.marketing-site .mkt-careers-jd-section p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.75;
+  color: #5b656c;
+}
+
+.marketing-site .mkt-careers-jd-section ul {
+  margin: 0;
+  padding-left: 1.125rem;
+  font-size: 14px;
+  line-height: 1.75;
+  color: #5b656c;
+}
+
+.marketing-site .mkt-careers-jd-section li + li {
+  margin-top: 0.5rem;
+}
+
+.marketing-site .mkt-careers-jd-meta {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem 1rem;
+  margin: 0 0 1.5rem;
+  padding: 1rem;
+  border: 1px solid #eceae3;
+  border-radius: 0.625rem;
+  background: #faf9f6;
+}
+
+.marketing-site .mkt-careers-jd-meta dt {
+  margin: 0 0 0.25rem;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #9ca3af;
+}
+
+.marketing-site .mkt-careers-jd-meta dd {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.45;
+  font-weight: 600;
+  color: var(--mkt-ink);
+}
+
+.marketing-site .mkt-careers-jd-foot {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem 1.25rem;
+  border-top: 1px solid #eceae3;
+  background: #fff;
+}
+
+.marketing-site .mkt-careers-jd-cancel,
+.marketing-site .mkt-careers-jd-apply {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.75rem;
+  padding: 0.625rem 1.25rem;
+  border-radius: 0.375rem;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+.marketing-site .mkt-careers-jd-cancel {
+  border: 1px solid #d1d5db;
+  background: #fff;
+  color: var(--mkt-ink);
+}
+
+.marketing-site .mkt-careers-jd-cancel:hover {
+  background: #f9fafb;
+}
+
+.marketing-site .mkt-careers-jd-apply {
+  border: 1px solid var(--mkt-amber);
+  background: var(--mkt-amber);
+  color: var(--mkt-ink);
+}
+
+.marketing-site .mkt-careers-jd-apply:hover {
+  background: #d8923f;
+  border-color: #d8923f;
+}
+
+.marketing-site .mkt-careers-jd-cancel:focus-visible,
+.marketing-site .mkt-careers-jd-apply:focus-visible {
+  outline: 2px solid var(--mkt-teal);
+  outline-offset: 2px;
+}
+
+@media (max-width: 640px) {
+  .marketing-site .mkt-careers-jd-dialog {
+    padding: 0.75rem;
+    align-items: flex-end;
+  }
+
+  .marketing-site .mkt-careers-jd-card {
+    max-height: 92vh;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+  }
+
+  .marketing-site .mkt-careers-jd-meta {
+    grid-template-columns: 1fr;
+  }
+
+  .marketing-site .mkt-careers-jd-foot {
+    flex-direction: column-reverse;
+  }
+
+  .marketing-site .mkt-careers-jd-cancel,
+  .marketing-site .mkt-careers-jd-apply {
+    width: 100%;
   }
 }
