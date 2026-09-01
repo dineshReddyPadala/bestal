@@ -7,4 +7,4 @@ Disallow: /sales/
 Disallow: /super-admin/
 Disallow: /login
 
-Sitemap: https://bestal.co/sitemap.xml
+Sitemap: https://www.bestal.co/sitemap.xml
