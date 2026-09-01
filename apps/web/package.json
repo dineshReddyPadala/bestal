@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build && node scripts/prerender.mjs",
-    "build:spa": "tsc --noEmit && vite build",
+    "build:spa": "node -e \"console.warn('build:spa skips prerender — do not use for production')\" && tsc --noEmit && vite build",
     "preview": "vite preview",
     "lint": "tsc --noEmit"
   },
