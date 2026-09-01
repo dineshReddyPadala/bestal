@@ -49,6 +49,7 @@ import { SampleTalentPage } from '../pages/public/SampleTalentPage';
 import { TalentPage } from '../pages/public/TalentPage';
 import { TrustPage } from '../pages/public/TrustPage';
 import { TryForAWeekPage } from '../pages/public/TryForAWeekPage';
+import { CareersPage } from '../pages/public/CareersPage';
 import { AddCandidatePage } from '../pages/recruiter/AddCandidatePage';
 import { BackgroundChecksPage } from '../pages/recruiter/BackgroundChecksPage';
 import { CandidateCsvImportPage as RecruiterCandidateCsvImportPage } from '../pages/recruiter/CandidateCsvImportPage';
@@ -308,6 +309,7 @@ const router = createBrowserRouter([
       { path: 'for-engineers', element: <ForEngineersPage /> },
       { path: 'contact', element: <ContactPage /> },
       { path: 'reach-out', element: <ReachOutPage /> },
+      { path: 'careers', element: <CareersPage /> },
     ],
   },
   {

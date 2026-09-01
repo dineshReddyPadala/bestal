@@ -30,7 +30,7 @@ export function LoginHeroSection() {
   return (
     <section
       className={`mkt-login-hero${isStaffLayout ? ' mkt-login-hero--portals' : ''}`}
-      aria-hidden="true"
+      aria-label="BesTal portal overview"
     >
       <img
         className={`mkt-login-hero-img${isStaffLayout ? ' mkt-login-hero-img--portals' : ''}`}

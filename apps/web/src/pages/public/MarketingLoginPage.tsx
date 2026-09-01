@@ -99,7 +99,11 @@ export function MarketingLoginPage({ variant = 'admin' }: MarketingLoginPageProp
       <SplitLoginLayout>
         <SplitLoginPanel brandHref={isClientLogin ? '/' : undefined}>
           <form className="mkt-login-form" onSubmit={handleSubmit}>
-            {error && <div className="mkt-login-error">{error}</div>}
+            {error && (
+              <div className="mkt-login-error" role="alert" aria-live="polite">
+                {error}
+              </div>
+            )}
 
             <label className="mkt-login-field">
               <span className="mkt-login-label">Email</span>
@@ -108,7 +112,9 @@ export function MarketingLoginPage({ variant = 'admin' }: MarketingLoginPageProp
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 autoComplete="email"
+                placeholder="name@company.com"
                 required
+                aria-invalid={error ? true : undefined}
                 className="mkt-login-input"
               />
             </label>
@@ -120,11 +126,12 @@ export function MarketingLoginPage({ variant = 'admin' }: MarketingLoginPageProp
                 onChange={(e) => setPassword(e.target.value)}
                 autoComplete="current-password"
                 required
+                aria-invalid={error ? true : undefined}
               />
             </label>
 
             <p className="mkt-login-forgot">
-              <Link to={config.forgotPath}>Forgot password ?</Link>
+              <Link to={config.forgotPath}>Forgot password?</Link>
             </p>
 
             <button

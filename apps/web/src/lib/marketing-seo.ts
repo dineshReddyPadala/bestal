@@ -1,7 +1,7 @@
 export const DEFAULT_TITLE = 'BesTal — Proven Talent. Ready to Perform.';
 
 export const DEFAULT_DESCRIPTION =
-  'Pre-vetted Talents who work your hours. See their test results, their rate and their start date up front — then try them free before you commit.';
+  'Pre-vetted Talent who work your hours. See their test results, their rate and their start date up front — then try them free before you commit.';
 
 export const PAGE_SEO = {
   home: {
@@ -78,6 +78,11 @@ export const PAGE_SEO = {
     description:
       'Tell BesTal what role you need, required skills, and timeline. Our talent team will match you with vetted engineers — test results and rates on every profile.',
   },
+  careers: {
+    title: 'Careers | BesTal',
+    description:
+      'Explore opportunities at BesTal — innovation, excellence, and inclusive culture. View current openings and join our technology team.',
+  },
   forEngineers: {
     title: 'For Engineers | BesTal',
     description:
@@ -126,4 +131,5 @@ export const MARKETING_ROUTES = [
   '/cookie-policy',
   '/contact',
   '/reach-out',
+  '/careers',
 ] as const;
