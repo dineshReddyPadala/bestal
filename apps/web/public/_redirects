@@ -1,0 +1,8 @@
+# SPA fallback for portals only. Prerendered marketing HTML is served as real files.
+/admin/*          /index.html   200
+/client/*         /index.html   200
+/recruiter/*      /index.html   200
+/sales/*          /index.html   200
+/super-admin/*    /index.html   200
+/login            /index.html   200
+/login/*          /index.html   200

@@ -1,7 +1,20 @@
+/** Public marketing origin. Apex `bestal.co` should 301 here at the CDN. */
+export const SITE_ORIGIN = 'https://www.bestal.co';
+
+export const DEFAULT_OG_IMAGE_PATH = '/og-image.png';
+
+export const DEFAULT_OG_IMAGE_URL = `${SITE_ORIGIN}${DEFAULT_OG_IMAGE_PATH}`;
+
 export const DEFAULT_TITLE = 'BesTal — Proven Talent. Ready to Perform.';
 
 export const DEFAULT_DESCRIPTION =
   'Pre-vetted Talent who work your hours. See their test results, their rate and their start date up front — then try them free before you commit.';
+
+export function canonicalUrlForPath(pathname: string): string {
+  const normalized = pathname.startsWith('/') ? pathname : `/${pathname}`;
+  if (normalized === '/') return `${SITE_ORIGIN}/`;
+  return `${SITE_ORIGIN}${normalized.replace(/\/+$/, '')}`;
+}
 
 export const PAGE_SEO = {
   home: {
