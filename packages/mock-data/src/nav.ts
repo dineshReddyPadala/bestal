@@ -67,6 +67,7 @@ export const publicNav = [
   { id: 'trial', label: 'Free Trial', href: '/try-for-a-week' },
   { id: 'rates', label: 'Pricing', href: '/rates' },
   { id: 'about', label: 'About us', href: '/about' },
+  { id: 'careers', label: 'Careers', href: '/careers' },
   { id: 'trust', label: 'Trust', href: '/trust' },
 ] as const satisfies readonly NavItem[];
 

@@ -78,7 +78,7 @@ export function HomePage() {
               Ready to Perform.
             </h1>
             <p className="mkt-lead mt-[26px] max-w-[540px]">
-              Pre-vetted Talents who work your hours. See their test results, their rate and their start
+              Pre-vetted Talent who work your hours. See their test results, their rate and their start
               date up front — Try them free before commit.
             </p>
             <div className="mkt-actions mt-9">
@@ -134,7 +134,7 @@ export function HomePage() {
 
       <section id="evidence-section" className="mkt-dark mkt-section">
         <MktShell className="mkt-g2 items-start">
-          <div>
+          <div className="mkt-section-intro">
             <h2>
               Everyone claims the top 10%.
               <br />
@@ -202,7 +202,7 @@ export function HomePage() {
 
       <section id="time-zone" className="mkt-cream mkt-section ">
         <MktShell className="mkt-g2">
-          <div>
+          <div className="mkt-section-intro">
             <div className="mkt-kicker">Time zone</div>
             <h2 className="mt-4">
               They work your hours.
@@ -302,7 +302,7 @@ export function HomePage() {
 
       <section className="mkt-white mkt-section">
         <MktShell>
-          <div className="mb-11">
+          <div className="mb-11 mkt-discipline-hd">
             <div className="flex flex-wrap items-center justify-between gap-4">
               <h2 className="mb-0">Engineers, organised by discipline</h2>
               <Link to="/sample-talent" className="mkt-btn mkt-btn-primary mkt-btn-lg shrink-0">
@@ -328,7 +328,7 @@ export function HomePage() {
 
       <section className="mkt-cream mkt-section">
         <MktShell className="mkt-g2 mkt-faq-split">
-          <div>
+          <div className="mkt-section-intro">
             <h2>The questions we built this platform to answer</h2>
             <p className="mkt-big mt-4">
               Every one of these is answerable on a profile, without a call.
