@@ -295,7 +295,7 @@ export function CandidateSearchPage() {
               Browse Talents
             </h1>
             <p className="mt-2 max-w-3xl text-sm leading-relaxed text-muted-foreground">
-              Browse pre-vetted engineers by discipline. Select a community to view matching
+              Browse pre-vetted talent by discipline. Select a community to view matching
               candidates.
             </p>
           </div>

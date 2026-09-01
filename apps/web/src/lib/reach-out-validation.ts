@@ -98,13 +98,15 @@ export function validateReachOutStep1(form: ReachOutFormValues): Record<string, 
   }
   if (!form.email.trim()) {
     errors.email = 'Email is required';
+  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
+    errors.email = 'Enter a valid email address';
   } else if (!isWorkEmail(form.email.trim())) {
     errors.email = 'Please use a work email address';
   }
   if (!form.phone.trim()) {
     errors.phone = 'Phone number is required';
-  } else if (form.phone.trim().length < 7) {
-    errors.phone = 'Phone number must be at least 7 characters';
+  } else if (form.phone.replace(/\D/g, '').length < 7) {
+    errors.phone = 'Enter a valid phone number (at least 7 digits)';
   }
 
   return errors;

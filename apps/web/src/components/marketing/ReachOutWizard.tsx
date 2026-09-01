@@ -135,6 +135,10 @@ function formatValidationSummary(errors: Record<string, string>) {
     .join('. ');
 }
 
+function reachOutFieldClass(base: string, error?: string) {
+  return `${base}${error ? ' is-invalid' : ''}`;
+}
+
 function clearStepFieldErrors(
   current: Record<string, string>,
   stepNumber: number,
@@ -440,7 +444,9 @@ export function ReachOutWizard() {
                 key={item.id}
                 className={`mkt-reach-out-step${isActive ? ' is-active' : ''}${isComplete ? ' is-complete' : ''}`}
               >
-                <span className="mkt-reach-out-step-n">{item.id}</span>
+                <span className="mkt-reach-out-step-n" aria-hidden="true">
+                  {item.id}
+                </span>
                 <span className="mkt-reach-out-step-l">{item.label}</span>
               </div>
             );
@@ -473,7 +479,7 @@ export function ReachOutWizard() {
           <button
             type="button"
             className="mkt-reach-out-close"
-            aria-label="Close form"
+            aria-label="Close"
             onClick={() => navigate('/')}
           >
             <X className="h-4 w-4" aria-hidden="true" />
@@ -499,7 +505,8 @@ export function ReachOutWizard() {
                   value={form.companyName}
                   placeholder="Enter company name"
                   onChange={(e) => update({ companyName: e.target.value })}
-                  className="mkt-reach-out-input"
+                  className={reachOutFieldClass('mkt-reach-out-input', fieldErrors.companyName)}
+                  aria-invalid={fieldErrors.companyName ? true : undefined}
                 />
                 <FieldError message={fieldErrors.companyName} />
               </label>
@@ -514,7 +521,8 @@ export function ReachOutWizard() {
                   value={form.location}
                   placeholder="City, state or country"
                   onChange={(e) => update({ location: e.target.value })}
-                  className="mkt-reach-out-input"
+                  className={reachOutFieldClass('mkt-reach-out-input', fieldErrors.location)}
+                  aria-invalid={fieldErrors.location ? true : undefined}
                 />
                 <FieldError message={fieldErrors.location} />
               </label>
@@ -527,7 +535,8 @@ export function ReachOutWizard() {
                   required
                   value={form.timezone}
                   onChange={(e) => update({ timezone: e.target.value })}
-                  className="mkt-reach-out-select"
+                  className={reachOutFieldClass('mkt-reach-out-select', fieldErrors.timezone)}
+                  aria-invalid={fieldErrors.timezone ? true : undefined}
                 >
                   {TIMEZONE_SELECT_OPTIONS.map((opt) => (
                     <option key={opt.value || 'empty'} value={opt.value} disabled={!opt.value}>
@@ -539,13 +548,17 @@ export function ReachOutWizard() {
               </label>
 
               <label className="mkt-reach-out-field">
-                <span className="mkt-reach-out-label">Company website</span>
+                <span className="mkt-reach-out-label">
+                  Company website <span className="mkt-reach-out-opt">(Optional)</span>
+                </span>
                 <input
-                  type="text"
+                  type="url"
+                  inputMode="url"
                   value={form.companyWebsite}
                   placeholder="www.company.com"
                   onChange={(e) => update({ companyWebsite: e.target.value })}
-                  className="mkt-reach-out-input"
+                  className={reachOutFieldClass('mkt-reach-out-input', fieldErrors.companyWebsite)}
+                  aria-invalid={fieldErrors.companyWebsite ? true : undefined}
                 />
                 <FieldError message={fieldErrors.companyWebsite} />
               </label>
@@ -560,7 +573,8 @@ export function ReachOutWizard() {
                   value={form.contactPersonName}
                   placeholder="Enter contact name"
                   onChange={(e) => update({ contactPersonName: e.target.value })}
-                  className="mkt-reach-out-input"
+                  className={reachOutFieldClass('mkt-reach-out-input', fieldErrors.contactPersonName)}
+                  aria-invalid={fieldErrors.contactPersonName ? true : undefined}
                 />
                 <FieldError message={fieldErrors.contactPersonName} />
               </label>
@@ -575,7 +589,8 @@ export function ReachOutWizard() {
                   value={form.phone}
                   placeholder="Enter phone number"
                   onChange={(e) => update({ phone: e.target.value })}
-                  className="mkt-reach-out-input"
+                  className={reachOutFieldClass('mkt-reach-out-input', fieldErrors.phone)}
+                  aria-invalid={fieldErrors.phone ? true : undefined}
                 />
                 <FieldError message={fieldErrors.phone} />
               </label>
@@ -588,9 +603,10 @@ export function ReachOutWizard() {
                   type="email"
                   required
                   value={form.email}
-                  placeholder="eg. name@company.com"
+                  placeholder="name@company.com"
                   onChange={(e) => update({ email: e.target.value })}
-                  className="mkt-reach-out-input"
+                  className={reachOutFieldClass('mkt-reach-out-input', fieldErrors.email)}
+                  aria-invalid={fieldErrors.email ? true : undefined}
                 />
                 <FieldError message={fieldErrors.email} />
               </label>
@@ -626,7 +642,13 @@ export function ReachOutWizard() {
                       value={job.jobTitle}
                       placeholder="e.g. Senior Data Engineer"
                       onChange={(e) => updateJob(job.id, { jobTitle: e.target.value }, index)}
-                      className="mkt-reach-out-input"
+                      className={reachOutFieldClass(
+                        'mkt-reach-out-input',
+                        getReachOutJobFieldError(fieldErrors, index, 'jobTitle'),
+                      )}
+                      aria-invalid={
+                        getReachOutJobFieldError(fieldErrors, index, 'jobTitle') ? true : undefined
+                      }
                     />
                     <FieldError message={getReachOutJobFieldError(fieldErrors, index, 'jobTitle')} />
                   </label>
@@ -643,7 +665,15 @@ export function ReachOutWizard() {
                       value={job.jobDescription}
                       placeholder="Type your message here."
                       onChange={(e) => updateJob(job.id, { jobDescription: e.target.value }, index)}
-                      className="mkt-reach-out-textarea"
+                      className={reachOutFieldClass(
+                        'mkt-reach-out-textarea',
+                        getReachOutJobFieldError(fieldErrors, index, 'jobDescription'),
+                      )}
+                      aria-invalid={
+                        getReachOutJobFieldError(fieldErrors, index, 'jobDescription')
+                          ? true
+                          : undefined
+                      }
                     />
                     <FieldError
                       message={getReachOutJobFieldError(fieldErrors, index, 'jobDescription')}
@@ -662,7 +692,15 @@ export function ReachOutWizard() {
                       value={job.requiredSkills}
                       placeholder="Search and select skills"
                       onChange={(e) => updateJob(job.id, { requiredSkills: e.target.value }, index)}
-                      className="mkt-reach-out-textarea"
+                      className={reachOutFieldClass(
+                        'mkt-reach-out-textarea',
+                        getReachOutJobFieldError(fieldErrors, index, 'requiredSkills'),
+                      )}
+                      aria-invalid={
+                        getReachOutJobFieldError(fieldErrors, index, 'requiredSkills')
+                          ? true
+                          : undefined
+                      }
                     />
                     <FieldError
                       message={getReachOutJobFieldError(fieldErrors, index, 'requiredSkills')}
@@ -682,7 +720,15 @@ export function ReachOutWizard() {
                         onChange={(e) =>
                           updateJob(job.id, { experienceRequired: e.target.value }, index)
                         }
-                        className="mkt-reach-out-select"
+                        className={reachOutFieldClass(
+                          'mkt-reach-out-select',
+                          getReachOutJobFieldError(fieldErrors, index, 'experienceRequired'),
+                        )}
+                        aria-invalid={
+                          getReachOutJobFieldError(fieldErrors, index, 'experienceRequired')
+                            ? true
+                            : undefined
+                        }
                       >
                         {EXPERIENCE_OPTIONS.map((opt) => (
                           <option key={opt.value || 'empty'} value={opt.value} disabled={!opt.value}>
@@ -707,7 +753,15 @@ export function ReachOutWizard() {
                         onChange={(e) =>
                           updateJob(job.id, { numberOfResources: e.target.value }, index)
                         }
-                        className="mkt-reach-out-select"
+                        className={reachOutFieldClass(
+                          'mkt-reach-out-select',
+                          getReachOutJobFieldError(fieldErrors, index, 'numberOfResources'),
+                        )}
+                        aria-invalid={
+                          getReachOutJobFieldError(fieldErrors, index, 'numberOfResources')
+                            ? true
+                            : undefined
+                        }
                       >
                         {RESOURCE_OPTIONS.map((opt) => (
                           <option key={opt.value || 'empty'} value={opt.value} disabled={!opt.value}>
@@ -807,7 +861,11 @@ export function ReachOutWizard() {
                   value={form.additionalRequirements}
                   placeholder="Type your message here."
                   onChange={(e) => update({ additionalRequirements: e.target.value })}
-                  className="mkt-reach-out-textarea mkt-reach-out-textarea-lg"
+                  className={reachOutFieldClass(
+                    'mkt-reach-out-textarea mkt-reach-out-textarea-lg',
+                    fieldErrors.additionalRequirements,
+                  )}
+                  aria-invalid={fieldErrors.additionalRequirements ? true : undefined}
                 />
                 <FieldError message={fieldErrors.additionalRequirements} />
                 <p className="mkt-reach-out-hint">

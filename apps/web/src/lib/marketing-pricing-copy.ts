@@ -4,7 +4,7 @@ export const PRICING_HERO = {
     { text: 'Competitive Rates.', em: false },
     { text: 'No Quality Compromise.', em: true },
   ] as const,
-  body: 'Access pre-vetted engineering talent at rates that help your organization scale efficiently. Every engineer profile displays the hourly rate you\'d pay, together with assessment insights, availability, start date, and verification status.',
+  body: 'Access pre-vetted talent at rates that help your organization scale efficiently. Every talent profile displays the hourly rate you\'d pay, together with assessment insights, availability, start date, and verification status.',
   bullets: [
     'No hidden pricing conversations.',
     'No surprise markups.',
@@ -152,7 +152,7 @@ export const PRICING_TRIAL = {
 
 export const PRICING_FOOTER_CTA = {
   title: 'Ready to Build Your Team?',
-  body: 'Access pre-vetted engineers with transparent pricing, verified profiles, and flexible engagement models.',
+  body: 'Access pre-vetted talent with transparent pricing, verified profiles, and flexible engagement models.',
   primaryCta: 'Explore Pre-vetted talent',
   primaryHref: '/sample-talent',
   secondaryCta: 'Reach out to us',
