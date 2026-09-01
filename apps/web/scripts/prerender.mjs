@@ -7,6 +7,7 @@ import puppeteer from 'puppeteer';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const webRoot = path.resolve(__dirname, '..');
 const distDir = path.join(webRoot, 'dist');
+const SITE_ORIGIN = 'https://www.bestal.co';
 const port = 4173;
 const baseUrl = `http://127.0.0.1:${port}`;
 
@@ -30,6 +31,7 @@ const STATIC_ROUTES = [
   '/free-trial-terms',
   '/cookie-policy',
   '/contact',
+  '/reach-out',
 ];
 
 const JOB_SLUGS = [
@@ -113,7 +115,7 @@ function routeToOutputFile(route) {
 
 async function writeSitemap() {
   const urls = routes.map((route) => {
-    const loc = route === '/' ? 'https://bestal.co/' : `https://bestal.co${route}`;
+    const loc = route === '/' ? `${SITE_ORIGIN}/` : `${SITE_ORIGIN}${route}`;
     return `  <url>\n    <loc>${loc}</loc>\n  </url>`;
   });
 

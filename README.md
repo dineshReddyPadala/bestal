@@ -13,15 +13,23 @@ Single web app at `apps/web` — marketing site plus admin, recruiter, and clien
 | **web** | 5173 | `npm run dev:web` | Unified app (public + all portals) |
 
 ```bash
-# Install all workspaces
-npm install
-
-# Run the web app
-npm run dev:web
-
-# Production build
+# Production build (Vite + prerender marketing HTML — required for SEO)
 npm run build:web
 ```
+
+Production **must** use `build:web` / `npm run build` in `apps/web`, not `build:spa`. The SPA-only build leaves crawlers with an empty HTML shell.
+
+Canonical host is `https://www.bestal.co`. Point the CDN / nginx to **301** `bestal.co` → `www.bestal.co`. Serve the `apps/web/dist` folder from a **production** `npm run build:web` (prerendered files first: `/about/index.html` for `/about`). Do **not** proxy the public hostname to `vite` or `vite preview` — that serves `/@vite/client` and an empty `#root`, which is what search engines currently see.
+
+See [`apps/web/nginx.conf`](apps/web/nginx.conf) for `try_files` order. Portal routes (`/admin`, `/client`, …) correctly fall back to `index.html`.
+
+After deploy, confirm source HTML (not DevTools):
+
+```bash
+curl -s https://www.bestal.co | head -60
+```
+
+The H1 and `og:` tags should appear in that output. Then submit `https://www.bestal.co/sitemap.xml` in Google Search Console.
 
 ### Public website
 

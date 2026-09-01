@@ -1,0 +1,11 @@
+{
+  "rewrites": [
+    { "source": "/admin/:path*", "destination": "/index.html" },
+    { "source": "/client/:path*", "destination": "/index.html" },
+    { "source": "/recruiter/:path*", "destination": "/index.html" },
+    { "source": "/sales/:path*", "destination": "/index.html" },
+    { "source": "/super-admin/:path*", "destination": "/index.html" },
+    { "source": "/login/:path*", "destination": "/index.html" },
+    { "source": "/login", "destination": "/index.html" }
+  ]
+}
