@@ -6,8 +6,8 @@
 export const EVIDENCE_STRIP = [
   {
     num: '01',
-    title: 'Tested by Experts',
-    body: 'An outside specialist tests every engineer. You see exactly how they scored — including what they were weak at.',
+    title: 'AI-Assessed. BesTal-reviewed',
+    body: `Powered by AI-driven evaluation and validated through BesTal's review process to deliver accurate, high-quality results.`,
   },
   {
     num: '02',
@@ -26,8 +26,8 @@ export const EVIDENCE_STRIP = [
   },
   {
     num: '05',
-    title: 'Start in Hours, Not Weeks',
-    body: 'Filter for engineers who can start now, in 24 hours, or in 48. Every start date is confirmed and dated.',
+    title: 'Know When They Can Start',
+    body: 'Every published profile shows confirmed availability upfront—from available now to a specific future start date.',
   },
   {
     num: '06',
@@ -37,7 +37,7 @@ export const EVIDENCE_STRIP = [
 ] as const;
 
 export const HOME_STATS = [
-  { value: '10', label: 'Hours free, on real work,\nbefore you commit' },
+  { value: '10', label: 'Hours free trail, on real work,\nbefore you commit' },
   { value: '100%', label: 'Working in\nyour time zone' },
   { value: '5', label: 'Areas every engineer\nis tested on' },
   { value: '7', label: 'Skill Communities' },
@@ -46,7 +46,7 @@ export const HOME_STATS = [
 export const HOME_STEPS = [
   {
     step: 1,
-    title: 'Tell us what you need',
+    title: 'Describe your requirement',
     body: 'One sentence is enough: "Two senior Snowflake engineers on Central hours, starting this week."',
   },
   {
@@ -105,7 +105,7 @@ export const HOME_BUYER_FAQ = [
   {
     question: 'What can this engineer actually do, and who says so?',
     answer:
-      'An outside specialist tested them against role-specific criteria. You read the scorecard — including what they were weak at.',
+      'An AI-Assessed. BesTal-reviewed tested them against role-specific criteria. You read the scorecard — including what they were weak at.',
   },
   {
     question: 'Who tested them, and what did they get wrong?',
@@ -279,7 +279,7 @@ export const ONBOARDING_STEPS = [
   },
   {
     step: 3,
-    title: 'Tested by an outside specialist',
+    title: 'Tested by AI-Assessed. BesTal-reviewed',
     body: 'A qualified specialist — not a BesTal recruiter — tests the engineer against role-specific criteria and scores technical depth, problem solving, collaboration and cultural fit, code quality and communication separately.',
     // fact: '[FACT: tester sourcing and qualification criteria]',
   },
@@ -388,7 +388,7 @@ export const RATE_FACTORS = [
 ] as const;
 
 export const TRIAL_STEPS = [
-  { step: 1, title: 'Pick the engineer', body: 'Any profile marked free Trial. No interview round required — the test results tell you what an interview would.' },
+  { step: 1, title: 'Pick the engineer', body: 'See a strong fit? Move directly to a trial. Prefer to interview the candidate first? Schedule an interview.' },
   { step: 2, title: 'Define the 10 hours', body: 'A specific deliverable, written success criteria, and a named manager on your side.' },
   { step: 3, title: 'They start', body: 'Your systems, your access controls, your standups, working your business hours. Most trials begin within 24 to 48 hours of confirmation.' },
   { step: 4, title: 'Decide', body: 'Continue into a paid engagement, swap for a different engineer, or stop. No charge for the 10 hours either way.' },
@@ -400,6 +400,90 @@ export const TRIAL_SETTLED = [
   { strong: 'IP is assigned to you at the point of creation', rest: ' — not on payment, not by licence.' },
   { strong: 'Stopping costs nothing.', rest: ' No continuation obligation, no notice period, no conversation about staying.' },
 ] as const;
+
+export const TRUST_PAGE = {
+  hero: {
+    label: 'Trust',
+    title: 'Trust at the Core of Every Engagement',
+    paragraphs: [
+      'At BesTal, trust is built into every stage of how we source, verify, and place talent — from candidate verification and assessment to client engagement.',
+      'Our structured processes provide greater transparency, confidence and protection before a professional joins your team, systems or projects.',
+    ],
+  },
+  pillars: [
+    {
+      id: 'verify',
+      title: 'Verify the Professional',
+      subtitle: "Know Who You're Engaging.",
+      intro:
+        'We validate key credentials to help establish candidate identity and professional credibility.',
+      items: [
+        {
+          title: 'Identity Verification',
+          body: 'Validation of identity credentials, including Aadhaar & PAN, as applicable.',
+        },
+        {
+          title: 'Employment Verification',
+          body: 'Validation of relevant employment history and professional experience.',
+        },
+        {
+          title: 'Education Verification',
+          body: 'Validation of relevant educational qualifications and credentials.',
+        },
+      ],
+    },
+    {
+      id: 'assess',
+      title: 'Assess the Capability',
+      subtitle: 'Go Beyond the Resume.',
+      intro:
+        'BesTal professionals undergo structured assessments aligned to their skills and experience, helping you evaluate demonstrated capability — not just resume claims.',
+      items: [
+        {
+          title: 'Technical Assessment',
+          body: 'Evaluation of relevant technical skills and proficiency.',
+        },
+        {
+          title: 'Assessment Identity',
+          body: 'Identity validation to confirm the professional taking the assessment is the same person being presented, preventing proxy test-taking.',
+        },
+      ],
+    },
+    {
+      id: 'protect',
+      title: 'Protect the Engagement',
+      subtitle: 'Trust Throughout the Engagement.',
+      intro:
+        'Our engagement framework is designed to protect client information, intellectual property and business interests throughout the engagement.',
+      items: [
+        {
+          title: 'Data Protection',
+          body: 'Responsible handling of candidate and client information with appropriate access controls.',
+        },
+        {
+          title: 'Confidentiality',
+          body: 'Clear expectations around the protection of confidential, proprietary and sensitive information.',
+        },
+        {
+          title: 'Client IP Protection',
+          body: 'Engagement terms are designed to establish appropriate protection of client work product and intellectual property.',
+        },
+      ],
+    },
+  ],
+  commitment: {
+    title: 'Our Commitment',
+    paragraphs: [
+      'We are committed to responsible data handling, controlled access, confidentiality and continuous process improvement.',
+      'As BesTal grows, we continue to strengthen our security, privacy, compliance and operational controls in line with recognized industry practices.',
+      'You get visibility into verification status, assessment results, availability, working hours, start date and rate — before you decide.',
+    ],
+  },
+  closing: {
+    title: 'Verified Talent. Greater Confidence.',
+    body: "Know who they are. Know what they can do. Know what's been verified — before you decide.",
+  },
+} as const;
 
 export const TRUST_STATS = [
   'Gartner projects that by 2028, one in four candidate profiles worldwide will be fake. (Gartner, 2025)',
@@ -489,7 +573,7 @@ export const COMMUNITY_DETAILS = [
 ] as const;
 
 export const FOR_ENGINEERS_ASK = [
-  { title: 'A real technical test', body: "By an outside specialist in your field — not a recruiter, not a generic aptitude quiz. It's demanding, and not everyone passes." },
+  { title: 'A real technical test', body: "By AI-Assessed. BesTal-reviewed in your field — not a recruiter, not a generic aptitude quiz. It's demanding, and not everyone passes." },
   { title: 'Verification', body: 'Identity, education and employment, independently checked. Your documents are never shared with clients — only the status.' },
   { title: 'A full day in a US time zone', body: "Not a few hours of overlap. A committed business day in Eastern, Central, Mountain or Pacific — because that's what clients are actually buying." },
   { title: 'An honest start date', body: "If you say you can start in 24 hours, we'll hold you to it. Start dates are reconfirmed regularly." },
@@ -509,9 +593,9 @@ export const FOOTER_TAGLINE =
 
 export const ABOUT_HERO = {
   title: 'About us',
-  subtitle: 'We help organizations build and scale their technology workforce.',
+  subtitle: 'Technology talent should be easier to evaluate before you hire it.',
   body:
-    'BesTal supports clients globally with digital engineering talent — freelancers, contractors, dedicated engineers, and managed teams — so businesses can acquire the skills and capacity they need, when they need them.',
+    'BesTal gives organizations access to Pre-Vetted Technology Professionals with assessment results, verification status, rates, availability and working hours visible upfront. From individual specialists to managed teams, we help technology leaders add the skills and capacity they need—without carrying unnecessary bench.',
   primaryCta: 'See how it works',
 } as const;
 
@@ -737,7 +821,7 @@ export const HIW_SEEKER = {
     },
     {
       label: 'Who runs the test',
-      value: 'An outside specialist',
+      value: 'AI-Assessed. BesTal-reviewed',
       note: 'Stage 03 is not scored by BesTal.',
     },
   ],
@@ -757,7 +841,7 @@ export const HIW_SEEKER = {
     },
     {
       num: '03',
-      title: 'Tested by an Outside Specialist',
+      title: 'Tested by AI-Assessed. BesTal-reviewed',
       body: 'Assessed by someone who does not work for us.',
       showArrow: true,
     },
@@ -827,10 +911,10 @@ export const FAQ_PAGE = {
         {
           question: 'What is BesTal?',
           answer:
-            'BesTal is a talent platform that helps organizations find and engage pre-vetted digital engineering talent, including freelancers, contractors, dedicated engineers, and managed teams.',
+            'BesTal is a talent platform that helps organizations find and engage Pre-Vetted Technology Professionals, including freelancers, contractors, dedicated engineers, and managed teams.',
         },
         {
-          question: 'What does "pre-vetted" mean?',
+          question: 'What does "Pre-Vetted" mean?',
           answer:
             'Every engineer undergoes a specialist-led assessment before being listed on the platform. Engineers are evaluated across technical depth, problem solving, architecture, code quality, and communication.',
         },
@@ -1051,7 +1135,7 @@ export const FAQ_PAGE = {
 export const HOME_FAQ_QUESTIONS = [
   'Can I see assessment results before speaking with an engineer?',
   "What information is available on an engineer's profile?",
-  'What does "pre-vetted" mean?',
+  'What does "Pre-Vetted" mean?',
   'How are engineers verified?',
   'Do engineers work in US time zones?',
 ] as const;

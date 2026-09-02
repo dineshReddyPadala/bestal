@@ -16,7 +16,12 @@ import { PageMeta } from '../../components/PageMeta';
 import { MktShell } from '../../components/marketing/MktShell';
 import { ForwardArrow } from '../../components/ui/ForwardArrow';
 import { useFreeTrialHours } from '../../hooks/api/useTrialPolicy';
-import { images } from '../../data/homeCopy';
+import { howweassesscta } from '../../data/homeCopy';
+import {
+  CTA_BANNER_PHOTO_DISPLAY_HEIGHT_PX,
+  CTA_BANNER_PHOTO_DISPLAY_WIDTH_PX,
+  CTA_BANNER_PHOTO_SIZES,
+} from '../../lib/brand';
 import { HIW_HERO, HIW_SEEKER } from '../../lib/marketing-copy';
 import { buildHiwClient } from '../../lib/marketing-trial-copy';
 import { PAGE_SEO } from '../../lib/marketing-seo';
@@ -255,7 +260,15 @@ export function HowItWorksPage() {
               </div>
             </div>
             <div className="mkt-cta-photo">
-              <img src={images.cta} alt="Team reviewing engineer evidence together" />
+              <img
+                src={howweassesscta.cta}
+                alt="Team reviewing engineer evidence together"
+                width={CTA_BANNER_PHOTO_DISPLAY_WIDTH_PX}
+                height={CTA_BANNER_PHOTO_DISPLAY_HEIGHT_PX}
+                sizes={CTA_BANNER_PHOTO_SIZES}
+                decoding="async"
+                fetchPriority="low"
+              />
             </div>
           </div>
         </MktShell>

@@ -64,7 +64,7 @@ export type DemoEngineer = {
 };
 
 const PLACEHOLDER_NOTE =
-  '[PLACEHOLDER: tester note pending — retains structure of a scored, written evaluation from an outside specialist.]';
+  '[PLACEHOLDER: tester note pending — retains structure of a scored, written evaluation from AI-Assessed. BesTal-reviewed.]';
 
 const ENGINEER_PREVIOUS_COMPANIES: Partial<Record<string, string>> = {
   'jessica-m': 'Microsoft',
@@ -720,11 +720,30 @@ const LANDING_PROFILE_TIMEZONES: Record<string, string> = {
   'james-h': 'UTC', // James H — US Mountain
 };
 
+/** Homepage hero slider — anonymized prior employers (no real company names). */
+const LANDING_PROFILE_PREVIOUS_COMPANIES: Partial<Record<string, string>> = {
+  'divya-k': 'Global Cloud Company',
+  'shiva-g': 'Fortune 500 Retail',
+  'sai-k': 'Global SaaS',
+  'saran-p': 'Big Four Consulting',
+  'jaya-k': 'Global Cloud Company',
+  'amanda-l': 'Fortune 500 Retail',
+  'prashanth-k': 'Global SaaS',
+  'emily-r': 'Big Four Consulting',
+  'michael-t': 'Global Cloud Company',
+  'jessica-m': 'Fortune 500 Retail',
+  'david-w': 'Global SaaS',
+  'james-h': 'Big Four Consulting',
+};
+
 export const LANDING_PROFILE_SLIDES: CommunityProfileSlide[] = LANDING_ENGINEER_IDS.map(
   ({ community, description, id }) => {
     const base = DEMO_ENGINEERS.find((engineer) => engineer.id === id)!;
     const timezone = LANDING_PROFILE_TIMEZONES[id] ?? base.timezone;
-    const slideEngineer = withEngineerTimezone(base, timezone);
+    const slideEngineer = {
+      ...withEngineerTimezone(base, timezone),
+      previousCompany: LANDING_PROFILE_PREVIOUS_COMPANIES[id] ?? base.previousCompany ?? null,
+    };
 
     return {
       community,

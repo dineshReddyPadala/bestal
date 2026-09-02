@@ -133,7 +133,7 @@ export function RatesPage() {
         </MktShell>
       </section>
 
-      <section className="mkt-pricing-subnav-band" aria-label="Pricing navigation">
+      {/* <section className="mkt-pricing-subnav-band" aria-label="Pricing navigation">
         <MktShell className="mkt-pricing-subnav justify-center">
           {heroPillars.map((pillar) => (
             <button
@@ -146,7 +146,7 @@ export function RatesPage() {
             </button>
           ))}
         </MktShell>
-      </section>
+      </section> */}
 
       <section id="know-the-engineer" className="mkt-section mkt-pricing-transparent">
         <MktShell>

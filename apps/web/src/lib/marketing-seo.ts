@@ -8,7 +8,7 @@ export const DEFAULT_OG_IMAGE_URL = `${SITE_ORIGIN}${DEFAULT_OG_IMAGE_PATH}`;
 export const DEFAULT_TITLE = 'BesTal — Proven Talent. Ready to Perform.';
 
 export const DEFAULT_DESCRIPTION =
-  'Pre-vetted Talent who work your hours. See their test results, their rate and their start date up front — then try them free before you commit.';
+  'Pre-Vetted Talent who work your hours. See their test results, their rate and their start date up front — then try them free before you commit.';
 
 export function canonicalUrlForPath(pathname: string): string {
   const normalized = pathname.startsWith('/') ? pathname : `/${pathname}`;
@@ -44,7 +44,7 @@ export const PAGE_SEO = {
   trust: {
     title: 'Trust & Verification — How BesTal Verifies Identity and Competence',
     description:
-      'Identity bound to assessment, independent education and employment checks, written exclusivity declarations, IP assigned at creation. What BesTal verifies and what it deliberately does not publish.',
+      'Trust at the core of every BesTal engagement — professional verification, structured assessment, and engagement protections before talent joins your team.',
   },
   rates: {
     title: 'How BesTal Pricing Works — Transparent Hourly Pricing',
@@ -74,12 +74,12 @@ export const PAGE_SEO = {
   about: {
     title: 'About Us | BesTal',
     description:
-      'BesTal helps organizations build and scale their technology workforce with pre-vetted specialists, external evaluation scorecards, and transparent pricing before you interview.',
+      'BesTal helps organizations build and scale their technology workforce with Pre-Vetted specialists, external evaluation scorecards, and transparent pricing before you interview.',
   },
   faq: {
     title: 'Frequently Asked Questions | BesTal',
     description:
-      'Answers about BesTal — pre-vetted talent, team collaboration, onboarding, free trials, and engagement models. Can\'t find what you need? Email connect@bestal.co.',
+      'Answers about BesTal — Pre-Vetted Talent, team collaboration, onboarding, free trials, and engagement models. Can\'t find what you need? Email connect@bestal.co.',
   },
   contact: {
     title: 'Talk to us | BesTal',
@@ -99,7 +99,7 @@ export const PAGE_SEO = {
   forEngineers: {
     title: 'For Engineers | BesTal',
     description:
-      'Get tested once by an outside specialist. Your results, rate, start date and US hours go on your profile — clients read the evidence before they contact you.',
+      'Get tested once by AI-Assessed. BesTal-reviewed. Your results, rate, start date and US hours go on your profile — clients read the evidence before they contact you.',
   },
   privacyPolicy: {
     title: 'Privacy Policy | BesTal',
