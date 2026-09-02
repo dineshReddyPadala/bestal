@@ -4,7 +4,7 @@ export const PRICING_HERO = {
     { text: 'Know the Talent.', em: false },
     { text: 'Know the Rate. Before You Decide.', em: true },
   ] as const,
-  body: 'Every published profile shows confirmed availability upfront—from available now to a specific future start date.',
+  body: 'Every profile shows the hourly rate alongside assessment results, verification status, availability and working hours—so you can evaluate capability and cost together.',
   bullets: [
     'No hidden pricing conversations.',
     'No surprise markups.',
