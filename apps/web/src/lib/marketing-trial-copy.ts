@@ -33,7 +33,7 @@ export function buildHomeStats(
   skillCommunityCount?: number,
 ) {
   return HOME_STATS.map((stat) => {
-    if (stat.label.startsWith('Hours free')) {
+    if (stat.label.startsWith('Hours free trial')) {
       return { ...stat, value: String(freeTrialHours) };
     }
     if (stat.label === 'Skill Communities' && skillCommunityCount != null && skillCommunityCount > 0) {

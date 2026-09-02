@@ -4,8 +4,8 @@ import { useMemo, useState } from 'react';
 import { MktShell } from '../../components/marketing/MktShell';
 import { PageMeta } from '../../components/PageMeta';
 import { ForwardArrow } from '../../components/ui/ForwardArrow';
-import { images } from '../../data/homeCopy';
-import { ABOUT_HERO_IMAGE_SRC } from '../../lib/brand';
+import { aboutcta } from '../../data/homeCopy';
+import { ABOUT_HERO_IMAGE_DISPLAY_HEIGHT_PX, ABOUT_HERO_IMAGE_DISPLAY_WIDTH_PX, ABOUT_HERO_IMAGE_SRC } from '../../lib/brand';
 import { useFreeTrialHours } from '../../hooks/api/useTrialPolicy';
 import {
   ABOUT_CTA,
@@ -93,7 +93,7 @@ function AboutCollapsibleCard({
     >
       <button
         type="button"
-        className="mkt-about-card-toggle"
+        className=""
         aria-expanded={open}
         onClick={() => setOpen((value) => !value)}
       >
@@ -124,8 +124,8 @@ export function AboutPage() {
       <section className="mkt-white mkt-section mkt-about-hero">
         <MktShell className="mkt-g2 mkt-about-hero-grid">
           <div className="mkt-about-hero-copy">
-            <h1>{ABOUT_HERO.title}</h1>
-            <p className="mkt-about-hero-subtitle">{ABOUT_HERO.subtitle}</p>
+            <div className="mkt-hiw-label mb-2">{ABOUT_HERO.title}</div>
+            <h1  className="mkt-about-hero-subtitle">{ABOUT_HERO.subtitle}</h1>
             <p className="mkt-lead howitworks-body-style">{ABOUT_HERO.body}</p>
             <div className="mkt-actions">
               <Link to="/how-it-works" className="mkt-btn mkt-btn-primary">
@@ -138,6 +138,11 @@ export function AboutPage() {
             <img
               src={ABOUT_HERO_IMAGE_SRC}
               alt="Technology professionals collaborating in a modern office"
+              width={ABOUT_HERO_IMAGE_DISPLAY_WIDTH_PX}
+              height={ABOUT_HERO_IMAGE_DISPLAY_HEIGHT_PX}
+              sizes="(min-width: 900px) 450px, (min-width: 640px) 28rem, 100vw"
+              decoding="async"
+              fetchPriority="high"
             />
           </div>
         </MktShell>
@@ -200,7 +205,7 @@ export function AboutPage() {
             <p className="howitworks-body-style">{ABOUT_CTA.body}</p>
           </div>
           <div className="mkt-about-cta-photo mkt-about-closing-photo">
-            <img src={images.cta} alt="Professional working at a desk with multiple monitors" />
+            <img src={aboutcta.cta} alt="Professional working at a desk with multiple monitors" />
           </div>
         </MktShell>
       </section>

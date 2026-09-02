@@ -193,7 +193,7 @@ export function ClientCandidateSearchCard({
                 tone="success"
                 icon={<CheckCircle2 className="h-3 w-3 shrink-0" />}
                 iconPosition="end"
-                label="Tech Evaluation"
+                label="Technical Evaluation"
               />
             ) : (
               <StatusRow
