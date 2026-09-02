@@ -21,7 +21,7 @@ export const TERMS_OF_SERVICE: LegalDocument = {
       blocks: [
         {
           type: 'paragraph',
-          text: 'BesTal is a talent platform that connects organizations with pre-vetted digital engineering professionals, including freelancers, contractors, dedicated engineers, and managed teams.',
+          text: 'BesTal is a talent platform that connects organizations with Pre-Vetted Technology Professionals, including freelancers, contractors, dedicated engineers, and managed teams.',
         },
         {
           type: 'paragraph',

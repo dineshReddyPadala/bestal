@@ -16,7 +16,7 @@ export type Step = { number: string; title: string };
 
 export const hero = {
   h1: 'Proven Talent. Ready to Perform.',
-  sub: 'Pre-vetted technology professionals, assessed by external specialists and background verified. See the scorecard, the hourly rate, the availability and the hours they overlap with your team — before you schedule a single interview.',
+  sub: 'Pre-Vetted Technology Professionals, assessed by external specialists and background verified. See the scorecard, the hourly rate, the availability and the hours they overlap with your team — before you schedule a single interview.',
   primaryCta: 'Find Talent',
   secondaryCta: 'See a sample scorecard',
   micro: 'No recruiter call required to see any of it.',
@@ -276,4 +276,19 @@ export const images = {
   hero: '/home-hero.jpg',
   cta: '/dd32bec6-6050-435f-87a9-48ec1374c8ef.jpg',
   avatar: '/home-avatar.jpg',
+};
+
+export const howweassesscta = {
+  hero: '/how_it_assess_cta.png',
+  cta: '/how_it_assess_cta.png',
+};
+
+export const aboutcta = {
+  hero: '/home-hero.jpg',
+  cta: '/about_us_horizonal_img.jpg',
+};
+
+export const howitassesscta = {
+  hero: '/home-hero.jpg',
+  cta: '/team-working-together-project (2).jpg',
 };

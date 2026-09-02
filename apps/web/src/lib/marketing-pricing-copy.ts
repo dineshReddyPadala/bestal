@@ -1,10 +1,10 @@
 export const PRICING_HERO = {
   label: 'Pricing & Engagement Models',
   titleLines: [
-    { text: 'Competitive Rates.', em: false },
-    { text: 'No Quality Compromise.', em: true },
+    { text: 'Know the Talent.', em: false },
+    { text: 'Know the Rate. Before You Decide.', em: true },
   ] as const,
-  body: 'Access pre-vetted talent at rates that help your organization scale efficiently. Every talent profile displays the hourly rate you\'d pay, together with assessment insights, availability, start date, and verification status.',
+  body: 'Every published profile shows confirmed availability upfront—from available now to a specific future start date.',
   bullets: [
     'No hidden pricing conversations.',
     'No surprise markups.',
@@ -152,8 +152,8 @@ export const PRICING_TRIAL = {
 
 export const PRICING_FOOTER_CTA = {
   title: 'Ready to Build Your Team?',
-  body: 'Access pre-vetted talent with transparent pricing, verified profiles, and flexible engagement models.',
-  primaryCta: 'Explore Pre-vetted talent',
+  body: 'Access Pre-Vetted Talent with transparent pricing, verified profiles, and flexible engagement models.',
+  primaryCta: 'Explore Pre-Vetted Talent',
   primaryHref: '/sample-talent',
   secondaryCta: 'Reach out to us',
   secondaryHref: '/reach-out',

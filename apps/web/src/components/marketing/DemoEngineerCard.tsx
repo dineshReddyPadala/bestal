@@ -118,7 +118,7 @@ function LandingProfileCardBody({
           <div className={cn('mkt-lpc-score-slot', !showScore && 'is-empty')}>
             {showScore ? (
               <div className="mkt-lpc-score">
-                <div className="mkt-lpc-score-l">Bestal Score</div>
+                <div className="mkt-lpc-score-l">BesTal Score</div>
                 <div className="mkt-lpc-score-v">
                   <span className="mkt-lpc-star" aria-hidden="true">
                     ★
@@ -184,11 +184,11 @@ function LandingProfileCardBody({
 
           <div className="mkt-lpc-verify">
             <div className="mkt-lpc-verify-row">
-              <span>Tested By Experts</span>
+              <span>AI-Assessed</span>
               <VerifyCheckIcon />
             </div>
             <div className="mkt-lpc-verify-row">
-              <span>Tech Evaluation</span>
+              <span>Technical Evaluation</span>
               <VerifyCheckIcon />
             </div>
             <div className="mkt-lpc-verify-row">
