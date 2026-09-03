@@ -1,3 +1,5 @@
+import { publicJobs } from '@bestal/mock-data';
+
 /** Public marketing origin. Apex `bestal.co` should 301 here at the CDN. */
 export const SITE_ORIGIN = 'https://www.bestal.co';
 
@@ -145,4 +147,5 @@ export const MARKETING_ROUTES = [
   '/contact',
   '/reach-out',
   '/careers',
+  ...publicJobs.map((job) => `/careers/${job.slug}` as const),
 ] as const;
