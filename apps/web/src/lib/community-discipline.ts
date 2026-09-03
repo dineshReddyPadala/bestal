@@ -7,7 +7,8 @@ export function communityToDiscipline(name: string): string {
     'DevOps & cloud': 'Cloud & Platform',
     'Full Stack': 'Full Stack & Engineering',
     'Full stack': 'Full Stack & Engineering',
-    SAP: 'SAP',
+    SAP: 'Enterprise Apps',
+    'Enterprise Apps': 'Enterprise Apps',
     Salesforce: 'Salesforce',
     ServiceNow: 'ServiceNow',
     Others: 'All Disciplines',
@@ -27,5 +28,6 @@ export function disciplineToCommunityName(discipline: string): string {
   if (discipline === 'Full Stack & Engineering') return 'Full Stack';
   if (discipline === 'Cloud & Platform') return 'DevOps & Cloud';
   if (discipline === 'Machine Learning') return 'AI/ML';
+  if (discipline === 'Enterprise Apps') return 'Enterprise Apps';
   return discipline;
 }

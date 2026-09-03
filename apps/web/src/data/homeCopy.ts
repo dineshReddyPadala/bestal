@@ -63,7 +63,7 @@ export const skillCommunities = {
     { name: 'Data & AI' },
     { name: 'Cloud & Platform' },
     { name: 'Full Stack & Engineering' },
-    { name: 'SAP' },
+    { name: 'Enterprise Apps' },
     { name: 'ServiceNow' },
     { name: 'Salesforce' },
     { name: 'Cybersecurity' },
@@ -157,7 +157,8 @@ export const skillCommunitiesDraft: Record<string, string> = {
     'Cloud architecture, platform engineering, DevOps and SRE. Assessed on infrastructure design, automation and operational reliability.',
   'Full Stack & Engineering':
     'Front-end, back-end and full stack product engineering. Assessed on system design, code quality and delivery inside existing codebases.',
-  SAP: 'Functional and technical capability across core modules and S/4HANA programmes. Assessed on configuration, integration and migration work.',
+  'Enterprise Apps':
+    'Enterprise application specialists across SAP, Oracle, OneStream, Anaplan, Workday, and Microsoft Dynamics. Assessed on configuration, integration, and programme delivery.',
   ServiceNow:
     'Implementation, development and administration across ITSM and adjacent workflows. Assessed on configuration, scripting and platform governance.',
   Salesforce:

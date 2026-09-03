@@ -184,7 +184,7 @@ function LandingProfileCardBody({
 
           <div className="mkt-lpc-verify">
             <div className="mkt-lpc-verify-row">
-              <span>AI-Assessed</span>
+              <span>AI-Powered Assessment</span>
               <VerifyCheckIcon />
             </div>
             <div className="mkt-lpc-verify-row">
