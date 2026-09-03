@@ -448,7 +448,8 @@ export function SampleTalentPage() {
   const [unlockDiscipline, setUnlockDiscipline] = useState<string | null>(null);
 
   const disciplineParam = searchParams.get('discipline');
-  const listingDiscipline = isDiscipline(disciplineParam) ? disciplineParam : null;
+  const normalizedDiscipline = disciplineParam ? communityToDiscipline(disciplineParam) : null;
+  const listingDiscipline = isDiscipline(normalizedDiscipline) ? normalizedDiscipline : null;
 
   useEffect(() => {
     if (

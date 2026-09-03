@@ -131,7 +131,7 @@ export const HOME_COMMUNITIES = [
   { name: 'Data & AI', body: 'Engineering, analytics, machine learning and applied AI.' },
   { name: 'Cloud & Platform', body: 'Cloud architecture, platform engineering, DevOps and SRE.' },
   { name: 'Full Stack & Engineering', body: 'Front-end, back-end and full-stack product engineering.' },
-  { name: 'SAP', body: 'Functional and technical roles across S/4HANA programmes.' },
+  { name: 'Enterprise Apps', body: 'SAP | Oracle ERP | Oracle EPM | OneStream | Anaplan | Workday | Microsoft Dynamics' },
   { name: 'ServiceNow', body: 'Implementation, development and administration across ITSM.' },
   { name: 'Salesforce', body: 'Admin, development and configuration across CRM.' },
   { name: 'Cybersecurity', body: 'Security engineering, cloud security, identity and governance.' },
@@ -197,20 +197,17 @@ export const HOME_COMMUNITY_CARDS: HomeCommunityCard[] = [
     ],
   },
   {
-    name: 'SAP',
-    body: 'Functional and technical roles across S/4HANA programmes.',
-    badges: ['Functional', 'Technical'],
+    name: 'Enterprise Apps',
+    body: 'Enterprise application specialists across leading ERP and planning platforms.',
+    badges: ['ERP', 'EPM'],
     tags: [
-      'S/4HANA',
-      'ABAP',
-      'Fiori',
-      'SAP BTP',
-      'Integration',
-      'FI/CO',
-      'MM',
-      'SD',
-      'Basis',
-      'Migration',
+      'SAP',
+      'Oracle ERP',
+      'Oracle EPM',
+      'OneStream',
+      'Anaplan',
+      'Workday',
+      'Microsoft Dynamics',
     ],
   },
   {
@@ -414,7 +411,7 @@ export const TRUST_PAGE = {
     {
       id: 'verify',
       title: 'Verify the Professional',
-      subtitle: "Know Who You're Engaging.",
+      subtitle: "Know Who You are Engaging.",
       intro:
         'We validate key credentials to help establish candidate identity and professional credibility.',
       items: [
@@ -427,8 +424,8 @@ export const TRUST_PAGE = {
           body: 'Validation of relevant employment history and professional experience.',
         },
         {
-          title: 'Education Verification',
-          body: 'Validation of relevant educational qualifications and credentials.',
+          title: 'Legal Checks',
+          body: 'Verification of criminal records, litigation history and court records, as applicable. replace Education Verification with Legal Checks.'
         },
       ],
     },
@@ -566,7 +563,7 @@ export const COMMUNITY_DETAILS = [
   { num: '01', name: 'Data & AI', body: 'Data Engineers · Databricks · Snowflake · Analytics Engineers · Data Scientists · ML Engineers · GenAI Engineers · Agentic AI · MLOps · AI Architects' },
   { num: '02', name: 'Cloud & Platform', body: 'AWS · Azure · GCP · DevOps · Site Reliability Engineers · Kubernetes · Platform Engineers · Cloud Architects' },
   { num: '03', name: 'Full Stack', body: 'React · Angular · Node · Java · .NET · Python · Mobile · QA Automation' },
-  { num: '04', name: 'SAP', body: 'S/4HANA · FICO · MM · SD · ABAP · Basis · BTP · SuccessFactors · SAP Analytics · Architects' },
+  { num: '04', name: 'Enterprise Apps', body: 'SAP · Oracle ERP · Oracle EPM · OneStream · Anaplan · Workday · Microsoft Dynamics' },
   { num: '05', name: 'ServiceNow', body: 'Developers · Architects · ITSM · ITOM · CSM · HRSD · SecOps · Integration Specialists' },
   { num: '06', name: 'Salesforce', body: 'Developers · Administrators · Architects · Marketing Cloud · Service Cloud · Sales Cloud · CPQ · Data Cloud' },
   { num: '07', name: 'Cybersecurity', body: 'SOC & Detection Engineers · IAM · Cloud Security · Application Security · Security Engineering · GRC · Security Architects' },
@@ -789,24 +786,36 @@ export const HIW_SEEKER = {
     {
       range: '01 – 02',
       label: 'Identified and screened',
+      detail:
+        'Candidates are sourced into a specialist community and screened on experience, stack depth, and stated availability.',
+      stageNums: ['01', '02'],
       width: 100,
       tone: 'light' as const,
     },
     {
       range: '03 – 04',
       label: 'Tested externally, then verified',
+      detail:
+        'An independent specialist assesses technical depth, then identity and employment claims are verified.',
+      stageNums: ['03', '04'],
       width: 88,
       tone: 'mid' as const,
     },
     {
       range: '05 – 06',
       label: 'Priced and time zone assigned',
+      detail:
+        'The hourly rate is set and published, and working hours are committed against a US time zone.',
+      stageNums: ['05', '06'],
       width: 76,
       tone: 'deep' as const,
     },
     {
       range: '07 – 08',
       label: 'Published and maintained',
+      detail:
+        'The profile goes live only when every prior stage is complete, then availability and hours stay current.',
+      stageNums: ['07', '08'],
       width: 64,
       tone: 'dark' as const,
     },
