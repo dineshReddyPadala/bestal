@@ -17,6 +17,11 @@ import {
 } from '../../lib/demo-engineers';
 import { PUBLIC_SKILL_COMMUNITIES } from '../../data/publicSkillCommunities';
 import { images } from '../../data/homeCopy';
+import {
+  CTA_BANNER_PHOTO_DISPLAY_HEIGHT_PX,
+  CTA_BANNER_PHOTO_DISPLAY_WIDTH_PX,
+  CTA_BANNER_PHOTO_SIZES,
+} from '../../lib/brand';
 import { PAGE_SEO } from '../../lib/marketing-seo';
 import { cn } from '@bestal/shared-utils';
 import { formatDimensionScoreDisplay } from '../../lib/score-display';
@@ -78,8 +83,7 @@ export function HomePage() {
               Ready to Perform.
             </h1>
             <p className="mkt-lead mt-[26px] max-w-[540px]">
-              Pre-vetted Talent who work your hours. See their test results, their rate and their start
-              date up front — Try them free before commit.
+            Pre-Vetted Technology talent that works your hours. See assessment results, hourly rates and confirmed availability upfront—then see them perform before you commit.
             </p>
             <div className="mkt-actions mt-9">
               <Link to="/sample-talent" className="mkt-btn mkt-btn-primary mkt-btn-lg">
@@ -388,6 +392,11 @@ export function HomePage() {
               <img
                 src={images.cta}
                 alt="A team reviewing engineer evidence together at a table"
+                width={CTA_BANNER_PHOTO_DISPLAY_WIDTH_PX}
+                height={CTA_BANNER_PHOTO_DISPLAY_HEIGHT_PX}
+                sizes={CTA_BANNER_PHOTO_SIZES}
+                decoding="async"
+                fetchPriority="low"
               />
             </div>
           </div>

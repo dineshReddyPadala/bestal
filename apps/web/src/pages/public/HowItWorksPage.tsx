@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { cn } from '@bestal/shared-utils';
 import {
@@ -16,7 +16,14 @@ import { PageMeta } from '../../components/PageMeta';
 import { MktShell } from '../../components/marketing/MktShell';
 import { ForwardArrow } from '../../components/ui/ForwardArrow';
 import { useFreeTrialHours } from '../../hooks/api/useTrialPolicy';
-import { images } from '../../data/homeCopy';
+import { useMarketingInView } from '../../hooks/useMarketingReveal';
+import { useAutoCycleIndex } from '../../hooks/useMarketingTouchViewport';
+import { howweassesscta } from '../../data/homeCopy';
+import {
+  CTA_BANNER_PHOTO_DISPLAY_HEIGHT_PX,
+  CTA_BANNER_PHOTO_DISPLAY_WIDTH_PX,
+  CTA_BANNER_PHOTO_SIZES,
+} from '../../lib/brand';
 import { HIW_HERO, HIW_SEEKER } from '../../lib/marketing-copy';
 import { buildHiwClient } from '../../lib/marketing-trial-copy';
 import { PAGE_SEO } from '../../lib/marketing-seo';
@@ -89,6 +96,81 @@ function HiWStagesGrid({
         ))}
       </div>
     </div>
+  );
+}
+
+function HiWSeekerSection() {
+  const funnelSection = useMarketingInView<HTMLDivElement>(0.2, true);
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const cycleIndex = useAutoCycleIndex(
+    HIW_SEEKER.funnel.length,
+    2800,
+    funnelSection.inView && hoveredIndex === null && selectedIndex === null,
+  );
+  const activeIndex = hoveredIndex ?? selectedIndex ?? cycleIndex;
+  const activeStep = HIW_SEEKER.funnel[activeIndex] ?? HIW_SEEKER.funnel[0];
+
+  return (
+    <div ref={funnelSection.ref} className="mkt-hiw-v3-seeker-layout">
+      <div className="mkt-hiw-v3-funnel-wrap">
+          <p className="mkt-hiw-v3-funnel-label">{HIW_SEEKER.funnelLabel}</p>
+          <div
+            className={cn(
+              'mkt-hiw-v3-funnel',
+              funnelSection.inView && 'is-in-view',
+              (hoveredIndex !== null || selectedIndex !== null) && 'has-active-step',
+            )}
+            onMouseLeave={() => setHoveredIndex(null)}
+          >
+            {HIW_SEEKER.funnel.map((step, index) => (
+              <div
+                key={step.range}
+                className={cn('mkt-hiw-v3-funnel-step', index === activeIndex && 'is-active')}
+              >
+                <span className="mkt-hiw-v3-funnel-range">{step.range}</span>
+                <button
+                  type="button"
+                  className={cn('mkt-hiw-v3-funnel-bar', `is-${step.tone}`)}
+                  style={{ width: `${step.width}%` }}
+                  aria-pressed={index === activeIndex}
+                  aria-label={`${step.range}: ${step.label}`}
+                  onMouseEnter={() => setHoveredIndex(index)}
+                  onFocus={() => setHoveredIndex(index)}
+                  onBlur={() => setHoveredIndex(null)}
+                  onClick={() =>
+                    setSelectedIndex((current) => (current === index ? null : index))
+                  }
+                >
+                  {step.label}
+                </button>
+              </div>
+            ))}
+          </div>
+          <p className="mkt-hiw-v3-funnel-note" aria-live="polite">
+            {activeStep.detail}
+          </p>
+        </div>
+
+        <div className="mkt-hiw-v3-stat-cards">
+          {HIW_SEEKER.stats.map((stat, index) => {
+            const Icon = index === 0 ? ShieldCheck : UserCheck;
+            const isActive = index === 0 || (index === 1 && activeIndex === 1);
+
+            return (
+              <article
+                key={stat.label}
+                className={cn('mkt-hiw-v3-stat-card', isActive && 'is-active')}
+              >
+                <Icon className="mkt-hiw-v3-stat-icon" aria-hidden="true" />
+                <p className="mkt-hiw-v3-stat-label">{stat.label}</p>
+                <p className="mkt-hiw-v3-stat-value">{stat.value}</p>
+                <p className="mkt-hiw-v3-stat-note">{stat.note}</p>
+              </article>
+            );
+          })}
+        </div>
+      </div>
   );
 }
 
@@ -255,7 +337,15 @@ export function HowItWorksPage() {
               </div>
             </div>
             <div className="mkt-cta-photo">
-              <img src={images.cta} alt="Team reviewing engineer evidence together" />
+              <img
+                src={howweassesscta.cta}
+                alt="Team reviewing engineer evidence together"
+                width={CTA_BANNER_PHOTO_DISPLAY_WIDTH_PX}
+                height={CTA_BANNER_PHOTO_DISPLAY_HEIGHT_PX}
+                sizes={CTA_BANNER_PHOTO_SIZES}
+                decoding="async"
+                fetchPriority="low"
+              />
             </div>
           </div>
         </MktShell>
@@ -269,39 +359,7 @@ export function HowItWorksPage() {
             intro={HIW_SEEKER.intro}
           />
 
-          <div className="mkt-hiw-v3-seeker-layout">
-            <div className="mkt-hiw-v3-funnel-wrap">
-              <p className="mkt-hiw-v3-funnel-label">{HIW_SEEKER.funnelLabel}</p>
-              <div className="mkt-hiw-v3-funnel">
-                {HIW_SEEKER.funnel.map((step) => (
-                  <div key={step.range} className="mkt-hiw-v3-funnel-step">
-                    <span className="mkt-hiw-v3-funnel-range">{step.range}</span>
-                    <div
-                      className={cn('mkt-hiw-v3-funnel-bar', `is-${step.tone}`)}
-                      style={{ width: `${step.width}%` }}
-                    >
-                      {step.label}
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <p className="mkt-hiw-v3-funnel-note">{HIW_SEEKER.funnelNote}</p>
-            </div>
-
-            <div className="mkt-hiw-v3-stat-cards">
-              {HIW_SEEKER.stats.map((stat, index) => {
-                const Icon = index === 0 ? ShieldCheck : UserCheck;
-                return (
-                  <article key={stat.label} className="mkt-hiw-v3-stat-card">
-                    <Icon className="mkt-hiw-v3-stat-icon" aria-hidden="true" />
-                    <p className="mkt-hiw-v3-stat-label">{stat.label}</p>
-                    <p className="mkt-hiw-v3-stat-value">{stat.value}</p>
-                    <p className="mkt-hiw-v3-stat-note">{stat.note}</p>
-                  </article>
-                );
-              })}
-            </div>
-          </div>
+          <HiWSeekerSection />
 
           <HiWStagesGrid
             label={HIW_SEEKER.stagesLabel}

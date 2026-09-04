@@ -49,14 +49,15 @@ function SampleTalentBrowsePage({ onDisciplineClick }: SampleTalentBrowsePagePro
       <section className="mkt-white mkt-section mkt-st-comm-hero">
         <MktShell className="mkt-g2">
           <div className="mkt-st-comm-copy">
-            <div className="mkt-st-comm-label">Engineering Communities</div>
+            <div className="mkt-st-comm-label">Pre-Vetted Talent</div>
             <h1 className="mkt-st-comm-title">
               Engineers, organised by{' '}
               <span className="mkt-st-comm-highlight">discipline</span>
             </h1>
             <p className="mkt-st-comm-lead howitworks-body-style">
-              Complete profiles in the real format — test results, verification status, rate, start
-              date and assigned time zone, exactly as they appear in the platform.
+              Pre-Vetted Technology Professional · BesTal Score · Technical Evaluation · Background
+              Verified · Confirmed Availability · U.S. Time Zone · Hourly Rate — exactly as they appear
+              on the platform.
             </p>
             <p className="mkt-st-comm-lead howitworks-body-style">
               The engineers below are fictional. They show the structure and depth of the evidence,
@@ -248,8 +249,9 @@ function SampleTalentListingPage({ initialDiscipline }: SampleTalentListingPageP
               own tests and its own outside testers.
             </p>
             <p className="mkt-lead mt-4 mkt-eng-banner-copy howitworks-body-style">
-              Complete profiles in the real format — test results, verification status, rate, start date
-              and assigned time zone. The engineers below are fictional demos of the evidence structure.
+              Pre-Vetted Technology Professional · BesTal Score · Technical Evaluation · Background
+              Verified · Confirmed Availability · U.S. Time Zone · Hourly Rate. The engineers below are
+              fictional demos of the evidence structure.
             </p>
           </div>
         </MktShell>
@@ -325,7 +327,7 @@ function SampleTalentListingPage({ initialDiscipline }: SampleTalentListingPageP
                   <ForwardArrow className="h-4 w-4 rotate-180" />
                   Back
                 </Link>
-                <div className="mkt-st-sl-tabs" role="tablist" aria-label="Vetted talent views">
+                <div className="mkt-st-sl-tabs" role="tablist" aria-label="Pre-Vetted Talent views">
                   <button
                     type="button"
                     role="tab"
@@ -446,7 +448,8 @@ export function SampleTalentPage() {
   const [unlockDiscipline, setUnlockDiscipline] = useState<string | null>(null);
 
   const disciplineParam = searchParams.get('discipline');
-  const listingDiscipline = isDiscipline(disciplineParam) ? disciplineParam : null;
+  const normalizedDiscipline = disciplineParam ? communityToDiscipline(disciplineParam) : null;
+  const listingDiscipline = isDiscipline(normalizedDiscipline) ? normalizedDiscipline : null;
 
   useEffect(() => {
     if (

@@ -18,7 +18,7 @@ export function ForEngineersPage() {
           technical round, culture round — repeated for each opportunity, most of which go nowhere.
         </p>
         <p className="mkt-lead mt-4">
-          BesTal tests you once, by an outside specialist in your field. The result goes on your
+          BesTal tests you once, by AI-Assessed. BesTal-reviewed in your field. The result goes on your
           profile with your rate, your start date and the US hours you&apos;ve committed to. Clients
           read it before they contact you.
         </p>

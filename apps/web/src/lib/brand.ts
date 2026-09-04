@@ -13,11 +13,18 @@ export const CLIENT_LOGIN_HERO_IMAGE_SRC = '/login_updated_img.png';
 /** Staff portal login split-layout hero */
 export const STAFF_LOGIN_HERO_IMAGE_SRC = '/login_updated_img.png';
 
-/** About us page hero banner */
-export const ABOUT_HERO_IMAGE_SRC = '/about_us_banner_img.png';
+/** About us page hero banner — use ≥900×1040 source for sharp retina display */
+export const ABOUT_HERO_IMAGE_SRC = '/about-us_verticle_img.jpg';
 
-/** @deprecated Use CLIENT_LOGIN_HERO_IMAGE_SRC */
-export const LOGIN_HERO_IMAGE_SRC = CLIENT_LOGIN_HERO_IMAGE_SRC;
+/** About hero card display size (CSS px); img intrinsic size should be 2× for retina */
+export const ABOUT_HERO_IMAGE_DISPLAY_WIDTH_PX = 450;
+export const ABOUT_HERO_IMAGE_DISPLAY_HEIGHT_PX = 520;
+
+/** CTA banner photo — use ≥1210×560 source for sharp retina display */
+export const CTA_BANNER_PHOTO_MIN_HEIGHT_PX = 280;
+export const CTA_BANNER_PHOTO_DISPLAY_WIDTH_PX = 605;
+export const CTA_BANNER_PHOTO_DISPLAY_HEIGHT_PX = 280;
+export const CTA_BANNER_PHOTO_SIZES = '(min-width: 901px) 605px, 100vw';
 
 /** Sample talent communities orbit — use ≥400×400 source for sharp retina display */
 export const SAMPLE_TALENT_HERO_AVATAR_SRC = '/prevettedimg.jpg';

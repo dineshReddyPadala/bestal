@@ -64,7 +64,7 @@ export type DemoEngineer = {
 };
 
 const PLACEHOLDER_NOTE =
-  '[PLACEHOLDER: tester note pending — retains structure of a scored, written evaluation from an outside specialist.]';
+  '[PLACEHOLDER: tester note pending — retains structure of a scored, written evaluation from AI-Assessed. BesTal-reviewed.]';
 
 const ENGINEER_PREVIOUS_COMPANIES: Partial<Record<string, string>> = {
   'jessica-m': 'Microsoft',
@@ -166,7 +166,7 @@ export const DEMO_ENGINEERS: DemoEngineer[] = [
     initials: 'DW',
     name: 'David W',
     role: 'ABAP Consultant',
-    discipline: 'SAP',
+    discipline: 'Enterprise Apps',
     gender: 'male',
     experience: '11 years',
     location: 'Atlanta, GA',
@@ -556,7 +556,7 @@ export const DISCIPLINES = [
   'Data & AI',
   'Cloud & Platform',
   'Full Stack & Engineering',
-  'SAP',
+  'Enterprise Apps',
   'ServiceNow',
   'Salesforce',
   'Cybersecurity',
@@ -585,7 +585,7 @@ const COMMUNITY_ENGINEER_IDS: Record<string, string> = {
   'Data & AI': 'emily-r',
   'Cloud & Platform': 'michael-t',
   'Full Stack & Engineering': 'jessica-m',
-  SAP: 'david-w',
+  'Enterprise Apps': 'david-w',
   ServiceNow: 'amanda-l',
   Cybersecurity: 'james-h',
 };
@@ -613,9 +613,9 @@ export const COMMUNITY_PROFILE_SLIDES: CommunityProfileSlide[] = [
     engineer: DEMO_ENGINEERS.find((e) => e.id === COMMUNITY_ENGINEER_IDS['Full Stack & Engineering'])!,
   },
   {
-    community: 'SAP',
-    description: 'Functional and technical roles across S/4HANA programmes',
-    engineer: DEMO_ENGINEERS.find((e) => e.id === COMMUNITY_ENGINEER_IDS.SAP)!,
+    community: 'Enterprise Apps',
+    description: 'SAP | Oracle ERP | Oracle EPM | OneStream | Anaplan | Workday | Microsoft Dynamics',
+    engineer: DEMO_ENGINEERS.find((e) => e.id === COMMUNITY_ENGINEER_IDS['Enterprise Apps'])!,
   },
   {
     community: 'ServiceNow',
@@ -682,8 +682,8 @@ const LANDING_ENGINEER_IDS: Array<{ community: string; description: string; id: 
     id: 'jessica-m',
   },
   {
-    community: 'SAP',
-    description: 'Functional and technical roles across S/4HANA programmes',
+    community: 'Enterprise Apps',
+    description: 'SAP | Oracle ERP | Oracle EPM | OneStream | Anaplan | Workday | Microsoft Dynamics',
     id: 'david-w',
   },
   {
@@ -720,11 +720,30 @@ const LANDING_PROFILE_TIMEZONES: Record<string, string> = {
   'james-h': 'UTC', // James H — US Mountain
 };
 
+/** Homepage hero slider — anonymized prior employers (no real company names). */
+const LANDING_PROFILE_PREVIOUS_COMPANIES: Partial<Record<string, string>> = {
+  'divya-k': 'Global Cloud Company',
+  'shiva-g': 'Fortune 500 Retail',
+  'sai-k': 'Global SaaS',
+  'saran-p': 'Big Four Consulting',
+  'jaya-k': 'Global Cloud Company',
+  'amanda-l': 'Fortune 500 Retail',
+  'prashanth-k': 'Global SaaS',
+  'emily-r': 'Big Four Consulting',
+  'michael-t': 'Global Cloud Company',
+  'jessica-m': 'Fortune 500 Retail',
+  'david-w': 'Global SaaS',
+  'james-h': 'Big Four Consulting',
+};
+
 export const LANDING_PROFILE_SLIDES: CommunityProfileSlide[] = LANDING_ENGINEER_IDS.map(
   ({ community, description, id }) => {
     const base = DEMO_ENGINEERS.find((engineer) => engineer.id === id)!;
     const timezone = LANDING_PROFILE_TIMEZONES[id] ?? base.timezone;
-    const slideEngineer = withEngineerTimezone(base, timezone);
+    const slideEngineer = {
+      ...withEngineerTimezone(base, timezone),
+      previousCompany: LANDING_PROFILE_PREVIOUS_COMPANIES[id] ?? base.previousCompany ?? null,
+    };
 
     return {
       community,
