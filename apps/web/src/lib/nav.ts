@@ -14,6 +14,7 @@ export type PermissionNavItem = DashboardNavItem & {
 
 const NAV_ITEM_PERMISSIONS: Record<string, string> = {
   '/super-admin/client-enquiries': 'job-requests:read',
+  '/super-admin/career-openings': 'job-requests:read',
   '/admin/client-enquiries': 'job-requests:read',
   '/sales/client-enquiries': 'job-requests:read',
 };

@@ -244,6 +244,12 @@ enum ContactMessageStatus {
   CLOSED
 }
 
+enum CareerOpeningStatus {
+  DRAFT
+  PUBLISHED
+  CLOSED
+}
+
 enum DeploymentStatus {
   PENDING
   ACTIVE
@@ -388,6 +394,7 @@ model Organization {
   trialRequests     TrialRequest[]
   jobRequests       JobRequest[]
   contactMessages   ContactMessage[]
+  careerOpenings    CareerOpening[]
   deployments       Deployment[]
   documents         Document[]
   notifications     Notification[]
@@ -973,6 +980,32 @@ model ContactMessage {
   @@index([organizationId, status, deletedAt])
   @@index([organizationId, createdAt])
   @@map("contact_messages")
+}
+
+model CareerOpening {
+  id               BigInt              @id @default(autoincrement())
+  organizationId   BigInt              @map("organization_id")
+  title            String              @db.VarChar(255)
+  slug             String              @unique @db.VarChar(160)
+  skillCommunity   String              @map("skill_community") @db.VarChar(120)
+  location         String              @db.VarChar(255)
+  remote           Boolean             @default(false)
+  jobLevel         String              @map("job_level") @db.VarChar(80)
+  experience       String              @db.VarChar(80)
+  aboutRole        String              @map("about_role") @db.Text
+  responsibilities Json
+  requirements     Json
+  status           CareerOpeningStatus @default(DRAFT)
+  publishedAt      DateTime?           @map("published_at")
+  createdAt        DateTime            @default(now()) @map("created_at")
+  updatedAt        DateTime            @updatedAt @map("updated_at")
+  deletedAt        DateTime?           @map("deleted_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, status, deletedAt])
+  @@index([status, deletedAt, publishedAt])
+  @@map("career_openings")
 }
 
 // ---------------------------------------------------------------------------

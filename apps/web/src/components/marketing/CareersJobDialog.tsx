@@ -1,11 +1,11 @@
 import { X } from 'lucide-react';
 import { useEffect } from 'react';
-import type { PublicJob } from '@bestal/mock-data';
+import type { CareerOpeningPublic } from '../../lib/api/career-openings';
 import { getCareersJobDescription } from '../../lib/careers-job-descriptions';
 import { openCareersEmail } from '../../lib/careers-copy';
 
 type CareersJobDialogProps = {
-  job: PublicJob | null;
+  job: CareerOpeningPublic | null;
   onClose: () => void;
 };
 
