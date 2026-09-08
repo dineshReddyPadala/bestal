@@ -2,27 +2,29 @@ import { cn } from '@bestal/shared-utils';
 import {
   ArrowRight,
   ArrowUpRight,
-  Briefcase,
+  Award,
+  CalendarCheck,
   ChevronLeft,
   ChevronRight,
-  Info,
+  Globe2,
+  Layers,
   Minus,
   Plus,
-  Rocket,
-  Search,
-  ShieldCheck,
   Star,
+  Target,
   Users,
 } from 'lucide-react';
 import { useEffect, useState, type CSSProperties } from 'react';
 import { Link } from 'react-router-dom';
 import { MktShell } from '../../components/marketing/MktShell';
+import { HomeAudienceToggle } from '../../components/marketing/HomeAudienceToggle';
 import { PageMeta } from '../../components/PageMeta';
 import { useCarouselVisibleCount } from '../../hooks/useCarouselVisibleCount';
 import { TALENT_LANDING_PAGE } from '../../lib/marketing-copy';
+import { CLIENT_LOGIN_PATH } from '../../lib/login-portals';
 import { PAGE_SEO } from '../../lib/marketing-seo';
 
-const FEATURE_ICONS = [Briefcase, Rocket, Search, Star, Users, ShieldCheck] as const;
+const FEATURE_ICONS = [Globe2, Target, Users, Award, CalendarCheck, Layers] as const;
 const WHY_JOIN_INTERVAL_MS = 4500;
 const HOW_IT_WORKS_INTERVAL_MS = 4500;
 const COMMUNITY_CAROUSEL_INTERVAL_MS = 4500;
@@ -36,6 +38,22 @@ function VerifyBadge() {
           d="M4.75 8.25 6.8 10.3 11.35 5.75"
           stroke="#fff"
           strokeWidth="1.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    </span>
+  );
+}
+
+function ApproachNoteCheck() {
+  return (
+    <span className="mkt-talent-v2-approach-note-icon" aria-hidden="true">
+      <svg viewBox="0 0 16 16" fill="none">
+        <path
+          d="M4.75 8.25 6.8 10.3 11.35 5.75"
+          stroke="#0b0e11"
+          strokeWidth="2"
           strokeLinecap="round"
           strokeLinejoin="round"
         />
@@ -113,10 +131,13 @@ export function TalentLandingPage() {
       <PageMeta title={PAGE_SEO.talent.title} description={PAGE_SEO.talent.description} />
 
       <section className="mkt-talent-v2-hero">
+        <div className="mkt-hero-audience-bar">
+          <HomeAudienceToggle />
+        </div>
         <MktShell>
           <div className="mkt-talent-v2-hero-grid">
             <div className="mkt-talent-v2-hero-copy">
-              <span className="mkt-talent-v2-hero-label">— {copy.hero.label}</span>
+              <span className="mkt-talent-v2-hero-label">{copy.hero.label}</span>
               <h1>{copy.hero.title}</h1>
               <p className="mkt-talent-v2-hero-sub">{copy.hero.subheading}</p>
               {copy.hero.paragraphs.map((paragraph) => (
@@ -197,11 +218,8 @@ export function TalentLandingPage() {
       <section className="mkt-talent-v2-section mkt-talent-v2-why">
         <MktShell>
           <div className="mkt-talent-v2-why-hd">
-            <div>
-              <span className="mkt-talent-v2-step-num mkt-talent-v2-step-num--green">{copy.whyJoin.step}</span>
-              <h2>{copy.whyJoin.title}</h2>
-              <p className="mkt-talent-v2-why-sub">{copy.whyJoin.subtitle}</p>
-            </div>
+            <h2>{copy.whyJoin.title}</h2>
+            <p className="mkt-talent-v2-why-sub">{copy.whyJoin.subtitle}</p>
             <p className="mkt-talent-v2-why-intro">{copy.whyJoin.intro}</p>
           </div>
 
@@ -264,10 +282,6 @@ export function TalentLandingPage() {
               <h3>{activeWhyContent.title}</h3>
               <p>{activeWhyContent.body}</p>
               <span className="mkt-talent-v2-why-panel-rule" aria-hidden="true" />
-              <Link to="/contact" className="mkt-talent-v2-why-panel-link">
-                {copy.whyJoin.cta}
-                <ArrowUpRight aria-hidden="true" />
-              </Link>
             </article>
           </div>
         </MktShell>
@@ -276,7 +290,6 @@ export function TalentLandingPage() {
       <section className="mkt-talent-v2-section mkt-talent-v2-capabilities">
         <MktShell>
           <div className="mkt-talent-v2-cap-hd">
-            <span className="mkt-talent-v2-step-num mkt-talent-v2-step-num--amber">{copy.capabilities.step}</span>
             <h2>{copy.capabilities.title}</h2>
             <p>{copy.capabilities.subtitle}</p>
           </div>
@@ -286,19 +299,16 @@ export function TalentLandingPage() {
       <section className="mkt-talent-v2-section mkt-talent-v2-work-speak">
         <MktShell>
           <div className="mkt-talent-v2-work-hd">
-            <div>
-              <span className="mkt-talent-v2-step-num mkt-talent-v2-step-num--green">{copy.workSpeak.step}</span>
-              <h2>{copy.workSpeak.title}</h2>
-              <p className="mkt-talent-v2-work-sub">{copy.workSpeak.subtitle}</p>
-            </div>
+            <h2>{copy.workSpeak.title}</h2>
+            <p className="mkt-talent-v2-work-sub">{copy.workSpeak.subtitle}</p>
             <p className="mkt-talent-v2-work-intro">{copy.workSpeak.intro}</p>
-          </div>
-
-          <div className="mkt-talent-v2-work-note">
-            <Info aria-hidden="true" />
-            <p>
-              <strong>{copy.workSpeak.importantLabel}</strong> {copy.workSpeak.importantNote}
-            </p>
+            <div className="mkt-talent-v2-approach-note">
+              <ApproachNoteCheck />
+              <p>
+                <span className="mkt-talent-v2-approach-note-label">{copy.workSpeak.approachNoteLabel}</span>{' '}
+                {copy.workSpeak.approachNote}
+              </p>
+            </div>
           </div>
         </MktShell>
       </section>
@@ -308,30 +318,10 @@ export function TalentLandingPage() {
           <div className="mkt-talent-v2-advantage-layout">
             <div className="mkt-talent-v2-advantage-left">
               <div className="mkt-talent-v2-advantage-hd">
-                <span className="mkt-talent-v2-step-num mkt-talent-v2-step-num--amber mkt-talent-v2-step-num--side">
-                  {copy.advantage.step}
-                </span>
-                <div>
-                  <h2>{copy.advantage.title}</h2>
-                  <p>{copy.advantage.subtitle}</p>
-                </div>
+                <h2>{copy.advantage.title}</h2>
+                <p>{copy.advantage.subtitle}</p>
               </div>
               <p className="mkt-talent-v2-advantage-intro">{copy.advantage.intro}</p>
-
-              <article className="mkt-talent-v2-evidence-card">
-                <span className="mkt-talent-v2-evidence-label">{copy.advantage.evidenceTitle}</span>
-                {copy.advantage.evidenceBars.map((bar) => (
-                  <div key={bar.label} className="mkt-talent-v2-evidence-bar">
-                    <div className="mkt-talent-v2-evidence-bar-hd">
-                      <span>{bar.label}</span>
-                      <strong>{bar.value}</strong>
-                    </div>
-                    <div className="mkt-talent-v2-evidence-bar-track">
-                      <span style={{ width: `${bar.value}%` }} />
-                    </div>
-                  </div>
-                ))}
-              </article>
             </div>
 
             <div className="mkt-talent-v2-advantage-accordion">
@@ -434,13 +424,10 @@ export function TalentLandingPage() {
             }}
           >
             <div className="mkt-talent-v2-communities-hd">
-              <div>
-                <span className="mkt-talent-v2-step-num mkt-talent-v2-step-num--green">{copy.communities.step}</span>
-                <h2>{copy.communities.title}</h2>
-                <p>{copy.communities.subtitleLeft}</p>
-              </div>
-              <div className="mkt-talent-v2-communities-controls">
-                <p>{copy.communities.subtitleRight}</p>
+              <h2>{copy.communities.title}</h2>
+              <p className="mkt-talent-v2-communities-sub">{copy.communities.subtitleLeft}</p>
+              <div className="mkt-talent-v2-communities-right">
+                <p className="mkt-talent-v2-communities-intro">{copy.communities.subtitleRight}</p>
                 <div className="mkt-talent-v2-communities-arrows">
                   <button
                     type="button"
@@ -500,7 +487,6 @@ export function TalentLandingPage() {
       <section className="mkt-talent-v2-section mkt-talent-v2-hiw">
         <MktShell>
           <div className="mkt-talent-v2-hiw-hd">
-            <span className="mkt-talent-v2-step-num mkt-talent-v2-step-num--amber">{copy.howItWorks.step}</span>
             <h2>{copy.howItWorks.title}</h2>
             <p>{copy.howItWorks.subtitle}</p>
           </div>
@@ -573,7 +559,6 @@ export function TalentLandingPage() {
         <MktShell>
           <div className="mkt-talent-v2-features-top">
             <div className="mkt-talent-v2-features-copy">
-              <span className="mkt-talent-v2-step-num mkt-talent-v2-step-num--green">{copy.features.step}</span>
               <h2>{copy.features.title}</h2>
               <p>{copy.features.body}</p>
             </div>
@@ -581,19 +566,27 @@ export function TalentLandingPage() {
               <img src={copy.features.image} alt="" loading="lazy" />
             </div>
           </div>
-          <div className="mkt-talent-v2-features-grid">
+
+          <div className="mkt-talent-v2-features-panel">
             {copy.features.items.map((item, index) => {
-              const Icon = FEATURE_ICONS[index] ?? Briefcase;
+              const Icon = FEATURE_ICONS[index] ?? Globe2;
               return (
-                <div key={item} className="mkt-talent-v2-features-item">
+                <div
+                  key={item}
+                  className={cn(
+                    'mkt-talent-v2-features-item',
+                    index === 5 && 'is-full',
+                  )}
+                >
                   <span className="mkt-talent-v2-features-icon" aria-hidden="true">
-                    <Icon strokeWidth={1.75} />
+                    <Icon strokeWidth={1.85} />
                   </span>
-                  <span>{item}</span>
+                  <span className="mkt-talent-v2-features-label">{item}</span>
                 </div>
               );
             })}
           </div>
+
           <blockquote className="mkt-talent-v2-features-quote">{copy.features.quote}</blockquote>
         </MktShell>
       </section>
@@ -602,7 +595,6 @@ export function TalentLandingPage() {
         <MktShell>
           <div className="mkt-talent-v2-transparency-layout">
             <div>
-              <span className="mkt-talent-v2-step-num mkt-talent-v2-step-num--amber">{copy.transparency.step}</span>
               <h2>{copy.transparency.title}</h2>
             </div>
             <div>
@@ -615,16 +607,15 @@ export function TalentLandingPage() {
       </section>
 
       <section className="mkt-talent-v2-cta">
+        <div className="mkt-talent-v2-cta-bg" aria-hidden="true">
+          <img src={copy.cta.backgroundImage} alt="" loading="lazy" />
+          <span className="mkt-talent-v2-cta-overlay" />
+        </div>
         <MktShell>
           <div className="mkt-talent-v2-cta-layout">
             <div className="mkt-talent-v2-cta-copy">
-              <span className="mkt-talent-v2-step-num mkt-talent-v2-step-num--green">{copy.cta.step}</span>
               <h2>{copy.cta.title}</h2>
               <p>{copy.cta.body}</p>
-              <div className="mkt-talent-v2-cta-quick">
-                <h3>{copy.cta.quickStepTitle}</h3>
-                <p>{copy.cta.quickStepBody}</p>
-              </div>
               <p className="mkt-talent-v2-cta-tagline">{copy.cta.tagline}</p>
               <p className="mkt-talent-v2-cta-headline">{copy.cta.headline}</p>
               <div className="mkt-talent-v2-cta-actions">
@@ -634,30 +625,35 @@ export function TalentLandingPage() {
                 </Link>
               </div>
               <div className="mkt-talent-v2-cta-footer-links">
-                <Link to={copy.cta.signInHref}>{copy.cta.signInLabel}</Link>
+                <Link to={CLIENT_LOGIN_PATH}>{copy.cta.signInLabel}</Link>
                 <span aria-hidden="true">|</span>
                 <Link to={copy.cta.assessmentHref}>{copy.cta.assessmentLabel}</Link>
               </div>
             </div>
-            <ul className="mkt-talent-v2-cta-checklist">
-              {copy.cta.checklist.map((item) => (
-                <li key={item}>
-                  <span className="mkt-talent-v2-cta-check" aria-hidden="true">
-                    <svg viewBox="0 0 12 12" fill="none">
-                      <rect width="12" height="12" rx="2" fill="currentColor" />
-                      <path
-                        d="M2.5 6.25 4.75 8.5 9.5 3.75"
-                        stroke="#fff"
-                        strokeWidth="1.5"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  </span>
-                  {item}
-                </li>
-              ))}
-            </ul>
+
+            <aside className="mkt-talent-v2-cta-checklist-card">
+              <h3>{copy.cta.quickStepTitle}</h3>
+              <p>{copy.cta.quickStepBody}</p>
+              <ul className="mkt-talent-v2-cta-checklist">
+                {copy.cta.checklist.map((item) => (
+                  <li key={item}>
+                    <span className="mkt-talent-v2-cta-check" aria-hidden="true">
+                      <svg viewBox="0 0 12 12" fill="none">
+                        <rect width="12" height="12" rx="2" fill="currentColor" />
+                        <path
+                          d="M2.5 6.25 4.75 8.5 9.5 3.75"
+                          stroke="#fff"
+                          strokeWidth="1.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    </span>
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </aside>
           </div>
         </MktShell>
       </section>

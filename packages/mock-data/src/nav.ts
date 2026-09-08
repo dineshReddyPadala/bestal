@@ -63,8 +63,6 @@ export const superAdminNav = [
 export const publicNav = [
   // { id: 'home', label: 'Home', href: '/' },
   { id: 'how-it-works', label: 'How it works', href: '/how-it-works' },
-  { id: 'talent', label: 'Talent', href: '/talent' },
-  { id: 'consulting', label: 'Consulting', href: '/consulting' },
   { id: 'how-we-assess', label: 'How we assess', href: '/evaluation-standard' },
   { id: 'engineers', label: 'Pre-Vetted Talent', href: '/sample-talent' },
   { id: 'trial', label: 'Free Trial', href: '/try-for-a-week' },
