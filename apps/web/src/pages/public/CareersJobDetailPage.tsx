@@ -1,15 +1,41 @@
-import { publicJobs } from '@bestal/mock-data';
-import { ArrowLeft, Briefcase, Clock, MapPin, Users } from 'lucide-react';
+import { ArrowLeft, Briefcase, Clock, MapPin } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
 import { MktShell } from '../../components/marketing/MktShell';
 import { PageMeta } from '../../components/PageMeta';
-import { openCareersEmail, CAREERS_APPLY_EMAIL, CAREERS_APPLY_MAILTO } from '../../lib/careers-copy';
+import { usePublicCareerOpenings } from '../../hooks/api/useCareerOpenings';
+import { CAREERS_APPLY_EMAIL, CAREERS_APPLY_MAILTO, openCareersEmail } from '../../lib/careers-copy';
 import { getCareersJobDescription } from '../../lib/careers-job-descriptions';
 import { formatDate } from '@bestal/shared-utils';
 
 export function CareersJobDetailPage() {
   const { slug } = useParams<{ slug: string }>();
-  const job = publicJobs.find((entry) => entry.slug === slug);
+  const { data: openings = [], isLoading, isError } = usePublicCareerOpenings();
+  const job = openings.find((entry) => entry.slug === slug);
+
+  if (isLoading) {
+    return (
+      <div className="mkt-careers-page">
+        <PageMeta title="Careers | BesTal" description="Loading this role." />
+        <MktShell className="mkt-careers-detail-empty">
+          <p>Loading opening…</p>
+        </MktShell>
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="mkt-careers-page">
+        <PageMeta title="Careers | BesTal" description="Unable to load this role." />
+        <MktShell className="mkt-careers-detail-empty">
+          <h1>Unable to load this role</h1>
+          <Link to="/careers" className="mkt-careers-detail-back-link">
+            Back to current openings
+          </Link>
+        </MktShell>
+      </div>
+    );
+  }
 
   if (!job) {
     return (
@@ -53,19 +79,12 @@ export function CareersJobDetailPage() {
                   <MapPin strokeWidth={2} aria-hidden="true" />
                   {description.location}
                 </span>
-                <span>
-                  <Clock strokeWidth={2} aria-hidden="true" />
-                  Posted {formatDate(job.postedAt)}
-                </span>
-                <span>
-                  <Users strokeWidth={2} aria-hidden="true" />
-                  {job.applicants}+ applicants
-                </span>
-              </div>
-
-              <div className="mkt-careers-detail-foot">
-                <span>{job.engagementType.replace('_', ' ')}</span>
-                <span>Openings: 1</span>
+                {job.publishedAt ? (
+                  <span>
+                    <Clock strokeWidth={2} aria-hidden="true" />
+                    Posted {formatDate(job.publishedAt)}
+                  </span>
+                ) : null}
               </div>
             </div>
 
