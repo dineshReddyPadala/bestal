@@ -47,6 +47,7 @@ export const superAdminNav = [
   { id: 'roles', label: 'Role Management', href: '/super-admin/roles', icon: 'shield' },
   { id: 'clients', label: 'Clients', href: '/super-admin/clients', icon: 'briefcase' },
   { id: 'client-enquiries', label: 'Customer Enquiries', href: '/super-admin/client-enquiries', icon: 'mail' },
+  { id: 'career-openings', label: 'Career Openings', href: '/super-admin/career-openings', icon: 'file-text' },
   { id: 'candidates', label: 'Candidates', href: '/super-admin/candidates', icon: 'user-check' },
   { id: 'pending', label: 'Pending Approvals', href: '/super-admin/candidates/pending', icon: 'check-square' },
   { id: 'evaluations', label: 'Evaluations', href: '/super-admin/evaluations', icon: 'clipboard-check' },

@@ -1,6 +1,8 @@
-import { publicJobs } from '@bestal/mock-data';
-import type { PublicJob } from '@bestal/mock-data';
-import { getCareersJobDescription } from './careers-job-descriptions';
+export type CareersFilterJob = {
+  title: string;
+  skillCommunity: string;
+  jobLevel: string;
+};
 
 export type CareersFilterState = {
   jobName: string;
@@ -8,26 +10,28 @@ export type CareersFilterState = {
   experienceLevels: string[];
 };
 
-export function getCareersJobExperienceLevel(job: PublicJob): string {
-  return getCareersJobDescription(job).jobLevel;
+export function getCareersJobExperienceLevel(job: Pick<CareersFilterJob, 'jobLevel'>): string {
+  return job.jobLevel.trim() || 'Open level';
 }
 
-export function getCareersDisciplines(): string[] {
-  return [...new Set(publicJobs.map((job) => job.skillCommunity))].sort();
+export function getCareersDisciplines(jobs: readonly CareersFilterJob[]): string[] {
+  return [...new Set(jobs.map((job) => job.skillCommunity).filter(Boolean))].sort();
 }
 
-export function getCareersExperienceLevels(): string[] {
-  return [...new Set(publicJobs.map((job) => getCareersJobExperienceLevel(job)))].sort();
+export function getCareersExperienceLevels(jobs: readonly CareersFilterJob[]): string[] {
+  return [...new Set(jobs.map((job) => getCareersJobExperienceLevel(job)))].sort();
 }
 
-export function countCareersJobsByDiscipline(jobs: readonly PublicJob[]): Record<string, number> {
+export function countCareersJobsByDiscipline(jobs: readonly CareersFilterJob[]): Record<string, number> {
   return jobs.reduce<Record<string, number>>((counts, job) => {
     counts[job.skillCommunity] = (counts[job.skillCommunity] ?? 0) + 1;
     return counts;
   }, {});
 }
 
-export function countCareersJobsByExperienceLevel(jobs: readonly PublicJob[]): Record<string, number> {
+export function countCareersJobsByExperienceLevel(
+  jobs: readonly CareersFilterJob[],
+): Record<string, number> {
   return jobs.reduce<Record<string, number>>((counts, job) => {
     const level = getCareersJobExperienceLevel(job);
     counts[level] = (counts[level] ?? 0) + 1;
@@ -35,10 +39,10 @@ export function countCareersJobsByExperienceLevel(jobs: readonly PublicJob[]): R
   }, {});
 }
 
-export function filterCareersJobs(
-  jobs: readonly PublicJob[],
+export function filterCareersJobs<T extends CareersFilterJob>(
+  jobs: readonly T[],
   filters: CareersFilterState,
-): PublicJob[] {
+): T[] {
   const query = filters.jobName.trim().toLowerCase();
 
   return jobs.filter((job) => {

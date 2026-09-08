@@ -1,9 +1,9 @@
-import { publicJobs } from '@bestal/mock-data';
 import { ChevronRight } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { MktShell } from '../../components/marketing/MktShell';
 import { PageMeta } from '../../components/PageMeta';
+import { usePublicCareerOpenings } from '../../hooks/api/useCareerOpenings';
 import {
   countCareersJobsByDiscipline,
   countCareersJobsByExperienceLevel,
@@ -25,16 +25,17 @@ const EMPTY_FILTERS: CareersFilterState = {
 
 export function CareersPage() {
   const [filters, setFilters] = useState<CareersFilterState>(EMPTY_FILTERS);
+  const { data: openings = [], isLoading, isError } = usePublicCareerOpenings();
 
-  const disciplines = useMemo(() => getCareersDisciplines(), []);
-  const experienceLevels = useMemo(() => getCareersExperienceLevels(), []);
+  const disciplines = useMemo(() => getCareersDisciplines(openings), [openings]);
+  const experienceLevels = useMemo(() => getCareersExperienceLevels(openings), [openings]);
 
-  const disciplineCounts = useMemo(() => countCareersJobsByDiscipline(publicJobs), []);
-  const experienceCounts = useMemo(() => countCareersJobsByExperienceLevel(publicJobs), []);
+  const disciplineCounts = useMemo(() => countCareersJobsByDiscipline(openings), [openings]);
+  const experienceCounts = useMemo(() => countCareersJobsByExperienceLevel(openings), [openings]);
 
   const filteredOpenings = useMemo(
-    () => filterCareersJobs(publicJobs, filters),
-    [filters],
+    () => filterCareersJobs(openings, filters),
+    [filters, openings],
   );
 
   const hasActiveFilters =
@@ -144,36 +145,48 @@ export function CareersPage() {
             </aside>
 
             <div className="mkt-careers-openings-results">
-              <p className="mkt-careers-openings-count">
-                Showing {filteredOpenings.length}{' '}
-                {filteredOpenings.length === 1 ? 'opening' : 'openings'}
-              </p>
+              {isLoading ? (
+                <p className="mkt-careers-openings-empty">Loading openings…</p>
+              ) : isError ? (
+                <p className="mkt-careers-openings-empty">Unable to load openings. Please try again.</p>
+              ) : (
+                <>
+                  <p className="mkt-careers-openings-count">
+                    Showing {filteredOpenings.length}{' '}
+                    {filteredOpenings.length === 1 ? 'opening' : 'openings'}
+                  </p>
 
-              <ul className="mkt-careers-jobs-list">
-                {filteredOpenings.map((job) => (
-                  <li key={job.id}>
-                    <Link to={`/careers/${job.slug}`} className="mkt-careers-job-row">
-                      <div className="mkt-careers-job-row-main">
-                        <span className="mkt-careers-job-level">
-                          {getCareersJobExperienceLevel(job).toUpperCase()}
-                        </span>
-                        <h3>{job.title}</h3>
-                        <p className="mkt-careers-job-discipline">{job.skillCommunity}</p>
-                        <p className="mkt-careers-job-location">{formatCareersJobLocation(job)}</p>
-                      </div>
-                      <ChevronRight
-                        className="mkt-careers-job-row-chevron"
-                        strokeWidth={2}
-                        aria-hidden="true"
-                      />
-                    </Link>
-                  </li>
-                ))}
-              </ul>
+                  <ul className="mkt-careers-jobs-list">
+                    {filteredOpenings.map((job) => (
+                      <li key={job.id}>
+                        <Link to={`/careers/${job.slug}`} className="mkt-careers-job-row">
+                          <div className="mkt-careers-job-row-main">
+                            <span className="mkt-careers-job-level">
+                              {getCareersJobExperienceLevel(job).toUpperCase()}
+                            </span>
+                            <h3>{job.title}</h3>
+                            <p className="mkt-careers-job-discipline">{job.skillCommunity}</p>
+                            <p className="mkt-careers-job-location">{formatCareersJobLocation(job)}</p>
+                          </div>
+                          <ChevronRight
+                            className="mkt-careers-job-row-chevron"
+                            strokeWidth={2}
+                            aria-hidden="true"
+                          />
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
 
-              {filteredOpenings.length === 0 ? (
-                <p className="mkt-careers-openings-empty">No openings match your filters.</p>
-              ) : null}
+                  {filteredOpenings.length === 0 ? (
+                    <p className="mkt-careers-openings-empty">
+                      {hasActiveFilters
+                        ? 'No openings match your filters.'
+                        : 'There are no current openings. Check back soon.'}
+                    </p>
+                  ) : null}
+                </>
+              )}
             </div>
           </div>
         </MktShell>

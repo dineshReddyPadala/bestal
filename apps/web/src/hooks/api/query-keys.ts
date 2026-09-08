@@ -65,6 +65,12 @@ export const queryKeys = {
     list: (params?: Record<string, unknown>) => ['contact-messages', 'list', params] as const,
     detail: (id: number) => ['contact-messages', id] as const,
   },
+  careerOpenings: {
+    all: ['career-openings'] as const,
+    list: (params?: Record<string, unknown>) => ['career-openings', 'list', params] as const,
+    detail: (id: number) => ['career-openings', id] as const,
+    public: ['career-openings', 'public'] as const,
+  },
   evaluations: {
     all: ['evaluations'] as const,
     list: (params?: Record<string, unknown>) => ['evaluations', 'list', params] as const,
