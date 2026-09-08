@@ -116,7 +116,7 @@ export const CAREERS_EQUAL = {
   ],
 } as const;
 
-export const CAREERS_APPLY_EMAIL = 'bestal@gmail.co';
+export const CAREERS_APPLY_EMAIL = 'careers@bestal.co';
 
 export const CAREERS_APPLY_MAILTO = `mailto:${CAREERS_APPLY_EMAIL}`;
 

@@ -2,7 +2,7 @@ import { X } from 'lucide-react';
 import { useEffect } from 'react';
 import type { PublicJob } from '@bestal/mock-data';
 import { getCareersJobDescription } from '../../lib/careers-job-descriptions';
-import { openCareersEmail } from '../../lib/careers-copy';
+import { openCareersEmail, CAREERS_APPLY_EMAIL, CAREERS_APPLY_MAILTO } from '../../lib/careers-copy';
 
 type CareersJobDialogProps = {
   job: PublicJob | null;
@@ -97,12 +97,17 @@ export function CareersJobDialog({ job, onClose }: CareersJobDialogProps) {
         </div>
 
         <div className="mkt-careers-jd-foot">
-          <button type="button" className="mkt-careers-jd-cancel" onClick={onClose}>
-            Cancel
-          </button>
-          <button type="button" className="mkt-careers-jd-apply" onClick={handleApply}>
-            Apply
-          </button>
+          <p className="mkt-careers-jd-apply-email">
+            Apply to <a href={CAREERS_APPLY_MAILTO}>{CAREERS_APPLY_EMAIL}</a>
+          </p>
+          <div className="mkt-careers-jd-foot-actions">
+            <button type="button" className="mkt-careers-jd-cancel" onClick={onClose}>
+              Cancel
+            </button>
+            <button type="button" className="mkt-careers-jd-apply" onClick={handleApply}>
+              Apply
+            </button>
+          </div>
         </div>
       </div>
     </div>

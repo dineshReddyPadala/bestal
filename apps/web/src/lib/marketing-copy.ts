@@ -1157,3 +1157,709 @@ export function getHomeFaqItems(): FaqItem[] {
     return item;
   });
 }
+
+export const TALENT_LANDING_PAGE = {
+  hero: {
+    label: 'For Talent',
+    title: 'Your Skills Deserve More Than a Résumé.',
+    subheading:
+      'Build a profile that shows what you can do — and get discovered for global technology opportunities.',
+    paragraphs: [
+      'You\'ve built your skills through years of learning, solving problems and delivering real work. Your next opportunity should recognize that — not just the keywords on your résumé.',
+      'BesTal helps skilled technology professionals in India showcase their capabilities and get considered for opportunities with companies and teams around the world.',
+      'Bring your skills, experience, assessment results, credentials, availability and work preferences together in one professional profile — giving potential clients a clearer picture of what you can contribute.',
+    ],
+    hook: 'Get assessed. Get recognized. Get discovered.',
+    primaryCta: 'Join the BesTal Talent Network',
+    profile: {
+      name: 'Leila Haddad',
+      role: 'AI / Machine Learning Engineer',
+      skills: ['PyTorch', 'LLMOps', 'Python', 'MLOps'],
+      experience: '7 years experience',
+      score: 95,
+      scoreLabel: 'BesTal Score',
+      availability: 'Available now',
+      image:
+        'https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=900&q=80',
+      tabs: ['Skills', 'Assessment', 'Profile'] as const,
+      tabRows: [
+        { label: 'Talent', value: 'Verified professional profile' },
+        { label: 'Capability', value: 'Evidence-based assessment' },
+        { label: 'Global Opportunities', value: 'Matched to your preferences' },
+      ],
+    },
+  },
+  whyJoin: {
+    step: '01',
+    title: 'Why Join BesTal?',
+    subtitle: 'Let your skills open more doors.',
+    intro:
+      'BesTal is building a curated community for technology professionals who want meaningful work, greater global exposure and recognition for demonstrated capability.',
+    reasons: [
+      {
+        title: 'Get Discovered for Global Opportunities',
+        body:
+          'Make your expertise visible for opportunities aligned to your capabilities, experience, availability and work preferences — not simply résumé keywords.',
+      },
+      {
+        title: 'Prove Your Skills Once. Use Them Across Opportunities.',
+        body:
+          'Complete BesTal\'s structured assessment process and build a richer professional profile that can be considered across relevant opportunities. Spend less time repeatedly proving the basics and more time discussing where you can add value.',
+      },
+      {
+        title: 'Build a Profile That Shows What You Can Do',
+        body:
+          'Showcase technical expertise, assessment insights, professional experience, projects, credentials, availability, preferred working hours, engagement preferences and rate expectations.',
+      },
+      {
+        title: 'Work With Global Teams',
+        body:
+          'Get considered for opportunities to collaborate with organizations and technology teams across geographies, industries and modern technology environments.',
+      },
+      {
+        title: 'Choose Opportunities That Fit You',
+        body:
+          'Depending on the opportunity, engagement models may include freelance, contract, part-time, full-time and project-based work. Share your availability and preferences upfront.',
+      },
+      {
+        title: 'Be Transparent. Expect Transparency.',
+        body:
+          'BesTal aims to align role expectations, working hours, availability, engagement model and commercial expectations early — so both you and the client can make informed decisions.',
+      },
+    ],
+    cta: 'Join the BesTal Talent Network',
+  },
+  capabilities: {
+    step: '02',
+    title: 'More than a résumé. Evidence of your capabilities.',
+    subtitle:
+      'Your BesTal profile is designed to make your skills, readiness and work preferences easier for the right clients to understand.',
+  },
+  workSpeak: {
+    step: '03',
+    title: 'Let Your Work Speak for You',
+    subtitle: 'Sometimes the best way to prove yourself isn\'t another interview.',
+    intro:
+      'For eligible opportunities, clients may evaluate mutual fit through a 10-hour trial engagement, giving you the opportunity to demonstrate your skills through real work before a longer-term engagement is considered.',
+    importantLabel: 'Important:',
+    importantNote:
+      'Approved trial hours are compensated to the professional under the applicable engagement terms. The client trial does not mean unpaid work for talent.',
+  },
+  advantage: {
+    step: '04',
+    title: 'The BesTal Advantage',
+    subtitle: 'Your expertise. Made visible.',
+    intro:
+      'Traditional hiring can reduce years of experience to a few pages of a résumé and a handful of keyword searches. BesTal is designed to give demonstrated capability, relevant experience and readiness to contribute greater visibility.',
+    evidenceTitle: 'Evidence of your capabilities',
+    evidenceBars: [
+      { label: 'Technical Capability', value: 95 },
+      { label: 'Communication Skills', value: 92 },
+      { label: 'Collaboration Style', value: 89 },
+      { label: 'Client Readiness', value: 94 },
+    ],
+    items: [
+      {
+        title: 'More Than a Résumé',
+        body:
+          'Showcase skills, assessment insights, experience and professional credentials in one profile.',
+      },
+      {
+        title: 'Capability-Based Matching',
+        body:
+          'Get considered for opportunities based on demonstrated expertise, experience, availability and client requirements.',
+      },
+      {
+        title: 'Verified Professional Profile',
+        body:
+          'Build additional credibility by completing applicable identity and professional verification.',
+      },
+      {
+        title: 'Transparent Opportunities',
+        body:
+          'Share your preferred engagement model, availability, working hours and rate expectations upfront.',
+      },
+      {
+        title: 'Real-World Validation',
+        body:
+          'For eligible engagements, demonstrate what you can do through actual work — not just another round of interviews.',
+      },
+    ],
+  },
+  profileShowcase: {
+    label: 'Verified Professional Profile',
+    name: 'Marcus Adeyemi',
+    role: 'Cloud & Platform Engineer',
+    bio: 'Platform engineering, landing zones and delivery automation.',
+    skills: ['Python/Go', 'Terraform', 'Azure', 'Platform Eng'],
+    breakdown: [
+      { label: 'Technical Capability', value: 90 },
+      { label: 'Communication Skills', value: 88 },
+    ],
+    experience: '17 years experience',
+    availability: 'Available in 2 weeks',
+    timezone: 'GMT +1',
+    rate: '$75 / hour',
+    badge: 'Western-Standard',
+    image:
+      'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=800&q=80',
+  },
+  communities: {
+    step: '05',
+    title: 'Find Your Community',
+    subtitleLeft: 'Where does your expertise fit?',
+    subtitleRight:
+      'Join specialized BesTal Talent Communities across high-demand technology domains:',
+    cta: 'Explore Talent Communities',
+    ctaHref: '/communities',
+    cards: [
+      {
+        title: 'AI & Machine Learning',
+        body: 'Generative AI, AI Engineering, Machine Learning, MLOps and emerging AI skills.',
+        image:
+          'https://images.unsplash.com/photo-1677442136019-21780ecad995?auto=format&fit=crop&w=900&q=80',
+      },
+      {
+        title: 'Data Engineering & Analytics',
+        body: 'Data Engineering, Databricks, Snowflake, Data Platforms, Analytics and Business Intelligence.',
+        image:
+          'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=900&q=80',
+      },
+      {
+        title: 'Cloud & DevOps',
+        body: 'AWS, Azure, GCP, DevOps, SRE, Kubernetes and Platform Engineering.',
+        image:
+          'https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=900&q=80',
+      },
+      {
+        title: 'Full-Stack & Software Engineering',
+        body: 'Java, .NET, Python, React, Angular, Node.js, Mobile and QA Automation.',
+        image:
+          'https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=900&q=80',
+      },
+      {
+        title: 'Enterprise Applications',
+        body: 'SAP, Oracle, Microsoft and other enterprise technology platforms.',
+        image:
+          'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=900&q=80',
+      },
+      {
+        title: 'ServiceNow',
+        body: 'Development, architecture, ITSM, ITOM, CSM, HRSD, SecOps and integrations.',
+        image:
+          'https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=900&q=80',
+      },
+      {
+        title: 'Salesforce',
+        body: 'Development, administration, architecture, Sales Cloud, Service Cloud, Marketing Cloud and Data Cloud.',
+        image:
+          'https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&w=900&q=80',
+      },
+      {
+        title: 'Cybersecurity',
+        body: 'Security engineering, cloud security, IAM, SOC, application security and GRC.',
+        image:
+          'https://images.unsplash.com/photo-1555949963-aa79dcee981c?auto=format&fit=crop&w=900&q=80',
+      },
+    ],
+  },
+  howItWorks: {
+    step: '06',
+    title: 'How BesTal Works',
+    subtitle: 'From your skills to the right opportunity.',
+    steps: [
+      {
+        title: 'Join',
+        body:
+          'Create your BesTal account and tell us about your experience, skills, career interests and work preferences.',
+      },
+      {
+        title: 'Demonstrate Your Expertise',
+        body:
+          'Complete a structured assessment designed to understand technical depth, problem solving, communication, collaboration and client readiness.',
+      },
+      {
+        title: 'Get Verified',
+        body:
+          'Complete applicable identity and professional background verification to strengthen the credibility of your profile.',
+      },
+      {
+        title: 'Build Your BesTal Profile',
+        body:
+          'Bring your skills, assessment insights, experience, credentials, availability and preferences together in one professional profile.',
+      },
+      {
+        title: 'Get Matched',
+        body:
+          'When relevant client requirements arise, BesTal can match your profile based on expertise, experience, availability and engagement preferences.',
+      },
+      {
+        title: 'Meet the Client',
+        body:
+          'If there\'s a strong match, move forward to a client conversation or interview. For eligible opportunities, you may also demonstrate your capability through a real-work trial.',
+      },
+      {
+        title: 'Start Your Engagement',
+        body:
+          'When you and the client are both comfortable with the fit and engagement terms, start working and doing what matters most: delivering great work.',
+      },
+    ],
+  },
+  features: {
+    step: '07',
+    title: 'Built for Ambitious Technology Professionals',
+    body:
+      'Whether you\'re an experienced engineer, specialist consultant, architect or emerging technology expert, BesTal gives you another way to make your capabilities visible to the market.',
+    items: [
+      'Work with global clients and distributed technology teams.',
+      'Take on challenging projects aligned to your expertise.',
+      'Build experience with international teams and delivery environments.',
+      'Earn recognition for specialized and emerging skills.',
+      'Find flexible opportunities that fit your career and availability.',
+      'Build a stronger professional profile around demonstrated capability.',
+    ],
+    quote:
+      'Whatever your next step looks like, BesTal is designed to help the right opportunities discover the right skills.',
+    image:
+      'https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=1200&q=80',
+  },
+  transparency: {
+    step: '08',
+    title: 'A Network Built on Quality and Transparency',
+    paragraphs: [
+      'BesTal is a curated talent network. Joining the network does not guarantee an interview, project, assignment or placement.',
+      'Opportunities depend on client demand, your skills and experience, assessment results, availability, work preferences and fit with specific client requirements.',
+      'We believe being transparent about this matters.',
+      'Our goal isn\'t to send every opportunity to every professional. It\'s to create better matches between proven talent and organizations that need those capabilities.',
+    ],
+  },
+  cta: {
+    step: '09',
+    title: 'Ready to Let Your Skills Speak for You?',
+    body:
+      'Start with a simple profile. You can complete your assessment, verification and detailed preferences as you move through the BesTal process.',
+    quickStepTitle: 'A quick first step',
+    quickStepBody:
+      'To join, we recommend asking only for: Name, Email, Mobile Number, Primary Skill, Years of Experience, and LinkedIn Profile or Résumé. Additional details can be completed after signup.',
+    tagline:
+      'Showcase your expertise. Demonstrate your capabilities. Get discovered for opportunities that match what you do best.',
+    headline: 'Your Skills Deserve More Than a Résumé.',
+    primaryCta: 'Join the BesTal Talent Network',
+    signInLabel: 'Already registered? Sign In',
+    signInHref: '/login/portal',
+    assessmentLabel: 'Want to know more? See How BesTal Assessment Works',
+    assessmentHref: '/evaluation-standard',
+    checklist: [
+      'Name',
+      'Email',
+      'Mobile Number',
+      'Primary Skill',
+      'Years of Experience',
+      'LinkedIn Profile or Résumé',
+    ],
+  },
+} as const;
+
+export const CONSULTING_PAGE = {
+  hero: {
+    titleLine1: 'Specialized Expertise.',
+    titleLine2: 'Built for Execution.',
+    paragraphs: [
+      'From strategy and architecture to engineering and managed delivery, BesTal helps organizations turn technology priorities into measurable progress.',
+      'Technology leaders are under constant pressure to modernize platforms, adopt AI, improve data foundations, accelerate product delivery and control cost — often with limited internal capacity and scarce specialist skills.',
+      'BesTal Consulting brings together experienced technology specialists, engineering capability and flexible delivery models to help organizations move critical initiatives forward with greater speed, focus and confidence.',
+      'Whether you need expert guidance for a complex decision, additional engineering capacity for a transformation program, or a dedicated team accountable for delivery, we shape the engagement around your business objectives, technology environment and operating model.',
+    ],
+    primaryCta: 'Schedule a Consultation',
+    secondaryCta: 'Explore How We Help',
+    profiles: [
+      {
+        name: 'Ananya Rao',
+        role: 'Full-Stack Engineer',
+        skills: ['TypeScript', 'React'],
+        experience: '7 years experience',
+        availability: 'Available now',
+        availabilityTone: 'now' as const,
+        score: 94,
+        image:
+          'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=200&q=80',
+      },
+      {
+        name: 'Leila Haddad',
+        role: 'AI / Machine Learning Engineer',
+        skills: ['PyTorch', 'LLMOps'],
+        experience: '7 years experience',
+        availability: 'Available now',
+        availabilityTone: 'now' as const,
+        score: 95,
+        image:
+          'https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=200&q=80',
+      },
+      {
+        name: 'Marcus Adeyemi',
+        role: 'Cloud & Platform Engineer',
+        skills: ['Kubernetes', 'Terraform'],
+        experience: '12 years experience',
+        availability: 'Available in 2 weeks',
+        availabilityTone: 'soon' as const,
+        score: 96,
+        image:
+          'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=200&q=80',
+      },
+      {
+        name: 'Diego Alvarez',
+        role: 'Data Engineer',
+        skills: ['Databricks', 'dbt'],
+        experience: '10 years experience',
+        availability: 'Available now',
+        availabilityTone: 'now' as const,
+        score: 93,
+        image:
+          'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=200&q=80',
+      },
+    ],
+    pillars: [
+      {
+        title: 'Advice when you need direction',
+        body:
+          'Expert guidance for complex technology decisions — from architecture and platform strategy to modernization planning, technical assessments and implementation roadmaps.',
+      },
+      {
+        title: 'Engineering when you need execution',
+        body:
+          'Extend your ability to build and ship with engineering capability across planning, design, development, integration, testing and release.',
+      },
+      {
+        title: 'Teams when you need scale',
+        body:
+          'Dedicated or managed teams aligned to a product, platform, workstream or business outcome — shaped around your operating model, time zones and program needs.',
+      },
+    ],
+  },
+  intro: {
+    columns: [
+      { title: 'Advice', sub: 'when you need direction.' },
+      { title: 'Engineering', sub: 'when you need execution.' },
+      { title: 'Teams', sub: 'when you need scale.' },
+    ],
+    body:
+      'BesTal Consulting is designed to meet organizations where they are — from a focused specialist engagement to an end-to-end delivery team.',
+  },
+  howWeHelp: {
+    title: 'How We Help',
+    intro: 'The right capability for the problem in front of you.',
+    cardLabel: 'How We Help',
+    services: [
+      {
+        title: 'Technology Advisory & Architecture',
+        body:
+          'Bring clarity to complex technology decisions. Our specialists can support architecture, platform strategy, solution design, modernization planning, technical assessments and implementation roadmaps — helping leadership teams move from options to informed action.',
+        link: 'Schedule a Consultation',
+      },
+      {
+        title: 'Specialized Technology Consulting',
+        body:
+          'Access deep expertise for initiatives that require skills beyond day-to-day team capacity. BesTal consultants work alongside your teams to solve focused technical challenges, establish sound engineering approaches and accelerate execution.',
+        link: 'Schedule a Consultation',
+      },
+      {
+        title: 'Engineering & Product Delivery',
+        body:
+          'Extend your ability to build and ship. From data platforms and AI solutions to cloud-native applications and enterprise systems, we provide engineering capability across planning, design, development, integration, testing and release.',
+        link: 'Schedule a Consultation',
+      },
+      {
+        title: 'Project & Program Delivery Support',
+        body:
+          'Strengthen critical initiatives with experienced professionals who can contribute across architecture, engineering, delivery management, quality and execution — reducing pressure on internal teams while maintaining alignment with your priorities.',
+        link: 'Schedule a Consultation',
+      },
+      {
+        title: 'Dedicated & Managed Teams',
+        body:
+          'Build cross-functional teams around a defined product, platform, workstream or business outcome. Team structure, governance and delivery cadence can be aligned to your operating model, time zones and program needs.',
+        link: 'Schedule a Consultation',
+      },
+      {
+        title: 'Ongoing Engineering Support',
+        body:
+          'Maintain momentum after go-live. BesTal can provide ongoing engineering, enhancement, platform support and delivery capacity for organizations that need continuity without permanently expanding internal headcount.',
+        link: 'Schedule a Consultation',
+      },
+    ],
+  },
+  technology: {
+    title: 'Our Technology Expertise',
+    intro:
+      'BesTal supports consulting, engineering and modernization initiatives across core and emerging enterprise technology domains.',
+    cards: [
+      {
+        title: 'Data, Analytics & AI',
+        body:
+          'Data strategy, data engineering, modern data platforms, analytics, machine learning, Generative AI, AI engineering, MLOps and AI-enabled applications.',
+        image:
+          'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=900&q=80',
+      },
+      {
+        title: 'Cloud, DevOps & Platform Engineering',
+        body:
+          'Cloud architecture, migration and modernization, AWS, Azure, GCP, DevOps, SRE, Kubernetes, infrastructure automation and platform engineering.',
+        image:
+          'https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=900&q=80',
+      },
+      {
+        title: 'Digital & Product Engineering',
+        body:
+          'Web and mobile applications, APIs, microservices, full-stack engineering, modernization, QA automation and product engineering.',
+        image:
+          'https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=900&q=80',
+      },
+      {
+        title: 'Enterprise Applications',
+        body:
+          'Enterprise application modernization, implementation and integration across platforms such as SAP, Oracle, Microsoft and related ecosystems.',
+        image:
+          'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=900&q=80',
+      },
+      {
+        title: 'ServiceNow',
+        body:
+          'Platform architecture, development, integration and implementation support across relevant ServiceNow workflows and modules.',
+        image:
+          'https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&w=900&q=80',
+      },
+      {
+        title: 'Salesforce',
+        body:
+          'Architecture, development, integration and platform support across Sales Cloud, Service Cloud, Marketing Cloud, Data Cloud and related solutions.',
+        image:
+          'https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=900&q=80',
+      },
+      {
+        title: 'Cybersecurity',
+        body:
+          'Security engineering, cloud and application security, IAM, security operations and technology risk support, subject to project-specific capability and requirements.',
+        image:
+          'https://images.unsplash.com/photo-1563986768609-322da13575f3?auto=format&fit=crop&w=900&q=80',
+      },
+    ],
+  },
+  professionals: {
+    title: 'Built Around Business Priorities',
+    intro:
+      'Technology consulting creates value when it connects architecture and engineering decisions to the outcomes the business actually needs.',
+    quote:
+      'Every engagement starts with the business objective — then we shape the capability, team and delivery model around what needs to be achieved.',
+    items: [
+      'Modernize legacy platforms without disrupting critical operations.',
+      'Build stronger data foundations for analytics, AI and automation.',
+      'Move AI initiatives from experimentation toward production use cases.',
+      'Accelerate cloud adoption and improve platform scalability and resilience.',
+      'Increase product and engineering throughput when internal capacity is constrained.',
+      'Access specialized skills for SAP, ServiceNow, Salesforce and enterprise platforms.',
+      'Strengthen delivery capability for transformation programs and time-sensitive initiatives.',
+      'Create flexible capacity without permanently carrying skills that may only be required for a specific phase or program.',
+    ],
+  },
+  why: {
+    step: '05',
+    title: 'Why BesTal Consulting?',
+    intro: 'Enterprise thinking. Specialist expertise. Flexible execution.',
+    items: [
+      {
+        title: 'Specialists, Not Generic Capacity',
+        body:
+          'Access professionals aligned to the problem you are solving — from architects and senior engineers to platform specialists and cross-functional delivery teams.',
+      },
+      {
+        title: 'From Advice to Execution',
+        body:
+          'We can support the journey from assessment and architecture through implementation and ongoing engineering, reducing the gap between strategy and delivery.',
+      },
+      {
+        title: 'Flexible by Design',
+        body:
+          'Engage an individual specialist, a dedicated team, a project-based unit or ongoing delivery capacity. The model can adapt as priorities, scope and demand evolve.',
+      },
+      {
+        title: 'Greater Transparency',
+        body:
+          'For talent-led engagements, relevant assessment insights, verification status, availability and commercial information can be made visible upfront, helping clients make faster, better-informed decisions.',
+      },
+      {
+        title: 'Global Delivery, Local Alignment',
+        body:
+          'Support distributed organizations across the US, UK, Middle East and India with delivery structures designed around client time zones, collaboration needs and program governance.',
+      },
+      {
+        title: 'Enterprise & GCC Ready',
+        body:
+          'Our model is suited to enterprises, Global Capability Centers, product companies and technology organizations that need specialist capability while preserving control, governance and flexibility.',
+      },
+      {
+        title: 'Outcome-Focused',
+        body:
+          'We start with the business and technology objective, then shape the capability, team and delivery model around what needs to be achieved — not around a predetermined staffing construct.',
+      },
+    ],
+  },
+  engagement: {
+    title: 'Engagement Models',
+    intro: 'Choose the level of ownership and flexibility your initiative requires.',
+    models: [
+      {
+        num: '01',
+        title: 'Expert-on-Demand',
+        body:
+          'Bring in a specialist architect, consultant or senior engineer for a focused challenge, technical decision or defined period.',
+      },
+      {
+        num: '02',
+        title: 'Team Augmentation',
+        body:
+          'Add experienced professionals to an existing product, engineering or transformation team while retaining day-to-day client ownership.',
+      },
+      {
+        num: '03',
+        title: 'Dedicated Team',
+        body:
+          'Create a stable, cross-functional team aligned to a product, platform or workstream, operating as an extension of your organization.',
+      },
+      {
+        num: '04',
+        title: 'Project-Based Delivery',
+        body:
+          'Define a scope, milestones and delivery responsibilities around a specific initiative. Commercial and governance structure can be aligned to the clarity and risk profile of the work.',
+      },
+      {
+        num: '05',
+        title: 'Managed Delivery',
+        body:
+          'BesTal assumes greater responsibility for team structure, delivery management, execution cadence and defined outcomes within the agreed scope.',
+      },
+      {
+        num: '06',
+        title: 'Ongoing Engineering Capacity',
+        body:
+          'Maintain access to engineering capability for enhancement, modernization, operational improvement or evolving product needs without permanently expanding internal capacity.',
+      },
+    ],
+  },
+  approach: {
+    step: '06',
+    title: 'Our Approach',
+    intro: 'Start with the problem. Build the right team. Stay focused on outcomes.',
+    steps: [
+      {
+        num: '01',
+        title: 'Understand',
+        body:
+          'We begin with the business objective, technology context, constraints, stakeholders, timelines and definition of success.',
+      },
+      {
+        num: '02',
+        title: 'Shape',
+        body:
+          'We define the expertise, team structure, delivery model and governance appropriate to the initiative.',
+      },
+      {
+        num: '03',
+        title: 'Mobilize',
+        body:
+          'We bring together the required specialists and establish ways of working, ownership, communication and delivery cadence.',
+      },
+      {
+        num: '04',
+        title: 'Execute',
+        body:
+          'The team works against agreed priorities, milestones and engineering standards, with transparent progress and active issue management.',
+      },
+      {
+        num: '05',
+        title: 'Adapt',
+        body:
+          'As requirements evolve, capacity and specialist skills can be adjusted to keep the engagement aligned to business needs.',
+      },
+      {
+        num: '06',
+        title: 'Transfer & Scale',
+        body:
+          'Where appropriate, we support knowledge transfer, transition, ongoing delivery or expansion into the next phase.',
+      },
+    ],
+  },
+  leaders: {
+    title: 'Designed for Technology Leaders',
+    intro:
+      'BesTal Consulting is built for leaders who need to move important technology work forward without creating unnecessary complexity.',
+    roles: [
+      {
+        num: '01',
+        title: 'CTO / CIO',
+        body:
+          'Modernize technology, improve resilience, access specialist expertise and balance transformation priorities with cost and risk.',
+      },
+      {
+        num: '02',
+        title: 'CDO / Head of Data & AI',
+        body:
+          'Strengthen data foundations, accelerate analytics and AI initiatives, and access engineers who can move concepts toward production.',
+      },
+      {
+        num: '03',
+        title: 'VP / Director of Engineering',
+        body:
+          'Increase engineering capacity, close skill gaps, improve delivery velocity and scale teams around changing product priorities.',
+      },
+      {
+        num: '04',
+        title: 'COO / Transformation Leader',
+        body:
+          'Add execution capacity to strategic programs while maintaining visibility, governance and alignment to business outcomes.',
+      },
+      {
+        num: '05',
+        title: 'CEO / Business Leader',
+        body:
+          'Access technology capability that helps accelerate growth, modernization and operational change without unnecessary fixed capacity.',
+      },
+      {
+        num: '06',
+        title: 'Procurement / Vendor Management',
+        body:
+          'Create clearer engagement structures, commercial visibility and scalable access to specialized technology capability.',
+      },
+    ],
+  },
+  closing: {
+    sections: [
+      {
+        title: 'Global Perspective. Delivery Aligned to You.',
+        paragraphs: [
+          'Organizations increasingly operate across geographies, time zones and distributed teams. BesTal Consulting is designed to support clients across the US, UK, Middle East and India with engagement structures aligned to local business needs and global delivery.',
+          'Team composition, working-hour overlap, location strategy and governance are shaped around the engagement — helping distributed teams collaborate effectively without forcing every project into the same delivery model.',
+        ],
+      },
+      {
+        title: 'Built for Enterprise Confidence',
+        paragraphs: [
+          'Enterprise technology work requires more than technical capability. Depending on the engagement, BesTal can align the delivery model around client requirements for confidentiality, access controls, verification, onboarding, IP protection, working practices and governance.',
+          'No unsupported compliance claims.',
+          'Any security certification, regulatory compliance, data-residency commitment, service-level obligation or industry-specific control should be communicated only when it is formally established and applicable to the engagement.',
+        ],
+      },
+      {
+        title: 'Ready to Move a Technology Priority Forward?',
+        paragraphs: [
+          'Whether you are modernizing a platform, building an AI or data capability, scaling engineering delivery, implementing an enterprise application or addressing a specialist skill gap, BesTal can help you shape the right consulting and delivery model.',
+          'Bring us the problem. We’ll help you define the expertise and execution model required to move it forward.',
+        ],
+      },
+    ],
+    primaryCta: 'Schedule a Consultation',
+    secondaryPrompt: 'Prefer to start with a conversation?',
+    secondaryCta: 'Talk to Our Team',
+    footerTitle: 'Specialized Expertise. Built for Execution.',
+    regions: ['US', 'UK', 'MIDDLE EAST', 'INDIA'],
+  },
+} as const;

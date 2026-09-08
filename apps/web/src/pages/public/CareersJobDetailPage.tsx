@@ -3,7 +3,7 @@ import { ArrowLeft, Briefcase, Clock, MapPin, Users } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
 import { MktShell } from '../../components/marketing/MktShell';
 import { PageMeta } from '../../components/PageMeta';
-import { openCareersEmail } from '../../lib/careers-copy';
+import { openCareersEmail, CAREERS_APPLY_EMAIL, CAREERS_APPLY_MAILTO } from '../../lib/careers-copy';
 import { getCareersJobDescription } from '../../lib/careers-job-descriptions';
 import { formatDate } from '@bestal/shared-utils';
 
@@ -73,6 +73,10 @@ export function CareersJobDetailPage() {
               <button type="button" className="mkt-careers-detail-apply" onClick={openCareersEmail}>
                 Apply
               </button>
+              <p className="mkt-careers-apply-email">
+                Apply to{' '}
+                <a href={CAREERS_APPLY_MAILTO}>{CAREERS_APPLY_EMAIL}</a>
+              </p>
             </div>
           </article>
         </MktShell>
@@ -141,7 +145,9 @@ export function CareersJobDetailPage() {
                 Apply Now
               </button>
               <p className="mkt-careers-detail-aside-note">
-                Applications reviewed within 48 hours.
+                Send your application to{' '}
+                <a href={CAREERS_APPLY_MAILTO}>{CAREERS_APPLY_EMAIL}</a>. Applications reviewed within
+                48 hours.
               </p>
             </div>
           </aside>

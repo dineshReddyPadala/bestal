@@ -16,6 +16,7 @@ const STATIC_ROUTES = [
   '/how-it-works',
   '/sample-talent',
   '/talent',
+  '/consulting',
   '/evaluation-standard',
   '/trust',
   '/rates',
