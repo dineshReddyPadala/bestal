@@ -27,6 +27,7 @@ import { cn } from '@bestal/shared-utils';
 import { formatDimensionScoreDisplay } from '../../lib/score-display';
 import { ForwardArrow } from '../../components/ui/ForwardArrow';
 import { CookieBanner } from '../../components/marketing/CookieBanner';
+import { HomeAudienceToggle } from '../../components/marketing/HomeAudienceToggle';
 
 const TIMEZONE_CHIPS = [
   { abbr: 'ET', name: 'Eastern' },
@@ -75,6 +76,9 @@ export function HomePage() {
       <PageMeta title={PAGE_SEO.home.title} description={PAGE_SEO.home.description} />
 
       <section className="mkt-hero">
+        <div className="mkt-hero-audience-bar">
+          <HomeAudienceToggle />
+        </div>
         <MktShell className="mkt-g2">
           <div className="mkt-hero-copy">
             <h1>

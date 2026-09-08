@@ -1165,7 +1165,7 @@ export const TALENT_LANDING_PAGE = {
     subheading:
       'Build a profile that shows what you can do — and get discovered for global technology opportunities.',
     paragraphs: [
-      'You\'ve built your skills through years of learning, solving problems and delivering real work. Your next opportunity should recognize that — not just the keywords on your Resume.',
+      'You have built your skills through years of learning, solving problems and delivering real work. Your next opportunity should recognize that — not just the keywords on your Resume.',
       'BesTal helps skilled technology professionals in India showcase their capabilities and get considered for opportunities with companies and teams around the world.',
       'Bring your skills, experience, assessment results, credentials, availability and work preferences together in one professional profile — giving potential clients a clearer picture of what you can contribute.',
     ],
@@ -1179,8 +1179,7 @@ export const TALENT_LANDING_PAGE = {
       score: 95,
       scoreLabel: 'BesTal Score',
       availability: 'Available now',
-      image:
-        'https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=900&q=80',
+      image: '/Image (5) (1).png',
       tabs: ['Skills', 'Assessment', 'Profile'] as const,
       tabRows: [
         { label: 'Talent', value: 'Verified professional profile' },
@@ -1204,7 +1203,7 @@ export const TALENT_LANDING_PAGE = {
       {
         title: 'Prove Your Skills Once. Use Them Across Opportunities.',
         body:
-          'Complete BesTal\'s structured assessment process and build a richer professional profile that can be considered across relevant opportunities. Spend less time repeatedly proving the basics and more time discussing where you can add value.',
+          'Complete the BesTal structured assessment process and build a richer professional profile that can be considered across relevant opportunities. Spend less time repeatedly proving the basics and more time discussing where you can add value.',
       },
       {
         title: 'Build a Profile That Shows What You Can Do',
@@ -1227,7 +1226,6 @@ export const TALENT_LANDING_PAGE = {
           'BesTal aims to align role expectations, working hours, availability, engagement model and commercial expectations early — so both you and the client can make informed decisions.',
       },
     ],
-    cta: 'Join the BesTal Talent Network',
   },
   capabilities: {
     step: '02',
@@ -1238,11 +1236,11 @@ export const TALENT_LANDING_PAGE = {
   workSpeak: {
     step: '03',
     title: 'Let Your Work Speak for You',
-    subtitle: 'Sometimes the best way to prove yourself isn\'t another interview.',
+    subtitle: 'Sometimes the best way to prove yourself is not another interview.',
     intro:
       'For eligible opportunities, clients may evaluate mutual fit through a 10-hour trial engagement, giving you the opportunity to demonstrate your skills through real work before a longer-term engagement is considered.',
-    importantLabel: 'Important:',
-    importantNote:
+    approachNoteLabel: 'Approach note:',
+    approachNote:
       'Approved trial hours are compensated to the professional under the applicable engagement terms. The client trial does not mean unpaid work for talent.',
   },
   advantage: {
@@ -1251,13 +1249,6 @@ export const TALENT_LANDING_PAGE = {
     subtitle: 'Your expertise. Made visible.',
     intro:
       'Traditional hiring can reduce years of experience to a few pages of a Resume and a handful of keyword searches. BesTal is designed to give demonstrated capability, relevant experience and readiness to contribute greater visibility.',
-    evidenceTitle: 'Evidence of your capabilities',
-    evidenceBars: [
-      { label: 'Technical Capability', value: 95 },
-      { label: 'Communication Skills', value: 92 },
-      { label: 'Collaboration Style', value: 89 },
-      { label: 'Client Readiness', value: 94 },
-    ],
     items: [
       {
         title: 'More Than a Resume',
@@ -1301,8 +1292,7 @@ export const TALENT_LANDING_PAGE = {
     timezone: 'GMT +1',
     rate: '$75 / hour',
     badge: 'Western-Standard',
-    image:
-      'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=800&q=80',
+    image: '/Image (6) (1).png',
   },
   communities: {
     step: '05',
@@ -1396,7 +1386,7 @@ export const TALENT_LANDING_PAGE = {
       {
         title: 'Meet the Client',
         body:
-          'If there\'s a strong match, move forward to a client conversation or interview. For eligible opportunities, you may also demonstrate your capability through a real-work trial.',
+          'If there is a strong match, move forward to a client conversation or interview. For eligible opportunities, you may also demonstrate your capability through a real-work trial.',
       },
       {
         title: 'Start Your Engagement',
@@ -1421,7 +1411,7 @@ export const TALENT_LANDING_PAGE = {
     quote:
       'Whatever your next step looks like, BesTal is designed to help the right opportunities discover the right skills.',
     image:
-      'https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=1200&q=80',
+      'https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&w=1200&q=80',
   },
   transparency: {
     step: '08',
@@ -1430,7 +1420,7 @@ export const TALENT_LANDING_PAGE = {
       'BesTal is a curated talent network. Joining the network does not guarantee an interview, project, assignment or placement.',
       'Opportunities depend on client demand, your skills and experience, assessment results, availability, work preferences and fit with specific client requirements.',
       'We believe being transparent about this matters.',
-      'Our goal isn\'t to send every opportunity to every professional. It\'s to create better matches between proven talent and organizations that need those capabilities.',
+      'Our goal is not to send every opportunity to every professional. It is to create better matches between proven talent and organizations that need those capabilities.',
     ],
   },
   cta: {
@@ -1446,9 +1436,11 @@ export const TALENT_LANDING_PAGE = {
     headline: 'Your Skills Deserve More Than a Resume.',
     primaryCta: 'Join the BesTal Talent Network',
     signInLabel: 'Already registered? Sign In',
-    signInHref: '/login/portal',
+    signInHref: '/login/client',
     assessmentLabel: 'Want to know more? See How BesTal Assessment Works',
     assessmentHref: '/evaluation-standard',
+    backgroundImage:
+      'https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=1920&q=80',
     checklist: [
       'Name',
       'Email',
@@ -1554,37 +1546,31 @@ export const CONSULTING_PAGE = {
         title: 'Technology Advisory & Architecture',
         body:
           'Bring clarity to complex technology decisions. Our specialists can support architecture, platform strategy, solution design, modernization planning, technical assessments and implementation roadmaps — helping leadership teams move from options to informed action.',
-        link: 'Schedule a Consultation',
       },
       {
         title: 'Specialized Technology Consulting',
         body:
           'Access deep expertise for initiatives that require skills beyond day-to-day team capacity. BesTal consultants work alongside your teams to solve focused technical challenges, establish sound engineering approaches and accelerate execution.',
-        link: 'Schedule a Consultation',
       },
       {
         title: 'Engineering & Product Delivery',
         body:
           'Extend your ability to build and ship. From data platforms and AI solutions to cloud-native applications and enterprise systems, we provide engineering capability across planning, design, development, integration, testing and release.',
-        link: 'Schedule a Consultation',
       },
       {
         title: 'Project & Program Delivery Support',
         body:
           'Strengthen critical initiatives with experienced professionals who can contribute across architecture, engineering, delivery management, quality and execution — reducing pressure on internal teams while maintaining alignment with your priorities.',
-        link: 'Schedule a Consultation',
       },
       {
         title: 'Dedicated & Managed Teams',
         body:
           'Build cross-functional teams around a defined product, platform, workstream or business outcome. Team structure, governance and delivery cadence can be aligned to your operating model, time zones and program needs.',
-        link: 'Schedule a Consultation',
       },
       {
         title: 'Ongoing Engineering Support',
         body:
           'Maintain momentum after go-live. BesTal can provide ongoing engineering, enhancement, platform support and delivery capacity for organizations that need continuity without permanently expanding internal headcount.',
-        link: 'Schedule a Consultation',
       },
     ],
   },
@@ -1705,45 +1691,42 @@ export const CONSULTING_PAGE = {
   },
   engagement: {
     title: 'Engagement Models',
-    intro: 'Choose the level of ownership and flexibility your initiative requires.',
+    intro:
+      'Choose the model that matches the work in front of you — and change it when the work changes.',
     models: [
       {
-        num: '01',
         title: 'Expert-on-Demand',
         body:
           'Bring in a specialist architect, consultant or senior engineer for a focused challenge, technical decision or defined period.',
       },
       {
-        num: '02',
-        title: 'Team Augmentation',
+        title: 'Time & Materials',
         body:
           'Add experienced professionals to an existing product, engineering or transformation team while retaining day-to-day client ownership.',
       },
       {
-        num: '03',
-        title: 'Dedicated Team',
+        title: 'Dedicated Teams',
         body:
           'Create a stable, cross-functional team aligned to a product, platform or workstream, operating as an extension of your organization.',
       },
       {
-        num: '04',
         title: 'Project-Based Delivery',
         body:
           'Define a scope, milestones and delivery responsibilities around a specific initiative. Commercial and governance structure can be aligned to the clarity and risk profile of the work.',
       },
       {
-        num: '05',
         title: 'Managed Delivery',
         body:
           'BesTal assumes greater responsibility for team structure, delivery management, execution cadence and defined outcomes within the agreed scope.',
       },
-      {
-        num: '06',
-        title: 'Ongoing Engineering Capacity',
-        body:
-          'Maintain access to engineering capability for enhancement, modernization, operational improvement or evolving product needs without permanently expanding internal capacity.',
-      },
     ],
+    highlight: {
+      title: 'Ongoing Engineering Capacity',
+      body:
+        'Maintain access to engineering capability for enhancement, modernization, operational improvement or evolving product needs without permanently expanding internal capacity.',
+      cta: 'Talk to Us About Ongoing Engineering Capacity',
+      href: '/contact',
+    },
   },
   approach: {
     step: '06',
