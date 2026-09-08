@@ -1,1 +1,2 @@
-export { SampleTalentPage as TalentPage } from './SampleTalentPage';
+export { TalentLandingPage as TalentPage } from './TalentLandingPage';
+export { SampleTalentPage } from './SampleTalentPage';

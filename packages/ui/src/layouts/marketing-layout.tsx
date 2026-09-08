@@ -21,7 +21,7 @@ function isSameMarketingPage(currentPathname: string, targetPathname: string): b
   }
 
   if (targetPathname === '/sample-talent') {
-    return currentPathname === '/sample-talent' || currentPathname === '/talent';
+    return currentPathname === '/sample-talent';
   }
 
   return (
@@ -250,7 +250,6 @@ export function MarketingLayout({
 
   function isNavItemActive(item: MarketingNavItem, isActive: boolean) {
     if (isActive) return true;
-    if (item.href === '/sample-talent' && location.pathname === '/talent') return true;
     if (
       item.children?.some(
         (child) =>
