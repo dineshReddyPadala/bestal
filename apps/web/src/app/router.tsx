@@ -33,6 +33,7 @@ import { PrivacyPolicyPage } from '../pages/public/PrivacyPolicyPage';
 import { TermsOfServicePage } from '../pages/public/TermsOfServicePage';
 import { CommunitiesPage } from '../pages/public/CommunitiesPage';
 import { ContactPage } from '../pages/public/ContactPage';
+import { ConsultingPage } from '../pages/public/ConsultingPage';
 import { ReachOutPage } from '../pages/public/ReachOutPage';
 import { EnterprisePage } from '../pages/public/EnterprisePage';
 import { EvaluationStandardPage } from '../pages/public/EvaluationStandardPage';
@@ -311,6 +312,7 @@ const router = createBrowserRouter([
       { path: 'how-it-works', element: <HowItWorksPage /> },
       { path: 'sample-talent', element: <SampleTalentPage /> },
       { path: 'talent', element: <TalentPage /> },
+      { path: 'consulting', element: <ConsultingPage /> },
       { path: 'evaluation-standard', element: <EvaluationStandardPage /> },
       { path: 'trust', element: <TrustPage /> },
       { path: 'rates', element: <RatesPage /> },

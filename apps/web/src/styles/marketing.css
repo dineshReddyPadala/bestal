@@ -17905,6 +17905,28 @@
   background: #084f55;
 }
 
+.marketing-site .mkt-careers-apply-email,
+.marketing-site .mkt-careers-jd-apply-email {
+  margin: 0.65rem 0 0;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: #6b7280;
+}
+
+.marketing-site .mkt-careers-detail-aside-note a,
+.marketing-site .mkt-careers-apply-email a,
+.marketing-site .mkt-careers-jd-apply-email a {
+  color: #0e6e76;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.marketing-site .mkt-careers-detail-aside-note a:hover,
+.marketing-site .mkt-careers-apply-email a:hover,
+.marketing-site .mkt-careers-jd-apply-email a:hover {
+  text-decoration: underline;
+}
+
 .marketing-site .mkt-careers-detail-body {
   padding: 1.5rem 0 3rem;
 }
@@ -18680,11 +18702,23 @@
 
 .marketing-site .mkt-careers-jd-foot {
   display: flex;
-  justify-content: flex-end;
-  gap: 0.75rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
   padding: 1rem 1.25rem 1.25rem;
   border-top: 1px solid #eceae3;
   background: #fff;
+}
+
+.marketing-site .mkt-careers-jd-foot-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  flex-shrink: 0;
+}
+
+.marketing-site .mkt-careers-jd-apply-email {
+  margin: 0;
 }
 
 .marketing-site .mkt-careers-jd-cancel,
@@ -18746,7 +18780,13 @@
   }
 
   .marketing-site .mkt-careers-jd-foot {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .marketing-site .mkt-careers-jd-foot-actions {
     flex-direction: column-reverse;
+    width: 100%;
   }
 
   .marketing-site .mkt-careers-jd-cancel,
@@ -18754,3 +18794,4900 @@
     width: 100%;
   }
 }
+
+/* Talent landing page */
+.marketing-site .mkt-talent-page {
+  background: var(--mkt-bg);
+}
+
+.marketing-site .mkt-talent-section {
+  padding: 4.5rem 0;
+}
+
+.marketing-site .mkt-talent-section-title {
+  margin: 0 0 2rem;
+  font-family: var(--mkt-display);
+  font-size: clamp(1.75rem, 3vw, 2.35rem);
+  line-height: 1.15;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--mkt-ink);
+}
+
+.marketing-site .mkt-talent-section-title--center {
+  text-align: center;
+  max-width: 46rem;
+  margin-inline: auto;
+}
+
+.marketing-site .mkt-talent-section-title--light {
+  color: #fff;
+}
+
+.marketing-site .mkt-talent-hero {
+  background: var(--mkt-teal-dd);
+  color: #fff;
+  padding: 4.5rem 0 3rem;
+}
+
+.marketing-site .mkt-talent-hero-copy {
+  width: 100%;
+  max-width: none;
+}
+
+.marketing-site .mkt-talent-hero-copy h1 {
+  margin: 0;
+  font-family: var(--mkt-display);
+  font-size: clamp(2.25rem, 5vw, 3.25rem);
+  line-height: 1.08;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+
+.marketing-site .mkt-talent-hero-lead {
+  margin: 1.25rem 0 0;
+  max-width: 42rem;
+  font-size: 1.05rem;
+  line-height: 1.7;
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.marketing-site .mkt-talent-hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1.25rem;
+  margin-top: 2rem;
+}
+
+.marketing-site .mkt-talent-text-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--mkt-teal);
+  text-decoration: none;
+}
+
+.marketing-site .mkt-talent-text-link--light {
+  color: #fff;
+}
+
+.marketing-site .mkt-talent-text-link:hover {
+  opacity: 0.85;
+}
+
+.marketing-site .mkt-talent-hero-pillars {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 2rem;
+  margin-top: 3rem;
+  padding-top: 2rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.marketing-site .mkt-talent-hero-pillar h3 {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--mkt-amber);
+}
+
+.marketing-site .mkt-talent-hero-pillar p {
+  margin: 0.5rem 0 0;
+  font-size: 0.875rem;
+  line-height: 1.65;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.marketing-site .mkt-talent-why-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.5rem;
+}
+
+.marketing-site .mkt-talent-why-card {
+  border-radius: 1rem;
+  padding: 2rem;
+}
+
+.marketing-site .mkt-talent-why-card--light {
+  background: #fff;
+  border: 1px solid var(--mkt-line);
+}
+
+.marketing-site .mkt-talent-why-card--dark {
+  background: var(--mkt-teal-dd);
+  color: #fff;
+}
+
+.marketing-site .mkt-talent-why-card-hd {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.marketing-site .mkt-talent-why-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 999px;
+  background: var(--mkt-amber);
+  color: var(--mkt-ink);
+}
+
+.marketing-site .mkt-talent-why-card h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 800;
+}
+
+.marketing-site .mkt-talent-why-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.marketing-site .mkt-talent-why-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  padding: 0.55rem 0;
+  font-size: 0.925rem;
+  line-height: 1.55;
+  color: var(--mkt-ink-d);
+}
+
+.marketing-site .mkt-talent-check {
+  flex-shrink: 0;
+  width: 1rem;
+  height: 1rem;
+  margin-top: 0.15rem;
+  color: var(--mkt-ok);
+}
+
+.marketing-site .mkt-talent-why-card--dark p {
+  margin: 0 0 1.25rem;
+  line-height: 1.7;
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.marketing-site .mkt-talent-cap-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 1.5rem;
+}
+
+.marketing-site .mkt-talent-cap-item {
+  text-align: center;
+}
+
+.marketing-site .mkt-talent-cap-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 999px;
+  background: var(--mkt-amber-t);
+  color: var(--mkt-amber-d);
+}
+
+.marketing-site .mkt-talent-cap-icon svg {
+  width: 1.35rem;
+  height: 1.35rem;
+}
+
+.marketing-site .mkt-talent-cap-item h3 {
+  margin: 1rem 0 0.5rem;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.marketing-site .mkt-talent-cap-item p {
+  margin: 0;
+  font-size: 0.85rem;
+  line-height: 1.6;
+  color: var(--mkt-ink-d);
+}
+
+.marketing-site .mkt-talent-work-speak {
+  background: var(--mkt-teal-dd);
+  color: #fff;
+  padding: 4.5rem 0;
+}
+
+.marketing-site .mkt-talent-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.marketing-site .mkt-talent-tab {
+  border: 0;
+  border-radius: 999px;
+  padding: 0.65rem 1.25rem;
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.82);
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.marketing-site .mkt-talent-tab.is-active {
+  background: var(--mkt-amber);
+  color: var(--mkt-ink);
+}
+
+.marketing-site .mkt-talent-tab-panel {
+  background: rgba(0, 0, 0, 0.18);
+  border-radius: 1rem;
+  padding: 1.75rem;
+}
+
+.marketing-site .mkt-talent-tab-copy h3 {
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 800;
+}
+
+.marketing-site .mkt-talent-tab-copy p {
+  margin: 0.75rem 0 0;
+  line-height: 1.7;
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.marketing-site .mkt-talent-tab-copy ul {
+  margin: 1rem 0 0;
+  padding-left: 1.1rem;
+  color: rgba(255, 255, 255, 0.78);
+  line-height: 1.65;
+}
+
+.marketing-site .mkt-talent-jobs-wrap {
+  margin-top: 1.5rem;
+}
+
+.marketing-site .mkt-talent-jobs-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem;
+  border-radius: 0.65rem;
+  background: rgba(0, 0, 0, 0.28);
+}
+
+.marketing-site .mkt-talent-jobs-filter-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.marketing-site .mkt-talent-jobs-search,
+.marketing-site .mkt-talent-jobs-select {
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 0.45rem;
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  font: inherit;
+  font-size: 0.85rem;
+  padding: 0.5rem 0.75rem;
+}
+
+.marketing-site .mkt-talent-jobs-search {
+  min-width: 12rem;
+  flex: 1 1 12rem;
+}
+
+.marketing-site .mkt-talent-jobs-search:focus,
+.marketing-site .mkt-talent-jobs-select:focus {
+  outline: none;
+  border-color: var(--mkt-amber);
+}
+
+.marketing-site .mkt-talent-jobs-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.marketing-site .mkt-talent-job-card {
+  display: block;
+  padding: 1rem 1.1rem;
+  border-radius: 0.75rem;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: inherit;
+  text-decoration: none;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.marketing-site .mkt-talent-job-card:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.marketing-site .mkt-talent-job-card h4 {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.marketing-site .mkt-talent-job-card p {
+  margin: 0.35rem 0 0;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.marketing-site .mkt-talent-job-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-top: 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--mkt-amber);
+}
+
+.marketing-site .mkt-talent-advantage-layout {
+  display: grid;
+  grid-template-columns: minmax(14rem, 22rem) minmax(0, 1fr);
+  gap: 2.5rem;
+  align-items: start;
+}
+
+.marketing-site .mkt-talent-advantage-nav h2 {
+  margin: 0 0 1.25rem;
+  font-size: clamp(1.5rem, 2.5vw, 2rem);
+  font-weight: 800;
+}
+
+.marketing-site .mkt-talent-advantage-nav ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.marketing-site .mkt-talent-advantage-btn {
+  display: block;
+  width: 100%;
+  padding: 0.85rem 0;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  text-align: left;
+  font: inherit;
+  font-size: 0.925rem;
+  font-weight: 600;
+  color: var(--mkt-ink-d);
+  cursor: pointer;
+  transition: color 0.2s ease, border-color 0.2s ease;
+}
+
+.marketing-site .mkt-talent-advantage-btn.is-active {
+  color: var(--mkt-ink);
+  border-bottom-color: var(--mkt-ok);
+}
+
+.marketing-site .mkt-talent-advantage-accordion {
+  border-top: 1px solid var(--mkt-line);
+}
+
+.marketing-site .mkt-talent-advantage-item {
+  border-bottom: 1px solid var(--mkt-line);
+}
+
+.marketing-site .mkt-talent-advantage-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 1.1rem 0;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  font: inherit;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.marketing-site .mkt-talent-advantage-plus {
+  width: 1rem;
+  height: 1rem;
+  transition: transform 0.2s ease;
+}
+
+.marketing-site .mkt-talent-advantage-plus.is-open {
+  transform: rotate(45deg);
+}
+
+.marketing-site .mkt-talent-advantage-item p {
+  margin: 0 0 1.1rem;
+  padding-right: 1.5rem;
+  font-size: 0.925rem;
+  line-height: 1.65;
+  color: var(--mkt-ink-d);
+}
+
+.marketing-site .mkt-talent-profile-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+  gap: 2rem;
+  padding: 2rem;
+  border-radius: 1.25rem;
+  background: #fff;
+  border: 1px solid var(--mkt-line);
+  box-shadow: 0 12px 40px rgba(18, 16, 14, 0.06);
+}
+
+.marketing-site .mkt-talent-profile-photo {
+  overflow: hidden;
+  border-radius: 1rem;
+  min-height: 18rem;
+}
+
+.marketing-site .mkt-talent-profile-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.marketing-site .mkt-talent-profile-role {
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--mkt-teal);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.marketing-site .mkt-talent-profile-body h3 {
+  margin: 0.35rem 0 0;
+  font-size: 1.75rem;
+  font-weight: 800;
+}
+
+.marketing-site .mkt-talent-profile-location {
+  margin: 0.35rem 0 1rem;
+  font-size: 0.875rem;
+  color: var(--mkt-ink-d);
+}
+
+.marketing-site .mkt-talent-profile-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-bottom: 1.25rem;
+}
+
+.marketing-site .mkt-talent-profile-tags span {
+  padding: 0.35rem 0.65rem;
+  border-radius: 999px;
+  background: var(--mkt-teal-t);
+  color: var(--mkt-teal-d);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.marketing-site .mkt-talent-profile-body h4 {
+  margin: 0 0 0.75rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.marketing-site .mkt-talent-profile-bar + .mkt-talent-profile-bar {
+  margin-top: 0.75rem;
+}
+
+.marketing-site .mkt-talent-profile-bar-hd {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin-bottom: 0.35rem;
+}
+
+.marketing-site .mkt-talent-profile-bar-track {
+  height: 0.45rem;
+  border-radius: 999px;
+  background: var(--mkt-surface2);
+  overflow: hidden;
+}
+
+.marketing-site .mkt-talent-profile-bar-track span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--mkt-teal), var(--mkt-amber));
+}
+
+.marketing-site .mkt-talent-communities-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.marketing-site .mkt-talent-community-card {
+  overflow: hidden;
+  border-radius: 0.85rem;
+  background: #fff;
+  border: 1px solid var(--mkt-line);
+}
+
+.marketing-site .mkt-talent-community-card img {
+  width: 100%;
+  height: 9rem;
+  object-fit: cover;
+}
+
+.marketing-site .mkt-talent-community-card div {
+  padding: 1rem;
+}
+
+.marketing-site .mkt-talent-community-card h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.marketing-site .mkt-talent-community-card p {
+  margin: 0.45rem 0 0;
+  font-size: 0.825rem;
+  line-height: 1.55;
+  color: var(--mkt-ink-d);
+}
+
+.marketing-site .mkt-talent-hiw-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  margin-bottom: 1.25rem;
+}
+
+.marketing-site .mkt-talent-hiw-step {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 999px;
+  border: 2px solid var(--mkt-line);
+  background: #fff;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--mkt-ink-d);
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.marketing-site .mkt-talent-hiw-step.is-active {
+  background: var(--mkt-amber);
+  border-color: var(--mkt-amber);
+  color: var(--mkt-ink);
+}
+
+.marketing-site .mkt-talent-hiw-card {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 1.5rem;
+  align-items: start;
+  padding: 2rem;
+  border-radius: 1rem;
+  background: #fff;
+  border: 1px solid var(--mkt-line);
+}
+
+.marketing-site .mkt-talent-hiw-num {
+  font-size: 3rem;
+  line-height: 1;
+  font-weight: 800;
+  color: var(--mkt-amber);
+}
+
+.marketing-site .mkt-talent-hiw-card h3 {
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 800;
+}
+
+.marketing-site .mkt-talent-hiw-card p {
+  margin: 0.65rem 0 0;
+  line-height: 1.65;
+  color: var(--mkt-ink-d);
+}
+
+.marketing-site .mkt-talent-features-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 2.5rem;
+  align-items: center;
+}
+
+.marketing-site .mkt-talent-features-copy h2 {
+  margin: 0;
+  font-size: clamp(1.75rem, 3vw, 2.25rem);
+  font-weight: 800;
+}
+
+.marketing-site .mkt-talent-features-copy p {
+  margin: 1rem 0 0;
+  line-height: 1.7;
+  color: var(--mkt-ink-d);
+}
+
+.marketing-site .mkt-talent-features-copy ul {
+  margin: 1.25rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.marketing-site .mkt-talent-features-copy li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  padding: 0.45rem 0;
+  font-size: 0.925rem;
+  line-height: 1.55;
+}
+
+.marketing-site .mkt-talent-features-photo {
+  overflow: hidden;
+  border-radius: 1rem;
+  min-height: 18rem;
+}
+
+.marketing-site .mkt-talent-features-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.marketing-site .mkt-talent-transparency-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+  gap: 2rem;
+  align-items: start;
+}
+
+.marketing-site .mkt-talent-transparency-layout h2 {
+  margin: 0;
+  font-size: clamp(1.75rem, 3vw, 2.25rem);
+  font-weight: 800;
+}
+
+.marketing-site .mkt-talent-transparency-layout p {
+  margin: 0 0 1rem;
+  line-height: 1.7;
+  color: var(--mkt-ink-d);
+}
+
+.marketing-site .mkt-talent-cta {
+  background:
+    linear-gradient(rgba(5, 42, 46, 0.88), rgba(5, 42, 46, 0.92)),
+    url('https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=1600&q=80')
+      center / cover no-repeat;
+  color: #fff;
+  padding: 4.5rem 0;
+}
+
+.marketing-site .mkt-talent-cta h2 {
+  margin: 0;
+  font-size: clamp(1.85rem, 3.5vw, 2.5rem);
+  font-weight: 800;
+}
+
+.marketing-site .mkt-talent-cta p {
+  margin: 1rem 0 0;
+  max-width: 36rem;
+  line-height: 1.7;
+  color: rgba(255, 255, 255, 0.78);
+}
+
+/* Consulting page v2 */
+.marketing-site .mkt-consult-v2-page {
+  background: var(--mkt-bg);
+}
+
+.marketing-site .mkt-consult-v2-hero-copy h1,
+.marketing-site .mkt-consult-v2-hero-pillar h2,
+.marketing-site .mkt-consult-v2-profile-name-row h3,
+.marketing-site .mkt-consult-v2-tech-hd h2,
+.marketing-site .mkt-consult-v2-tech-card h3,
+.marketing-site .mkt-consult-v2-engagement-col h3,
+.marketing-site .mkt-consult-v2-closing-row h2,
+.marketing-site .mkt-consult-v2-closing-foot h3,
+.marketing-site .mkt-consult-v2-btn-primary,
+.marketing-site .mkt-consult-v2-btn-primary:hover,
+.marketing-site .mkt-talent-hero-copy h1,
+.marketing-site .mkt-talent-why-card--dark h3,
+.marketing-site .mkt-talent-tab-copy h3,
+.marketing-site .mkt-talent-cta h2 {
+  color: #fff;
+}
+
+.marketing-site .mkt-consult-v2-section {
+  padding: 4.5rem 0;
+}
+
+.marketing-site .mkt-consult-v2-section-hd h2,
+.marketing-site .mkt-consult-v2-why-copy h2,
+.marketing-site .mkt-consult-v2-professionals-copy h2 {
+  margin: 0;
+  font-family: var(--mkt-display);
+  font-size: clamp(1.85rem, 3vw, 2.5rem);
+  line-height: 1.12;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #002b24;
+}
+
+.marketing-site .mkt-consult-v2-section-hd p,
+.marketing-site .mkt-consult-v2-why-copy p {
+  margin: 0.85rem 0 0;
+  max-width: 34rem;
+  font-size: 0.95rem;
+  line-height: 1.7;
+  color: var(--mkt-ink-d);
+}
+
+.marketing-site .mkt-consult-v2-section-hd--light h2,
+.marketing-site .mkt-consult-v2-section-hd--light p {
+  color: #fff;
+}
+
+.marketing-site .mkt-consult-v2-section-hd--light p {
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.marketing-site .mkt-consult-v2-hero {
+  background: #0a110f;
+  color: #fff;
+  padding: 4.75rem 0 0;
+  overflow: visible;
+}
+
+.marketing-site .mkt-consult-v2-hero-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(2rem, 4vw, 4.5rem);
+  align-items: center;
+  overflow: visible;
+}
+
+.marketing-site .mkt-consult-v2-hero-copy {
+  width: 100%;
+  max-width: none;
+}
+
+.marketing-site .mkt-consult-v2-hero-copy h1 {
+  margin: 0;
+  font-family: var(--mkt-display);
+  font-size: clamp(2.35rem, 4.8vw, 3.35rem);
+  line-height: 1.04;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+
+.marketing-site .mkt-consult-v2-hero-copy p {
+  margin: 1.35rem 0 0;
+  max-width: none;
+  width: 100%;
+  font-size: 1.02rem;
+  line-height: 1.75;
+  color: rgba(255, 255, 255, 0.76);
+}
+
+.marketing-site .mkt-consult-v2-hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.85rem;
+  margin-top: 2.15rem;
+}
+
+.marketing-site .mkt-consult-v2-hero-cards-wrap {
+  container-type: inline-size;
+  container-name: consult-hero-cards;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  overflow: visible;
+  flex-shrink: 1;
+}
+
+.marketing-site .mkt-consult-v2-hero-cards {
+  --consult-card-w: 24rem;
+  --consult-zigzag-offset: 5rem;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: repeat(4, auto);
+  gap: 0.85rem;
+  width: min(calc(var(--consult-card-w) + var(--consult-zigzag-offset)), 100%);
+  max-width: 100%;
+  margin-left: auto;
+  isolation: isolate;
+}
+
+.marketing-site .mkt-consult-v2-profile-card {
+  position: relative;
+  top: auto;
+  left: auto;
+  display: grid;
+  grid-template-columns: 3.25rem minmax(0, 1fr);
+  gap: 0.75rem;
+  align-items: start;
+  width: var(--consult-card-w);
+  max-width: 100%;
+  margin: 0;
+  padding: 0.95rem 1rem 0.85rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 1.125rem;
+  background: #161c1b;
+  box-shadow: 0 16px 38px rgba(0, 0, 0, 0.38);
+  cursor: default;
+  outline: none;
+  overflow: hidden;
+  transition:
+    transform 0.28s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 0.28s ease,
+    border-color 0.28s ease,
+    opacity 0.28s ease;
+}
+
+/* Vertical zigzag — row 1 left, row 2 right, row 3 left, row 4 right */
+.marketing-site .mkt-consult-v2-profile-card.is-zigzag-left {
+  justify-self: start;
+}
+
+.marketing-site .mkt-consult-v2-profile-card.is-zigzag-right {
+  justify-self: end;
+}
+
+.marketing-site .mkt-consult-v2-hero-cards.has-hovered-card .mkt-consult-v2-profile-card:not(.is-hovered) {
+  opacity: 0.82;
+}
+
+.marketing-site .mkt-consult-v2-profile-card.is-hovered,
+.marketing-site .mkt-consult-v2-profile-card:hover,
+.marketing-site .mkt-consult-v2-profile-card:focus-visible {
+  transform: translateY(-3px);
+  border-color: rgba(42, 168, 154, 0.5);
+  box-shadow: 0 24px 56px rgba(0, 0, 0, 0.52);
+}
+
+.marketing-site .mkt-consult-v2-profile-card:focus-visible {
+  outline: 2px solid rgba(42, 168, 154, 0.65);
+  outline-offset: 3px;
+}
+
+.marketing-site .mkt-consult-v2-profile-photo {
+  width: 3.25rem;
+  height: 3.25rem;
+  border-radius: 0.5rem;
+  object-fit: cover;
+}
+
+.marketing-site .mkt-consult-v2-profile-body {
+  min-width: 0;
+}
+
+.marketing-site .mkt-consult-v2-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.8rem 1.25rem;
+  border-radius: 999px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  text-decoration: none;
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.marketing-site .mkt-consult-v2-btn-primary {
+  border: 1px solid #134e48;
+  background: #134e48;
+  color: #fff;
+}
+
+.marketing-site .mkt-consult-v2-btn-primary:hover {
+  background: #0f3f3a;
+  border-color: #0f3f3a;
+}
+
+.marketing-site .mkt-consult-v2-btn-outline {
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  background: transparent;
+  color: #fff;
+}
+
+.marketing-site .mkt-consult-v2-btn-outline:hover {
+  border-color: rgba(255, 255, 255, 0.6);
+}
+
+.marketing-site .mkt-consult-v2-profile-name-row {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.marketing-site .mkt-consult-v2-profile-name-row h3 {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+.marketing-site .mkt-consult-v2-profile-check {
+  color: #2aa89a;
+}
+
+.marketing-site .mkt-consult-v2-profile-check svg {
+  width: 0.85rem;
+  height: 0.85rem;
+}
+
+.marketing-site .mkt-consult-v2-profile-role {
+  margin: 0.25rem 0 0;
+  font-size: 0.72rem;
+  line-height: 1.45;
+  color: rgba(191, 221, 218, 0.72);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.marketing-site .mkt-consult-v2-profile-meta-row {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 0.45rem;
+  margin-top: 0.5rem;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.marketing-site .mkt-consult-v2-profile-tag-group {
+  display: inline-flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 0.35rem;
+  flex: 0 0 auto;
+  min-width: 0;
+}
+
+.marketing-site .mkt-consult-v2-profile-tag {
+  flex-shrink: 0;
+  padding: 0.2rem 0.45rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 0.64rem;
+  font-weight: 600;
+  line-height: 1.2;
+  color: rgba(255, 255, 255, 0.78);
+  white-space: nowrap;
+}
+
+.marketing-site .mkt-consult-v2-profile-exp {
+  margin: 0;
+  flex: 0 0 auto;
+  font-size: 0.68rem;
+  line-height: 1.2;
+  color: rgba(255, 255, 255, 0.52);
+  white-space: nowrap;
+}
+
+.marketing-site .mkt-consult-v2-profile-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-top: 0.6rem;
+  padding-top: 0.6rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 0.66rem;
+}
+
+.marketing-site .mkt-consult-v2-profile-avail {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: rgba(255, 255, 255, 0.58);
+}
+
+.marketing-site .mkt-consult-v2-profile-dot {
+  width: 0.38rem;
+  height: 0.38rem;
+  border-radius: 999px;
+  background: #3ecf8e;
+}
+
+.marketing-site .mkt-consult-v2-profile-dot.is-soon {
+  background: #e6b422;
+}
+
+.marketing-site .mkt-consult-v2-profile-score {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #2aa89a;
+}
+
+.marketing-site .mkt-consult-v2-profile-score svg {
+  width: 0.72rem;
+  height: 0.72rem;
+  fill: #2aa89a;
+  stroke: #2aa89a;
+}
+
+.marketing-site .mkt-consult-v2-hero-foot {
+  position: relative;
+  z-index: 5;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0;
+  margin-top: 4.25rem;
+  padding: 2.35rem 0 3rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.marketing-site .mkt-consult-v2-hero-pillar {
+  position: relative;
+  padding: 0 1.75rem;
+}
+
+.marketing-site .mkt-consult-v2-hero-pillar:first-child {
+  padding-left: 0;
+}
+
+.marketing-site .mkt-consult-v2-hero-pillar:last-child {
+  padding-right: 0;
+}
+
+.marketing-site .mkt-consult-v2-hero-pillar-rule {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.marketing-site .mkt-consult-v2-hero-pillar h2 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.marketing-site .mkt-consult-v2-hero-pillar p {
+  margin: 0.65rem 0 0;
+  font-size: 0.85rem;
+  line-height: 1.65;
+  color: rgba(255, 255, 255, 0.68);
+}
+
+.marketing-site .mkt-consult-v2-intro {
+  padding: 4rem 0;
+  background: #f9f8f3;
+}
+
+.marketing-site .mkt-consult-v2-intro-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.marketing-site .mkt-consult-v2-intro-col {
+  position: relative;
+  padding: 0 2rem;
+}
+
+.marketing-site .mkt-consult-v2-intro-col:first-child {
+  padding-left: 0;
+}
+
+.marketing-site .mkt-consult-v2-intro-col:last-child {
+  padding-right: 0;
+}
+
+.marketing-site .mkt-consult-v2-intro-rule {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: rgba(0, 43, 36, 0.12);
+}
+
+.marketing-site .mkt-consult-v2-intro-col h2 {
+  margin: 0;
+  font-size: clamp(1.75rem, 2.5vw, 2.25rem);
+  font-weight: 800;
+  color: #002b24;
+}
+
+.marketing-site .mkt-consult-v2-intro-col p {
+  margin: 0.35rem 0 0;
+  font-size: clamp(1.5rem, 2vw, 1.85rem);
+  line-height: 1.2;
+  font-weight: 300;
+  color: rgba(0, 43, 36, 0.42);
+}
+
+.marketing-site .mkt-consult-v2-intro-body {
+  margin: 2.5rem auto 0;
+  max-width: 46rem;
+  text-align: center;
+  font-size: 0.95rem;
+  line-height: 1.75;
+  color: var(--mkt-ink-d);
+}
+
+.marketing-site .mkt-consult-v2-help {
+  background: #fbfbf9;
+}
+
+.marketing-site .mkt-consult-v2-help-layout {
+  display: grid;
+  grid-template-columns: minmax(18rem, 28rem) minmax(0, 1fr);
+  gap: clamp(2rem, 4vw, 4rem);
+  align-items: start;
+}
+
+.marketing-site .mkt-consult-v2-help-copy h2 {
+  margin: 0;
+  font-family: var(--mkt-display);
+  font-size: clamp(1.85rem, 3vw, 2.5rem);
+  line-height: 1.12;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #002b24;
+}
+
+.marketing-site .mkt-consult-v2-help-copy p {
+  margin: 0.85rem 0 0;
+  max-width: 24rem;
+  font-size: 0.95rem;
+  line-height: 1.7;
+  color: var(--mkt-ink-d);
+}
+
+.marketing-site .mkt-consult-v2-help-nav {
+  margin-top: 2rem;
+}
+
+.marketing-site .mkt-consult-v2-help-nav ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid rgba(0, 43, 36, 0.1);
+}
+
+.marketing-site .mkt-consult-v2-help-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: 100%;
+  padding: 1.05rem 0;
+  border: 0;
+  border-bottom: 1px solid rgba(0, 43, 36, 0.1);
+  background: transparent;
+  text-align: left;
+  font: inherit;
+  font-size: 0.925rem;
+  font-weight: 500;
+  color: rgba(0, 43, 36, 0.42);
+  cursor: pointer;
+  transition: color 0.2s ease, font-weight 0.2s ease;
+}
+
+.marketing-site .mkt-consult-v2-help-btn:hover {
+  color: rgba(0, 43, 36, 0.72);
+}
+
+.marketing-site .mkt-consult-v2-help-btn.is-active {
+  font-weight: 800;
+  color: #002b24;
+}
+
+.marketing-site .mkt-consult-v2-help-btn svg {
+  flex-shrink: 0;
+  width: 1rem;
+  height: 1rem;
+  color: #002b24;
+}
+
+.marketing-site .mkt-consult-v2-help-card {
+  margin-top: 4.75rem;
+  max-width: 36rem;
+  padding: 2.25rem 2.5rem;
+  border-radius: 1rem;
+  background: #fff;
+  border: 0;
+  box-shadow: 0 20px 60px rgba(18, 16, 14, 0.08);
+}
+
+.marketing-site .mkt-consult-v2-help-card-label {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--mkt-teal);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.marketing-site .mkt-consult-v2-help-card h3 {
+  margin: 0.85rem 0 0;
+  font-size: clamp(1.45rem, 2.2vw, 1.85rem);
+  font-weight: 800;
+  line-height: 1.2;
+  color: #002b24;
+}
+
+.marketing-site .mkt-consult-v2-help-card p {
+  margin: 1rem 0 0;
+  max-width: 32rem;
+  font-size: 0.95rem;
+  line-height: 1.75;
+  color: var(--mkt-ink-d);
+}
+
+.marketing-site .mkt-consult-v2-help-card-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin-top: 1.5rem;
+  font-size: 0.925rem;
+  font-weight: 800;
+  color: #002b24;
+  text-decoration: none;
+}
+
+.marketing-site .mkt-consult-v2-help-card-link:hover {
+  opacity: 0.78;
+}
+
+.marketing-site .mkt-consult-v2-help-card-link svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+.marketing-site .mkt-consult-v2-text-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin-top: 1.25rem;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--mkt-teal);
+  text-decoration: none;
+}
+
+.marketing-site .mkt-consult-v2-text-link--dark {
+  color: #002b24;
+}
+
+.marketing-site .mkt-consult-v2-tech {
+  background: #0a120d;
+  color: #fff;
+}
+
+.marketing-site .mkt-consult-v2-tech-hd {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1.5rem;
+  margin-bottom: 1.75rem;
+}
+
+.marketing-site .mkt-consult-v2-tech-hd h2 {
+  margin: 0;
+  font-size: clamp(1.85rem, 3vw, 2.35rem);
+  font-weight: 800;
+}
+
+.marketing-site .mkt-consult-v2-tech-hd p {
+  margin: 0.75rem 0 0;
+  max-width: 34rem;
+  line-height: 1.7;
+  color: rgba(255, 255, 255, 0.68);
+}
+
+.marketing-site .mkt-consult-v2-tech-controls {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.marketing-site .mkt-consult-v2-tech-arrow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+  background: transparent;
+  color: #fff;
+  cursor: pointer;
+}
+
+.marketing-site .mkt-consult-v2-tech-arrow:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.marketing-site .mkt-consult-v2-tech-track-wrap {
+  overflow: hidden;
+}
+
+.marketing-site .mkt-consult-v2-tech-track {
+  display: flex;
+  gap: 0.75rem;
+  transition: transform 0.35s ease;
+}
+
+.marketing-site .mkt-consult-v2-tech-card {
+  flex: 0 0 calc(25% - 0.5625rem);
+  overflow: hidden;
+  border-radius: 0.85rem;
+  background: #0e1f16;
+  min-width: 0;
+}
+
+.marketing-site .mkt-consult-v2-tech-card img {
+  width: 100%;
+  height: 8.5rem;
+  object-fit: cover;
+}
+
+.marketing-site .mkt-consult-v2-tech-card-body {
+  position: relative;
+  padding: 1rem 1rem 1.25rem;
+}
+
+.marketing-site .mkt-consult-v2-tech-card-icon {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  width: 1rem;
+  height: 1rem;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.marketing-site .mkt-consult-v2-tech-card h3 {
+  margin: 0;
+  padding-right: 1.25rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+.marketing-site .mkt-consult-v2-tech-card p {
+  margin: 0.55rem 0 0;
+  font-size: 0.8rem;
+  line-height: 1.55;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.marketing-site .mkt-consult-v2-professionals-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
+  gap: 3rem;
+  align-items: start;
+}
+
+.marketing-site .mkt-consult-v2-professionals-copy p {
+  margin: 1rem 0 0;
+  line-height: 1.75;
+  color: var(--mkt-ink-d);
+}
+
+.marketing-site .mkt-consult-v2-professionals-quote {
+  margin: 1.5rem 0 0;
+  padding-left: 1rem;
+  border-left: 3px solid #e07a5f;
+  font-size: 0.95rem;
+  line-height: 1.7;
+  color: var(--mkt-ink-d);
+}
+
+.marketing-site .mkt-consult-v2-professionals-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--mkt-line);
+}
+
+.marketing-site .mkt-consult-v2-professionals-list li {
+  padding: 1rem 0;
+  border-bottom: 1px solid var(--mkt-line);
+  font-size: 0.925rem;
+  line-height: 1.6;
+  color: var(--mkt-ink-d);
+}
+
+.marketing-site .mkt-consult-v2-professionals-list li.is-emphasis {
+  font-weight: 700;
+  color: #002b24;
+}
+
+.marketing-site .mkt-consult-v2-why {
+  background: #f9f8f3;
+}
+
+.marketing-site .mkt-consult-v2-why-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  gap: 3rem;
+  align-items: start;
+}
+
+.marketing-site .mkt-consult-v2-step-num {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--mkt-ink-f);
+}
+
+.marketing-site .mkt-consult-v2-why-accordion {
+  border-top: 1px solid var(--mkt-line);
+}
+
+.marketing-site .mkt-consult-v2-why-item {
+  border-bottom: 1px solid var(--mkt-line);
+}
+
+.marketing-site .mkt-consult-v2-why-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 1rem 0;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  font: inherit;
+  font-size: 0.975rem;
+  font-weight: 600;
+  color: var(--mkt-ink-d);
+  cursor: pointer;
+}
+
+.marketing-site .mkt-consult-v2-why-item.is-open .mkt-consult-v2-why-trigger {
+  color: #002b24;
+  font-weight: 800;
+}
+
+.marketing-site .mkt-consult-v2-why-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 999px;
+  background: #0f4c44;
+  color: #fff;
+}
+
+.marketing-site .mkt-consult-v2-why-item:not(.is-open) .mkt-consult-v2-why-mark {
+  background: transparent;
+  color: var(--mkt-ink-f);
+}
+
+.marketing-site .mkt-consult-v2-why-mark svg {
+  width: 0.9rem;
+  height: 0.9rem;
+}
+
+.marketing-site .mkt-consult-v2-why-item p {
+  margin: 0 0 1rem;
+  padding-right: 2rem;
+  line-height: 1.7;
+  color: var(--mkt-ink-d);
+}
+
+.marketing-site .mkt-consult-v2-engagement {
+  background: #081312;
+  color: #fff;
+}
+
+.marketing-site .mkt-consult-v2-engagement-hd {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1.5rem;
+  margin-bottom: 1.75rem;
+}
+
+.marketing-site .mkt-consult-v2-engagement-hd h2 {
+  margin: 0;
+  font-family: var(--mkt-display);
+  font-size: clamp(1.85rem, 3vw, 2.5rem);
+  line-height: 1.12;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #fff;
+}
+
+.marketing-site .mkt-consult-v2-engagement-hd p {
+  margin: 0.85rem 0 0;
+  max-width: 34rem;
+  font-size: 0.95rem;
+  line-height: 1.7;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.marketing-site .mkt-consult-v2-engagement-controls {
+  display: flex;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.marketing-site .mkt-consult-v2-engagement-arrow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+  background: transparent;
+  color: #fff;
+  cursor: pointer;
+}
+
+.marketing-site .mkt-consult-v2-engagement-arrow:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.marketing-site .mkt-consult-v2-engagement-track-wrap {
+  overflow: hidden;
+}
+
+.marketing-site .mkt-consult-v2-engagement-track {
+  display: flex;
+  transition: transform 0.35s ease;
+}
+
+.marketing-site .mkt-consult-v2-engagement-col {
+  position: relative;
+  flex: 0 0 25%;
+  padding: 0 1.25rem 1.5rem;
+}
+
+.marketing-site .mkt-consult-v2-engagement-rule {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.marketing-site .mkt-consult-v2-engagement-num {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.42);
+}
+
+.marketing-site .mkt-consult-v2-engagement-col h3 {
+  margin: 0.75rem 0 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+.marketing-site .mkt-consult-v2-engagement-col p {
+  margin: 0.55rem 0 0;
+  font-size: 0.8rem;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.68);
+}
+
+.marketing-site .mkt-consult-v2-engagement-highlight {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 1.5rem;
+  align-items: end;
+  margin-top: 2rem;
+  padding: 1.5rem 1.75rem;
+  border-radius: 0.85rem;
+  background: #fff;
+  color: #002b24;
+}
+
+.marketing-site .mkt-consult-v2-engagement-highlight h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 800;
+}
+
+.marketing-site .mkt-consult-v2-engagement-highlight p {
+  margin: 0.55rem 0 0;
+  max-width: 42rem;
+  font-size: 0.875rem;
+  line-height: 1.65;
+  color: var(--mkt-ink-d);
+}
+
+.marketing-site .mkt-consult-v2-approach {
+  background: #fbfbf9;
+}
+
+.marketing-site .mkt-consult-v2-approach-hd {
+  max-width: 40rem;
+  margin-bottom: 2.5rem;
+}
+
+.marketing-site .mkt-consult-v2-approach-index {
+  display: block;
+  margin-bottom: 0.65rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #6db5a8;
+  letter-spacing: 0.02em;
+}
+
+.marketing-site .mkt-consult-v2-approach-hd h2 {
+  margin: 0;
+  font-family: var(--mkt-display);
+  font-size: clamp(1.85rem, 3vw, 2.5rem);
+  line-height: 1.12;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #002b24;
+}
+
+.marketing-site .mkt-consult-v2-approach-hd p {
+  margin: 0.85rem 0 0;
+  font-size: 0.95rem;
+  line-height: 1.7;
+  color: var(--mkt-ink-d);
+}
+
+.marketing-site .mkt-consult-v2-approach-list {
+  --mkt-approach-stepper-w: 2.75rem;
+  --mkt-approach-stepper-gap: clamp(1rem, 2vw, 1.5rem);
+  --mkt-approach-content-start: calc(var(--mkt-approach-stepper-w) + var(--mkt-approach-stepper-gap));
+  position: relative;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.marketing-site .mkt-consult-v2-approach-list::before {
+  content: '';
+  position: absolute;
+  top: calc(1.45rem + 1.0625rem);
+  bottom: calc(1.45rem + 1.0625rem);
+  left: calc(var(--mkt-approach-stepper-w) / 2 - 0.5px);
+  width: 1px;
+  background: #b8ddd6;
+  pointer-events: none;
+}
+
+.marketing-site .mkt-consult-v2-approach-list li {
+  position: relative;
+  display: grid;
+  grid-template-columns: var(--mkt-approach-stepper-w) auto 1fr minmax(0, 34rem);
+  column-gap: var(--mkt-approach-stepper-gap);
+  align-items: center;
+  padding: 1.45rem 0;
+}
+
+.marketing-site .mkt-consult-v2-approach-list li::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: var(--mkt-approach-content-start);
+  height: 1px;
+  background: rgba(0, 43, 36, 0.1);
+}
+
+.marketing-site .mkt-consult-v2-approach-list li:first-child::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: var(--mkt-approach-content-start);
+  height: 1px;
+  background: rgba(0, 43, 36, 0.1);
+}
+
+.marketing-site .mkt-consult-v2-approach-stepper {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  justify-content: center;
+}
+
+.marketing-site .mkt-consult-v2-approach-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.125rem;
+  height: 2.125rem;
+  border-radius: 999px;
+  border: 1px solid rgba(0, 43, 36, 0.14);
+  background: #ece8df;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: rgba(0, 43, 36, 0.58);
+}
+
+.marketing-site .mkt-consult-v2-approach-title {
+  grid-column: 2;
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 800;
+  line-height: 1.35;
+  color: #002b24;
+  white-space: nowrap;
+}
+
+.marketing-site .mkt-consult-v2-approach-body {
+  grid-column: 4;
+  margin: 0;
+  font-size: 0.925rem;
+  line-height: 1.75;
+  color: var(--mkt-ink-d);
+}
+
+.marketing-site .mkt-consult-v2-leaders {
+  background: #081312;
+  color: #fff;
+}
+
+.marketing-site .mkt-consult-v2-leaders-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.marketing-site .mkt-consult-v2-leader-tile {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 0.75rem;
+  align-items: center;
+  min-height: 5.5rem;
+  padding: 1rem 1.1rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 0.65rem;
+  background: #fff;
+  color: #002b24;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+.marketing-site .mkt-consult-v2-leader-tile.is-active {
+  background: #081312;
+  border-color: rgba(255, 255, 255, 0.18);
+  color: #fff;
+}
+
+.marketing-site .mkt-consult-v2-leader-tile.is-active,
+.marketing-site .mkt-consult-v2-leader-tile.is-active .mkt-consult-v2-leader-title,
+.marketing-site .mkt-consult-v2-leader-tile.is-active .mkt-consult-v2-leader-num {
+  color: #fff;
+}
+
+.marketing-site .mkt-consult-v2-leader-num {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--mkt-ink-f);
+}
+
+.marketing-site .mkt-consult-v2-leader-tile.is-active .mkt-consult-v2-leader-num {
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.marketing-site .mkt-consult-v2-leader-title {
+  font-size: 0.875rem;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.marketing-site .mkt-consult-v2-leader-plus {
+  width: 0.9rem;
+  height: 0.9rem;
+  color: var(--mkt-ink-f);
+}
+
+.marketing-site .mkt-consult-v2-leader-tile.is-active .mkt-consult-v2-leader-plus {
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.marketing-site .mkt-consult-v2-leader-panel {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  gap: 2rem;
+  margin-top: 1rem;
+  padding: 1.75rem;
+  border-radius: 0.65rem;
+  background: #fff;
+  color: #002b24;
+}
+
+.marketing-site .mkt-consult-v2-leader-panel h3 {
+  margin: 0;
+  font-size: clamp(1.35rem, 2vw, 1.75rem);
+  font-weight: 800;
+}
+
+.marketing-site .mkt-consult-v2-leader-panel p {
+  margin: 0;
+  line-height: 1.7;
+  color: var(--mkt-ink-d);
+}
+
+.marketing-site .mkt-consult-v2-closing {
+  background: #0a191b;
+  color: #fff;
+  padding: 4.5rem 0;
+}
+
+.marketing-site .mkt-consult-v2-closing-row {
+  display: grid;
+  grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
+  gap: 2rem;
+  padding: 1.75rem 0;
+}
+
+.marketing-site .mkt-consult-v2-closing-row + .mkt-consult-v2-closing-row {
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.marketing-site .mkt-consult-v2-closing-row h2 {
+  margin: 0;
+  font-size: clamp(1.35rem, 2.5vw, 1.85rem);
+  font-weight: 800;
+}
+
+.marketing-site .mkt-consult-v2-closing-row p {
+  margin: 0 0 1rem;
+  line-height: 1.75;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.marketing-site .mkt-consult-v2-closing-row p:last-child {
+  margin-bottom: 0;
+}
+
+.marketing-site .mkt-consult-v2-closing-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1.25rem;
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.marketing-site .mkt-consult-v2-closing-secondary {
+  margin: 0;
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.marketing-site .mkt-consult-v2-closing-secondary a {
+  color: #fff;
+  font-weight: 700;
+  text-decoration: underline;
+}
+
+.marketing-site .mkt-consult-v2-closing-foot {
+  margin-top: 3rem;
+  padding-top: 2rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.marketing-site .mkt-consult-v2-closing-foot h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 800;
+}
+
+.marketing-site .mkt-consult-v2-closing-foot p {
+  margin: 0.75rem 0 0;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+/* Consulting v2 — hover & focus interactions */
+@keyframes mkt-consult-v2-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.marketing-site .mkt-consult-v2-help-card-inner,
+.marketing-site .mkt-consult-v2-leader-panel-inner {
+  animation: mkt-consult-v2-fade-up 0.32s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.marketing-site .mkt-consult-v2-hero-pillar {
+  transition: transform 0.22s ease;
+}
+
+.marketing-site .mkt-consult-v2-hero-pillar:hover {
+  transform: translateY(-2px);
+}
+
+.marketing-site .mkt-consult-v2-hero-pillar h2 {
+  transition: color 0.22s ease;
+}
+
+.marketing-site .mkt-consult-v2-hero-pillar:hover h2 {
+  color: #6ecfc2;
+}
+
+.marketing-site .mkt-consult-v2-intro-col {
+  transition: transform 0.22s ease;
+}
+
+.marketing-site .mkt-consult-v2-intro-col:hover {
+  transform: translateY(-3px);
+}
+
+.marketing-site .mkt-consult-v2-intro-col h2 {
+  transition: color 0.22s ease;
+}
+
+.marketing-site .mkt-consult-v2-intro-col:hover h2 {
+  color: #0f4c44;
+}
+
+.marketing-site .mkt-consult-v2-help-card {
+  transition: box-shadow 0.25s ease, transform 0.25s ease;
+}
+
+.marketing-site .mkt-consult-v2-help-card:hover {
+  box-shadow: 0 24px 64px rgba(18, 16, 14, 0.12);
+  transform: translateY(-2px);
+}
+
+.marketing-site .mkt-consult-v2-help-btn {
+  transition:
+    color 0.2s ease,
+    font-weight 0.2s ease,
+    padding-left 0.22s ease;
+}
+
+.marketing-site .mkt-consult-v2-help-btn:hover,
+.marketing-site .mkt-consult-v2-help-btn:focus-visible {
+  padding-left: 0.4rem;
+  color: rgba(0, 43, 36, 0.78);
+  outline: none;
+}
+
+.marketing-site .mkt-consult-v2-help-btn:focus-visible {
+  outline: 2px solid rgba(15, 76, 68, 0.35);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+.marketing-site .mkt-consult-v2-help-card-link svg,
+.marketing-site .mkt-consult-v2-btn svg,
+.marketing-site .mkt-consult-v2-text-link svg {
+  transition: transform 0.2s ease;
+}
+
+.marketing-site .mkt-consult-v2-help-card-link:hover svg,
+.marketing-site .mkt-consult-v2-btn:hover svg,
+.marketing-site .mkt-consult-v2-text-link:hover svg {
+  transform: translateX(3px);
+}
+
+.marketing-site .mkt-consult-v2-tech-arrow {
+  transition:
+    transform 0.2s ease,
+    border-color 0.2s ease,
+    background-color 0.2s ease;
+}
+
+.marketing-site .mkt-consult-v2-engagement-arrow {
+  transition:
+    transform 0.2s ease,
+    border-color 0.2s ease,
+    background-color 0.2s ease;
+}
+
+.marketing-site .mkt-consult-v2-tech-arrow:hover:not(:disabled),
+.marketing-site .mkt-consult-v2-tech-arrow:focus-visible:not(:disabled) {
+  transform: translateY(-1px);
+  border-color: rgba(255, 255, 255, 0.42);
+  background: rgba(255, 255, 255, 0.06);
+  outline: none;
+}
+
+.marketing-site .mkt-consult-v2-engagement-arrow:hover:not(:disabled),
+.marketing-site .mkt-consult-v2-engagement-arrow:focus-visible:not(:disabled) {
+  transform: translateY(-1px);
+  border-color: rgba(255, 255, 255, 0.42);
+  background: rgba(255, 255, 255, 0.06);
+  outline: none;
+}
+
+.marketing-site .mkt-consult-v2-tech-card {
+  transition:
+    transform 0.28s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 0.28s ease;
+  cursor: default;
+}
+
+.marketing-site .mkt-consult-v2-tech-card:hover,
+.marketing-site .mkt-consult-v2-tech-card:focus-within {
+  transform: translateY(-4px);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.28);
+}
+
+.marketing-site .mkt-consult-v2-tech-card img {
+  transition: transform 0.35s ease;
+}
+
+.marketing-site .mkt-consult-v2-tech-card:hover img,
+.marketing-site .mkt-consult-v2-tech-card:focus-within img {
+  transform: scale(1.05);
+}
+
+.marketing-site .mkt-consult-v2-tech-card-icon {
+  transition: transform 0.22s ease, color 0.22s ease;
+}
+
+.marketing-site .mkt-consult-v2-tech-card:hover .mkt-consult-v2-tech-card-icon,
+.marketing-site .mkt-consult-v2-tech-card:focus-within .mkt-consult-v2-tech-card-icon {
+  transform: translate(2px, -2px);
+  color: #2aa89a;
+}
+
+.marketing-site .mkt-consult-v2-professionals-list li {
+  transition:
+    color 0.2s ease,
+    padding-left 0.22s ease,
+    border-color 0.2s ease;
+}
+
+.marketing-site .mkt-consult-v2-professionals-list li:hover {
+  padding-left: 0.5rem;
+  color: #002b24;
+  border-color: rgba(0, 43, 36, 0.18);
+}
+
+.marketing-site .mkt-consult-v2-why-item {
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.marketing-site .mkt-consult-v2-why-item:not(.is-open):hover {
+  border-color: rgba(0, 43, 36, 0.16);
+}
+
+.marketing-site .mkt-consult-v2-why-trigger {
+  transition: color 0.2s ease;
+}
+
+.marketing-site .mkt-consult-v2-why-trigger:hover,
+.marketing-site .mkt-consult-v2-why-trigger:focus-visible {
+  color: #002b24;
+  outline: none;
+}
+
+.marketing-site .mkt-consult-v2-why-trigger:focus-visible {
+  outline: 2px solid rgba(15, 76, 68, 0.3);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+.marketing-site .mkt-consult-v2-why-item:not(.is-open) .mkt-consult-v2-why-trigger:hover .mkt-consult-v2-why-mark,
+.marketing-site .mkt-consult-v2-why-item:not(.is-open) .mkt-consult-v2-why-trigger:focus-visible .mkt-consult-v2-why-mark {
+  color: #0f4c44;
+}
+
+.marketing-site .mkt-consult-v2-engagement-col {
+  transition: transform 0.22s ease;
+}
+
+.marketing-site .mkt-consult-v2-engagement-col:hover {
+  transform: translateY(-3px);
+}
+
+.marketing-site .mkt-consult-v2-engagement-num {
+  transition: color 0.22s ease;
+}
+
+.marketing-site .mkt-consult-v2-engagement-col:hover .mkt-consult-v2-engagement-num {
+  color: #2aa89a;
+}
+
+.marketing-site .mkt-consult-v2-engagement-highlight {
+  transition:
+    transform 0.22s ease,
+    box-shadow 0.22s ease;
+}
+
+.marketing-site .mkt-consult-v2-engagement-highlight:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18);
+}
+
+.marketing-site .mkt-consult-v2-approach-num {
+  transition:
+    background 0.22s ease,
+    border-color 0.22s ease,
+    color 0.22s ease,
+    transform 0.22s ease;
+}
+
+.marketing-site .mkt-consult-v2-approach-list li:hover .mkt-consult-v2-approach-num {
+  background: #dceee9;
+  border-color: rgba(42, 168, 154, 0.45);
+  color: #0f4c44;
+  transform: scale(1.06);
+}
+
+.marketing-site .mkt-consult-v2-approach-title {
+  transition: color 0.22s ease;
+}
+
+.marketing-site .mkt-consult-v2-approach-list li:hover .mkt-consult-v2-approach-title {
+  color: #0f4c44;
+}
+
+.marketing-site .mkt-consult-v2-leader-tile {
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.22s ease,
+    box-shadow 0.22s ease;
+}
+
+.marketing-site .mkt-consult-v2-leader-tile:not(.is-active):hover,
+.marketing-site .mkt-consult-v2-leader-tile:not(.is-active):focus-visible {
+  transform: translateY(-2px);
+  border-color: rgba(0, 43, 36, 0.18);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  outline: none;
+}
+
+.marketing-site .mkt-consult-v2-leader-tile:focus-visible {
+  outline: 2px solid rgba(15, 76, 68, 0.35);
+  outline-offset: 2px;
+}
+
+.marketing-site .mkt-consult-v2-leader-panel {
+  transition: box-shadow 0.22s ease;
+}
+
+.marketing-site .mkt-consult-v2-leader-panel:hover {
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.1);
+}
+
+.marketing-site .mkt-consult-v2-btn {
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease,
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.marketing-site .mkt-consult-v2-btn-primary:hover,
+.marketing-site .mkt-consult-v2-btn-primary:focus-visible {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 20px rgba(19, 78, 72, 0.28);
+}
+
+.marketing-site .mkt-consult-v2-btn-outline:hover,
+.marketing-site .mkt-consult-v2-btn-outline:focus-visible {
+  transform: translateY(-1px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .marketing-site .mkt-consult-v2-profile-card,
+  .marketing-site .mkt-consult-v2-hero-pillar,
+  .marketing-site .mkt-consult-v2-intro-col,
+  .marketing-site .mkt-consult-v2-help-card,
+  .marketing-site .mkt-consult-v2-help-btn,
+  .marketing-site .mkt-consult-v2-tech-arrow,
+  .marketing-site .mkt-consult-v2-engagement-arrow,
+  .marketing-site .mkt-consult-v2-tech-card,
+  .marketing-site .mkt-consult-v2-tech-card img,
+  .marketing-site .mkt-consult-v2-tech-card-icon,
+  .marketing-site .mkt-consult-v2-professionals-list li,
+  .marketing-site .mkt-consult-v2-why-item,
+  .marketing-site .mkt-consult-v2-engagement-col,
+  .marketing-site .mkt-consult-v2-engagement-track,
+  .marketing-site .mkt-consult-v2-engagement-highlight,
+  .marketing-site .mkt-consult-v2-approach-num,
+  .marketing-site .mkt-consult-v2-leader-tile,
+  .marketing-site .mkt-consult-v2-btn {
+    transition: none;
+  }
+
+  .marketing-site .mkt-consult-v2-help-card-inner,
+  .marketing-site .mkt-consult-v2-leader-panel-inner {
+    animation: none;
+  }
+}
+
+/* Legacy consulting selectors removed — page uses mkt-consult-v2-* */
+.marketing-site .mkt-consulting-page {
+  background: var(--mkt-bg);
+}
+
+.marketing-site .mkt-consulting-section {
+  padding: 4.5rem 0;
+}
+
+.marketing-site .mkt-consulting-section-title {
+  margin: 0 0 2rem;
+  font-family: var(--mkt-display);
+  font-size: clamp(1.75rem, 3vw, 2.35rem);
+  line-height: 1.15;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--mkt-ink);
+}
+
+.marketing-site .mkt-consulting-section-title--light {
+  color: #fff;
+}
+
+.marketing-site .mkt-consulting-hero {
+  background: #001a1a;
+  color: #fff;
+  padding: 4.5rem 0 3rem;
+}
+
+.marketing-site .mkt-consulting-hero-copy {
+  width: 100%;
+  max-width: none;
+}
+
+.marketing-site .mkt-consulting-hero-copy h1 {
+  margin: 0;
+  font-family: var(--mkt-display);
+  font-size: clamp(2.25rem, 5vw, 3.25rem);
+  line-height: 1.08;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+
+.marketing-site .mkt-consulting-hero-copy p {
+  margin: 1.25rem 0 0;
+  max-width: 42rem;
+  font-size: 1.05rem;
+  line-height: 1.7;
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.marketing-site .mkt-consulting-hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1.25rem;
+  margin-top: 2rem;
+}
+
+.marketing-site .mkt-consulting-text-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--mkt-teal);
+  text-decoration: none;
+}
+
+.marketing-site .mkt-consulting-text-link--light {
+  color: #fff;
+}
+
+.marketing-site .mkt-consulting-text-link:hover {
+  opacity: 0.85;
+}
+
+.marketing-site .mkt-consulting-hero-pillars {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 2rem;
+  margin-top: 3rem;
+  padding-top: 2rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.marketing-site .mkt-consulting-hero-pillar h3 {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--mkt-teal-t2);
+}
+
+.marketing-site .mkt-consulting-hero-pillar p {
+  margin: 0.5rem 0 0;
+  font-size: 0.875rem;
+  line-height: 1.65;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.marketing-site .mkt-consulting-expertise-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 2rem;
+}
+
+.marketing-site .mkt-consulting-expertise-col h3 {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--mkt-teal);
+}
+
+.marketing-site .mkt-consulting-expertise-col p {
+  margin: 0.65rem 0 0;
+  font-size: 0.925rem;
+  line-height: 1.65;
+  color: var(--mkt-ink-d);
+}
+
+.marketing-site .mkt-consulting-ticker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  margin-top: 2.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--mkt-line);
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--mkt-ink-f);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.marketing-site .mkt-consulting-help-layout {
+  display: grid;
+  grid-template-columns: minmax(14rem, 22rem) minmax(0, 1fr);
+  gap: 2rem;
+  align-items: start;
+}
+
+.marketing-site .mkt-consulting-help-nav ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.marketing-site .mkt-consulting-help-btn {
+  display: block;
+  width: 100%;
+  padding: 0.85rem 0;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  text-align: left;
+  font: inherit;
+  font-size: 0.925rem;
+  font-weight: 600;
+  color: var(--mkt-ink-d);
+  cursor: pointer;
+  transition: color 0.2s ease, border-color 0.2s ease;
+}
+
+.marketing-site .mkt-consulting-help-btn.is-active {
+  color: var(--mkt-ink);
+  border-bottom-color: var(--mkt-teal);
+}
+
+.marketing-site .mkt-consulting-help-card {
+  padding: 2rem;
+  border-radius: 1rem;
+  background: #fff;
+  border: 1px solid var(--mkt-line);
+  box-shadow: 0 12px 40px rgba(18, 16, 14, 0.06);
+}
+
+.marketing-site .mkt-consulting-help-card h3 {
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 800;
+}
+
+.marketing-site .mkt-consulting-help-card p {
+  margin: 0.85rem 0 0;
+  line-height: 1.7;
+  color: var(--mkt-ink-d);
+}
+
+.marketing-site .mkt-consulting-tech {
+  background: #001a1a;
+  color: #fff;
+}
+
+.marketing-site .mkt-consulting-tech-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.marketing-site .mkt-consulting-tech-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 0.85rem;
+  min-height: 14rem;
+}
+
+.marketing-site .mkt-consulting-tech-card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.marketing-site .mkt-consulting-tech-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(0, 26, 26, 0.92), rgba(0, 26, 26, 0.2));
+}
+
+.marketing-site .mkt-consulting-tech-card h3 {
+  position: absolute;
+  left: 1rem;
+  right: 1rem;
+  bottom: 1rem;
+  z-index: 1;
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--mkt-teal-t2);
+}
+
+.marketing-site .mkt-consulting-benefits-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+  gap: 2.5rem;
+  align-items: start;
+}
+
+.marketing-site .mkt-consulting-benefits-intro {
+  margin: 1rem 0 0;
+  line-height: 1.7;
+  color: var(--mkt-ink-d);
+}
+
+.marketing-site .mkt-consulting-benefits-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.marketing-site .mkt-consulting-benefits-list li + li {
+  margin-top: 1.25rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--mkt-line);
+}
+
+.marketing-site .mkt-consulting-benefits-list h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.marketing-site .mkt-consulting-benefits-list p {
+  margin: 0.45rem 0 0;
+  font-size: 0.925rem;
+  line-height: 1.6;
+  color: var(--mkt-ink-d);
+}
+
+.marketing-site .mkt-consulting-faq-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+  gap: 2.5rem;
+  align-items: start;
+}
+
+.marketing-site .mkt-consulting-faq-accordion {
+  border-top: 1px solid var(--mkt-line);
+}
+
+.marketing-site .mkt-consulting-faq-item {
+  border-bottom: 1px solid var(--mkt-line);
+}
+
+.marketing-site .mkt-consulting-faq-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 1.1rem 0;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  font: inherit;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.marketing-site .mkt-consulting-faq-chev {
+  width: 1rem;
+  height: 1rem;
+  transition: transform 0.2s ease;
+}
+
+.marketing-site .mkt-consulting-faq-chev.is-open {
+  transform: rotate(180deg);
+}
+
+.marketing-site .mkt-consulting-faq-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 1rem;
+  align-items: start;
+  padding-bottom: 1.1rem;
+}
+
+.marketing-site .mkt-consulting-faq-body p {
+  margin: 0;
+  line-height: 1.65;
+  color: var(--mkt-ink-d);
+}
+
+.marketing-site .mkt-consulting-faq-arrow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 999px;
+  background: var(--mkt-teal);
+  color: #fff;
+}
+
+.marketing-site .mkt-consulting-engagement {
+  background: #001a1a;
+  color: #fff;
+}
+
+.marketing-site .mkt-consulting-engagement-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1.5rem;
+}
+
+.marketing-site .mkt-consulting-engagement-grid h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--mkt-teal-t2);
+}
+
+.marketing-site .mkt-consulting-engagement-grid p {
+  margin: 0.55rem 0 0;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.marketing-site .mkt-consulting-engagement-cta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 2rem;
+  padding: 1.5rem 1.75rem;
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.marketing-site .mkt-consulting-engagement-cta p {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.marketing-site .mkt-consulting-process-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.marketing-site .mkt-consulting-process-list li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 1.5rem;
+  padding: 1.25rem 0;
+  border-bottom: 1px solid var(--mkt-line);
+}
+
+.marketing-site .mkt-consulting-process-num {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--mkt-teal);
+}
+
+.marketing-site .mkt-consulting-process-list h3 {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.marketing-site .mkt-consulting-process-list p {
+  margin: 0.45rem 0 0;
+  line-height: 1.65;
+  color: var(--mkt-ink-d);
+}
+
+.marketing-site .mkt-consulting-leaders {
+  background: #001a1a;
+  color: #fff;
+}
+
+.marketing-site .mkt-consulting-leaders-intro {
+  margin: -1rem 0 1.5rem;
+  max-width: 42rem;
+  line-height: 1.7;
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.marketing-site .mkt-consulting-jobs-panel {
+  padding: 1.5rem;
+  border-radius: 1rem;
+  background: #fff;
+  color: var(--mkt-ink);
+}
+
+.marketing-site .mkt-consulting-jobs-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--mkt-ink-d);
+}
+
+.marketing-site .mkt-consulting-jobs-search,
+.marketing-site .mkt-consulting-jobs-select {
+  border: 1px solid var(--mkt-line);
+  border-radius: 0.45rem;
+  background: #fff;
+  color: var(--mkt-ink);
+  font: inherit;
+  font-size: 0.85rem;
+  padding: 0.5rem 0.75rem;
+}
+
+.marketing-site .mkt-consulting-jobs-search {
+  min-width: 12rem;
+  flex: 1 1 12rem;
+}
+
+.marketing-site .mkt-consulting-jobs-search:focus,
+.marketing-site .mkt-consulting-jobs-select:focus {
+  outline: none;
+  border-color: var(--mkt-teal);
+}
+
+.marketing-site .mkt-consulting-jobs-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.85rem;
+  margin-top: 1.25rem;
+}
+
+.marketing-site .mkt-consulting-job-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 1rem;
+  border-radius: 0.75rem;
+  border: 1px solid var(--mkt-line);
+  background: var(--mkt-bg);
+  color: inherit;
+  text-decoration: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.marketing-site .mkt-consulting-job-card:hover {
+  border-color: var(--mkt-teal);
+  box-shadow: 0 8px 24px rgba(11, 110, 118, 0.08);
+}
+
+.marketing-site .mkt-consulting-job-card h3 {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.marketing-site .mkt-consulting-job-card p {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--mkt-ink-d);
+}
+
+.marketing-site .mkt-consulting-job-card svg {
+  margin-top: auto;
+  width: 1rem;
+  height: 1rem;
+  color: var(--mkt-teal);
+}
+
+.marketing-site .mkt-consulting-jobs-all {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin-top: 1.25rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--mkt-teal);
+  text-decoration: none;
+}
+
+.marketing-site .mkt-consulting-value {
+  background: #001a1a;
+  color: #fff;
+}
+
+.marketing-site .mkt-consulting-value-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+  gap: 2rem;
+  padding: 1.5rem 0;
+}
+
+.marketing-site .mkt-consulting-value-row + .mkt-consulting-value-row {
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.marketing-site .mkt-consulting-value-row h2 {
+  margin: 0;
+  font-size: clamp(1.35rem, 2.5vw, 1.85rem);
+  font-weight: 800;
+}
+
+.marketing-site .mkt-consulting-value-row p {
+  margin: 0;
+  line-height: 1.7;
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.marketing-site .mkt-consulting-cta {
+  background: #001a1a;
+  color: #fff;
+  padding: 4.5rem 0;
+  text-align: center;
+}
+
+.marketing-site .mkt-consulting-cta h2 {
+  margin: 0;
+  font-size: clamp(1.85rem, 3.5vw, 2.5rem);
+  font-weight: 800;
+}
+
+.marketing-site .mkt-consulting-cta-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 1.25rem;
+  margin-top: 1.75rem;
+}
+
+@media (max-width: 1024px) {
+  .marketing-site .mkt-talent-cap-grid,
+  .marketing-site .mkt-talent-communities-grid,
+  .marketing-site .mkt-consulting-tech-grid,
+  .marketing-site .mkt-consulting-engagement-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .marketing-site .mkt-talent-jobs-grid,
+  .marketing-site .mkt-consulting-jobs-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .marketing-site .mkt-talent-advantage-layout,
+  .marketing-site .mkt-consulting-help-layout,
+  .marketing-site .mkt-consulting-faq-layout,
+  .marketing-site .mkt-consulting-benefits-layout,
+  .marketing-site .mkt-talent-features-layout,
+  .marketing-site .mkt-talent-transparency-layout,
+  .marketing-site .mkt-talent-profile-card,
+  .marketing-site .mkt-consulting-value-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .marketing-site .mkt-talent-section,
+  .marketing-site .mkt-consulting-section {
+    padding: 3rem 0;
+  }
+
+  .marketing-site .mkt-talent-hero,
+  .marketing-site .mkt-consulting-hero {
+    padding: 3rem 0 2.25rem;
+  }
+
+  .marketing-site .mkt-talent-why-grid,
+  .marketing-site .mkt-talent-hero-pillars,
+  .marketing-site .mkt-consulting-hero-pillars,
+  .marketing-site .mkt-consulting-expertise-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .marketing-site .mkt-talent-cap-grid,
+  .marketing-site .mkt-talent-communities-grid,
+  .marketing-site .mkt-talent-jobs-grid,
+  .marketing-site .mkt-consulting-tech-grid,
+  .marketing-site .mkt-consulting-engagement-grid,
+  .marketing-site .mkt-consulting-jobs-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .marketing-site .mkt-talent-jobs-filters,
+  .marketing-site .mkt-consulting-jobs-filters {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .marketing-site .mkt-talent-jobs-search,
+  .marketing-site .mkt-consulting-jobs-search {
+    width: 100%;
+  }
+
+  .marketing-site .mkt-consult-v2-hero-grid,
+  .marketing-site .mkt-consult-v2-help-layout,
+  .marketing-site .mkt-consult-v2-professionals-layout,
+  .marketing-site .mkt-consult-v2-why-layout,
+  .marketing-site .mkt-consult-v2-leader-panel,
+  .marketing-site .mkt-consult-v2-closing-row,
+  .marketing-site .mkt-consult-v2-engagement-highlight {
+    grid-template-columns: 1fr;
+  }
+
+  .marketing-site .mkt-consult-v2-hero-cards-wrap,
+  .marketing-site .mkt-consult-v2-hero-cards {
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .marketing-site .mkt-consult-v2-hero-cards-wrap {
+    margin-top: 2rem;
+    justify-content: center;
+  }
+
+  .marketing-site .mkt-consult-v2-hero-cards {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: none;
+    gap: 0.75rem;
+    width: 100%;
+    max-width: 22rem;
+    margin-inline: auto;
+  }
+
+  .marketing-site .mkt-consult-v2-hero-cards {
+    --consult-zigzag-offset: 0rem;
+  }
+
+  .marketing-site .mkt-consult-v2-profile-card,
+  .marketing-site .mkt-consult-v2-profile-card.is-zigzag-left,
+  .marketing-site .mkt-consult-v2-profile-card.is-zigzag-right {
+    justify-self: stretch;
+    width: 100%;
+    max-width: none;
+    margin: 0 !important;
+  }
+
+  .marketing-site .mkt-consult-v2-profile-card.is-hovered,
+  .marketing-site .mkt-consult-v2-profile-card:hover,
+  .marketing-site .mkt-consult-v2-profile-card:focus-visible {
+    transform: none;
+  }
+
+  .marketing-site .mkt-consult-v2-hero-cards.has-hovered-card .mkt-consult-v2-profile-card:not(.is-hovered) {
+    opacity: 1;
+  }
+
+  .marketing-site .mkt-consult-v2-hero-foot,
+  .marketing-site .mkt-consult-v2-intro-grid,
+  .marketing-site .mkt-consult-v2-leaders-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .marketing-site .mkt-consult-v2-hero-pillar,
+  .marketing-site .mkt-consult-v2-intro-col,
+  .marketing-site .mkt-consult-v2-engagement-col {
+    padding: 0 0 1.5rem;
+  }
+
+  .marketing-site .mkt-consult-v2-hero-pillar-rule,
+  .marketing-site .mkt-consult-v2-intro-rule,
+  .marketing-site .mkt-consult-v2-engagement-rule {
+    display: none;
+  }
+
+  .marketing-site .mkt-consult-v2-tech-card {
+    flex-basis: calc(50% - 0.375rem);
+  }
+
+  .marketing-site .mkt-consult-v2-engagement-col {
+    flex-basis: 100%;
+  }
+
+  .marketing-site .mkt-consult-v2-help-card {
+    margin-top: 0;
+    max-width: none;
+  }
+
+  .marketing-site .mkt-consult-v2-approach-list::before {
+    display: none;
+  }
+
+  .marketing-site .mkt-consult-v2-approach-list li {
+    grid-template-columns: var(--mkt-approach-stepper-w) minmax(0, 1fr);
+    row-gap: 0.65rem;
+    column-gap: 1rem;
+    align-items: start;
+  }
+
+  .marketing-site .mkt-consult-v2-approach-list li::after,
+  .marketing-site .mkt-consult-v2-approach-list li:first-child::before {
+    left: 0;
+  }
+
+  .marketing-site .mkt-consult-v2-approach-stepper {
+    grid-row: 1 / span 2;
+  }
+
+  .marketing-site .mkt-consult-v2-approach-title {
+    grid-column: 2;
+    grid-row: 1;
+    white-space: normal;
+  }
+
+  .marketing-site .mkt-consult-v2-approach-body {
+    grid-column: 2;
+    grid-row: 2;
+    max-width: none;
+  }
+
+  .marketing-site .mkt-consult-v2-section {
+    padding: 3rem 0;
+  }
+
+  .marketing-site .mkt-consult-v2-hero {
+    padding: 3rem 0 0;
+  }
+
+  .marketing-site .mkt-consult-v2-leaders-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .marketing-site .mkt-consult-v2-tech-card {
+    flex-basis: 100%;
+  }
+
+  .marketing-site .mkt-consult-v2-closing-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .marketing-site .mkt-consult-v2-closing-actions .mkt-consult-v2-btn {
+    justify-content: center;
+  }
+}
+
+@media (min-width: 1024px) {
+  .marketing-site .mkt-consult-v2-hero-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: clamp(2.5rem, 5vw, 5rem);
+  }
+
+  .marketing-site .mkt-consult-v2-hero-cards {
+    --consult-card-w: 25rem;
+    --consult-zigzag-offset: 5.5rem;
+    gap: 1rem;
+  }
+}
+
+@container consult-hero-cards (max-width: 38rem) {
+  .marketing-site .mkt-consult-v2-hero-cards {
+    --consult-card-w: 23rem;
+    --consult-zigzag-offset: 4.75rem;
+  }
+}
+
+@container consult-hero-cards (max-width: 36rem) {
+  .marketing-site .mkt-consult-v2-hero-cards {
+    --consult-card-w: 22rem;
+    --consult-zigzag-offset: 4.25rem;
+  }
+}
+
+@container consult-hero-cards (max-width: 34rem) {
+  .marketing-site .mkt-consult-v2-hero-cards {
+    --consult-card-w: 21rem;
+    --consult-zigzag-offset: 3.75rem;
+  }
+}
+
+@container consult-hero-cards (max-width: 30rem) {
+  .marketing-site .mkt-consult-v2-hero-cards {
+    --consult-card-w: 19.5rem;
+    --consult-zigzag-offset: 3.25rem;
+  }
+}
+
+@container consult-hero-cards (max-width: 27rem) {
+  .marketing-site .mkt-consult-v2-hero-cards {
+    --consult-card-w: 18rem;
+    --consult-zigzag-offset: 2.75rem;
+  }
+
+  .marketing-site .mkt-consult-v2-profile-card {
+    grid-template-columns: 2.85rem minmax(0, 1fr);
+    gap: 0.65rem;
+    padding: 0.85rem 0.9rem 0.8rem;
+  }
+
+  .marketing-site .mkt-consult-v2-profile-photo {
+    width: 2.85rem;
+    height: 2.85rem;
+  }
+}
+
+@container consult-hero-cards (max-width: 24.5rem) {
+  .marketing-site .mkt-consult-v2-hero-cards {
+    --consult-card-w: 17rem;
+    --consult-zigzag-offset: 2.25rem;
+  }
+}
+
+@media (max-width: 1024px) {
+  .marketing-site .mkt-consult-v2-help-layout,
+  .marketing-site .mkt-consult-v2-professionals-layout,
+  .marketing-site .mkt-consult-v2-why-layout,
+  .marketing-site .mkt-consult-v2-leader-panel,
+  .marketing-site .mkt-consult-v2-closing-row,
+  .marketing-site .mkt-consult-v2-hero-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .marketing-site .mkt-consult-v2-hero-grid {
+    gap: 2.5rem;
+  }
+
+  .marketing-site .mkt-consult-v2-hero-cards-wrap {
+    justify-content: center;
+  }
+
+  .marketing-site .mkt-consult-v2-tech-hd,
+  .marketing-site .mkt-consult-v2-engagement-hd {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .marketing-site .mkt-consult-v2-tech-controls,
+  .marketing-site .mkt-consult-v2-engagement-controls {
+    justify-content: flex-end;
+  }
+
+  .marketing-site .mkt-consult-v2-leaders-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .marketing-site .mkt-consult-v2-engagement-col {
+    flex-basis: 50%;
+  }
+
+  .marketing-site .mkt-consult-v2-tech-card {
+    flex-basis: calc(50% - 0.375rem);
+  }
+}
+
+@media (min-width: 769px) and (max-width: 1023px) {
+  .marketing-site .mkt-consult-v2-hero-cards {
+    --consult-card-w: 22rem;
+    --consult-zigzag-offset: 4.25rem;
+  }
+}
+
+@media (min-width: 769px) and (max-width: 960px) {
+  .marketing-site .mkt-consult-v2-hero-cards {
+    --consult-card-w: 20.5rem;
+    --consult-zigzag-offset: 3.5rem;
+  }
+}
+
+/* ── Talent landing v2 ── */
+.marketing-site .mkt-talent-v2-page {
+  background: #f9f7f2;
+}
+
+/* White text on dark / green sections (override global h1–h3 + p ink colors) */
+.marketing-site .mkt-talent-v2-hero,
+.marketing-site .mkt-talent-v2-hero-card,
+.marketing-site .mkt-talent-v2-why-panel,
+.marketing-site .mkt-talent-v2-work-speak,
+.marketing-site .mkt-talent-v2-hiw-panel-left,
+.marketing-site .mkt-talent-v2-cta {
+  color: #fff;
+}
+
+.marketing-site .mkt-talent-v2-hero h1,
+.marketing-site .mkt-talent-v2-hero h2,
+.marketing-site .mkt-talent-v2-hero h3,
+.marketing-site .mkt-talent-v2-hero-card h2,
+.marketing-site .mkt-talent-v2-hero-card h3,
+.marketing-site .mkt-talent-v2-why-panel h3,
+.marketing-site .mkt-talent-v2-work-speak h2,
+.marketing-site .mkt-talent-v2-work-speak h3,
+.marketing-site .mkt-talent-v2-work-stage h3,
+.marketing-site .mkt-talent-v2-hiw-panel-left h2,
+.marketing-site .mkt-talent-v2-hiw-panel-left h3,
+.marketing-site .mkt-talent-v2-cta h2,
+.marketing-site .mkt-talent-v2-cta h3 {
+  color: #fff;
+}
+
+.marketing-site .mkt-talent-v2-work-speak p,
+.marketing-site .mkt-talent-v2-work-stage p {
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.marketing-site .mkt-talent-v2-work-stage.is-featured,
+.marketing-site .mkt-talent-v2-work-stage.is-featured h3,
+.marketing-site .mkt-talent-v2-work-stage.is-featured p {
+  color: #0b0e11;
+}
+
+.marketing-site .mkt-talent-v2-section {
+  padding: 4.5rem 0;
+}
+
+.marketing-site .mkt-talent-v2-step-num {
+  display: inline-block;
+  margin-bottom: 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.marketing-site .mkt-talent-v2-step-num--green {
+  color: #6db5a8;
+}
+
+.marketing-site .mkt-talent-v2-step-num--amber {
+  color: #e07a5f;
+}
+
+.marketing-site .mkt-talent-v2-step-num--side {
+  margin-bottom: 0;
+  margin-top: 0.15rem;
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.marketing-site .mkt-talent-v2-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.85rem 1.35rem;
+  border-radius: 999px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  text-decoration: none;
+  transition:
+    transform 0.22s ease,
+    box-shadow 0.22s ease,
+    background 0.22s ease,
+    border-color 0.22s ease,
+    color 0.22s ease;
+}
+
+.marketing-site .mkt-talent-v2-btn svg {
+  transition: transform 0.2s ease;
+}
+
+.marketing-site .mkt-talent-v2-btn:hover svg {
+  transform: translateX(3px);
+}
+
+.marketing-site .mkt-talent-v2-btn-primary {
+  border: 1px solid #e07a5f;
+  background: #e07a5f;
+  color: #0b0e11;
+}
+
+.marketing-site .mkt-talent-v2-btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 22px rgba(224, 122, 95, 0.32);
+}
+
+.marketing-site .mkt-talent-v2-btn-outline {
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  background: transparent;
+  color: #fff;
+}
+
+.marketing-site .mkt-talent-v2-btn-outline:hover {
+  transform: translateY(-1px);
+  border-color: rgba(255, 255, 255, 0.6);
+}
+
+.marketing-site .mkt-talent-v2-hero {
+  background: #0b0e11;
+  color: #fff;
+  padding: 4.75rem 0 5rem;
+}
+
+.marketing-site .mkt-talent-v2-hero-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(20rem, 26rem);
+  gap: clamp(2rem, 4vw, 4rem);
+  align-items: start;
+}
+
+.marketing-site .mkt-talent-v2-hero-label {
+  display: block;
+  margin-bottom: 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #e07a5f;
+}
+
+.marketing-site .mkt-talent-v2-hero-copy h1 {
+  margin: 0;
+  font-family: var(--mkt-display);
+  font-size: clamp(2.2rem, 4.5vw, 3.1rem);
+  line-height: 1.08;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: #fff;
+}
+
+.marketing-site .mkt-talent-v2-hero-sub {
+  margin: 1.1rem 0 0;
+  max-width: 34rem;
+  font-size: 1rem;
+  line-height: 1.65;
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.marketing-site .mkt-talent-v2-hero-body {
+  margin: 1rem 0 0;
+  max-width: 34rem;
+  font-size: 0.925rem;
+  line-height: 1.75;
+  color: rgba(255, 255, 255, 0.68);
+}
+
+.marketing-site .mkt-talent-v2-hero-hook {
+  margin: 1.35rem 0 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #e07a5f;
+}
+
+.marketing-site .mkt-talent-v2-hero-copy .mkt-talent-v2-btn {
+  margin-top: 1.75rem;
+}
+
+.marketing-site .mkt-talent-v2-hero-card {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 1rem;
+  background: #161c1b;
+  overflow: hidden;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.42);
+  transition: transform 0.28s ease, box-shadow 0.28s ease;
+}
+
+.marketing-site .mkt-talent-v2-hero-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 28px 64px rgba(0, 0, 0, 0.48);
+}
+
+.marketing-site .mkt-talent-v2-hero-card-photo {
+  position: relative;
+}
+
+.marketing-site .mkt-talent-v2-hero-card-photo img {
+  display: block;
+  width: 100%;
+  height: calc(17rem + 40px);
+  object-fit: cover;
+}
+
+.marketing-site .mkt-talent-v2-hero-card-badges {
+  position: absolute;
+  top: 0.75rem;
+  left: 0.75rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.marketing-site .mkt-talent-v2-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.28rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+.marketing-site .mkt-talent-v2-badge--verify {
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+}
+
+.marketing-site .mkt-talent-v2-badge--avail {
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+}
+
+.marketing-site .mkt-talent-v2-dot {
+  width: 0.38rem;
+  height: 0.38rem;
+  border-radius: 999px;
+  background: #3ecf8e;
+}
+
+.marketing-site .mkt-talent-v2-verify svg {
+  width: 0.85rem;
+  height: 0.85rem;
+  color: #e07a5f;
+}
+
+.marketing-site .mkt-talent-v2-hero-card-body {
+  padding: 1rem 1.1rem 1.15rem;
+}
+
+.marketing-site .mkt-talent-v2-hero-card-name {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.marketing-site .mkt-talent-v2-hero-card-name h2 {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #fff;
+}
+
+.marketing-site .mkt-talent-v2-hero-card-role {
+  margin: 0.25rem 0 0;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.marketing-site .mkt-talent-v2-hero-card-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.75rem;
+}
+
+.marketing-site .mkt-talent-v2-hero-card-tags span {
+  padding: 0.22rem 0.5rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 0.64rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.marketing-site .mkt-talent-v2-hero-card-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.marketing-site .mkt-talent-v2-hero-card-score strong {
+  color: #fff;
+  font-size: 0.95rem;
+}
+
+.marketing-site .mkt-talent-v2-hero-card-tabs {
+  display: flex;
+  gap: 0.35rem;
+  margin-top: 0.85rem;
+  padding: 0.25rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.marketing-site .mkt-talent-v2-hero-card-tab {
+  flex: 1;
+  border: 0;
+  border-radius: 999px;
+  padding: 0.45rem 0.65rem;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.62);
+  font: inherit;
+  font-size: 0.68rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.marketing-site .mkt-talent-v2-hero-card-tab.is-active {
+  background: #f9f7f2;
+  color: #0b0e11;
+}
+
+.marketing-site .mkt-talent-v2-hero-card-rows {
+  margin: 0.85rem 0 0;
+}
+
+.marketing-site .mkt-talent-v2-hero-card-row {
+  display: grid;
+  grid-template-columns: minmax(5rem, 0.9fr) minmax(0, 1.4fr);
+  gap: 0.75rem;
+  padding: 0.55rem 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 0.72rem;
+}
+
+.marketing-site .mkt-talent-v2-hero-card-row dt {
+  margin: 0;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.marketing-site .mkt-talent-v2-hero-card-row dd {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.58);
+}
+
+.marketing-site .mkt-talent-v2-why {
+  background: #f9f7f2;
+}
+
+.marketing-site .mkt-talent-v2-why-hd {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(16rem, 22rem);
+  gap: 2rem;
+  margin-bottom: 2.5rem;
+  align-items: start;
+}
+
+.marketing-site .mkt-talent-v2-why-hd h2 {
+  margin: 0;
+  font-family: var(--mkt-display);
+  font-size: clamp(1.85rem, 3vw, 2.45rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #002b24;
+}
+
+.marketing-site .mkt-talent-v2-why-sub {
+  margin: 0.65rem 0 0;
+  font-size: 0.95rem;
+  color: var(--mkt-ink-d);
+}
+
+.marketing-site .mkt-talent-v2-why-intro {
+  margin: 0;
+  font-size: 0.925rem;
+  line-height: 1.75;
+  color: var(--mkt-ink-d);
+}
+
+.marketing-site .mkt-talent-v2-why-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(18rem, 22rem);
+  gap: 1.25rem;
+  align-items: start;
+}
+
+.marketing-site .mkt-talent-v2-why-nav {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.55rem;
+}
+
+.marketing-site .mkt-talent-v2-why-btn {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 0.75rem;
+  align-items: center;
+  width: 100%;
+  padding: 0.95rem 1rem;
+  border: 1px solid rgba(0, 43, 36, 0.08);
+  border-radius: 0.75rem;
+  background: #fff;
+  text-align: left;
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #002b24;
+  cursor: pointer;
+  transition:
+    background 0.22s ease,
+    border-color 0.22s ease,
+    transform 0.22s ease,
+    box-shadow 0.22s ease;
+}
+
+.marketing-site .mkt-talent-v2-why-btn:hover,
+.marketing-site .mkt-talent-v2-why-btn.is-active {
+  transform: translateX(3px);
+}
+
+.marketing-site .mkt-talent-v2-why-btn.is-active {
+  background: #081312;
+  border-color: #081312;
+  color: #fff;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.14);
+}
+
+.marketing-site .mkt-talent-v2-why-btn-icon {
+  display: inline-flex;
+  width: 1.65rem;
+  height: 1.65rem;
+  color: #d4c4a8;
+}
+
+.marketing-site .mkt-talent-v2-why-btn.is-active .mkt-talent-v2-why-btn-icon {
+  color: #e07a5f;
+}
+
+.marketing-site .mkt-talent-v2-why-btn-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.marketing-site .mkt-talent-v2-why-btn-arrow {
+  width: 0.9rem;
+  height: 0.9rem;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.marketing-site .mkt-talent-v2-why-btn.is-active .mkt-talent-v2-why-btn-arrow {
+  opacity: 1;
+  color: #e07a5f;
+}
+
+.marketing-site .mkt-talent-v2-why-panel {
+  padding: 2rem 1.75rem;
+  border-radius: 1rem;
+  background: #081312;
+  color: #fff;
+  animation: mkt-talent-v2-fade-up 0.32s ease;
+}
+
+.marketing-site .mkt-talent-v2-why-panel-icon {
+  display: inline-flex;
+  width: 2.5rem;
+  height: 2.5rem;
+  margin-bottom: 1.25rem;
+  color: #e07a5f;
+}
+
+.marketing-site .mkt-talent-v2-why-panel-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.marketing-site .mkt-talent-v2-why-panel h3 {
+  margin: 0;
+  font-size: clamp(1.35rem, 2vw, 1.65rem);
+  font-weight: 800;
+  line-height: 1.25;
+  color: #fff;
+}
+
+.marketing-site .mkt-talent-v2-why-panel p {
+  margin: 1rem 0 0;
+  font-size: 0.925rem;
+  line-height: 1.75;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.marketing-site .mkt-talent-v2-why-panel-rule {
+  display: block;
+  width: 2.5rem;
+  height: 3px;
+  margin-top: 1.5rem;
+  border-radius: 999px;
+  background: #e07a5f;
+}
+
+.marketing-site .mkt-talent-v2-why-panel-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 1.25rem;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #fff;
+  text-decoration: none;
+  transition: opacity 0.2s ease;
+}
+
+.marketing-site .mkt-talent-v2-why-panel-link:hover {
+  opacity: 0.82;
+}
+
+.marketing-site .mkt-talent-v2-capabilities {
+  background: #fff;
+}
+
+.marketing-site .mkt-talent-v2-cap-hd {
+  max-width: 46rem;
+  margin: 0 auto 2.5rem;
+  text-align: center;
+}
+
+.marketing-site .mkt-talent-v2-cap-hd h2 {
+  margin: 0;
+  font-family: var(--mkt-display);
+  font-size: clamp(1.85rem, 3vw, 2.5rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #002b24;
+}
+
+.marketing-site .mkt-talent-v2-cap-hd p {
+  margin: 0.85rem 0 0;
+  font-size: 0.95rem;
+  line-height: 1.7;
+  color: var(--mkt-ink-d);
+}
+
+.marketing-site .mkt-talent-v2-cap-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 1.5rem;
+}
+
+.marketing-site .mkt-talent-v2-cap-item {
+  transition: transform 0.22s ease;
+}
+
+.marketing-site .mkt-talent-v2-cap-item:hover {
+  transform: translateY(-3px);
+}
+
+.marketing-site .mkt-talent-v2-cap-item-hd {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.marketing-site .mkt-talent-v2-cap-num {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #e07a5f;
+}
+
+.marketing-site .mkt-talent-v2-cap-icon {
+  display: inline-flex;
+  color: #e07a5f;
+}
+
+.marketing-site .mkt-talent-v2-cap-icon svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+.marketing-site .mkt-talent-v2-cap-item h3 {
+  margin: 0.75rem 0 0;
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #002b24;
+}
+
+.marketing-site .mkt-talent-v2-cap-item p {
+  margin: 0.55rem 0 0;
+  font-size: 0.82rem;
+  line-height: 1.6;
+  color: var(--mkt-ink-d);
+}
+
+.marketing-site .mkt-talent-v2-work-speak {
+  background: #081312;
+  color: #fff;
+}
+
+.marketing-site .mkt-talent-v2-work-hd {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(16rem, 22rem);
+  gap: 2rem;
+  margin-bottom: 2rem;
+}
+
+.marketing-site .mkt-talent-v2-work-dot {
+  display: inline-block;
+  width: 0.55rem;
+  height: 0.55rem;
+  margin-bottom: 0.75rem;
+  border-radius: 999px;
+  background: #e07a5f;
+}
+
+.marketing-site .mkt-talent-v2-work-hd h2 {
+  margin: 0;
+  font-size: clamp(1.85rem, 3vw, 2.35rem);
+  font-weight: 800;
+  color: #fff;
+}
+
+.marketing-site .mkt-talent-v2-work-sub {
+  margin: 0.65rem 0 0;
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.68);
+}
+
+.marketing-site .mkt-talent-v2-work-intro {
+  margin: 0;
+  font-size: 0.925rem;
+  line-height: 1.75;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.marketing-site .mkt-talent-v2-work-stages {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.marketing-site .mkt-talent-v2-work-stage {
+  padding: 1.35rem 1.25rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 0.85rem;
+  background: rgba(255, 255, 255, 0.04);
+  transition: transform 0.22s ease, box-shadow 0.22s ease;
+}
+
+.marketing-site .mkt-talent-v2-work-stage:hover {
+  transform: translateY(-3px);
+}
+
+.marketing-site .mkt-talent-v2-work-stage.is-featured {
+  background: #e07a5f;
+  border-color: #e07a5f;
+  color: #0b0e11;
+}
+
+.marketing-site .mkt-talent-v2-work-stage-num {
+  display: block;
+  margin-bottom: 0.65rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  opacity: 0.65;
+}
+
+.marketing-site .mkt-talent-v2-work-stage h3 {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #fff;
+}
+
+.marketing-site .mkt-talent-v2-work-stage p {
+  margin: 0.65rem 0 0;
+  font-size: 0.85rem;
+  line-height: 1.6;
+  opacity: 0.82;
+}
+
+.marketing-site .mkt-talent-v2-work-eval {
+  margin-top: 1.75rem;
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.marketing-site .mkt-talent-v2-work-eval span {
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.marketing-site .mkt-talent-v2-work-eval p {
+  margin: 0.35rem 0 0;
+}
+
+.marketing-site .mkt-talent-v2-work-note {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  margin-top: 1.25rem;
+  padding: 1rem 1.15rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04);
+  font-size: 0.8rem;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.68);
+}
+
+.marketing-site .mkt-talent-v2-work-note svg {
+  flex-shrink: 0;
+  width: 1rem;
+  height: 1rem;
+  margin-top: 0.1rem;
+  color: #e07a5f;
+}
+
+.marketing-site .mkt-talent-v2-work-note p {
+  margin: 0;
+}
+
+@keyframes mkt-talent-v2-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.marketing-site .mkt-talent-v2-advantage-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
+  gap: 2.5rem;
+  align-items: start;
+}
+
+.marketing-site .mkt-talent-v2-advantage-hd {
+  display: flex;
+  gap: 0.65rem;
+  align-items: flex-start;
+}
+
+.marketing-site .mkt-talent-v2-advantage-mark {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #e07a5f;
+}
+
+.marketing-site .mkt-talent-v2-advantage-hd h2 {
+  margin: 0;
+  font-size: clamp(1.75rem, 2.5vw, 2.25rem);
+  font-weight: 800;
+  color: #002b24;
+}
+
+.marketing-site .mkt-talent-v2-advantage-hd p {
+  margin: 0.35rem 0 0;
+  font-size: 0.925rem;
+  color: var(--mkt-ink-d);
+}
+
+.marketing-site .mkt-talent-v2-advantage-intro {
+  margin: 1rem 0 0;
+  max-width: 36rem;
+  font-size: 0.925rem;
+  line-height: 1.75;
+  color: var(--mkt-ink-d);
+}
+
+.marketing-site .mkt-talent-v2-evidence-card,
+.marketing-site .mkt-talent-v2-showcase {
+  border: 1px solid var(--mkt-line);
+  border-radius: 1rem;
+  background: #fff;
+  box-shadow: 0 12px 40px rgba(18, 16, 14, 0.06);
+  transition: transform 0.22s ease, box-shadow 0.22s ease;
+}
+
+.marketing-site .mkt-talent-v2-evidence-card {
+  margin-top: 1.5rem;
+  padding: 1.5rem;
+}
+
+.marketing-site .mkt-talent-v2-evidence-card:hover,
+.marketing-site .mkt-talent-v2-showcase:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 16px 44px rgba(18, 16, 14, 0.1);
+}
+
+.marketing-site .mkt-talent-v2-evidence-label {
+  display: block;
+  margin-bottom: 1rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--mkt-ink-f);
+}
+
+.marketing-site .mkt-talent-v2-evidence-bar + .mkt-talent-v2-evidence-bar {
+  margin-top: 0.85rem;
+}
+
+.marketing-site .mkt-talent-v2-evidence-bar-hd {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.35rem;
+  font-size: 0.82rem;
+}
+
+.marketing-site .mkt-talent-v2-evidence-bar-hd strong {
+  font-weight: 800;
+  color: #002b24;
+}
+
+.marketing-site .mkt-talent-v2-evidence-bar-track {
+  height: 0.45rem;
+  border-radius: 999px;
+  background: #ece8df;
+  overflow: hidden;
+}
+
+.marketing-site .mkt-talent-v2-evidence-bar-track span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: #e07a5f;
+}
+
+.marketing-site .mkt-talent-v2-advantage-accordion {
+  border-top: 1px solid var(--mkt-line);
+}
+
+.marketing-site .mkt-talent-v2-advantage-item {
+  border-bottom: 1px solid var(--mkt-line);
+}
+
+.marketing-site .mkt-talent-v2-advantage-trigger {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 0.65rem;
+  align-items: center;
+  width: 100%;
+  padding: 1rem 0;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  font: inherit;
+  font-size: 0.925rem;
+  font-weight: 700;
+  color: #002b24;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.marketing-site .mkt-talent-v2-advantage-trigger:hover {
+  color: #e07a5f;
+}
+
+.marketing-site .mkt-talent-v2-advantage-trigger-mark {
+  color: var(--mkt-ink-f);
+}
+
+.marketing-site .mkt-talent-v2-advantage-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 999px;
+  background: #e07a5f;
+  color: #fff;
+}
+
+.marketing-site .mkt-talent-v2-advantage-item:not(.is-open) .mkt-talent-v2-advantage-toggle {
+  background: transparent;
+  color: var(--mkt-ink-f);
+}
+
+.marketing-site .mkt-talent-v2-advantage-toggle svg {
+  width: 0.85rem;
+  height: 0.85rem;
+}
+
+.marketing-site .mkt-talent-v2-advantage-item p {
+  margin: 0 0 1rem;
+  padding-right: 2rem;
+  font-size: 0.875rem;
+  line-height: 1.7;
+  color: var(--mkt-ink-d);
+}
+
+.marketing-site .mkt-talent-v2-showcase {
+  display: grid;
+  grid-template-columns: minmax(14rem, 0.85fr) minmax(0, 1.15fr);
+  gap: 0;
+  margin-top: 2.5rem;
+  overflow: hidden;
+  align-items: stretch;
+}
+
+.marketing-site .mkt-talent-v2-showcase-photo {
+  position: relative;
+  min-height: calc(14rem + 120px);
+}
+
+.marketing-site .mkt-talent-v2-showcase-photo img {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top;
+}
+
+.marketing-site .mkt-talent-v2-showcase-verify {
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.65rem;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.72);
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.marketing-site .mkt-talent-v2-showcase-body {
+  padding: 1.75rem 1.75rem 1.5rem;
+}
+
+.marketing-site .mkt-talent-v2-showcase-label {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #e07a5f;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.marketing-site .mkt-talent-v2-showcase-body h3 {
+  margin: 0.5rem 0 0;
+  font-size: 1.65rem;
+  font-weight: 800;
+  color: #002b24;
+}
+
+.marketing-site .mkt-talent-v2-showcase-role {
+  margin: 0.25rem 0 0;
+  font-size: 0.925rem;
+  color: var(--mkt-ink-d);
+}
+
+.marketing-site .mkt-talent-v2-showcase-bio {
+  margin: 0.65rem 0 0;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: var(--mkt-ink-d);
+}
+
+.marketing-site .mkt-talent-v2-showcase-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.85rem;
+}
+
+.marketing-site .mkt-talent-v2-showcase-tags span {
+  padding: 0.25rem 0.55rem;
+  border-radius: 999px;
+  background: #f3f0e8;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #002b24;
+}
+
+.marketing-site .mkt-talent-v2-showcase-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 1.5rem;
+  margin-top: 1.25rem;
+}
+
+.marketing-site .mkt-talent-v2-showcase-meta {
+  margin: 0;
+}
+
+.marketing-site .mkt-talent-v2-showcase-meta div + div {
+  margin-top: 0.65rem;
+}
+
+.marketing-site .mkt-talent-v2-showcase-meta dt {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--mkt-ink-f);
+}
+
+.marketing-site .mkt-talent-v2-showcase-meta dd {
+  margin: 0.15rem 0 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #002b24;
+}
+
+.marketing-site .mkt-talent-v2-showcase-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 1.25rem 0 0;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #e07a5f;
+}
+
+.marketing-site .mkt-talent-v2-showcase-badge svg {
+  width: 0.85rem;
+  height: 0.85rem;
+  fill: #e07a5f;
+  stroke: #e07a5f;
+}
+
+.marketing-site .mkt-talent-v2-communities-hd {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(16rem, 22rem);
+  gap: 2rem;
+  margin-bottom: 1.75rem;
+  align-items: end;
+}
+
+.marketing-site .mkt-talent-v2-communities-mark {
+  display: block;
+  width: 2rem;
+  height: 0.25rem;
+  margin-bottom: 0.75rem;
+  border-radius: 999px;
+  background: #6db5a8;
+}
+
+.marketing-site .mkt-talent-v2-communities-hd h2 {
+  margin: 0;
+  font-size: clamp(1.85rem, 3vw, 2.35rem);
+  font-weight: 800;
+  color: #002b24;
+}
+
+.marketing-site .mkt-talent-v2-communities-hd p {
+  margin: 0.35rem 0 0;
+  font-size: 0.925rem;
+  color: var(--mkt-ink-d);
+}
+
+.marketing-site .mkt-talent-v2-communities-controls {
+  display: grid;
+  gap: 0.85rem;
+  justify-items: end;
+}
+
+.marketing-site .mkt-talent-v2-communities-controls p {
+  margin: 0;
+  font-size: 0.85rem;
+  line-height: 1.6;
+  color: var(--mkt-ink-d);
+  text-align: right;
+}
+
+.marketing-site .mkt-talent-v2-communities-arrows,
+.marketing-site .mkt-talent-v2-arrow {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.marketing-site .mkt-talent-v2-arrow {
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border: 1px solid rgba(0, 43, 36, 0.14);
+  border-radius: 999px;
+  background: #fff;
+  color: #002b24;
+  cursor: pointer;
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.marketing-site .mkt-talent-v2-arrow:hover:not(:disabled) {
+  transform: translateY(-1px);
+  border-color: rgba(0, 43, 36, 0.28);
+}
+
+.marketing-site .mkt-talent-v2-arrow:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.marketing-site .mkt-talent-v2-communities-track-wrap {
+  --community-gap: 0.75rem;
+  --community-peek: 0;
+  --community-visible: 4;
+  --community-index: 0;
+  overflow: hidden;
+}
+
+.marketing-site .mkt-talent-v2-communities-track {
+  display: flex;
+  gap: var(--community-gap);
+  width: 100%;
+  transition: transform 0.35s ease;
+  transform: translateX(
+    calc(
+      -1 * var(--community-index) *
+        (
+          (100% - (var(--community-visible) - 1) * var(--community-gap)) /
+            (var(--community-visible) + var(--community-peek)) +
+            var(--community-gap)
+        )
+    )
+  );
+}
+
+.marketing-site .mkt-talent-v2-community-card {
+  flex: 0 0
+    calc(
+      (100% - (var(--community-visible) - 1) * var(--community-gap)) /
+        (var(--community-visible) + var(--community-peek))
+    );
+  overflow: hidden;
+  border-radius: 0.85rem;
+  background: #fff;
+  border: 1px solid var(--mkt-line);
+  min-width: 0;
+  transition: transform 0.28s ease, box-shadow 0.28s ease;
+}
+
+.marketing-site .mkt-talent-v2-community-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 14px 36px rgba(18, 16, 14, 0.1);
+}
+
+.marketing-site .mkt-talent-v2-community-card img {
+  width: 100%;
+  height: 8.5rem;
+  object-fit: cover;
+}
+
+.marketing-site .mkt-talent-v2-community-card-body {
+  padding: 1rem;
+}
+
+.marketing-site .mkt-talent-v2-community-card-hd {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.marketing-site .mkt-talent-v2-community-card-hd h3 {
+  margin: 0;
+  flex: 1;
+  min-width: 0;
+  font-size: 0.95rem;
+  font-weight: 800;
+  line-height: 1.35;
+  color: #002b24;
+  overflow-wrap: break-word;
+}
+
+.marketing-site .mkt-talent-v2-community-card-hd svg {
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
+  color: var(--mkt-ink-f);
+  transition: transform 0.2s ease;
+}
+
+.marketing-site .mkt-talent-v2-community-card:hover .mkt-talent-v2-community-card-hd svg {
+  transform: translate(2px, -2px);
+}
+
+.marketing-site .mkt-talent-v2-community-card-body p {
+  margin: 0.55rem 0 0;
+  font-size: 0.8rem;
+  line-height: 1.55;
+  color: var(--mkt-ink-d);
+  overflow-wrap: break-word;
+}
+
+.marketing-site .mkt-talent-v2-communities-cta-wrap {
+  margin-top: 2rem;
+}
+
+.marketing-site .mkt-talent-v2-hiw {
+  background: #fff;
+}
+
+.marketing-site .mkt-talent-v2-hiw-hd h2 {
+  margin: 0;
+  font-size: clamp(1.85rem, 3vw, 2.35rem);
+  font-weight: 800;
+  color: #002b24;
+}
+
+.marketing-site .mkt-talent-v2-hiw-hd p {
+  margin: 0.5rem 0 0;
+  font-size: 0.95rem;
+  color: var(--mkt-ink-d);
+}
+
+.marketing-site .mkt-talent-v2-hiw-stepper {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 0.5rem;
+  margin: 2rem 0 1.25rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--mkt-line);
+}
+
+.marketing-site .mkt-talent-v2-hiw-step {
+  display: grid;
+  gap: 0.45rem;
+  justify-items: center;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.marketing-site .mkt-talent-v2-hiw-step:hover {
+  transform: translateY(-2px);
+}
+
+.marketing-site .mkt-talent-v2-hiw-step-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.45rem;
+  border: 1px solid var(--mkt-line);
+  background: #fff;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--mkt-ink-f);
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.marketing-site .mkt-talent-v2-hiw-step.is-active .mkt-talent-v2-hiw-step-num {
+  border-color: var(--mkt-brand-700);
+  background: var(--mkt-brand-700);
+  color: #fff;
+}
+
+.marketing-site .mkt-talent-v2-hiw-step-label {
+  font-size: 0.68rem;
+  line-height: 1.35;
+  text-align: center;
+  color: var(--mkt-ink-d);
+}
+
+.marketing-site .mkt-talent-v2-hiw-step.is-active .mkt-talent-v2-hiw-step-label {
+  font-weight: 800;
+  color: #002b24;
+}
+
+.marketing-site .mkt-talent-v2-hiw-panel {
+  display: grid;
+  grid-template-columns: minmax(8rem, 0.32fr) minmax(0, 1fr);
+  overflow: hidden;
+  border-radius: 0.85rem;
+  border: 1px solid var(--mkt-line);
+  background: #fff;
+  animation: mkt-talent-v2-fade-up 0.32s ease;
+}
+
+.marketing-site .mkt-talent-v2-hiw-panel-left {
+  display: grid;
+  align-content: start;
+  gap: 0.15rem;
+  padding: 1.75rem 1.25rem;
+  background: #081312;
+  color: #fff;
+}
+
+.marketing-site .mkt-talent-v2-hiw-panel-kicker {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.marketing-site .mkt-talent-v2-hiw-panel-num {
+  font-size: 3.5rem;
+  font-weight: 800;
+  line-height: 1;
+  color: #fff;
+}
+
+.marketing-site .mkt-talent-v2-hiw-panel-of {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.marketing-site .mkt-talent-v2-hiw-panel-nav {
+  display: flex;
+  gap: 0.45rem;
+  margin-top: auto;
+  padding-top: 2rem;
+}
+
+.marketing-site .mkt-talent-v2-hiw-nav-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 0.45rem;
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.marketing-site .mkt-talent-v2-hiw-nav-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.marketing-site .mkt-talent-v2-hiw-nav-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.marketing-site .mkt-talent-v2-hiw-panel-right {
+  padding: 2rem 2rem 2rem 1.75rem;
+}
+
+.marketing-site .mkt-talent-v2-hiw-panel-right h3 {
+  margin: 0;
+  font-size: clamp(1.5rem, 2.5vw, 2rem);
+  font-weight: 800;
+  color: #002b24;
+}
+
+.marketing-site .mkt-talent-v2-hiw-panel-right p {
+  margin: 0.85rem 0 0;
+  max-width: 36rem;
+  font-size: 0.95rem;
+  line-height: 1.75;
+  color: var(--mkt-ink-d);
+}
+
+.marketing-site .mkt-talent-v2-features-top {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(16rem, 24rem);
+  gap: 2rem;
+  align-items: start;
+}
+
+.marketing-site .mkt-talent-v2-features-dot {
+  display: inline-block;
+  width: 0.55rem;
+  height: 0.55rem;
+  margin-bottom: 0.75rem;
+  border-radius: 999px;
+  background: #002b24;
+}
+
+.marketing-site .mkt-talent-v2-features-copy h2 {
+  margin: 0;
+  font-size: clamp(1.85rem, 3vw, 2.35rem);
+  font-weight: 800;
+  color: #002b24;
+}
+
+.marketing-site .mkt-talent-v2-features-copy p {
+  margin: 0.85rem 0 0;
+  max-width: 34rem;
+  line-height: 1.75;
+  color: var(--mkt-ink-d);
+}
+
+.marketing-site .mkt-talent-v2-features-photo img {
+  display: block;
+  width: 100%;
+  border-radius: 0.85rem;
+  object-fit: cover;
+}
+
+.marketing-site .mkt-talent-v2-features-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem 2rem;
+  margin-top: 2rem;
+}
+
+.marketing-site .mkt-talent-v2-features-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  font-size: 0.925rem;
+  line-height: 1.55;
+  color: var(--mkt-ink-d);
+  transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.marketing-site .mkt-talent-v2-features-item:hover {
+  transform: translateX(4px);
+  color: #002b24;
+}
+
+.marketing-site .mkt-talent-v2-features-icon {
+  display: inline-flex;
+  color: #e07a5f;
+}
+
+.marketing-site .mkt-talent-v2-features-icon svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+.marketing-site .mkt-talent-v2-features-quote {
+  margin: 2rem 0 0;
+  padding-left: 1rem;
+  border-left: 3px solid #e07a5f;
+  font-size: 0.95rem;
+  line-height: 1.7;
+  color: var(--mkt-ink-d);
+}
+
+.marketing-site .mkt-talent-v2-transparency-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
+  gap: 2.5rem;
+  align-items: start;
+}
+
+.marketing-site .mkt-talent-v2-transparency-layout h2 {
+  margin: 0;
+  font-size: clamp(1.85rem, 3vw, 2.35rem);
+  font-weight: 800;
+  color: #002b24;
+}
+
+.marketing-site .mkt-talent-v2-transparency-layout p {
+  margin: 0 0 1rem;
+  font-size: 0.95rem;
+  line-height: 1.75;
+  color: var(--mkt-ink-d);
+}
+
+.marketing-site .mkt-talent-v2-transparency-layout p:last-child {
+  margin-bottom: 0;
+}
+
+.marketing-site .mkt-talent-v2-cta {
+  background: #081312;
+  color: #fff;
+  padding: 4.5rem 0;
+}
+
+.marketing-site .mkt-talent-v2-cta-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(14rem, 0.9fr);
+  gap: 2.5rem;
+  align-items: start;
+}
+
+.marketing-site .mkt-talent-v2-cta-copy h2 {
+  margin: 0;
+  font-size: clamp(1.85rem, 3vw, 2.5rem);
+  font-weight: 800;
+  color: #fff;
+}
+
+.marketing-site .mkt-talent-v2-cta-copy p {
+  margin: 0.85rem 0 0;
+  max-width: 34rem;
+  line-height: 1.75;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.marketing-site .mkt-talent-v2-cta-quick {
+  margin-top: 1.25rem;
+  padding: 1.1rem 1.25rem;
+  border-radius: 0.75rem;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.marketing-site .mkt-talent-v2-cta-quick h3 {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #fff;
+}
+
+.marketing-site .mkt-talent-v2-cta-quick p {
+  margin: 0.55rem 0 0;
+  font-size: 0.875rem;
+}
+
+.marketing-site .mkt-talent-v2-cta-tagline {
+  margin-top: 1.25rem !important;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.88) !important;
+}
+
+.marketing-site .mkt-talent-v2-cta-headline {
+  margin-top: 0.65rem !important;
+  font-size: 1.05rem !important;
+  font-weight: 800;
+  color: #fff !important;
+}
+
+.marketing-site .mkt-talent-v2-cta-footer-links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.65rem;
+  margin-top: 1.25rem;
+  font-size: 0.82rem;
+}
+
+.marketing-site .mkt-talent-v2-cta-footer-links a {
+  color: rgba(255, 255, 255, 0.78);
+  text-decoration: none;
+}
+
+.marketing-site .mkt-talent-v2-cta-footer-links a:hover {
+  color: #fff;
+  text-decoration: underline;
+}
+
+.marketing-site .mkt-talent-v2-cta-footer-links span {
+  color: rgba(255, 255, 255, 0.35);
+}
+
+.marketing-site .mkt-talent-v2-cta-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.85rem;
+  margin-top: 1.5rem;
+}
+
+.marketing-site .mkt-talent-v2-cta-checklist {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.85rem;
+}
+
+.marketing-site .mkt-talent-v2-cta-checklist li {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.marketing-site .mkt-talent-v2-cta-check svg {
+  width: 0.85rem;
+  height: 0.85rem;
+  color: #e07a5f;
+}
+
+@media (max-width: 1024px) {
+  .marketing-site .mkt-talent-v2-hero-grid,
+  .marketing-site .mkt-talent-v2-why-hd,
+  .marketing-site .mkt-talent-v2-why-layout,
+  .marketing-site .mkt-talent-v2-cap-grid,
+  .marketing-site .mkt-talent-v2-work-hd,
+  .marketing-site .mkt-talent-v2-work-stages,
+  .marketing-site .mkt-talent-v2-advantage-layout,
+  .marketing-site .mkt-talent-v2-showcase,
+  .marketing-site .mkt-talent-v2-communities-hd,
+  .marketing-site .mkt-talent-v2-hiw-panel,
+  .marketing-site .mkt-talent-v2-features-top,
+  .marketing-site .mkt-talent-v2-features-grid,
+  .marketing-site .mkt-talent-v2-transparency-layout,
+  .marketing-site .mkt-talent-v2-cta-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .marketing-site .mkt-talent-v2-hero-card {
+    width: 100%;
+    max-width: 26rem;
+    margin-inline: auto;
+  }
+
+  .marketing-site .mkt-talent-v2-cap-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .marketing-site .mkt-talent-v2-hiw-stepper {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.75rem 0.5rem;
+  }
+
+  .marketing-site .mkt-talent-v2-hiw-step {
+    flex: 0 1 calc(25% - 0.5rem);
+    min-width: 6.25rem;
+    max-width: calc(25% - 0.375rem);
+  }
+
+  .marketing-site .mkt-talent-v2-showcase-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .marketing-site .mkt-talent-v2-showcase-photo {
+    height: auto;
+    min-height: 0;
+  }
+
+  .marketing-site .mkt-talent-v2-showcase-photo img {
+    position: static;
+    width: 100%;
+    object-fit: cover;
+    object-position: center 15%;
+  }
+
+  .marketing-site .mkt-talent-v2-communities-controls {
+    justify-items: stretch;
+  }
+
+  .marketing-site .mkt-talent-v2-communities-arrows {
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 768px) {
+  .marketing-site .mkt-talent-v2-section,
+  .marketing-site .mkt-talent-v2-hero,
+  .marketing-site .mkt-talent-v2-cta {
+    padding: 3rem 0;
+  }
+
+  .marketing-site .mkt-talent-v2-cap-grid,
+  .marketing-site .mkt-talent-v2-work-stages,
+  .marketing-site .mkt-talent-v2-features-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .marketing-site .mkt-talent-v2-hiw-stepper {
+    gap: 0.65rem 0.45rem;
+  }
+
+  .marketing-site .mkt-talent-v2-hiw-step {
+    flex: 0 1 calc(50% - 0.45rem);
+    min-width: 8.5rem;
+    max-width: calc(50% - 0.35rem);
+  }
+
+  .marketing-site .mkt-talent-v2-hiw-step-label {
+    font-size: 0.65rem;
+    line-height: 1.35;
+  }
+
+  .marketing-site .mkt-talent-v2-communities-controls {
+    justify-items: start;
+  }
+
+  .marketing-site .mkt-talent-v2-communities-controls p {
+    text-align: left;
+  }
+
+  .marketing-site .mkt-talent-v2-work-note {
+    border-radius: 0.85rem;
+  }
+
+  .marketing-site .mkt-talent-v2-hero-card {
+    max-width: 22rem;
+  }
+
+  .marketing-site .mkt-talent-v2-hero-card-photo img {
+    height: 15rem;
+  }
+
+  .marketing-site .mkt-talent-v2-cta-actions .mkt-talent-v2-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .marketing-site .mkt-talent-v2-work-hd {
+    gap: 1.25rem;
+  }
+}
+
+@media (max-width: 770px) {
+  .marketing-site .mkt-talent-v2-showcase-photo img {
+    height: 500px;
+    min-height: 500px;
+    object-position: center 15%;
+  }
+}
+
+@media (min-width: 771px) and (max-width: 1024px) {
+  .marketing-site .mkt-talent-v2-showcase-photo img {
+    height: 36rem;
+    min-height: 36rem;
+    object-position: center 15%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .marketing-site .mkt-talent-v2-hero-card,
+  .marketing-site .mkt-talent-v2-why-btn,
+  .marketing-site .mkt-talent-v2-cap-item,
+  .marketing-site .mkt-talent-v2-work-stage,
+  .marketing-site .mkt-talent-v2-evidence-card,
+  .marketing-site .mkt-talent-v2-showcase,
+  .marketing-site .mkt-talent-v2-community-card,
+  .marketing-site .mkt-talent-v2-hiw-step,
+  .marketing-site .mkt-talent-v2-features-item,
+  .marketing-site .mkt-talent-v2-btn {
+    transition: none;
+  }
+
+  .marketing-site .mkt-talent-v2-why-panel,
+  .marketing-site .mkt-talent-v2-hiw-panel {
+    animation: none;
+  }
+}
+
