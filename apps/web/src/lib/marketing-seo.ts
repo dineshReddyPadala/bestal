@@ -34,7 +34,7 @@ export const PAGE_SEO = {
       'Complete example profiles in the production format: external evaluation scorecards, verification status, hourly rate, availability and US time-zone overlap. Fictional professionals, real structure.',
   },
   talent: {
-    title: 'For Talent | BesTal — Your Skills Deserve More Than a Résumé',
+    title: 'For Talent | BesTal — Your Skills Deserve More Than a Resume',
     description:
       'Join the BesTal Talent Network to build a profile that shows what you can do, complete structured assessments, and get discovered for global technology opportunities.',
   },

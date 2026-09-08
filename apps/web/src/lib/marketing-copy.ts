@@ -1161,11 +1161,11 @@ export function getHomeFaqItems(): FaqItem[] {
 export const TALENT_LANDING_PAGE = {
   hero: {
     label: 'For Talent',
-    title: 'Your Skills Deserve More Than a Résumé.',
+    title: 'Your Skills Deserve More Than a Resume.',
     subheading:
       'Build a profile that shows what you can do — and get discovered for global technology opportunities.',
     paragraphs: [
-      'You\'ve built your skills through years of learning, solving problems and delivering real work. Your next opportunity should recognize that — not just the keywords on your résumé.',
+      'You\'ve built your skills through years of learning, solving problems and delivering real work. Your next opportunity should recognize that — not just the keywords on your Resume.',
       'BesTal helps skilled technology professionals in India showcase their capabilities and get considered for opportunities with companies and teams around the world.',
       'Bring your skills, experience, assessment results, credentials, availability and work preferences together in one professional profile — giving potential clients a clearer picture of what you can contribute.',
     ],
@@ -1199,7 +1199,7 @@ export const TALENT_LANDING_PAGE = {
       {
         title: 'Get Discovered for Global Opportunities',
         body:
-          'Make your expertise visible for opportunities aligned to your capabilities, experience, availability and work preferences — not simply résumé keywords.',
+          'Make your expertise visible for opportunities aligned to your capabilities, experience, availability and work preferences — not simply Resume keywords.',
       },
       {
         title: 'Prove Your Skills Once. Use Them Across Opportunities.',
@@ -1231,7 +1231,7 @@ export const TALENT_LANDING_PAGE = {
   },
   capabilities: {
     step: '02',
-    title: 'More than a résumé. Evidence of your capabilities.',
+    title: 'More than a Resume. Evidence of your capabilities.',
     subtitle:
       'Your BesTal profile is designed to make your skills, readiness and work preferences easier for the right clients to understand.',
   },
@@ -1250,7 +1250,7 @@ export const TALENT_LANDING_PAGE = {
     title: 'The BesTal Advantage',
     subtitle: 'Your expertise. Made visible.',
     intro:
-      'Traditional hiring can reduce years of experience to a few pages of a résumé and a handful of keyword searches. BesTal is designed to give demonstrated capability, relevant experience and readiness to contribute greater visibility.',
+      'Traditional hiring can reduce years of experience to a few pages of a Resume and a handful of keyword searches. BesTal is designed to give demonstrated capability, relevant experience and readiness to contribute greater visibility.',
     evidenceTitle: 'Evidence of your capabilities',
     evidenceBars: [
       { label: 'Technical Capability', value: 95 },
@@ -1260,7 +1260,7 @@ export const TALENT_LANDING_PAGE = {
     ],
     items: [
       {
-        title: 'More Than a Résumé',
+        title: 'More Than a Resume',
         body:
           'Showcase skills, assessment insights, experience and professional credentials in one profile.',
       },
@@ -1440,10 +1440,10 @@ export const TALENT_LANDING_PAGE = {
       'Start with a simple profile. You can complete your assessment, verification and detailed preferences as you move through the BesTal process.',
     quickStepTitle: 'A quick first step',
     quickStepBody:
-      'To join, we recommend asking only for: Name, Email, Mobile Number, Primary Skill, Years of Experience, and LinkedIn Profile or Résumé. Additional details can be completed after signup.',
+      'To join, we recommend asking only for: Name, Email, Mobile Number, Primary Skill, Years of Experience, and LinkedIn Profile or Resume. Additional details can be completed after signup.',
     tagline:
       'Showcase your expertise. Demonstrate your capabilities. Get discovered for opportunities that match what you do best.',
-    headline: 'Your Skills Deserve More Than a Résumé.',
+    headline: 'Your Skills Deserve More Than a Resume.',
     primaryCta: 'Join the BesTal Talent Network',
     signInLabel: 'Already registered? Sign In',
     signInHref: '/login/portal',
@@ -1455,7 +1455,7 @@ export const TALENT_LANDING_PAGE = {
       'Mobile Number',
       'Primary Skill',
       'Years of Experience',
-      'LinkedIn Profile or Résumé',
+      'LinkedIn Profile or Resume',
     ],
   },
 } as const;
