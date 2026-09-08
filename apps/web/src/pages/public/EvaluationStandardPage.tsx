@@ -20,7 +20,12 @@ import {
 import { PageMeta } from '../../components/PageMeta';
 import { MktShell } from '../../components/marketing/MktShell';
 import { ForwardArrow } from '../../components/ui/ForwardArrow';
-import { images } from '../../data/homeCopy';
+import { howitassesscta } from '../../data/homeCopy';
+import {
+  CTA_BANNER_PHOTO_DISPLAY_HEIGHT_PX,
+  CTA_BANNER_PHOTO_DISPLAY_WIDTH_PX,
+  CTA_BANNER_PHOTO_SIZES,
+} from '../../lib/brand';
 import { useFreeTrialHours } from '../../hooks/api/useTrialPolicy';
 import {
   ASSESS_CTA,
@@ -450,7 +455,15 @@ export function EvaluationStandardPage() {
               </div>
             </div>
             <div className="mkt-cta-photo">
-              <img src={images.cta} alt="Team collaborating during a working trial" />
+              <img
+                src={howitassesscta.cta}
+                alt="Team collaborating during a working trial"
+                width={CTA_BANNER_PHOTO_DISPLAY_WIDTH_PX}
+                height={CTA_BANNER_PHOTO_DISPLAY_HEIGHT_PX}
+                sizes={CTA_BANNER_PHOTO_SIZES}
+                decoding="async"
+                fetchPriority="low"
+              />
             </div>
           </div>
         </MktShell>

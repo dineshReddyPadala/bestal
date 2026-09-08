@@ -5,7 +5,7 @@
     "Data Engineering",
     "Full stack",
     "Salesforce",
-    "SAP",
+    "Enterprise Apps",
     "ServiceNow"
   ],
   "communities": [
@@ -43,9 +43,9 @@
     },
     {
       "id": 6,
-      "name": "SAP",
-      "slug": "sap",
-      "description": "SAP functional and technical consultants.",
+      "name": "Enterprise Apps",
+      "slug": "enterprise-apps",
+      "description": "SAP | Oracle ERP | Oracle EPM | OneStream | Anaplan | Workday | Microsoft Dynamics",
       "iconUrl": null,
       "displayOrder": 5
     },

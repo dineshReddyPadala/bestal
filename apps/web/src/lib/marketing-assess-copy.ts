@@ -125,7 +125,7 @@ export const ASSESS_WHAT_WE_ASSESS = {
 export const ASSESS_PREVETTED = {
   title: "What Does 'Pre-Vetted' Mean at BesTal?",
   intro:
-    'At BesTal, pre-vetted means an engineer has completed a structured assessment process before being listed on the platform, an engineer is evaluated on Technical Depth, Problem Solving, Collaboration & Culture Fit, Communication Skills and Client Readiness',
+    'At BesTal, Pre-Vetted means an engineer has completed a structured assessment process before being listed on the platform, an engineer is evaluated on Technical Depth, Problem Solving, Collaboration & Culture Fit, Communication Skills and Client Readiness',
   steps: [
     {
       id: 'structured',

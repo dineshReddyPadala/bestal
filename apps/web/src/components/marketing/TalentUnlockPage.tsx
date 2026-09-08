@@ -73,13 +73,13 @@ export function TalentUnlockDialog({ open, discipline, onClose }: TalentUnlockDi
             Unlock detailed talent insights
           </h1>
           <p>
-            To access more about this discipline and pre-vetted talent details, sign in or create a client account.
+            To access more about this discipline and Pre-Vetted Talent details, sign in or create a client account.
           </p>
 
           <div className="mkt-talent-unlock-features">
             <div className="mkt-talent-unlock-feature">
               <ShieldCheck className="h-5 w-5" strokeWidth={2.25} />
-              <span>Verified and pre-vetted talent profiles</span>
+              <span>Verified and Pre-Vetted Talent profiles</span>
             </div>
             <div className="mkt-talent-unlock-feature">
               <User className="h-5 w-5" strokeWidth={2.25} />

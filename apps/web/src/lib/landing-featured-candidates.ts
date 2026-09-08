@@ -43,7 +43,7 @@ export type PublicFeaturedCandidate = {
 };
 
 const PLACEHOLDER_NOTE =
-  '[PLACEHOLDER: tester note pending — retains structure of a scored, written evaluation from an outside specialist.]';
+  '[PLACEHOLDER: tester note pending — retains structure of a scored, written evaluation from AI-Assessed. BesTal-reviewed.]';
 
 const EVALUATION_DIMENSIONS = [
   { key: 'technicalScore', label: 'Technical depth' },

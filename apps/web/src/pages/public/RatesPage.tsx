@@ -63,7 +63,6 @@ export function RatesPage() {
   const trialTimeline = useMarketingInView<HTMLDivElement>(0.08, true);
   const bandsSection = useMarketingInView<HTMLDivElement>(0.08, true);
   const heroBullets = PRICING_HERO.bullets ?? [];
-  const heroPillars = PRICING_HERO.pillars ?? [];
   const rateBandSegments = PRICING_BANDS.segments ?? PRICING_RATE_BAND_SEGMENTS ?? [];
   const rateBandScale = PRICING_BANDS.scale ?? [];
   const rateBandColumns = PRICING_BANDS.columns ?? [];
@@ -91,10 +90,6 @@ export function RatesPage() {
     const activeStep = trialSteps[trialFilled - 1];
     if (activeStep) setHoveredTrialStep(activeStep.num);
   }, [isTouchViewport, trialFilled, trialSteps]);
-
-  function scrollToSection(sectionId: string) {
-    document.getElementById(sectionId)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }
 
   return (
     <div className="mkt-pricing-page">
@@ -133,7 +128,7 @@ export function RatesPage() {
         </MktShell>
       </section>
 
-      <section className="mkt-pricing-subnav-band" aria-label="Pricing navigation">
+      {/* <section className="mkt-pricing-subnav-band" aria-label="Pricing navigation">
         <MktShell className="mkt-pricing-subnav justify-center">
           {heroPillars.map((pillar) => (
             <button
@@ -146,7 +141,7 @@ export function RatesPage() {
             </button>
           ))}
         </MktShell>
-      </section>
+      </section> */}
 
       <section id="know-the-engineer" className="mkt-section mkt-pricing-transparent">
         <MktShell>

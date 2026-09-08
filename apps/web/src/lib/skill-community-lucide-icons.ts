@@ -1,6 +1,7 @@
 import {
   Box,
   Brain,
+  Building2,
   Cloud,
   Code2,
   Database,
@@ -18,6 +19,7 @@ export const SKILL_COMMUNITY_LUCIDE_ICONS: Record<string, LucideIcon> = {
   'Full stack': Code2,
   Salesforce: Cloud,
   SAP: Box,
+  'Enterprise Apps': Building2,
   ServiceNow: Workflow,
   Others: Layers,
 };

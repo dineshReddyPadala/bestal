@@ -1,7 +1,7 @@
 import type { CareerOpeningPublic } from './api/career-openings';
 
 export const CAREERS_WHO_WE_ARE =
-  'BesTal is a technology talent platform that helps enterprises hire pre-vetted engineers with proven scorecards, transparent rates, and overlap in US time zones. Our teams design and deploy enterprise solutions that are robust, secure, and scalable — across cloud, data, full-stack, and security disciplines.';
+  'BesTal is a technology talent platform that helps enterprises hire Pre-Vetted Talent with proven scorecards, transparent rates, and overlap in US time zones. Our teams design and deploy enterprise solutions that are robust, secure, and scalable — across cloud, data, full-stack, and security disciplines.';
 
 export type CareerOpeningView = Pick<
   CareerOpeningPublic,
