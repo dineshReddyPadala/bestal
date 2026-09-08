@@ -3,6 +3,7 @@ import { ArrowRight, ArrowUpRight, ChevronLeft, ChevronRight, Minus, Plus, Star 
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { MktShell } from '../../components/marketing/MktShell';
+import { HomeAudienceToggle } from '../../components/marketing/HomeAudienceToggle';
 import { PageMeta } from '../../components/PageMeta';
 import { useCarouselVisibleCount } from '../../hooks/useCarouselVisibleCount';
 import { CONSULTING_PAGE } from '../../lib/marketing-copy';
@@ -13,6 +14,7 @@ type ConsultingProfile = (typeof CONSULTING_PAGE.hero.profiles)[number];
 const HELP_SERVICE_INTERVAL_MS = 4500;
 const TECH_CAROUSEL_INTERVAL_MS = 4500;
 const ENGAGEMENT_CAROUSEL_INTERVAL_MS = 4500;
+const PROFESSIONALS_INTERVAL_MS = 4500;
 
 function ConsultingHeroProfileCard({
   profile,
@@ -99,9 +101,13 @@ export function ConsultingPage() {
   const [isTechPaused, setIsTechPaused] = useState(false);
   const [engagementIndex, setEngagementIndex] = useState(0);
   const [isEngagementPaused, setIsEngagementPaused] = useState(false);
+  const [activeProfessional, setActiveProfessional] = useState(0);
+  const [isProfessionalsPaused, setIsProfessionalsPaused] = useState(false);
 
   const helpServices = copy.howWeHelp.services;
   const serviceCount = helpServices.length;
+  const professionalItems = copy.professionals.items;
+  const professionalCount = professionalItems.length;
 
   useEffect(() => {
     if (isHelpPaused || serviceCount <= 1) return undefined;
@@ -158,6 +164,19 @@ export function ConsultingPage() {
     return () => window.clearInterval(timerId);
   }, [isEngagementPaused, maxEngagementIndex]);
 
+  useEffect(() => {
+    if (isProfessionalsPaused || professionalCount <= 1) return undefined;
+
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reducedMotion) return undefined;
+
+    const timerId = window.setInterval(() => {
+      setActiveProfessional((current) => (current + 1) % professionalCount);
+    }, PROFESSIONALS_INTERVAL_MS);
+
+    return () => window.clearInterval(timerId);
+  }, [isProfessionalsPaused, professionalCount]);
+
   const activeServiceContent = helpServices[activeService] ?? helpServices[0];
   const activeLeaderContent = copy.leaders.roles[activeLeader] ?? copy.leaders.roles[0];
 
@@ -166,6 +185,9 @@ export function ConsultingPage() {
       <PageMeta title={PAGE_SEO.consulting.title} description={PAGE_SEO.consulting.description} />
 
       <section className="mkt-consult-v2-hero">
+        <div className="mkt-hero-audience-bar">
+          <HomeAudienceToggle />
+        </div>
         <MktShell>
           <div className="mkt-consult-v2-hero-grid">
             <div className="mkt-consult-v2-hero-copy">
@@ -276,10 +298,6 @@ export function ConsultingPage() {
                 <span className="mkt-consult-v2-help-card-label">{copy.howWeHelp.cardLabel}</span>
                 <h3>{activeServiceContent.title}</h3>
                 <p>{activeServiceContent.body}</p>
-                <Link to="/contact" className="mkt-consult-v2-help-card-link">
-                  {activeServiceContent.link}
-                  <ArrowRight aria-hidden="true" />
-                </Link>
               </div>
             </article>
           </div>
@@ -354,9 +372,25 @@ export function ConsultingPage() {
               <p>{copy.professionals.intro}</p>
               <blockquote className="mkt-consult-v2-professionals-quote">{copy.professionals.quote}</blockquote>
             </div>
-            <ul className="mkt-consult-v2-professionals-list">
-              {copy.professionals.items.map((item, index) => (
-                <li key={item} className={cn(index === 0 && 'is-emphasis')}>
+            <ul
+              className="mkt-consult-v2-professionals-list"
+              onMouseEnter={() => setIsProfessionalsPaused(true)}
+              onMouseLeave={() => setIsProfessionalsPaused(false)}
+              onFocusCapture={() => setIsProfessionalsPaused(true)}
+              onBlurCapture={(event) => {
+                if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+                  setIsProfessionalsPaused(false);
+                }
+              }}
+            >
+              {professionalItems.map((item, index) => (
+                <li
+                  key={item}
+                  className={cn(activeProfessional === index && 'is-emphasis')}
+                  onMouseEnter={() => setActiveProfessional(index)}
+                  onFocus={() => setActiveProfessional(index)}
+                  tabIndex={0}
+                >
                   {item}
                 </li>
               ))}
@@ -449,11 +483,20 @@ export function ConsultingPage() {
                 {engagementModels.map((model, index) => (
                   <article key={model.title} className="mkt-consult-v2-engagement-col">
                     {index > 0 ? <span className="mkt-consult-v2-engagement-rule" aria-hidden="true" /> : null}
-                    <span className="mkt-consult-v2-engagement-num">{model.num}</span>
                     <h3>{model.title}</h3>
                     <p>{model.body}</p>
                   </article>
                 ))}
+              </div>
+            </div>
+            <div className="mkt-consult-v2-engagement-highlight">
+              <h3>{copy.engagement.highlight.title}</h3>
+              <div className="mkt-consult-v2-engagement-highlight-copy">
+                <p>{copy.engagement.highlight.body}</p>
+                <Link to={copy.engagement.highlight.href} className="mkt-consult-v2-engagement-highlight-link">
+                  {copy.engagement.highlight.cta}
+                  <ArrowRight aria-hidden="true" />
+                </Link>
               </div>
             </div>
           </div>
