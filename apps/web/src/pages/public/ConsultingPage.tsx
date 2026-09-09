@@ -192,7 +192,7 @@ export function ConsultingPage() {
           <div className="mkt-consult-v2-hero-grid">
             <div className="mkt-consult-v2-hero-copy">
               <h1>
-                {copy.hero.titleLine1}
+                <span className="mkt-consult-v2-hero-title-line">{copy.hero.titleLine1}</span>
                 <br />
                 {copy.hero.titleLine2}
               </h1>
@@ -204,12 +204,13 @@ export function ConsultingPage() {
                   {copy.hero.primaryCta}
                   <ArrowRight aria-hidden="true" />
                 </Link>
-                <Link to="#how-we-help" className="mkt-consult-v2-btn mkt-consult-v2-btn-outline">
+                {/* <Link to="#how-we-help" className="mkt-consult-v2-btn mkt-consult-v2-btn-outline">
                   {copy.hero.secondaryCta}
-                </Link>
+                </Link> */}
               </div>
             </div>
             <div className="mkt-consult-v2-hero-cards-wrap">
+              <div className="mkt-consult-v2-hero-cards-panel" aria-hidden="true" />
               <div
                 className={cn(
                   'mkt-consult-v2-hero-cards',
@@ -351,11 +352,11 @@ export function ConsultingPage() {
                 {techCards.map((card) => (
                   <article key={card.title} className="mkt-consult-v2-tech-card">
                     <img src={card.image} alt="" loading="lazy" />
-                    <div className="mkt-consult-v2-tech-card-body">
-                      <ArrowUpRight className="mkt-consult-v2-tech-card-icon" aria-hidden="true" />
+                    <Link to="/sample-talent" className="mkt-consult-v2-tech-card-body">
+                      <ArrowUpRight className="mkt-consult-v2-tech-card-icon" aria-hidden="true"/>
                       <h3>{card.title}</h3>
                       <p>{card.body}</p>
-                    </div>
+                    </Link>
                   </article>
                 ))}
               </div>
@@ -403,7 +404,7 @@ export function ConsultingPage() {
         <MktShell>
           <div className="mkt-consult-v2-why-layout">
             <div className="mkt-consult-v2-why-copy">
-              <span className="mkt-consult-v2-step-num">{copy.why.step}</span>
+              {/* <span className="mkt-consult-v2-step-num">{copy.why.step}</span> */}
               <h2>{copy.why.title}</h2>
               <p>{copy.why.intro}</p>
             </div>
@@ -506,7 +507,7 @@ export function ConsultingPage() {
       <section className="mkt-consult-v2-section mkt-consult-v2-approach">
         <MktShell>
           <div className="mkt-consult-v2-approach-hd">
-            <span className="mkt-consult-v2-approach-index">{copy.approach.step}</span>
+            {/* <span className="mkt-consult-v2-approach-index">{copy.approach.step}</span> */}
             <h2>{copy.approach.title}</h2>
             <p>{copy.approach.intro}</p>
           </div>
@@ -540,7 +541,7 @@ export function ConsultingPage() {
                 className={cn('mkt-consult-v2-leader-tile', activeLeader === index && 'is-active')}
                 onClick={() => setActiveLeader(index)}
               >
-                <span className="mkt-consult-v2-leader-num">{role.num}</span>
+                {/* <span className="mkt-consult-v2-leader-num">{role.num}</span> */}
                 <span className="mkt-consult-v2-leader-title">{role.title}</span>
                 <Plus className="mkt-consult-v2-leader-plus" aria-hidden="true" />
               </button>
@@ -559,8 +560,24 @@ export function ConsultingPage() {
         <MktShell>
           {copy.closing.sections.map((section) => (
             <div key={section.title} className="mkt-consult-v2-closing-row">
-              <h2>{section.title}</h2>
-              <div>
+              <div className="mkt-consult-v2-closing-row-copy">
+                <h2>{section.title}</h2>
+                {'subheading' in section && section.subheading ? (
+                  <>
+                    <span className="mkt-consult-v2-closing-row-rule" aria-hidden="true" />
+                    <div className="mkt-consult-v2-closing-row-meta">
+                      {/* <h3>{section.subheading}</h3> */}
+                      {'subheading1' in section && section.subheading1 ? (
+                        <>
+                          <span className="mkt-consult-v2-closing-row-meta-sep" aria-hidden="true" />
+                          <p className="mkt-consult-v2-closing-row-regions">{section.subheading1}</p>
+                        </>
+                      ) : null}
+                    </div>
+                  </>
+                ) : null}
+              </div>
+              <div className="mkt-consult-v2-closing-row-body">
                 {section.paragraphs.map((paragraph) => (
                   <p key={paragraph}>{paragraph}</p>
                 ))}
@@ -579,10 +596,10 @@ export function ConsultingPage() {
             </p>
           </div>
 
-          <div className="mkt-consult-v2-closing-foot">
+          {/* <div className="mkt-consult-v2-closing-foot">
             <h3>{copy.closing.footerTitle}</h3>
             <p>{copy.closing.regions.join(' • ')}</p>
-          </div>
+          </div> */}
         </MktShell>
       </section>
     </div>

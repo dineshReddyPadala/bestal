@@ -137,7 +137,7 @@ export function TalentLandingPage() {
         <MktShell>
           <div className="mkt-talent-v2-hero-grid">
             <div className="mkt-talent-v2-hero-copy">
-              <span className="mkt-talent-v2-hero-label">{copy.hero.label}</span>
+              {/* <span className="mkt-talent-v2-hero-label">{copy.hero.label}</span> */}
               <h1>{copy.hero.title}</h1>
               <p className="mkt-talent-v2-hero-sub">{copy.hero.subheading}</p>
               {copy.hero.paragraphs.map((paragraph) => (
@@ -316,12 +316,9 @@ export function TalentLandingPage() {
       <section className="mkt-talent-v2-section mkt-talent-v2-advantage">
         <MktShell>
           <div className="mkt-talent-v2-advantage-layout">
-            <div className="mkt-talent-v2-advantage-left">
-              <div className="mkt-talent-v2-advantage-hd">
-                <h2>{copy.advantage.title}</h2>
-                <p>{copy.advantage.subtitle}</p>
-              </div>
-              <p className="mkt-talent-v2-advantage-intro">{copy.advantage.intro}</p>
+            <div className="mkt-talent-v2-advantage-hd">
+              <h2>{copy.advantage.title}</h2>
+              <p>{copy.advantage.subtitle}</p>
             </div>
 
             <div className="mkt-talent-v2-advantage-accordion">
@@ -338,7 +335,7 @@ export function TalentLandingPage() {
                       <span className="mkt-talent-v2-advantage-trigger-mark" aria-hidden="true">
                         »
                       </span>
-                      <span>{item.title}</span>
+                      <span className="mkt-talent-v2-advantage-trigger-title">{item.title}</span>
                       <span className="mkt-talent-v2-advantage-toggle" aria-hidden="true">
                         {isOpen ? <Minus /> : <Plus />}
                       </span>
@@ -348,9 +345,8 @@ export function TalentLandingPage() {
                 );
               })}
             </div>
-          </div>
 
-          <article className="mkt-talent-v2-showcase">
+            <article className="mkt-talent-v2-showcase">
             <div className="mkt-talent-v2-showcase-photo">
               <img src={copy.profileShowcase.image} alt="" loading="lazy" />
               <span className="mkt-talent-v2-showcase-verify">
@@ -369,7 +365,7 @@ export function TalentLandingPage() {
                 ))}
               </div>
               <div className="mkt-talent-v2-showcase-grid">
-                <div className="mkt-talent-v2-showcase-bars">
+                {/* <div className="mkt-talent-v2-showcase-bars">
                   {copy.profileShowcase.breakdown.map((row) => (
                     <div key={row.label} className="mkt-talent-v2-evidence-bar">
                       <div className="mkt-talent-v2-evidence-bar-hd">
@@ -381,19 +377,19 @@ export function TalentLandingPage() {
                       </div>
                     </div>
                   ))}
-                </div>
+                </div> */}
                 <dl className="mkt-talent-v2-showcase-meta">
                   <div>
                     <dt>Experience</dt>
                     <dd>{copy.profileShowcase.experience}</dd>
                   </div>
                   <div>
-                    <dt>Availability</dt>
-                    <dd>{copy.profileShowcase.availability}</dd>
-                  </div>
-                  <div>
                     <dt>Time Zone</dt>
                     <dd>{copy.profileShowcase.timezone}</dd>
+                  </div>
+                  <div>
+                    <dt>Availability</dt>
+                    <dd>{copy.profileShowcase.availability}</dd>
                   </div>
                   <div>
                     <dt>Hourly Rate</dt>
@@ -406,7 +402,8 @@ export function TalentLandingPage() {
                 {copy.profileShowcase.badge}
               </p>
             </div>
-          </article>
+            </article>
+          </div>
         </MktShell>
       </section>
 

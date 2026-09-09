@@ -1250,6 +1250,11 @@ export const TALENT_LANDING_PAGE = {
     intro:
       'Traditional hiring can reduce years of experience to a few pages of a Resume and a handful of keyword searches. BesTal is designed to give demonstrated capability, relevant experience and readiness to contribute greater visibility.',
     items: [
+       {
+        title: 'Your expertise. Made visible.',
+        body:
+          'Traditional hiring can reduce years of experience to a few pages of a Resume and a handful of keyword searches. BesTal is designed to give demonstrated capability, relevant experience and readiness to contribute greater visibility.',
+      },
       {
         title: 'More Than a Resume',
         body:
@@ -1465,17 +1470,7 @@ export const CONSULTING_PAGE = {
     primaryCta: 'Schedule a Consultation',
     secondaryCta: 'Explore How We Help',
     profiles: [
-      {
-        name: 'Ananya Rao',
-        role: 'Full-Stack Engineer',
-        skills: ['TypeScript', 'React'],
-        experience: '7 years experience',
-        availability: 'Available now',
-        availabilityTone: 'now' as const,
-        score: 94,
-        image:
-          'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=200&q=80',
-      },
+    
       {
         name: 'Leila Haddad',
         role: 'AI / Machine Learning Engineer',
@@ -1818,6 +1813,8 @@ export const CONSULTING_PAGE = {
     sections: [
       {
         title: 'Global Perspective. Delivery Aligned to You.',
+        subheading: 'Specialized Expertise. Built for Execution.',
+        subheading1: 'US • UK • MIDDLE EAST • INDIA',
         paragraphs: [
           'Organizations increasingly operate across geographies, time zones and distributed teams. BesTal Consulting is designed to support clients across the US, UK, Middle East and India with engagement structures aligned to local business needs and global delivery.',
           'Team composition, working-hour overlap, location strategy and governance are shaped around the engagement — helping distributed teams collaborate effectively without forcing every project into the same delivery model.',
