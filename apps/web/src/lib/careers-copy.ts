@@ -6,18 +6,260 @@ export const CAREERS_HERO = {
 
 /** Placeholder imagery — replace with BesTal assets when available. */
 export const CAREERS_IMAGES = {
-  why: {
-    impact:
-      'https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&w=960&q=80',
-    development:
-      'https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=960&q=80',
-    progress:
-      'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?auto=format&fit=crop&w=960&q=80',
-    support:
-      'https://images.unsplash.com/photo-1600880292203-757bb62b4baf?auto=format&fit=crop&w=960&q=80',
+  hero: '/Image (8) (1).png',
+  vision: '/Image (7) (1).png',
+  why: '/Image (9) (1).png',
+  india: 'https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=900&q=80',
+  us: '/Image (11) (1).png',
+  values: '/Image (10) (1).png',
+  join: '/group-people-working-out-business-plan-office.jpg',
+  emptyOpenings:
+    '/ChatGPT Image Sep 9, 2026, 08_40_29 PM.png',
+  closing: 'https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=1600&q=80',
+} as const;
+
+export const CAREERS_EMPTY_OPENINGS_IMAGE = CAREERS_IMAGES.emptyOpenings;
+
+export const CAREERS_V2_PAGE = {
+  hero: {
+    label: 'CAREERS',
+    titleLine1: 'Build What\u2019s Next.',
+    titleLine2: 'Grow With BesTal.',
+    lead: 'Meaningful technology opportunities for professionals in the U.S. and India.',
+    body:
+      'Your career should be defined by what you can do, what you can learn, and the impact you can create \u2014 not just the keywords on your r\u00e9sum\u00e9.',
+    primaryCta: 'Explore Open Opportunities',
+    image: CAREERS_IMAGES.hero,
   },
-  equal:
-    'https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=960&q=80',
+  vision: {
+    image: CAREERS_IMAGES.vision,
+    lead:
+      'BesTal connects skilled technology professionals with opportunities across our own teams and client engagements. Whether you\u2019re looking for a full-time role, contract assignment, project-based work or a flexible engagement, we help you discover opportunities aligned with your expertise, experience and ambitions.',
+    body:
+      'From AI and data to cloud, enterprise platforms and digital engineering, BesTal is building a community of people who want to solve meaningful problems and keep growing.',
+  },
+  why: {
+    title: 'Why Build Your Career Through BesTal?',
+    subtitle: 'The right opportunity should move your career forward.',
+    image: CAREERS_IMAGES.why,
+    items: [
+      {
+        num: '01',
+        title: 'Work on Meaningful Technology Challenges',
+        body:
+          'Get considered for roles and projects where your expertise can contribute to real products, platforms, transformation programs and business outcomes.',
+      },
+      {
+        num: '02',
+        title: 'Access Opportunities Across the U.S. and India',
+        body:
+          'BesTal supports opportunities across geographies and working models. Depending on the role, opportunities may be remote, hybrid, onsite or aligned to client time zones.',
+      },
+      {
+        num: '03',
+        title: 'Be Recognized for What You Can Do',
+        body:
+          'We look beyond job titles and r\u00e9sum\u00e9 keywords. Relevant roles may include structured assessment of technical depth, problem solving, communication and readiness to work with modern engineering teams.',
+      },
+      {
+        num: '04',
+        title: 'Choose the Work Model That Fits',
+        body:
+          'Depending on the opportunity, engagement models may include full-time employment, contract work, part-time assignments, freelance engagements and project-based roles.',
+      },
+      {
+        num: '05',
+        title: 'Stay Visible for Future Opportunities',
+        body:
+          'A strong profile can help BesTal consider you for future roles that match your skills, experience, availability and work preferences \u2014 even when you are not applying to a specific opening.',
+      },
+      {
+        num: '06',
+        title: 'Grow With Emerging Technology',
+        body:
+          'Build experience across high-demand areas such as AI, data, cloud, platform engineering and enterprise applications while working with teams solving real technology problems.',
+      },
+    ],
+  },
+  paths: {
+    title: 'Explore Technology Career Paths',
+    intro:
+      'Whether you are a specialist, engineer, consultant, architect or technology leader, explore opportunities across BesTal\u2019s growing technology communities.',
+    cards: [
+      {
+        title: 'AI & Machine Learning',
+        body:
+          'AI Engineering, Generative AI, Machine Learning, Data Science, MLOps, NLP, Computer Vision and emerging AI technologies.',
+        image:
+          'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=800&h=450&q=80',
+      },
+      {
+        title: 'Data Engineering & Analytics',
+        body:
+          'Data Engineering, Analytics Engineering, Databricks, Snowflake, ETL/ELT, Data Platforms, BI and modern analytics.',
+        image:
+          'https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&w=800&h=450&q=80',
+      },
+      {
+        title: 'Cloud, DevOps & Platform Engineering',
+        body:
+          'AWS, Azure, Google Cloud, DevOps, SRE, Kubernetes, Infrastructure Automation and Platform Engineering.',
+        image:
+          'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&w=800&h=450&q=80',
+      },
+      {
+        title: 'Full-Stack & Software Engineering',
+        body:
+          'Frontend, Backend, Java, .NET, Python, React, Angular, Node.js, APIs, Microservices, Mobile and QA Automation.',
+        image:
+          'https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=800&h=450&q=80',
+      },
+      {
+        title: 'Enterprise Applications',
+        body: 'SAP, Oracle ERP/EPM/HCM/SCM, Microsoft technologies and other enterprise platforms.',
+        image:
+          'https://images.unsplash.com/photo-1542744173-8e7e53415bb0?auto=format&fit=crop&w=800&h=450&q=80',
+      },
+      {
+        title: 'ServiceNow',
+        body:
+          'Development, Administration, Architecture, ITSM, ITOM, CSM, HRSD, SecOps and Platform Implementation.',
+        image:
+          'https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=800&h=450&q=80',
+      },
+      {
+        title: 'Salesforce',
+        body:
+          'Development, Administration, Architecture, Integration, Sales Cloud, Service Cloud, Marketing Cloud and Data Cloud.',
+        image:
+          'https://images.unsplash.com/photo-1600880292203-757bb62b4baf?auto=format&fit=crop&w=800&h=450&q=80',
+      },
+      {
+        title: 'Cybersecurity',
+        body:
+          'Security Engineering, Cloud Security, IAM, SOC, Application Security, GRC and related security disciplines.',
+        image:
+          'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&w=800&h=450&q=80',
+      },
+    ],
+  },
+  journey: {
+    title: 'How the BesTal Career Journey Works',
+    steps: [
+      {
+        num: '1',
+        title: 'Explore',
+        body: 'Browse current opportunities or join the BesTal Network for future roles.',
+      },
+      {
+        num: '2',
+        title: 'Create Your Profile',
+        body:
+          'Tell us about your skills, experience, location, availability, work preferences and career interests.',
+      },
+      {
+        num: '3',
+        title: 'Demonstrate Your Expertise',
+        body:
+          'For relevant opportunities, complete a structured assessment or interview process designed around the role.',
+      },
+      {
+        num: '4',
+        title: 'Get Matched',
+        body:
+          'We consider your capabilities, experience, availability and preferences against relevant BesTal or client opportunities.',
+      },
+      {
+        num: '5',
+        title: 'Meet the Team',
+        body:
+          'If there is a strong fit, meet the BesTal hiring team or client team to understand the role, expectations and working environment.',
+      },
+      {
+        num: '6',
+        title: 'Decide Together',
+        body:
+          'A great engagement should work for both sides. If the role, expectations and terms align, move forward with clarity.',
+      },
+      {
+        num: '7',
+        title: 'Do Work You\u2019re Proud Of',
+        body:
+          'Join the team, contribute your expertise, keep learning and build the next chapter of your career.',
+      },
+    ],
+  },
+  regions: [
+    {
+      title: 'For Professionals in India',
+      accent: 'green' as const,
+      paragraphs: [
+        'Build a career with global exposure without limiting yourself to traditional local opportunities. Depending on the role, BesTal professionals in India may work with global teams, collaborate across time zones and contribute to technology initiatives for clients in international markets.',
+        'Working hours, location expectations and engagement terms vary by opportunity and are communicated during the selection process.',
+      ],
+      image: CAREERS_IMAGES.india,
+    },
+    {
+      title: 'For Professionals in the United States',
+      accent: 'slate' as const,
+      paragraphs: [
+        'Explore technology opportunities that combine specialized expertise with flexible ways of working. BesTal supports roles and engagements where U.S.-based professionals can contribute to client programs, consulting initiatives, engineering teams and specialized technology projects.',
+        'Role type, location, compensation structure and employment or contracting terms vary by opportunity.',
+      ],
+      image: CAREERS_IMAGES.us,
+    },
+  ],
+  values: {
+    title: 'What We Value',
+    intro:
+      'Great technology teams are built on more than technical skill. We value professionals who combine expertise with curiosity, ownership and the ability to work well with others.',
+    image: CAREERS_IMAGES.values,
+    items: [
+      'Strong technical fundamentals and a willingness to keep learning',
+      'Ownership and accountability',
+      'Clear, respectful communication',
+      'Problem solving and practical thinking',
+      'Collaboration across teams, cultures and time zones',
+      'Customer and business awareness',
+      'Integrity and professionalism',
+    ],
+  },
+  join: {
+    title: 'Join the BesTal Network',
+    subtitle: 'Not every opportunity starts with a job posting.',
+    body:
+      'Join the BesTal Network to build professional visibility for future opportunities aligned with your expertise, location, availability and career interests. When a relevant opportunity arises, our team can review your profile and reach out if there is a potential fit.',
+    primaryCta: 'Join now',
+    image: CAREERS_IMAGES.join,
+  },
+  process: {
+    title: 'A Transparent Process',
+    paragraphs: [
+      'Applying for a role or joining the BesTal Network does not guarantee an interview, assignment, client engagement or placement. Opportunities depend on business and client demand, role requirements, location, work authorization where applicable, skills, experience, assessment results, availability and overall fit.',
+      'We believe candidates deserve clarity. Where possible, BesTal aims to communicate the role, engagement model, working expectations and next steps early in the process.',
+    ],
+  },
+  emptyOpenings: {
+    label: 'CAREERS',
+    title: 'No current openings',
+    body:
+      'There are no open positions available at the moment. Please check back soon for new opportunities.',
+    primaryCta: 'Explore our teams',
+    primaryHref: '#career-paths',
+    secondaryCta: 'Check back soon',
+    cardText: 'Great people build great products',
+    image: CAREERS_EMPTY_OPENINGS_IMAGE,
+  },
+  closing: {
+    title: 'Ready for Your Next Opportunity?',
+    body:
+      'Explore current openings or join the BesTal Network and stay visible for opportunities that match what you do best.',
+    asideTitle: 'Your Skills Deserve More Than a R\u00e9sum\u00e9.',
+    cta: 'Explore Opportunities',
+    secondaryPrompt: 'Not ready to apply?',
+    secondaryCta: 'Join the BesTal Network.',
+    image: CAREERS_IMAGES.closing,
+  },
 } as const;
 
 export const CAREERS_WHY_TABS = [
@@ -26,32 +268,8 @@ export const CAREERS_WHY_TABS = [
     label: 'Impact',
     title: 'Happy customers',
     body: 'Empowering our customers to achieve their business goals consistently leveraging our deep technology experience without negotiating on the quality.',
-    image: CAREERS_IMAGES.why.impact,
+    image: CAREERS_IMAGES.why,
     imageAlt: 'Team reviewing customer feedback on a dashboard',
-  },
-  {
-    id: 'development',
-    label: 'Development',
-    title: 'Proven track record',
-    body: 'Our teams combine deep technology expertise with consistent delivery, helping clients solve complex challenges while building meaningful careers.',
-    image: CAREERS_IMAGES.why.development,
-    imageAlt: 'Colleagues collaborating around a laptop',
-  },
-  {
-    id: 'progress',
-    label: 'Progress',
-    title: 'Continuous growth',
-    body: 'Structured learning, mentorship, and clear advancement paths help you grow from contributor to leader at BesTal.',
-    image: CAREERS_IMAGES.why.progress,
-    imageAlt: 'Professional development session in a meeting room',
-  },
-  {
-    id: 'support',
-    label: 'Support',
-    title: 'People-first culture',
-    body: 'HR partners, collaborative teams, and accessible leadership ensure you have support at every stage of your journey.',
-    image: CAREERS_IMAGES.why.support,
-    imageAlt: 'Supportive team conversation in the office',
   },
 ] as const;
 
@@ -61,32 +279,7 @@ export const CAREERS_CORE_VALUES = [
   {
     id: 'innovation',
     title: 'Innovation',
-    body: 'We unleash creativity by making innovation part of each associate’s job responsibility.',
-  },
-  {
-    id: 'excellence',
-    title: 'Excellence',
-    body: 'We challenge the status quo and opinions to build premier products and deliver the best services.',
-  },
-  {
-    id: 'integrity',
-    title: 'Integrity',
-    body: 'We strive towards doing the right thing, at the right time for our customers, partners and teams.',
-  },
-  {
-    id: 'empathy',
-    title: 'Empathy',
-    body: 'We are curious and take leaps to understand and respect other’s perspectives for success.',
-  },
-  {
-    id: 'inclusivity',
-    title: 'Inclusivity',
-    body: 'We prioritize inclusion and diversity to build great culture, better teams and meaningful tech products.',
-  },
-  {
-    id: 'expectancy',
-    title: 'Expectancy',
-    body: 'We are committed to customer satisfaction and success through our best-in-class support program.',
+    body: 'We unleash creativity by making innovation part of each associate\u2019s job responsibility.',
   },
 ] as const;
 
@@ -94,26 +287,9 @@ export const CAREERS_EQUAL = {
   title: 'WE ENCOURAGE EQUAL RIGHTS AND OPPORTUNITIES',
   intro:
     'We exercise an inclusive and safe work environment to provide equal rights and opportunities for our stakeholders across the globe as foundational values to envision a better society.',
-  image: CAREERS_IMAGES.equal,
+  image: CAREERS_IMAGES.india,
   imageAlt: 'Modern office desk with laptop and workspace essentials',
-  items: [
-    {
-      title: 'Team Work',
-      body: 'Working at BesTal means having an interesting and challenging job and being a part of an exciting digital journey.',
-    },
-    {
-      title: 'Growth',
-      body: 'Our unique approach, digital frameworks and custom tech accelerators help businesses and teams to grow consistently.',
-    },
-    {
-      title: 'Impact',
-      body: 'We solve our clients’ technology challenges by leveraging our deep tech expertise to deliver great customer experiences and achieve higher ROI.',
-    },
-    {
-      title: 'Modest',
-      body: 'We encourage and accept constructive criticism with grace, and are receptive to fresh ideas. Experience the true results of your efforts! Both your speech and your code will be heard.',
-    },
-  ],
+  items: [] as const,
 } as const;
 
 export const CAREERS_APPLY_EMAIL = 'careers@bestal.co';
