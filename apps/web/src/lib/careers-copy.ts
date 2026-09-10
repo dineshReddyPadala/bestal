@@ -27,7 +27,7 @@ export const CAREERS_V2_PAGE = {
     titleLine2: 'Grow With BesTal.',
     lead: 'Meaningful technology opportunities for professionals in the U.S. and India.',
     body:
-      'Your career should be defined by what you can do, what you can learn, and the impact you can create \u2014 not just the keywords on your r\u00e9sum\u00e9.',
+      'Your career should be defined by what you can do, what you can learn, and the impact you can create \u2014 not just the keywords on your resume.',
     primaryCta: 'Explore Open Opportunities',
     image: CAREERS_IMAGES.hero,
   },
@@ -254,7 +254,7 @@ export const CAREERS_V2_PAGE = {
     title: 'Ready for Your Next Opportunity?',
     body:
       'Explore current openings or join the BesTal Network and stay visible for opportunities that match what you do best.',
-    asideTitle: 'Your Skills Deserve More Than a R\u00e9sum\u00e9.',
+    asideTitle: 'Your Skills Deserve More Than a Resume',
     cta: 'Explore Opportunities',
     secondaryPrompt: 'Not ready to apply?',
     secondaryCta: 'Join the BesTal Network.',
