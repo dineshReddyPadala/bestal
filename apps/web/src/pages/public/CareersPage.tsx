@@ -409,24 +409,24 @@ export function CareersPage() {
               <p>{copy.paths.intro}</p>
             </div>
             <div className="mkt-careers-v2-paths-controls">
-              <button
-                type="button"
+            <button
+              type="button"
                 className="mkt-careers-v2-paths-arrow"
                 aria-label="Previous career paths"
                 disabled={pathIndex === 0}
                 onClick={() => setPathIndex((current) => Math.max(0, current - 1))}
               >
                 <ChevronLeft aria-hidden="true" />
-              </button>
-              <button
-                type="button"
+            </button>
+                    <button
+                      type="button"
                 className="mkt-careers-v2-paths-arrow"
                 aria-label="Next career paths"
                 disabled={pathIndex >= maxPathIndex}
                 onClick={() => setPathIndex((current) => Math.min(maxPathIndex, current + 1))}
               >
                 <ChevronRight aria-hidden="true" />
-              </button>
+                    </button>
             </div>
           </div>
           <div className="mkt-careers-v2-paths-track-wrap">
@@ -529,7 +529,7 @@ export function CareersPage() {
                       {String(index + 1).padStart(2, '0')}
                     </span>
                     <span>{item}</span>
-                  </li>
+              </li>
                 );
               })}
             </ol>

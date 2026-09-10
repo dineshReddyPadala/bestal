@@ -257,6 +257,8 @@ function MarketingShell() {
         navItems={[...marketingNav]}
         ctaLabel="Reach out to us"
         ctaHref="/reach-out"
+        secondaryCtaLabel="Join Talent Community"
+        secondaryCtaHref="/talent"
         brandLogoSrc={BESTAL_LOGO_SRC}
         {...authLayoutProps}
       >

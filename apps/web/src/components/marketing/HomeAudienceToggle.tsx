@@ -4,16 +4,11 @@ import { Link, useLocation } from 'react-router-dom';
 const AUDIENCE_OPTIONS = [
   { id: 'talent', label: 'Hire Talent', href: '/' },
   { id: 'consulting', label: 'Consulting Services', href: '/consulting' },
-   { id: 'candidate', label: 'Join Talent Community', href: '/talent' },
 ] as const;
 
 function isActiveOption(pathname: string, optionId: (typeof AUDIENCE_OPTIONS)[number]['id']) {
   if (optionId === 'talent') {
     return pathname === '/';
-  }
-
-  if (optionId === 'candidate') {
-    return pathname === '/talent' || pathname.startsWith('/talent/');
   }
 
   return pathname === '/consulting' || pathname.startsWith('/consulting/');
@@ -24,11 +19,11 @@ export function HomeAudienceToggle() {
 
   return (
     <div className="mkt-home-audience-toggle-wrap">
-      <span className="mkt-home-audience-toggle-label">I am looking for:</span>
+      <span className="mkt-home-audience-toggle-label"></span>
       <div
         className="mkt-home-audience-toggle"
         role="group"
-        aria-label="Choose Talent, Candidate, or Consulting"
+        aria-label="Choose Talent or Consulting"
       >
         {AUDIENCE_OPTIONS.map((option) => {
           const isActive = isActiveOption(pathname, option.id);
