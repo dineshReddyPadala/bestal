@@ -17,7 +17,6 @@ import {
 import { useEffect, useState, type CSSProperties } from 'react';
 import { Link } from 'react-router-dom';
 import { MktShell } from '../../components/marketing/MktShell';
-import { HomeAudienceToggle } from '../../components/marketing/HomeAudienceToggle';
 import { PageMeta } from '../../components/PageMeta';
 import { useCarouselVisibleCount } from '../../hooks/useCarouselVisibleCount';
 import { TALENT_LANDING_PAGE } from '../../lib/marketing-copy';
@@ -131,9 +130,6 @@ export function TalentLandingPage() {
       <PageMeta title={PAGE_SEO.talent.title} description={PAGE_SEO.talent.description} />
 
       <section className="mkt-talent-v2-hero">
-        <div className="mkt-hero-audience-bar">
-          <HomeAudienceToggle />
-        </div>
         <MktShell>
           <div className="mkt-talent-v2-hero-grid">
             <div className="mkt-talent-v2-hero-copy">
@@ -146,7 +142,7 @@ export function TalentLandingPage() {
                 </p>
               ))}
               <p className="mkt-talent-v2-hero-hook">{copy.hero.hook}</p>
-              <Link to="/contact" className="mkt-talent-v2-btn mkt-talent-v2-btn-primary">
+              <Link to={copy.hero.primaryCtaHref} className="mkt-talent-v2-btn mkt-talent-v2-btn-primary">
                 {copy.hero.primaryCta}
                 <ArrowRight aria-hidden="true" />
               </Link>
@@ -458,7 +454,11 @@ export function TalentLandingPage() {
             >
               <div className="mkt-talent-v2-communities-track">
                 {copy.communities.cards.map((card) => (
-                  <article key={card.title} className="mkt-talent-v2-community-card">
+                  <Link
+                    key={card.title}
+                    to={copy.communities.ctaHref}
+                    className="mkt-talent-v2-community-card"
+                  >
                     <img src={card.image} alt="" loading="lazy" />
                     <div className="mkt-talent-v2-community-card-body">
                       <div className="mkt-talent-v2-community-card-hd">
@@ -467,7 +467,7 @@ export function TalentLandingPage() {
                       </div>
                       <p>{card.body}</p>
                     </div>
-                  </article>
+                  </Link>
                 ))}
               </div>
             </div>
@@ -616,7 +616,7 @@ export function TalentLandingPage() {
               <p className="mkt-talent-v2-cta-tagline">{copy.cta.tagline}</p>
               <p className="mkt-talent-v2-cta-headline">{copy.cta.headline}</p>
               <div className="mkt-talent-v2-cta-actions">
-                <Link to="/contact" className="mkt-talent-v2-btn mkt-talent-v2-btn-primary">
+                <Link to={copy.cta.primaryCtaHref} className="mkt-talent-v2-btn mkt-talent-v2-btn-primary">
                   {copy.cta.primaryCta}
                   <ArrowRight aria-hidden="true" />
                 </Link>
