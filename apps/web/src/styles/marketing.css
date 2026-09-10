@@ -8143,6 +8143,92 @@
   color: var(--mkt-ink-d);
 }
 
+.marketing-site .mkt-home-trial-scale {
+  overflow: visible;
+}
+
+.marketing-site .mkt-cta-banner.mkt-home-trial-scale-layout {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  min-height: clamp(18rem, calc(42vw - 4rem), 24rem);
+  background: transparent;
+}
+
+.marketing-site .mkt-home-trial-scale-copy {
+  background: #041e21;
+  color: #fff;
+}
+
+.marketing-site .mkt-home-trial-scale-copy h2 {
+  margin: 0;
+  max-width: none;
+  font-size: clamp(1.85rem, 3.2vw, 2.35rem);
+  line-height: 1.14;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #fff;
+}
+
+.marketing-site .mkt-home-trial-scale-copy p {
+  margin: 1.25rem 0 0;
+  max-width: none;
+  font-size: clamp(0.875rem, 1.2vw, 0.9375rem);
+  line-height: 1.65;
+  color: rgba(214, 228, 223, 0.82);
+}
+
+.marketing-site .mkt-home-trial-scale-cta {
+  align-self: flex-start;
+  margin-top: 1.35rem;
+  background: #f5a623;
+  border-color: #f5a623;
+  color: #12100e;
+  font-size: 0.875rem;
+  font-weight: 700;
+  padding: 0.8rem 1.15rem;
+  border-radius: 0.35rem;
+}
+
+.marketing-site .mkt-home-trial-scale-cta:hover,
+.marketing-site .mkt-home-trial-scale-cta:focus-visible {
+  background: #e89a1a;
+  border-color: #e89a1a;
+  color: #12100e;
+  transform: translateY(-1px);
+}
+
+.marketing-site .mkt-home-trial-scale-visual {
+  position: relative;
+}
+
+.marketing-site .mkt-home-trial-scale-panel {
+  position: absolute;
+  inset: 50% auto auto 50%;
+  transform: translate(-50%, -50%);
+  width: min(88%, 26rem);
+  padding: clamp(1.5rem, 2.8vw, 2rem) clamp(1.35rem, 2.5vw, 1.85rem);
+  border-radius: 0.95rem;
+  background: rgba(0, 0, 0, 0.72);
+  color: #fff;
+}
+
+.marketing-site .mkt-home-trial-scale-panel h3 {
+  margin: 0;
+  font-size: clamp(1.125rem, 1.8vw, 1.35rem);
+  line-height: 1.25;
+  font-weight: 800;
+  letter-spacing: -0.015em;
+  color: #fff;
+}
+
+.marketing-site .mkt-home-trial-scale-panel p {
+  margin: 0.85rem 0 0;
+  font-size: clamp(0.8125rem, 1.1vw, 0.875rem);
+  line-height: 1.65;
+  color: rgba(255, 255, 255, 0.92);
+}
+
 .marketing-site .mkt-cta-banner {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
@@ -8400,6 +8486,23 @@
     border-bottom: 1px solid var(--mkt-line);
   }
 
+  .marketing-site .mkt-home-trial-scale-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .marketing-site .mkt-cta-banner.mkt-home-trial-scale-layout {
+    min-height: clamp(16rem, calc(55vw - 4rem), 22rem);
+  }
+
+  .marketing-site .mkt-home-trial-scale-copy h2,
+  .marketing-site .mkt-home-trial-scale-copy p {
+    max-width: none;
+  }
+
+  .marketing-site .mkt-home-trial-scale-panel {
+    width: min(calc(100% - 2rem), 26rem);
+  }
+
   .marketing-site .mkt-cta-banner {
     grid-template-columns: 1fr;
   }
@@ -8515,6 +8618,53 @@
 .marketing-site .mkt-home .mkt-comm p {
   font-size: 0.875rem;
   line-height: var(--mkt-home-body-lh);
+  margin-top: 0.625rem;
+}
+
+.marketing-site .mkt-home .mkt-home-comm-card {
+  position: relative;
+  padding: 0;
+  overflow: hidden;
+  transition: transform 0.28s ease, box-shadow 0.28s ease, border-color 0.15s;
+}
+
+.marketing-site .mkt-home .mkt-home-comm-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 14px 36px rgba(18, 16, 14, 0.1);
+  border-color: var(--mkt-line);
+}
+
+.marketing-site .mkt-home .mkt-home-comm-card-media {
+  position: relative;
+  display: block;
+  height: 8.5rem;
+  overflow: hidden;
+}
+
+.marketing-site .mkt-home .mkt-home-comm-card-media::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: color-mix(in srgb, #0d3128 40%, transparent);
+  pointer-events: none;
+}
+
+.marketing-site .mkt-home .mkt-home-comm-card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.marketing-site .mkt-home .mkt-home-comm-card-body {
+  padding: var(--mkt-home-card-pad);
+}
+
+.marketing-site .mkt-home .mkt-home-comm-card-body h3 {
+  margin: 0;
+}
+
+.marketing-site .mkt-home .mkt-home-comm-card-body p {
   margin-top: 0.625rem;
 }
 
@@ -8806,7 +8956,8 @@
 .marketing-site .mkt-home .mkt-shell.mkt-g2t,
 .marketing-site .mkt-home .mkt-shell.mkt-g3,
 .marketing-site .mkt-home .mkt-shell.mkt-g6,
-.marketing-site .mkt-home .mkt-shell.mkt-profile {
+.marketing-site .mkt-home .mkt-shell.mkt-profile,
+.marketing-site .mkt-home .mkt-home-trial-scale .mkt-shell {
   min-width: 0;
 }
 
@@ -8816,6 +8967,7 @@
 .marketing-site .mkt-home .mkt-g6:not(.mkt-shell),
 .marketing-site .mkt-home .mkt-profile:not(.mkt-shell),
 .marketing-site .mkt-home .mkt-cta-banner,
+.marketing-site .mkt-home .mkt-home-trial-scale-layout,
 .marketing-site .mkt-home .mkt-community-slider,
 .marketing-site .mkt-home .mkt-community-slider-card,
 .marketing-site .mkt-home .mkt-prof-landing {
@@ -8836,6 +8988,10 @@
   max-width: none;
   object-fit: cover;
   object-position: center top;
+}
+
+.marketing-site .mkt-home .mkt-home-trial-scale-visual img {
+  object-position: center;
 }
 
 /* Statistics — 2×2 on tablet/mobile with readable labels */
@@ -17258,7 +17414,7 @@
 }
 
 .marketing-site .mkt-trust-v2-closing {
-  background: #043927;
+  background: #041e21;
   color: #fff;
 }
 
@@ -24485,7 +24641,7 @@
 }
 
 .marketing-site .mkt-careers-v2-paths {
-  background: var(--mkt-brand-900);
+  background: #041e21;
   padding: clamp(2rem, 4vw, 3rem) 0 clamp(2.75rem, 5vw, 4rem);
 }
 
@@ -24787,7 +24943,7 @@
 }
 
 .marketing-site .mkt-careers-v2-values {
-  background: var(--mkt-brand-900);
+  background: #041e21;
   padding: clamp(2.75rem, 5vw, 4rem) 0;
 }
 
@@ -25187,7 +25343,8 @@
 .marketing-site .mkt-careers-v2-closing-overlay {
   position: absolute;
   inset: 0;
-  background: color-mix(in srgb, var(--mkt-brand-900) 88%, transparent);
+  background: #041e21;
+  opacity: 0.9;
 }
 
 .marketing-site .mkt-careers-v2-closing .mkt-shell {
@@ -25234,6 +25391,20 @@
   align-items: center;
   gap: 1rem 1.25rem;
   margin-top: 1.5rem;
+}
+
+.marketing-site .mkt-careers-v2-closing-actions .mkt-btn-primary {
+  background: #EE941B;
+  border-color: #EE941B;
+  color: #12100e;
+}
+
+.marketing-site .mkt-careers-v2-closing-actions .mkt-btn-primary:hover,
+.marketing-site .mkt-careers-v2-closing-actions .mkt-btn-primary:focus-visible {
+  background: #d88517;
+  border-color: #d88517;
+  color: #12100e;
+  box-shadow: 0 8px 20px rgba(238, 148, 27, 0.32);
 }
 
 .marketing-site .mkt-careers-v2-closing-secondary {
@@ -25427,6 +25598,88 @@
 
   .marketing-site .mkt-careers-v2-journey-line-fill {
     transition: none;
+  }
+
+  html:has(.marketing-site) {
+    scroll-behavior: auto;
+  }
+
+  .marketing-site .mkt-parallax-layer,
+  .marketing-site .mkt-parallax-bg {
+    animation: none !important;
+    transform: none !important;
+  }
+}
+
+/* ── Global smooth scroll + parallax (marketing pages, CSS-only) ── */
+html:has(.marketing-site) {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes mkt-parallax-image {
+    from {
+      transform: translate3d(0, -12%, 0) scale(1.1);
+    }
+
+    to {
+      transform: translate3d(0, 12%, 0) scale(1.1);
+    }
+  }
+
+  @keyframes mkt-parallax-bg {
+    from {
+      transform: translate3d(0, -18%, 0) scale(1.14);
+    }
+
+    to {
+      transform: translate3d(0, 18%, 0) scale(1.14);
+    }
+  }
+
+  @supports (animation-timeline: view()) {
+    .marketing-site .mkt-parallax-layer,
+    .marketing-site [class*='-photo'] img:not([class*='icon']),
+    .marketing-site [class*='-visual'] img:not([class*='icon']),
+    .marketing-site .mkt-cta-photo img,
+    .marketing-site .mkt-login-hero-img,
+    .marketing-site .mkt-about-hero-photo img,
+    .marketing-site .mkt-about-closing-photo img {
+      animation: mkt-parallax-image linear both;
+      animation-timeline: view();
+      animation-range: entry -5% cover 105%;
+      will-change: transform;
+    }
+
+    .marketing-site .mkt-parallax-bg,
+    .marketing-site .mkt-careers-v2-closing-bg img,
+    .marketing-site .mkt-talent-v2-cta-bg img {
+      animation: mkt-parallax-bg linear both;
+      animation-timeline: view();
+      animation-range: entry -10% cover 110%;
+      will-change: transform;
+    }
+  }
+
+  @supports not (animation-timeline: view()) {
+    .marketing-site .mkt-parallax-layer,
+    .marketing-site [class*='-photo'] img,
+    .marketing-site [class*='-visual'] img,
+    .marketing-site .mkt-cta-photo img,
+    .marketing-site .mkt-login-hero-img,
+    .marketing-site .mkt-careers-v2-closing-bg img,
+    .marketing-site .mkt-talent-v2-cta-bg img {
+      transform: scale(1.08);
+    }
+  }
+
+  .marketing-site [class*='-photo'],
+  .marketing-site [class*='-visual'],
+  .marketing-site [class*='-bg']:not(.mkt-reach-out-upload):not(.mkt-reach-out-upload-bg),
+  .marketing-site .mkt-cta-photo,
+  .marketing-site .mkt-careers-v2-closing-bg,
+  .marketing-site .mkt-talent-v2-cta-bg {
+    overflow: hidden;
   }
 }
 

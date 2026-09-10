@@ -2,9 +2,9 @@ import { cn } from '@bestal/shared-utils';
 import { Link, useLocation } from 'react-router-dom';
 
 const AUDIENCE_OPTIONS = [
-  { id: 'talent', label: 'Talent', href: '/' },
-  { id: 'consulting', label: 'Consulting & Services', href: '/consulting' },
-   { id: 'candidate', label: 'Candidate', href: '/talent' },
+  { id: 'talent', label: 'Hire Talent', href: '/' },
+  { id: 'consulting', label: 'Consulting Services', href: '/consulting' },
+   { id: 'candidate', label: 'Join Talent Community', href: '/talent' },
 ] as const;
 
 function isActiveOption(pathname: string, optionId: (typeof AUDIENCE_OPTIONS)[number]['id']) {
