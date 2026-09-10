@@ -1171,6 +1171,7 @@ export const TALENT_LANDING_PAGE = {
     ],
     hook: 'Get assessed. Get recognized. Get discovered.',
     primaryCta: 'Join the BesTal Talent Network',
+    primaryCtaHref: '/careers#openings',
     profile: {
       name: 'Leila Haddad',
       role: 'AI / Machine Learning Engineer',
@@ -1306,7 +1307,7 @@ export const TALENT_LANDING_PAGE = {
     subtitleRight:
       'Join specialized BesTal Talent Communities across high-demand technology domains:',
     cta: 'Explore Talent Communities',
-    ctaHref: '/communities',
+    ctaHref: '/careers#openings',
     cards: [
       {
         title: 'AI & Machine Learning',
@@ -1440,6 +1441,7 @@ export const TALENT_LANDING_PAGE = {
       'Showcase your expertise. Demonstrate your capabilities. Get discovered for opportunities that match what you do best.',
     headline: 'Your Skills Deserve More Than a Resume.',
     primaryCta: 'Join the BesTal Talent Network',
+    primaryCtaHref: '/careers#openings',
     signInLabel: 'Already registered? Sign In',
     signInHref: '/login/client',
     assessmentLabel: 'Want to know more? See How BesTal Assessment Works',

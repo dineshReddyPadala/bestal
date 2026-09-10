@@ -72,6 +72,8 @@ export type MarketingLayoutProps = {
   children: ReactNode;
   ctaLabel?: string;
   ctaHref?: string;
+  secondaryCtaLabel?: string;
+  secondaryCtaHref?: string;
   brandLogoSrc?: string;
   footerTagline?: string;
   hideFooter?: boolean;
@@ -222,6 +224,8 @@ export function MarketingLayout({
   children,
   ctaLabel = 'Reach out to us',
   ctaHref = '/reach-out',
+  secondaryCtaLabel,
+  secondaryCtaHref,
   brandLogoSrc,
   footerTagline = 'Evaluated, verified and priced before you interview — with a committed working window in your zone.',
   hideFooter = false,
@@ -313,6 +317,16 @@ export function MarketingLayout({
                   </NavLink>
                 ),
               )}
+
+              {secondaryCtaLabel && secondaryCtaHref ? (
+                <Link
+                  to={secondaryCtaHref}
+                  className="mkt-btn mkt-btn-sm mkt-nav-secondary"
+                  onClick={closeNav}
+                >
+                  {secondaryCtaLabel}
+                </Link>
+              ) : null}
 
               {isAuthenticated ? (
                 <button
