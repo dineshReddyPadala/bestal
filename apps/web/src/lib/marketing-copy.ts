@@ -1312,49 +1312,49 @@ export const TALENT_LANDING_PAGE = {
         title: 'AI & Machine Learning',
         body: 'Generative AI, AI Engineering, Machine Learning, MLOps and emerging AI skills.',
         image:
-          'https://images.unsplash.com/photo-1677442136019-21780ecad995?auto=format&fit=crop&w=900&q=80',
+          'AI_ML.jpg',
       },
       {
         title: 'Data Engineering & Analytics',
         body: 'Data Engineering, Databricks, Snowflake, Data Platforms, Analytics and Business Intelligence.',
         image:
-          'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=900&q=80',
+          'data_engineer.jpg',
       },
       {
         title: 'Cloud & DevOps',
         body: 'AWS, Azure, GCP, DevOps, SRE, Kubernetes and Platform Engineering.',
         image:
-          'https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=900&q=80',
+          'cloude_computing.jpg',
       },
       {
         title: 'Full-Stack & Software Engineering',
         body: 'Java, .NET, Python, React, Angular, Node.js, Mobile and QA Automation.',
         image:
-          'https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=900&q=80',
+          'full-stack.jpg',
       },
       {
         title: 'Enterprise Applications',
         body: 'SAP, Oracle, Microsoft and other enterprise technology platforms.',
         image:
-          'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=900&q=80',
+          'application_dev.jpg',
       },
       {
         title: 'ServiceNow',
         body: 'Development, architecture, ITSM, ITOM, CSM, HRSD, SecOps and integrations.',
         image:
-          'https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=900&q=80',
+          'service_now.jpg',
       },
       {
         title: 'Salesforce',
         body: 'Development, administration, architecture, Sales Cloud, Service Cloud, Marketing Cloud and Data Cloud.',
         image:
-          'https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&w=900&q=80',
+          'saleforce.jpg',
       },
       {
         title: 'Cybersecurity',
         body: 'Security engineering, cloud security, IAM, SOC, application security and GRC.',
         image:
-          'https://images.unsplash.com/photo-1555949963-aa79dcee981c?auto=format&fit=crop&w=900&q=80',
+          'others.jpg',
       },
     ],
   },
