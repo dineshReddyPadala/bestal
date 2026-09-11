@@ -1,11 +1,12 @@
 import { cn } from '@bestal/shared-utils';
 import { ArrowRight, ArrowUpRight, ChevronLeft, ChevronRight, Minus, Plus, Star } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type CSSProperties } from 'react';
 import { Link } from 'react-router-dom';
 import { MktShell } from '../../components/marketing/MktShell';
 import { HomeAudienceToggle } from '../../components/marketing/HomeAudienceToggle';
 import { PageMeta } from '../../components/PageMeta';
 import { useCarouselVisibleCount } from '../../hooks/useCarouselVisibleCount';
+import { getConsultingTechImage } from '../../lib/home-community-images';
 import { CONSULTING_PAGE } from '../../lib/marketing-copy';
 import { PAGE_SEO } from '../../lib/marketing-seo';
 
@@ -344,14 +345,20 @@ export function ConsultingPage() {
                 </button>
               </div>
             </div>
-            <div className="mkt-consult-v2-tech-track-wrap">
-              <div
-                className="mkt-consult-v2-tech-track"
-                style={{ transform: `translateX(calc(${-techIndex} * (100% / ${techVisibleCount} + 0.75rem)))` }}
-              >
+            <div
+              className="mkt-consult-v2-tech-track-wrap mkt-carousel-track-wrap"
+              style={
+                {
+                  '--carousel-visible': techVisibleCount,
+                  '--carousel-index': techIndex,
+                  '--carousel-gap': '1.2rem',
+                } as CSSProperties
+              }
+            >
+              <div className="mkt-consult-v2-tech-track mkt-carousel-track">
                 {techCards.map((card) => (
-                  <article key={card.title} className="mkt-consult-v2-tech-card">
-                    <img src={card.image} alt="" loading="lazy" />
+                  <article key={card.title} className="mkt-consult-v2-tech-card mkt-carousel-slide">
+                    <img src={getConsultingTechImage(card.title)} alt="" loading="lazy" />
                     <Link to="/sample-talent" className="mkt-consult-v2-tech-card-body">
                       <ArrowUpRight className="mkt-consult-v2-tech-card-icon" aria-hidden="true"/>
                       <h3>{card.title}</h3>
@@ -474,15 +481,19 @@ export function ConsultingPage() {
                 </button>
               </div>
             </div>
-            <div className="mkt-consult-v2-engagement-track-wrap">
-              <div
-                className="mkt-consult-v2-engagement-track"
-                style={{
-                  transform: `translateX(calc(${-engagementIndex} * (100% / ${engagementVisibleCount})))`,
-                }}
-              >
+            <div
+              className="mkt-consult-v2-engagement-track-wrap mkt-carousel-track-wrap"
+              style={
+                {
+                  '--carousel-visible': engagementVisibleCount,
+                  '--carousel-index': engagementIndex,
+                  '--carousel-gap': '1.25rem',
+                } as CSSProperties
+              }
+            >
+              <div className="mkt-consult-v2-engagement-track mkt-carousel-track">
                 {engagementModels.map((model, index) => (
-                  <article key={model.title} className="mkt-consult-v2-engagement-col">
+                  <article key={model.title} className="mkt-consult-v2-engagement-col mkt-carousel-slide">
                     {index > 0 ? <span className="mkt-consult-v2-engagement-rule" aria-hidden="true" /> : null}
                     <h3>{model.title}</h3>
                     <p>{model.body}</p>

@@ -1417,7 +1417,7 @@ export const TALENT_LANDING_PAGE = {
     quote:
       'Whatever your next step looks like, BesTal is designed to help the right opportunities discover the right skills.',
     image:
-      'https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&w=1200&q=80',
+      'https://images.unsplash.com/photo-1531482615713-2afd69097998?auto=format&fit=crop&w=1200&q=80',
   },
   transparency: {
     step: '08',
@@ -1580,50 +1580,43 @@ export const CONSULTING_PAGE = {
         title: 'Data, Analytics & AI',
         body:
           'Data strategy, data engineering, modern data platforms, analytics, machine learning, Generative AI, AI engineering, MLOps and AI-enabled applications.',
-        image:
-          'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=900&q=80',
+        image: 'AI_ML.jpg',
       },
       {
         title: 'Cloud, DevOps & Platform Engineering',
         body:
           'Cloud architecture, migration and modernization, AWS, Azure, GCP, DevOps, SRE, Kubernetes, infrastructure automation and platform engineering.',
-        image:
-          'https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=900&q=80',
+        image: 'cloude_computing.jpg',
       },
       {
         title: 'Digital & Product Engineering',
         body:
           'Web and mobile applications, APIs, microservices, full-stack engineering, modernization, QA automation and product engineering.',
-        image:
-          'https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=900&q=80',
+        image: 'full-stack.jpg',
       },
       {
         title: 'Enterprise Applications',
         body:
           'Enterprise application modernization, implementation and integration across platforms such as SAP, Oracle, Microsoft and related ecosystems.',
-        image:
-          'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=900&q=80',
+        image: 'application_dev.jpg',
       },
       {
         title: 'ServiceNow',
         body:
           'Platform architecture, development, integration and implementation support across relevant ServiceNow workflows and modules.',
-        image:
-          'https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&w=900&q=80',
+        image: 'service_now.jpg',
       },
       {
         title: 'Salesforce',
         body:
           'Architecture, development, integration and platform support across Sales Cloud, Service Cloud, Marketing Cloud, Data Cloud and related solutions.',
-        image:
-          'https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=900&q=80',
+        image: 'saleforce.jpg',
       },
       {
         title: 'Cybersecurity',
         body:
           'Security engineering, cloud and application security, IAM, security operations and technology risk support, subject to project-specific capability and requirements.',
-        image:
-          'https://images.unsplash.com/photo-1563986768609-322da13575f3?auto=format&fit=crop&w=900&q=80',
+        image: 'others.jpg',
       },
     ],
   },

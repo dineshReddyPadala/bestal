@@ -15,7 +15,7 @@ export function useCarouselVisibleCount({
 
   useEffect(() => {
     const desktopQuery = window.matchMedia('(min-width: 1025px)');
-    const tabletQuery = window.matchMedia('(min-width: 769px)');
+    const tabletQuery = window.matchMedia('(min-width: 768px)');
 
     const sync = () => {
       if (desktopQuery.matches) {
