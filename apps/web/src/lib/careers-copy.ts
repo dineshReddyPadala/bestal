@@ -130,10 +130,9 @@ export const CAREERS_V2_PAGE = {
         image: CAREER_PATH_IMAGES.salesforce,
       },
       {
-        title: 'Cybersecurity',
-        body:
-          'Security Engineering, Cloud Security, IAM, SOC, Application Security, GRC and related security disciplines.',
-        image: CAREER_PATH_IMAGES.cybersecurity,
+        title: 'Others',
+        body: 'Other Skill Communities.',
+        image: CAREER_PATH_IMAGES.others,
       },
     ],
   },
