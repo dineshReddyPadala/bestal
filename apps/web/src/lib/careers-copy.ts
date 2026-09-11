@@ -1,3 +1,5 @@
+import { CAREER_PATH_IMAGES } from './talent-community-images';
+
 export const CAREERS_HERO = {
   label: 'Careers',
   title: 'Explore A World Of Opportunities',
@@ -90,56 +92,48 @@ export const CAREERS_V2_PAGE = {
         title: 'AI & Machine Learning',
         body:
           'AI Engineering, Generative AI, Machine Learning, Data Science, MLOps, NLP, Computer Vision and emerging AI technologies.',
-        image:
-          'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=800&h=450&q=80',
+        image: CAREER_PATH_IMAGES.aiMl,
       },
       {
         title: 'Data Engineering & Analytics',
         body:
           'Data Engineering, Analytics Engineering, Databricks, Snowflake, ETL/ELT, Data Platforms, BI and modern analytics.',
-        image:
-          'https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&w=800&h=450&q=80',
+        image: CAREER_PATH_IMAGES.dataEngineering,
       },
       {
         title: 'Cloud, DevOps & Platform Engineering',
         body:
           'AWS, Azure, Google Cloud, DevOps, SRE, Kubernetes, Infrastructure Automation and Platform Engineering.',
-        image:
-          'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&w=800&h=450&q=80',
+        image: CAREER_PATH_IMAGES.cloudDevOps,
       },
       {
         title: 'Full-Stack & Software Engineering',
         body:
           'Frontend, Backend, Java, .NET, Python, React, Angular, Node.js, APIs, Microservices, Mobile and QA Automation.',
-        image:
-          'https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=800&h=450&q=80',
+        image: CAREER_PATH_IMAGES.fullStack,
       },
       {
         title: 'Enterprise Applications',
         body: 'SAP, Oracle ERP/EPM/HCM/SCM, Microsoft technologies and other enterprise platforms.',
-        image:
-          'https://images.unsplash.com/photo-1542744173-8e7e53415bb0?auto=format&fit=crop&w=800&h=450&q=80',
+        image: CAREER_PATH_IMAGES.enterpriseApps,
       },
       {
         title: 'ServiceNow',
         body:
           'Development, Administration, Architecture, ITSM, ITOM, CSM, HRSD, SecOps and Platform Implementation.',
-        image:
-          'https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=800&h=450&q=80',
+        image: CAREER_PATH_IMAGES.serviceNow,
       },
       {
         title: 'Salesforce',
         body:
           'Development, Administration, Architecture, Integration, Sales Cloud, Service Cloud, Marketing Cloud and Data Cloud.',
-        image:
-          'https://images.unsplash.com/photo-1600880292203-757bb62b4baf?auto=format&fit=crop&w=800&h=450&q=80',
+        image: CAREER_PATH_IMAGES.salesforce,
       },
       {
         title: 'Cybersecurity',
         body:
           'Security Engineering, Cloud Security, IAM, SOC, Application Security, GRC and related security disciplines.',
-        image:
-          'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&w=800&h=450&q=80',
+        image: CAREER_PATH_IMAGES.cybersecurity,
       },
     ],
   },

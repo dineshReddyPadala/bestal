@@ -421,25 +421,34 @@ export function TalentLandingPage() {
               <p className="mkt-talent-v2-communities-sub">{copy.communities.subtitleLeft}</p>
               <div className="mkt-talent-v2-communities-right">
                 <p className="mkt-talent-v2-communities-intro">{copy.communities.subtitleRight}</p>
-                <div className="mkt-talent-v2-communities-arrows">
-                  <button
-                    type="button"
-                    className="mkt-talent-v2-arrow"
-                    aria-label="Previous communities"
-                    disabled={communityIndex === 0}
-                    onClick={() => setCommunityIndex((current) => Math.max(0, current - 1))}
+                <div className="mkt-talent-v2-communities-controls">
+                  <Link
+                    to={copy.communities.ctaHref}
+                    className="mkt-talent-v2-btn mkt-talent-v2-btn-primary mkt-talent-v2-communities-cta"
                   >
-                    <ChevronLeft aria-hidden="true" />
-                  </button>
-                  <button
-                    type="button"
-                    className="mkt-talent-v2-arrow"
-                    aria-label="Next communities"
-                    disabled={communityIndex >= maxCommunityIndex}
-                    onClick={() => setCommunityIndex((current) => Math.min(maxCommunityIndex, current + 1))}
-                  >
-                    <ChevronRight aria-hidden="true" />
-                  </button>
+                    {copy.communities.cta}
+                    <ArrowRight aria-hidden="true" />
+                  </Link>
+                  <div className="mkt-talent-v2-communities-arrows">
+                    <button
+                      type="button"
+                      className="mkt-talent-v2-arrow"
+                      aria-label="Previous communities"
+                      disabled={communityIndex === 0}
+                      onClick={() => setCommunityIndex((current) => Math.max(0, current - 1))}
+                    >
+                      <ChevronLeft aria-hidden="true" />
+                    </button>
+                    <button
+                      type="button"
+                      className="mkt-talent-v2-arrow"
+                      aria-label="Next communities"
+                      disabled={communityIndex >= maxCommunityIndex}
+                      onClick={() => setCommunityIndex((current) => Math.min(maxCommunityIndex, current + 1))}
+                    >
+                      <ChevronRight aria-hidden="true" />
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -472,12 +481,6 @@ export function TalentLandingPage() {
               </div>
             </div>
           </div>
-          <div className="mkt-talent-v2-communities-cta-wrap">
-            <Link to={copy.communities.ctaHref} className="mkt-talent-v2-btn mkt-talent-v2-btn-primary">
-              {copy.communities.cta}
-              <ArrowRight aria-hidden="true" />
-            </Link>
-          </div>
         </MktShell>
       </section>
 
@@ -500,22 +503,41 @@ export function TalentLandingPage() {
             }}
           >
             <div className="mkt-talent-v2-hiw-stepper" role="tablist" aria-label="How BesTal works">
-              {copy.howItWorks.steps.map((step, index) => (
-                <button
-                  key={step.title}
-                  type="button"
-                  role="tab"
-                  aria-selected={activeStep === index}
-                  className={cn('mkt-talent-v2-hiw-step', activeStep === index && 'is-active')}
-                  onClick={() => setActiveStep(index)}
-                >
-                  <span className="mkt-talent-v2-hiw-step-num">{String(index + 1).padStart(2, '0')}</span>
-                  <span className="mkt-talent-v2-hiw-step-label">{step.title}</span>
-                </button>
-              ))}
+              {copy.howItWorks.steps.map((step, index) => {
+                const isActive = activeStep === index;
+
+                return (
+                  <div
+                    key={step.title}
+                    className={cn('mkt-talent-v2-hiw-step-wrap', isActive && 'is-active')}
+                  >
+                    <button
+                      type="button"
+                      role="tab"
+                      aria-selected={isActive}
+                      aria-controls={`hiw-step-panel-${index}`}
+                      id={`hiw-step-tab-${index}`}
+                      className={cn('mkt-talent-v2-hiw-step', isActive && 'is-active')}
+                      onClick={() => setActiveStep(index)}
+                    >
+                      <span className="mkt-talent-v2-hiw-step-num">{String(index + 1).padStart(2, '0')}</span>
+                      <span className="mkt-talent-v2-hiw-step-label">{step.title}</span>
+                    </button>
+                    <div
+                      id={`hiw-step-panel-${index}`}
+                      role="tabpanel"
+                      aria-labelledby={`hiw-step-tab-${index}`}
+                      className="mkt-talent-v2-hiw-step-detail"
+                      hidden={!isActive}
+                    >
+                      <p>{step.body}</p>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
 
-            <article className="mkt-talent-v2-hiw-panel" key={activeStep}>
+            <article className="mkt-talent-v2-hiw-panel mkt-talent-v2-hiw-panel--desktop" key={activeStep}>
               <div className="mkt-talent-v2-hiw-panel-left">
                 <span className="mkt-talent-v2-hiw-panel-kicker">STEP</span>
                 <span className="mkt-talent-v2-hiw-panel-num">{activeStep + 1}</span>
