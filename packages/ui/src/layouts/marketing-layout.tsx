@@ -293,30 +293,32 @@ export function MarketingLayout({
             </Link>
 
             <nav className={`mkt-nav ${navOpen ? 'open' : ''}`} aria-label="Primary">
-              {navItems.map((item) =>
-                item.children?.length ? (
-                  <MarketingNavDropdown
-                    key={navItemKey(item)}
-                    item={item}
-                    isActive={isNavItemActive(item, location.pathname === item.href)}
-                    onNavigate={closeNav}
-                    navOpen={navOpen}
-                    isTouchViewport={isTouchViewport}
-                  />
-                ) : (
-                  <NavLink
-                    key={navItemKey(item)}
-                    to={item.href}
-                    end={item.href === '/'}
-                    onClick={closeNav}
-                    className={({ isActive }) =>
-                      isNavItemActive(item, isActive) ? 'is-active' : undefined
-                    }
-                  >
-                    {item.label}
-                  </NavLink>
-                ),
-              )}
+              <div className="mkt-nav-links">
+                {navItems.map((item) =>
+                  item.children?.length ? (
+                    <MarketingNavDropdown
+                      key={navItemKey(item)}
+                      item={item}
+                      isActive={isNavItemActive(item, location.pathname === item.href)}
+                      onNavigate={closeNav}
+                      navOpen={navOpen}
+                      isTouchViewport={isTouchViewport}
+                    />
+                  ) : (
+                    <NavLink
+                      key={navItemKey(item)}
+                      to={item.href}
+                      end={item.href === '/'}
+                      onClick={closeNav}
+                      className={({ isActive }) =>
+                        isNavItemActive(item, isActive) ? 'is-active' : undefined
+                      }
+                    >
+                      {item.label}
+                    </NavLink>
+                  ),
+                )}
+              </div>
 
               {secondaryCtaLabel && secondaryCtaHref ? (
                 <Link

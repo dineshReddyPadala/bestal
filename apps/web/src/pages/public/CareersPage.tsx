@@ -1,6 +1,6 @@
 import { cn } from '@bestal/shared-utils';
 import { ChevronLeft, ChevronRight, Users } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type CSSProperties } from 'react';
 import { Link } from 'react-router-dom';
 import { MktShell } from '../../components/marketing/MktShell';
 import { PageMeta } from '../../components/PageMeta';
@@ -429,15 +429,19 @@ export function CareersPage() {
                     </button>
             </div>
           </div>
-          <div className="mkt-careers-v2-paths-track-wrap">
-            <div
-              className="mkt-careers-v2-paths-track"
-              style={{
-                transform: `translateX(calc(${-pathIndex} * (100% / ${pathVisibleCount})))`,
-              }}
-            >
+          <div
+            className="mkt-careers-v2-paths-track-wrap mkt-carousel-track-wrap"
+            style={
+              {
+                '--carousel-visible': pathVisibleCount,
+                '--carousel-index': pathIndex,
+                '--carousel-gap': '1.25rem',
+              } as CSSProperties
+            }
+          >
+            <div className="mkt-careers-v2-paths-track mkt-carousel-track">
               {pathCards.map((card) => (
-                <article key={card.title} className="mkt-careers-v2-path-card">
+                <article key={card.title} className="mkt-careers-v2-path-card mkt-carousel-slide">
                   <div className="mkt-careers-v2-path-card-photo">
                     <img src={card.image} alt="" loading="lazy" decoding="async" />
                   </div>
