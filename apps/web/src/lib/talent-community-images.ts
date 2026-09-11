@@ -6,7 +6,7 @@ const TALENT_COMMUNITY_IMAGE_BY_TITLE = Object.fromEntries(
 
 /** Image path used on the talent landing “Find Your Community” cards. */
 export function getTalentCommunityImage(title: string): string {
-  return TALENT_COMMUNITY_IMAGE_BY_TITLE[title] ?? TALENT_COMMUNITY_IMAGE_BY_TITLE.Cybersecurity ?? '';
+  return TALENT_COMMUNITY_IMAGE_BY_TITLE[title] ?? TALENT_COMMUNITY_IMAGE_BY_TITLE.Others ?? '';
 }
 
 /** Careers “Explore Technology Career Paths” cards mapped to talent community art. */
@@ -18,5 +18,5 @@ export const CAREER_PATH_IMAGES = {
   enterpriseApps: getTalentCommunityImage('Enterprise Applications'),
   serviceNow: getTalentCommunityImage('ServiceNow'),
   salesforce: getTalentCommunityImage('Salesforce'),
-  cybersecurity: getTalentCommunityImage('Cybersecurity'),
+  others: getTalentCommunityImage('Others'),
 } as const;

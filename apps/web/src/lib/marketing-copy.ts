@@ -1352,8 +1352,8 @@ export const TALENT_LANDING_PAGE = {
           'saleforce.jpg',
       },
       {
-        title: 'Cybersecurity',
-        body: 'Security engineering, cloud security, IAM, SOC, application security and GRC.',
+        title: 'Others',
+        body: 'Other Skill Communities.',
         image:
           'others.jpg',
       },
@@ -1417,7 +1417,7 @@ export const TALENT_LANDING_PAGE = {
     quote:
       'Whatever your next step looks like, BesTal is designed to help the right opportunities discover the right skills.',
     image:
-      'https://images.unsplash.com/photo-1531482615713-2afd69097998?auto=format&fit=crop&w=1200&q=80',
+      'build_ambitious.jpg',
   },
   transparency: {
     step: '08',

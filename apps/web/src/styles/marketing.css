@@ -7200,6 +7200,13 @@
     grid-template-columns: 1fr;
     row-gap: 0.125rem;
     width: 100%;
+    padding-bottom: 0.875rem;
+    margin-bottom: 0.125rem;
+    border-bottom: 1px solid var(--mkt-line);
+  }
+
+  .marketing-site .mkt-header-dark .mkt-nav.open .mkt-nav-links {
+    border-bottom-color: rgba(255, 255, 255, 0.12);
   }
 
   .marketing-site .mkt-nav.open .mkt-nav-links > a,
@@ -7340,9 +7347,10 @@
     display: inline-flex;
     align-items: center;
     width: 100%;
-    margin: 0;
-    padding: 0.875rem 0;
+    margin: 0.875rem 0 0;
+    padding: 0.875rem 0 0;
     border: none;
+    border-top: 1px solid var(--mkt-line);
     background: none;
     font: inherit;
     font-size: 1rem;
@@ -7355,10 +7363,15 @@
     min-height: 2.75rem;
   }
 
+  .marketing-site .mkt-header-dark .mkt-nav.open a.mkt-nav-login,
+  .marketing-site .mkt-header-dark .mkt-nav.open button.mkt-nav-login {
+    border-top-color: rgba(255, 255, 255, 0.12);
+  }
+
   .marketing-site .mkt-nav.open a.mkt-nav-secondary {
     justify-content: center;
     width: 100%;
-    margin: 0.25rem 0 0.5rem;
+    margin: 0.875rem 0 0;
     padding: 0.75rem 1rem;
     min-height: 2.75rem;
     font-size: 0.9375rem;
@@ -10430,13 +10443,21 @@
   .marketing-site .mkt-login-page--scroll-panel .mkt-login-panel {
     min-height: 0;
     overflow: hidden;
-    align-items: stretch;
+    align-items: center;
+    justify-content: center;
     padding-top: 1rem;
     padding-bottom: 1rem;
   }
 
   .marketing-site .mkt-login-page--scroll-panel .mkt-login-panel-stack {
-    height: 100%;
+    height: auto;
+    max-height: 100%;
+    flex-shrink: 1;
+  }
+
+  .marketing-site .mkt-login-page--scroll-panel .mkt-login-card {
+    flex: 0 1 auto;
+    max-height: calc(100svh - 2rem);
   }
 }
 
@@ -23566,9 +23587,25 @@
 }
 
 @media (min-width: 1025px) {
+  .marketing-site .mkt-talent-v2-communities-hd {
+    grid-template-rows: auto auto auto;
+  }
+
+  .marketing-site .mkt-talent-v2-communities-right {
+    display: contents;
+  }
+
+  .marketing-site .mkt-talent-v2-communities-intro {
+    grid-column: 2;
+    grid-row: 2;
+    text-align: right;
+  }
+
   .marketing-site .mkt-talent-v2-communities-controls {
-    width: auto;
-    justify-content: flex-end;
+    grid-column: 1 / -1;
+    grid-row: 3;
+    width: 100%;
+    justify-content: space-between;
   }
 }
 
@@ -25716,9 +25753,9 @@
   }
 
   .marketing-site .mkt-careers-v2-hero-visual {
-    order: -1;
     max-width: min(100%, 22rem);
     margin-inline: auto;
+    margin-top: 1.75rem;
   }
 
   .marketing-site .mkt-careers-v2-vision-photo img {
@@ -25858,7 +25895,7 @@
   .marketing-site .mkt-consult-v2-engagement-highlight-link {
     display: flex;
     width: 100%;
-    justify-content: center;
+    justify-content: left;
     text-align: center;
   }
 
