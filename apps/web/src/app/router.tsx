@@ -33,6 +33,7 @@ import { PrivacyPolicyPage } from '../pages/public/PrivacyPolicyPage';
 import { TermsOfServicePage } from '../pages/public/TermsOfServicePage';
 import { CommunitiesPage } from '../pages/public/CommunitiesPage';
 import { ContactPage } from '../pages/public/ContactPage';
+import { ConsultingPage } from '../pages/public/ConsultingPage';
 import { ReachOutPage } from '../pages/public/ReachOutPage';
 import { EnterprisePage } from '../pages/public/EnterprisePage';
 import { EvaluationStandardPage } from '../pages/public/EvaluationStandardPage';
@@ -84,6 +85,8 @@ import { SuperAdminDashboardPage } from '../pages/super-admin/DashboardPage';
 import { SuperAdminUsersPage } from '../pages/super-admin/UsersPage';
 import { SuperAdminUserFormPage } from '../pages/super-admin/UserFormPage';
 import { SuperAdminIconsPage } from '../pages/super-admin/IconsPage';
+import { SuperAdminCareerOpeningsPage } from '../pages/super-admin/CareerOpeningsPage';
+import { SuperAdminCareerOpeningFormPage } from '../pages/super-admin/CareerOpeningFormPage';
 import { SuperAdminRolesPage } from '../pages/super-admin/RolesPage';
 import { SuperAdminRoleDetailPage } from '../pages/super-admin/RoleDetailPage';
 import { SuperAdminClientsPage } from '../pages/super-admin/ClientsPage';
@@ -136,6 +139,22 @@ function ContactMessageDetailRoute({ redirectTo }: { redirectTo: string }) {
   return (
     <PermissionGate permission="job-requests:read" redirectTo={redirectTo}>
       <SuperAdminContactMessageDetailPage />
+    </PermissionGate>
+  );
+}
+
+function CareerOpeningsRoute({ redirectTo }: { redirectTo: string }) {
+  return (
+    <PermissionGate permission="job-requests:read" redirectTo={redirectTo}>
+      <SuperAdminCareerOpeningsPage />
+    </PermissionGate>
+  );
+}
+
+function CareerOpeningFormRoute({ redirectTo }: { redirectTo: string }) {
+  return (
+    <PermissionGate permission="job-requests:write" redirectTo={redirectTo}>
+      <SuperAdminCareerOpeningFormPage />
     </PermissionGate>
   );
 }
@@ -238,6 +257,8 @@ function MarketingShell() {
         navItems={[...marketingNav]}
         ctaLabel="Reach out to us"
         ctaHref="/reach-out"
+        secondaryCtaLabel="Join Talent Community"
+        secondaryCtaHref="/talent"
         brandLogoSrc={BESTAL_LOGO_SRC}
         {...authLayoutProps}
       >
@@ -293,6 +314,7 @@ const router = createBrowserRouter([
       { path: 'how-it-works', element: <HowItWorksPage /> },
       { path: 'sample-talent', element: <SampleTalentPage /> },
       { path: 'talent', element: <TalentPage /> },
+      { path: 'consulting', element: <ConsultingPage /> },
       { path: 'evaluation-standard', element: <EvaluationStandardPage /> },
       { path: 'trust', element: <TrustPage /> },
       { path: 'rates', element: <RatesPage /> },
@@ -417,6 +439,9 @@ const router = createBrowserRouter([
       { path: 'client-enquiries/:id', element: <ClientEnquiryDetailRoute redirectTo="/super-admin/dashboard" /> },
       { path: 'contact-messages', element: <ContactMessagesRoute redirectTo="/super-admin/dashboard" /> },
       { path: 'contact-messages/:id', element: <ContactMessageDetailRoute redirectTo="/super-admin/dashboard" /> },
+      { path: 'career-openings', element: <CareerOpeningsRoute redirectTo="/super-admin/dashboard" /> },
+      { path: 'career-openings/new', element: <CareerOpeningFormRoute redirectTo="/super-admin/dashboard" /> },
+      { path: 'career-openings/:id', element: <CareerOpeningFormRoute redirectTo="/super-admin/dashboard" /> },
       { path: 'candidates', element: <SuperAdminCandidatesPage /> },
       { path: 'candidates/pending', element: <SuperAdminPendingCandidatesPage /> },
       { path: 'candidates/import', element: <SuperAdminCandidateCsvImportPage /> },

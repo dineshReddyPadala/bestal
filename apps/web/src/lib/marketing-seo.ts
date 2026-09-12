@@ -34,9 +34,14 @@ export const PAGE_SEO = {
       'Complete example profiles in the production format: external evaluation scorecards, verification status, hourly rate, availability and US time-zone overlap. Fictional professionals, real structure.',
   },
   talent: {
-    title: 'Sample Talent Profiles — See a BesTal Evaluation Scorecard',
+    title: 'For Talent | BesTal — Your Skills Deserve More Than a Resume',
     description:
-      'Complete example profiles in the production format: external evaluation scorecards, verification status, hourly rate, availability and US time-zone overlap. Fictional professionals, real structure.',
+      'Join the BesTal Talent Network to build a profile that shows what you can do, complete structured assessments, and get discovered for global technology opportunities.',
+  },
+  consulting: {
+    title: 'Technology Consulting & Engineering Services | BesTal',
+    description:
+      'BesTal provides technology consulting, AI and data engineering, cloud, digital engineering, enterprise applications and managed delivery teams.',
   },
   evaluationStandard: {
     title: 'How we assess — How BesTal Assesses Technology Talent',
@@ -130,6 +135,7 @@ export const MARKETING_ROUTES = [
   '/how-it-works',
   '/sample-talent',
   '/talent',
+  '/consulting',
   '/evaluation-standard',
   '/trust',
   '/rates',

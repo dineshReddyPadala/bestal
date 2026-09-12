@@ -26,7 +26,9 @@ import { PAGE_SEO } from '../../lib/marketing-seo';
 import { cn } from '@bestal/shared-utils';
 import { formatDimensionScoreDisplay } from '../../lib/score-display';
 import { ForwardArrow } from '../../components/ui/ForwardArrow';
+import { getHomeCommunityImage } from '../../lib/home-community-images';
 import { CookieBanner } from '../../components/marketing/CookieBanner';
+import { HomeAudienceToggle } from '../../components/marketing/HomeAudienceToggle';
 
 const TIMEZONE_CHIPS = [
   { abbr: 'ET', name: 'Eastern' },
@@ -75,6 +77,9 @@ export function HomePage() {
       <PageMeta title={PAGE_SEO.home.title} description={PAGE_SEO.home.description} />
 
       <section className="mkt-hero">
+        <div className="mkt-hero-audience-bar">
+          <HomeAudienceToggle />
+        </div>
         <MktShell className="mkt-g2">
           <div className="mkt-hero-copy">
             <h1>
@@ -279,28 +284,44 @@ export function HomePage() {
         </MktShell>
       </section>
 
-      <section className="mkt-cream mkt-section-tight">
-        <MktShell className="mkt-g2t mkt-equal-cards">
-          <div className="mkt-card mkt-card-dark mkt-card-fill p-8 bgcolordrakgreen">
-            <h2>Don&apos;t hire from a resume. <br /> See them perform.</h2>
-            <p className="mt-4">
-              One cold email or scoped work brief is your trial, and your process, agreed in
-              advance.
-            </p>
-            <Link to="/try-for-a-week" className="mkt-btn mkt-btn-white mt-7">
-              How the free Trial works
-              <ForwardArrow />
-            </Link>
+      <section className="mkt-white mkt-section-tight mkt-home-trial-scale" aria-labelledby="home-trial-scale-heading">
+        <MktShell>
+          <div className="mkt-cta-banner mkt-home-trial-scale-layout">
+            <div className="mkt-cta-copy mkt-home-trial-scale-copy">
+              <h2 id="home-trial-scale-heading">
+                Don&apos;t hire from a resume.
+                <br />
+                See them perform.
+              </h2>
+              <p>
+                One cold email or scoped work brief is your trial, and your process, agreed in
+                advance.
+              </p>
+              <Link to="/try-for-a-week" className="mkt-btn mkt-home-trial-scale-cta">
+                How the free Trial works
+                <ForwardArrow />
+              </Link>
+            </div>
+            <div className="mkt-cta-photo mkt-home-trial-scale-visual">
+              <img
+                src={images.cta}
+                alt="Technology professionals collaborating around a shared workspace"
+                loading="lazy"
+                decoding="async"
+              />
+              <div className="mkt-home-trial-scale-panel">
+                <h3>Scale without carrying bench</h3>
+                <p>
+                  One engineer this week. Four more next month. A SAP team for two quarters, then
+                  nothing.
+                </p>
+                <p>
+                  Scale your technology workforce up or down as business demand changes—without the
+                  cost and complexity of maintaining a large bench.
+                </p>
+              </div>
+            </div>
           </div>
-          <div className="mkt-card mkt-card-amber mkt-card-fill p-8">
-            <h2>Scale without carrying bench</h2>
-            <p className="mt-4">
-              One engineer this week. Four more next month. A SAP team for two quarters, then
-              nothing.
-            </p>
-            
-<p className="mt-4">Scale your technology workforce up or down as business demand changes—without the cost and complexity of maintaining a large bench.
-  </p>          </div>
         </MktShell>
       </section>
 
@@ -319,12 +340,22 @@ export function HomePage() {
               its own tests and its own outside testers.
             </p>
           </div>
-          <div className="mkt-g3">
+          <div className="mkt-g3 mkt-home-comm-grid">
             {topCommunities.map((community) => (
-              <div key={community.id} className="mkt-comm mkt-comm--static">
-                <h3>{community.name}</h3>
-                <p>{community.description ?? ''}</p>
-              </div>
+              <article key={community.id} className="mkt-comm mkt-comm--static mkt-home-comm-card">
+                <span className="mkt-home-comm-card-media">
+                  <img
+                    src={getHomeCommunityImage(community.name)}
+                    alt=""
+                    loading="lazy"
+                    decoding="async"
+                  />
+                </span>
+                <div className="mkt-home-comm-card-body">
+                  <h3>{community.name}</h3>
+                  <p>{community.description ?? ''}</p>
+                </div>
+              </article>
             ))}
           </div>
         </MktShell>

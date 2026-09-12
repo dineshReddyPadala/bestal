@@ -21,7 +21,7 @@ function isSameMarketingPage(currentPathname: string, targetPathname: string): b
   }
 
   if (targetPathname === '/sample-talent') {
-    return currentPathname === '/sample-talent' || currentPathname === '/talent';
+    return currentPathname === '/sample-talent';
   }
 
   return (
@@ -72,6 +72,8 @@ export type MarketingLayoutProps = {
   children: ReactNode;
   ctaLabel?: string;
   ctaHref?: string;
+  secondaryCtaLabel?: string;
+  secondaryCtaHref?: string;
   brandLogoSrc?: string;
   footerTagline?: string;
   hideFooter?: boolean;
@@ -222,6 +224,8 @@ export function MarketingLayout({
   children,
   ctaLabel = 'Reach out to us',
   ctaHref = '/reach-out',
+  secondaryCtaLabel,
+  secondaryCtaHref,
   brandLogoSrc,
   footerTagline = 'Evaluated, verified and priced before you interview — with a committed working window in your zone.',
   hideFooter = false,
@@ -250,7 +254,6 @@ export function MarketingLayout({
 
   function isNavItemActive(item: MarketingNavItem, isActive: boolean) {
     if (isActive) return true;
-    if (item.href === '/sample-talent' && location.pathname === '/talent') return true;
     if (
       item.children?.some(
         (child) =>
@@ -290,30 +293,42 @@ export function MarketingLayout({
             </Link>
 
             <nav className={`mkt-nav ${navOpen ? 'open' : ''}`} aria-label="Primary">
-              {navItems.map((item) =>
-                item.children?.length ? (
-                  <MarketingNavDropdown
-                    key={navItemKey(item)}
-                    item={item}
-                    isActive={isNavItemActive(item, location.pathname === item.href)}
-                    onNavigate={closeNav}
-                    navOpen={navOpen}
-                    isTouchViewport={isTouchViewport}
-                  />
-                ) : (
-                  <NavLink
-                    key={navItemKey(item)}
-                    to={item.href}
-                    end={item.href === '/'}
-                    onClick={closeNav}
-                    className={({ isActive }) =>
-                      isNavItemActive(item, isActive) ? 'is-active' : undefined
-                    }
-                  >
-                    {item.label}
-                  </NavLink>
-                ),
-              )}
+              <div className="mkt-nav-links">
+                {navItems.map((item) =>
+                  item.children?.length ? (
+                    <MarketingNavDropdown
+                      key={navItemKey(item)}
+                      item={item}
+                      isActive={isNavItemActive(item, location.pathname === item.href)}
+                      onNavigate={closeNav}
+                      navOpen={navOpen}
+                      isTouchViewport={isTouchViewport}
+                    />
+                  ) : (
+                    <NavLink
+                      key={navItemKey(item)}
+                      to={item.href}
+                      end={item.href === '/'}
+                      onClick={closeNav}
+                      className={({ isActive }) =>
+                        isNavItemActive(item, isActive) ? 'is-active' : undefined
+                      }
+                    >
+                      {item.label}
+                    </NavLink>
+                  ),
+                )}
+              </div>
+
+              {secondaryCtaLabel && secondaryCtaHref ? (
+                <Link
+                  to={secondaryCtaHref}
+                  className="mkt-btn mkt-btn-sm mkt-nav-secondary"
+                  onClick={closeNav}
+                >
+                  {secondaryCtaLabel}
+                </Link>
+              ) : null}
 
               {isAuthenticated ? (
                 <button
