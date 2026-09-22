@@ -44,6 +44,43 @@ function LegalBlocks({ blocks }: { blocks: LegalBlock[] }) {
   );
 }
 
+function LegalTocList({
+  sections,
+  activeSection,
+  onSelect,
+  depth = 0,
+}: {
+  sections: LegalSection[];
+  activeSection: string;
+  onSelect: (sectionId: string) => void;
+  depth?: number;
+}) {
+  return (
+    <ul className={cn(depth > 0 && 'mkt-legal-toc-sublist')}>
+      {sections.map((section) => (
+        <li key={section.id} className={cn(depth > 0 && 'mkt-legal-toc-item--sub')}>
+          <button
+            type="button"
+            className={cn(activeSection === section.id && 'is-active')}
+            aria-current={activeSection === section.id ? 'true' : undefined}
+            onClick={() => onSelect(section.id)}
+          >
+            {section.title}
+          </button>
+          {section.subsections?.length ? (
+            <LegalTocList
+              sections={section.subsections}
+              activeSection={activeSection}
+              onSelect={onSelect}
+              depth={depth + 1}
+            />
+          ) : null}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 function LegalSectionBlock({ section, depth = 0 }: { section: LegalSection; depth?: number }) {
   const HeadingTag = depth === 0 ? 'h3' : 'h4';
 
@@ -110,20 +147,11 @@ export function LegalDocumentPage({ document }: LegalDocumentPageProps) {
         <MktShell className="mkt-legal-layout">
           <aside className="mkt-legal-toc" aria-label="Document sections">
             <h2>Contents</h2>
-            <ul>
-              {tocSections.map((section) => (
-                <li key={section.id}>
-                  <button
-                    type="button"
-                    className={cn(activeSection === section.id && 'is-active')}
-                    aria-current={activeSection === section.id ? 'true' : undefined}
-                    onClick={() => scrollToSection(section.id)}
-                  >
-                    {section.title}
-                  </button>
-                </li>
-              ))}
-            </ul>
+            <LegalTocList
+              sections={document.sections}
+              activeSection={activeSection}
+              onSelect={scrollToSection}
+            />
           </aside>
 
           <div className="mkt-legal-content">

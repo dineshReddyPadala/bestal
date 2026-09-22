@@ -1,5 +1,5 @@
-/** BesTal wordmark — transparent light theme SVG in public/ */
-export const BESTAL_LOGO_SRC = '/Light%20Theme%20WebsiteTransparent%20%20logo.svg';
+/** BesTal wordmark — light theme SVG from src/asserts/Light Theme Website logo (1).svg */
+export const BESTAL_LOGO_SRC = '/bestal-logo.svg';
 
 /** Browser tab icon — light theme SVG in public/ */
 export const BESTAL_FAVICON_SRC = '/Light%20Fav%20Icon.svg';
