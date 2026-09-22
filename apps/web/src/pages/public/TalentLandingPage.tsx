@@ -27,6 +27,7 @@ const FEATURE_ICONS = [Globe2, Target, Users, Award, CalendarCheck, Layers] as c
 const WHY_JOIN_INTERVAL_MS = 4500;
 const HOW_IT_WORKS_INTERVAL_MS = 4500;
 const COMMUNITY_CAROUSEL_INTERVAL_MS = 4500;
+const FEATURES_INTERVAL_MS = 4500;
 
 function VerifyBadge() {
   return (
@@ -72,9 +73,13 @@ export function TalentLandingPage() {
   const [isHiwPaused, setIsHiwPaused] = useState(false);
   const [communityIndex, setCommunityIndex] = useState(0);
   const [isCommunityPaused, setIsCommunityPaused] = useState(false);
+  const [activeFeature, setActiveFeature] = useState(0);
+  const [hoveredFeature, setHoveredFeature] = useState<number | null>(null);
+  const [isFeaturePaused, setIsFeaturePaused] = useState(false);
 
   const whyReasonCount = copy.whyJoin.reasons.length;
   const hiwStepCount = copy.howItWorks.steps.length;
+  const featureCount = copy.features.items.length;
 
   useEffect(() => {
     if (isWhyPaused || whyReasonCount <= 1) return undefined;
@@ -124,6 +129,21 @@ export function TalentLandingPage() {
 
     return () => window.clearInterval(timerId);
   }, [isCommunityPaused, maxCommunityIndex]);
+
+  useEffect(() => {
+    if (isFeaturePaused || featureCount <= 1) return undefined;
+
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reducedMotion) return undefined;
+
+    const timerId = window.setInterval(() => {
+      setActiveFeature((current) => (current + 1) % featureCount);
+    }, FEATURES_INTERVAL_MS);
+
+    return () => window.clearInterval(timerId);
+  }, [isFeaturePaused, featureCount]);
+
+  const featureIndex = hoveredFeature ?? activeFeature;
 
   return (
     <div id="top" className="mkt-talent-v2-page">
@@ -586,22 +606,44 @@ export function TalentLandingPage() {
             </div>
           </div>
 
-          <div className="mkt-talent-v2-features-panel">
+          <div
+            className="mkt-talent-v2-features-panel"
+            onMouseEnter={() => setIsFeaturePaused(true)}
+            onMouseLeave={() => {
+              setIsFeaturePaused(false);
+              setHoveredFeature(null);
+            }}
+            onFocusCapture={() => setIsFeaturePaused(true)}
+            onBlurCapture={(event) => {
+              if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+                setIsFeaturePaused(false);
+              }
+            }}
+          >
             {copy.features.items.map((item, index) => {
               const Icon = FEATURE_ICONS[index] ?? Globe2;
+              const isActive = featureIndex === index;
               return (
-                <div
+                <button
                   key={item}
+                  type="button"
                   className={cn(
                     'mkt-talent-v2-features-item',
                     index === 5 && 'is-full',
+                    isActive && 'is-active',
                   )}
+                  aria-pressed={isActive}
+                  onClick={() => {
+                    setActiveFeature(index);
+                    setHoveredFeature(index);
+                  }}
+                  onMouseEnter={() => setHoveredFeature(index)}
                 >
                   <span className="mkt-talent-v2-features-icon" aria-hidden="true">
                     <Icon strokeWidth={1.85} />
                   </span>
                   <span className="mkt-talent-v2-features-label">{item}</span>
-                </div>
+                </button>
               );
             })}
           </div>
