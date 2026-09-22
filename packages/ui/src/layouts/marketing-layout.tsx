@@ -289,7 +289,11 @@ export function MarketingLayout({
         <div className="mkt-shell">
           <div className="mkt-hdr">
             <Link to="/" onClick={() => setNavOpen(false)} aria-label="BesTal home">
-              <BesTalBrand variant="light" logoSrc={brandLogoSrc} />
+              <BesTalBrand
+                variant="light"
+                logoSrc={brandLogoSrc}
+                logoClassName="h-auto w-auto max-w-none"
+              />
             </Link>
 
             <nav className={`mkt-nav ${navOpen ? 'open' : ''}`} aria-label="Primary">

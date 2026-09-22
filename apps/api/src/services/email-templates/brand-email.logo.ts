@@ -1,5 +1,5 @@
 import { existsSync, readFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { dirname, extname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -7,17 +7,21 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 /** Inline attachment id referenced in HTML: `<img src="cid:bestal-logo@bestal" />` */
 export const EMAIL_LOGO_CID = 'bestal-logo@bestal';
 
-/** Source of truth: apps/web/src/asserts/New logo.png */
-const WEB_LOGO_FILENAME = 'New logo.png';
-const API_LOGO_FILENAME = 'new-logo.png';
+/** Source of truth: apps/web/src/asserts/Light Theme Website logo (1).svg */
+const WEB_LOGO_FILENAMES = ['Light Theme Website logo (1).svg', 'New logo.png'];
+const API_LOGO_FILENAMES = ['bestal-logo.svg', 'new-logo.png'];
 
 function resolveLogoPath(): string | null {
   const candidates = [
-    join(process.cwd(), 'apps/web/src/asserts', WEB_LOGO_FILENAME),
-    join(process.cwd(), '../web/src/asserts', WEB_LOGO_FILENAME),
-    join(__dirname, '../../assets', API_LOGO_FILENAME),
-    join(process.cwd(), 'src/assets', API_LOGO_FILENAME),
-    join(process.cwd(), 'apps/api/src/assets', API_LOGO_FILENAME),
+    ...WEB_LOGO_FILENAMES.flatMap((filename) => [
+      join(process.cwd(), 'apps/web/src/asserts', filename),
+      join(process.cwd(), '../web/src/asserts', filename),
+    ]),
+    ...API_LOGO_FILENAMES.flatMap((filename) => [
+      join(__dirname, '../../assets', filename),
+      join(process.cwd(), 'src/assets', filename),
+      join(process.cwd(), 'apps/api/src/assets', filename),
+    ]),
   ];
 
   for (const candidate of candidates) {
@@ -29,26 +33,48 @@ function resolveLogoPath(): string | null {
   return null;
 }
 
-let cachedLogoBuffer: Buffer | null | undefined;
+function logoContentType(logoPath: string): string {
+  return extname(logoPath).toLowerCase() === '.svg' ? 'image/svg+xml' : 'image/png';
+}
 
-export function getEmailLogoBuffer(): Buffer | null {
-  if (cachedLogoBuffer !== undefined) {
-    return cachedLogoBuffer;
+function logoFilename(logoPath: string): string {
+  return extname(logoPath).toLowerCase() === '.svg' ? 'bestal-logo.svg' : 'bestal-logo.png';
+}
+
+let cachedLogo:
+  | {
+      buffer: Buffer;
+      contentType: string;
+      filename: string;
+    }
+  | null
+  | undefined;
+
+function getEmailLogo(): { buffer: Buffer; contentType: string; filename: string } | null {
+  if (cachedLogo !== undefined) {
+    return cachedLogo;
   }
 
   const logoPath = resolveLogoPath();
   if (!logoPath) {
-    cachedLogoBuffer = null;
+    cachedLogo = null;
     return null;
   }
 
-  cachedLogoBuffer = readFileSync(logoPath);
-  return cachedLogoBuffer;
+  cachedLogo = {
+    buffer: readFileSync(logoPath),
+    contentType: logoContentType(logoPath),
+    filename: logoFilename(logoPath),
+  };
+  return cachedLogo;
+}
+
+export function getEmailLogoBuffer(): Buffer | null {
+  return getEmailLogo()?.buffer ?? null;
 }
 
 export function getEmailLogoSrc(): string | null {
-  const buffer = getEmailLogoBuffer();
-  if (!buffer) {
+  if (!getEmailLogo()) {
     return null;
   }
 
@@ -65,28 +91,28 @@ export function getEmailLogoAttachment():
       contentDisposition: 'inline';
     }
   | null {
-  const buffer = getEmailLogoBuffer();
-  if (!buffer) {
+  const logo = getEmailLogo();
+  if (!logo) {
     return null;
   }
 
   return {
-    filename: 'bestal-logo.png',
-    content: buffer,
+    filename: logo.filename,
+    content: logo.buffer,
     cid: EMAIL_LOGO_CID,
-    contentType: 'image/png',
+    contentType: logo.contentType,
     contentDisposition: 'inline',
   };
 }
 
 /** Fallback for clients that inline base64 (e.g. local HTML preview). */
 export function getEmailLogoDataUri(): string | null {
-  const buffer = getEmailLogoBuffer();
-  if (!buffer) {
+  const logo = getEmailLogo();
+  if (!logo) {
     return null;
   }
 
-  return `data:image/png;base64,${buffer.toString('base64')}`;
+  return `data:${logo.contentType};base64,${logo.buffer.toString('base64')}`;
 }
 
 /** Microsoft Graph inline file attachment payload. */
@@ -100,16 +126,16 @@ export function getEmailLogoGraphAttachment():
       isInline: true;
     }
   | null {
-  const buffer = getEmailLogoBuffer();
-  if (!buffer) {
+  const logo = getEmailLogo();
+  if (!logo) {
     return null;
   }
 
   return {
     '@odata.type': '#microsoft.graph.fileAttachment',
-    name: 'bestal-logo.png',
-    contentType: 'image/png',
-    contentBytes: buffer.toString('base64'),
+    name: logo.filename,
+    contentType: logo.contentType,
+    contentBytes: logo.buffer.toString('base64'),
     contentId: EMAIL_LOGO_CID,
     isInline: true,
   };
