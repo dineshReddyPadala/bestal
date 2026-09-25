@@ -7,8 +7,10 @@
   ],
   "scripts": {
     "dev:web": "npm run dev -w @bestal/web",
+    "dev:marketingsite": "npm run dev -w @bestal/marketingsite",
     "dev:api": "npm run dev -w @bestal/api",
     "build:web": "npm run build -w @bestal/web",
+    "build:marketingsite": "npm run build -w @bestal/marketingsite",
     "dev:ai": "docker compose up ai-service"
   }
 }
