@@ -9,9 +9,35 @@ html {
 }
 
 body {
-  background-color: #f4f2ea;
-  color: #0a0d0b;
+  background-color: #f7f6fc;
+  color: #1a1636;
   -webkit-font-smoothing: antialiased;
+}
+
+/* Product login/signup shells — remap leftover marketing teal to navy/violet */
+.marketing-site.mkt-split-login-site {
+  --mkt-teal: #5b4be8;
+  --mkt-teal-d: #4536c4;
+  --mkt-teal-dd: #151132;
+  --mkt-teal-t: #eeebfe;
+  --mkt-teal-t2: #d4cfff;
+  --mkt-brand-600: #5b4be8;
+  --mkt-brand-700: #4536c4;
+  --mkt-brand-800: #221c55;
+  --mkt-brand-900: #151132;
+}
+
+.marketing-site.mkt-split-login-site .mkt-login-forgot a {
+  color: #5b4be8 !important;
+}
+
+.marketing-site.mkt-split-login-site .mkt-login-forgot a:hover {
+  color: #4536c4 !important;
+}
+
+.marketing-site.mkt-split-login-site .mkt-portal-select-icon.is-teal {
+  background: #eeebfe;
+  color: #151132;
 }
 
 .section-shell {

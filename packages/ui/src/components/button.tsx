@@ -26,7 +26,7 @@ const variantClasses: Record<ButtonVariant, string> = {
 };
 
 const dashboardButtonInteraction =
-  'transition-[color,background-color,box-shadow,border-color,outline-color] hover:shadow-[0_2px_8px_rgba(11,92,99,0.14)] hover:ring-1 hover:ring-[var(--shell-button-active)]/30 active:bg-[var(--shell-button-active)] active:text-white active:shadow-none active:ring-0';
+  'transition-[color,background-color,box-shadow,border-color,outline-color] hover:shadow-[0_2px_8px_rgba(91,75,232,0.14)] hover:ring-1 hover:ring-[var(--shell-button-active)]/30 active:bg-[var(--shell-button-active)] active:text-white active:shadow-none active:ring-0';
 
 const dashboardVariantClasses: Record<ButtonVariant, string> = {
   primary:

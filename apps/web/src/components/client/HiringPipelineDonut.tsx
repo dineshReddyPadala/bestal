@@ -11,7 +11,7 @@ type HiringPipelineDonutProps = {
   className?: string;
 };
 
-/** BesTal logo palette — teal (Bes), amber (Tal), ink (wordmark dark) */
+/** BesTal logo palette — navy, gold, ink (marketing-site brand) */
 const BRAND_PIPELINE_COLORS = {
   trials: 'hsl(var(--logo-teal))',
   deployed: 'hsl(var(--logo-amber))',

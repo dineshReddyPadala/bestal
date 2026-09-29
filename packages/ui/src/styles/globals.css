@@ -4,50 +4,50 @@
 
 @layer base {
   :root {
-    /* Warm cream page canvas — BesTal website palette */
-    --background: 40 20% 96%;
-    --foreground: 200 6% 11%;
+    /* Marketing-site canvas — navy + violet */
+    --background: 250 50% 98%; /* #F7F6FC */
+    --foreground: 248 42% 15%; /* #1A1636 */
 
     --card: 0 0% 100%;
-    --card-foreground: 200 6% 11%;
+    --card-foreground: 248 42% 15%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 200 6% 11%;
+    --popover-foreground: 248 42% 15%;
 
-    /* Brand teal #0D5E5E */
-    --primary: 180 76% 21%;
+    /* Brand violet #5B4BE8 */
+    --primary: 246 77% 60%;
     --primary-foreground: 0 0% 100%;
 
-    --brand: 180 76% 21%;
-    --brand-hover: 180 77% 17%; /* #0A4F4F */
-    --brand-light: 185 28% 92%; /* #E6F0F1 */
+    --brand: 246 77% 60%;
+    --brand-hover: 246 57% 49%; /* #4536C4 */
+    --brand-light: 249 90% 96%; /* #EEEBFE */
 
-    /* BesTal logo palette (from brand SVG wordmark + icon) */
-    --logo-teal: 174 82% 26%; /* #0B6E76 */
-    --logo-amber: 38 86% 57%; /* #F0AD34 — “Tal” accent */
-    --logo-ink: 200 42% 8%; /* #0B181D */
-    --logo-teal-tint: 174 33% 91%; /* #E2F0EF */
+    /* Logo / chart accents aligned to marketing tokens */
+    --logo-teal: 247 49% 13%; /* #151132 */
+    --logo-amber: 40 63% 48%; /* #C9962E */
+    --logo-ink: 248 42% 15%; /* #1A1636 */
+    --logo-teal-tint: 249 90% 96%; /* #EEEBFE */
 
-    --secondary: 180 20% 94%;
-    --secondary-foreground: 200 6% 11%;
+    --secondary: 257 90% 96%; /* #F1ECFE */
+    --secondary-foreground: 248 42% 15%;
 
-    --muted: 40 14% 94%;
-    --muted-foreground: 220 9% 46%;
+    --muted: 250 50% 98%; /* #F7F6FC */
+    --muted-foreground: 248 19% 42%; /* #5D5880 */
 
-    --accent: 180 25% 93%;
-    --accent-foreground: 180 76% 21%;
+    --accent: 249 90% 96%; /* #EEEBFE */
+    --accent-foreground: 246 77% 60%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    /* Teal-tinted success (Verified / Placed) */
-    --success: 180 76% 21%;
+    /* Distinct from brand violet */
+    --success: 171 84% 24%; /* #0A6F60 */
     --success-foreground: 0 0% 100%;
-    --success-soft: 168 33% 95%; /* #ECF6F5 */
+    --success-soft: 167 53% 92%; /* #DEF5F0 */
 
-    --border: 220 13% 91%;
-    --input: 220 13% 91%;
-    --ring: 180 76% 21%;
+    --border: 251 36% 91%; /* #E4E1F1 */
+    --input: 251 36% 91%;
+    --ring: 246 77% 60%;
 
     --radius: 0.5rem;
 
@@ -57,11 +57,10 @@
     --shell-sidebar-rail: 3.25rem;
     --shell-table-muted: #fafafa;
     --shell-table-row-hover: #f3f4f6;
-    --shell-button-active: #0b5c63;
+    --shell-button-active: #4536c4;
 
-    /* Legacy navy tokens remapped to deep teal */
-    --navy: 180 76% 21%;
-    --navy-light: 174 49% 24%;
+    --navy: 247 49% 13%; /* #151132 */
+    --navy-light: 246 50% 22%; /* #221C55 */
   }
 
   * {
@@ -210,8 +209,8 @@
 
   [data-dashboard-shell] button[class*='hover:bg-muted']:not(:disabled):not([class*='bg-red']):hover,
   [data-dashboard-shell] button.rounded-md.p-2:not(:disabled):not([class*='bg-red']):hover {
-    box-shadow: 0 2px 8px rgba(11, 92, 99, 0.14);
-    outline: 1px solid rgba(11, 92, 99, 0.28);
+    box-shadow: 0 2px 8px rgba(91, 75, 232, 0.14);
+    outline: 1px solid rgba(91, 75, 232, 0.28);
     outline-offset: 0;
   }
 
