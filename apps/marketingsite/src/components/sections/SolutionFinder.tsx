@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { isExternalHref } from '@/constants/app-urls';
 import { ADVISOR_EXAMPLES } from '@/constants/content';
 import { Button } from '@/components/ui/Button';
 import { useApp } from '@/context/app-context';
@@ -89,9 +90,15 @@ export function SolutionFinder() {
             <span style={{ fontSize: 13.5, color: '#41506B' }}>{result.why}</span>
           </div>
           <div style={{ marginTop: 12 }}>
-            <Link className="btn primary sm" to={result.ctaTo}>
-              {result.ctaLabel}
-            </Link>
+            {isExternalHref(result.ctaTo) ? (
+              <a className="btn primary sm" href={result.ctaTo}>
+                {result.ctaLabel}
+              </a>
+            ) : (
+              <Link className="btn primary sm" to={result.ctaTo}>
+                {result.ctaLabel}
+              </Link>
+            )}
           </div>
         </div>
       ) : null}
