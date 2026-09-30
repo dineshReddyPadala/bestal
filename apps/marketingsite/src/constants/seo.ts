@@ -58,14 +58,16 @@ export const PAGE_META: Record<PageId, PageMeta> = {
   },
   privacy: {
     title: `Privacy Policy | ${SITE_NAME}`,
-    description: 'How BesTal Solutions collects, uses and protects information.',
+    description:
+      'How BesTal collects, uses, discloses, and safeguards personal information when you visit our website or use our platform.',
   },
   terms: {
-    title: `Terms of Use | ${SITE_NAME}`,
-    description: 'Terms governing use of the BesTal Solutions website.',
+    title: `Terms of Service | ${SITE_NAME}`,
+    description: 'Terms governing your access to and use of the BesTal website, platform, and related services.',
   },
   cookies: {
     title: `Cookie Policy | ${SITE_NAME}`,
-    description: 'How BesTal Solutions uses cookies.',
+    description:
+      'How BesTal uses cookies and similar technologies on our website, and how you can manage your cookie preferences.',
   },
 };
