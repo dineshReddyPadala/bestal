@@ -42,7 +42,7 @@ const COLUMNS: { title: string; links: FooterLink[] }[] = [
     title: 'Legal',
     links: [
       { to: ROUTES.privacy, label: 'Privacy Policy' },
-      { to: ROUTES.terms, label: 'Terms of Use' },
+      { to: ROUTES.terms, label: 'Terms of Service' },
       { to: ROUTES.cookies, label: 'Cookie Policy' },
     ],
   },
