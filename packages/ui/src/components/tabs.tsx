@@ -5,7 +5,7 @@ export type TabsProps = {
   tabs: { id: string; label: string; content: ReactNode }[];
   defaultTab?: string;
   className?: string;
-  /** Active tab styling — `primary` uses brand teal with white text. */
+  /** Active tab styling — `primary` uses brand violet with white text. */
   variant?: 'default' | 'primary';
 };
 

@@ -6,6 +6,7 @@ import { LifeDiagram, PodDiagram, VelocityDiagram } from '@/components/diagrams/
 import { COMMUNITIES, GOV_AREAS, SERVICE_FAMILIES } from '@/constants/content';
 import { PROFESSIONALS } from '@/constants/workspace-data';
 import { INITIAL_PODS } from '@/constants/workspace-data';
+import { CLIENT_WORKSPACE_URL } from '@/constants/app-urls';
 import { ROUTES } from '@/constants/routes';
 import { useApp } from '@/context/app-context';
 
@@ -265,9 +266,9 @@ export function DeliveryPage() {
                 </div>
               ))}
             </div>
-            <Link className="btn primary" style={{ width: '100%', marginTop: 12 }} to={`${ROUTES.workspace}?tab=teams`}>
+            <a className="btn primary" style={{ width: '100%', marginTop: 12 }} href={CLIENT_WORKSPACE_URL}>
               Build your own in the workspace
-            </Link>
+            </a>
           </div>
         </div>
       </section>
@@ -297,9 +298,9 @@ export function DeliveryPage() {
               service indicators, risks and actions, utilization, approvals and commercials. Not every feature applies
               to every engagement.
             </p>
-            <Link className="btn outline" style={{ marginTop: 16 }} to={`${ROUTES.workspace}?tab=delivery`}>
+            <a className="btn outline" style={{ marginTop: 16 }} href={CLIENT_WORKSPACE_URL}>
               See it in the workspace
-            </Link>
+            </a>
           </div>
           <div>
             <span className="k">When Managed Services fits</span>

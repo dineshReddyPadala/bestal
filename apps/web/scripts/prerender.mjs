@@ -7,44 +7,11 @@ import puppeteer from 'puppeteer';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const webRoot = path.resolve(__dirname, '..');
 const distDir = path.join(webRoot, 'dist');
-const SITE_ORIGIN = 'https://www.bestal.co';
+const SITE_ORIGIN = 'https://app.bestal.co';
 const port = 4173;
 const baseUrl = `http://127.0.0.1:${port}`;
 
-const STATIC_ROUTES = [
-  '/',
-  '/how-it-works',
-  '/sample-talent',
-  '/talent',
-  '/consulting',
-  '/evaluation-standard',
-  '/trust',
-  '/rates',
-  '/try-for-a-week',
-  '/for-engineers',
-  '/jobs',
-  '/communities',
-  '/enterprise',
-  '/about',
-  '/faq',
-  '/privacy-policy',
-  '/terms-of-service',
-  '/free-trial-terms',
-  '/cookie-policy',
-  '/contact',
-  '/reach-out',
-];
-
-const JOB_SLUGS = [
-  'senior-full-stack-engineer-react-node',
-  'staff-devops-engineer',
-  'principal-data-engineer',
-  'senior-machine-learning-engineer',
-  'lead-mobile-engineer',
-  'security-architect',
-];
-
-const routes = [...STATIC_ROUTES, ...JOB_SLUGS.map((slug) => `/jobs/${slug}`)];
+const routes = ['/login/client', '/login/portal'];
 
 const MIME_TYPES = {
   '.html': 'text/html; charset=utf-8',

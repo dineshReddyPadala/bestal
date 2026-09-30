@@ -15,7 +15,7 @@ type PortalOption = {
 const COLOR_CLASS_MAP: Record<string, string> = {
   'is-violet': 'bg-violet-100 text-violet-700',
   'is-amber': 'bg-amber-100 text-amber-700',
-  'is-teal': 'bg-teal-100 text-teal-700',
+  'is-teal': 'bg-violet-100 text-violet-800',
 };
 
 function PortalOptionList({ portals }: { portals: PortalOption[] }) {

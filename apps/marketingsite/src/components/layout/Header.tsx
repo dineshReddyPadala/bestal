@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
 import { BrandMark } from '@/components/common/BrandMark';
+import { CLIENT_WORKSPACE_URL, PORTAL_LOGIN_URL } from '@/constants/app-urls';
 import { NAV_LINKS, ROUTES } from '@/constants/routes';
 
 export function Header() {
@@ -26,9 +27,12 @@ export function Header() {
           <Link className="mobile-action" to={ROUTES.candidate}>
             Join Our Community
           </Link>
-          <Link className="mobile-action" to={ROUTES.workspace}>
+          <a className="mobile-action" href={CLIENT_WORKSPACE_URL}>
             Client Workspace
-          </Link>
+          </a>
+          <a className="mobile-action" href={PORTAL_LOGIN_URL}>
+            Portal
+          </a>
           <Link className="mobile-action" to={ROUTES.contact} style={{ color: 'var(--blue-d)', fontWeight: 700 }}>
             Talk to BesTal
           </Link>
@@ -37,9 +41,12 @@ export function Header() {
           <Link className="btn outline sm navr-action" to={ROUTES.candidate}>
             Join Our Community
           </Link>
-          <Link className="btn outline sm navr-action" to={ROUTES.workspace}>
+          <a className="btn outline sm navr-action" href={CLIENT_WORKSPACE_URL}>
             Client Workspace
-          </Link>
+          </a>
+          <a className="btn outline sm navr-action" href={PORTAL_LOGIN_URL}>
+            Portal
+          </a>
           <Link className="btn primary sm navr-action" to={ROUTES.contact}>
             Talk to BesTal
           </Link>

@@ -11,7 +11,7 @@ export default defineConfig({
   server: {
     port: 5174,
     strictPort: true,
-    allowedHosts: ['bestal.co', 'www.bestal.co'],
+    allowedHosts: ['bestal.co', 'www.bestal.co', 'app.bestal.co'],
     proxy: {
       '/api/v1': {
         target: 'http://localhost:3001',
