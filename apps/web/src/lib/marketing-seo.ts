@@ -1,7 +1,7 @@
 import { publicJobs } from '@bestal/mock-data';
 
-/** Public marketing origin. Apex `bestal.co` should 301 here at the CDN. */
-export const SITE_ORIGIN = 'https://www.bestal.co';
+/** Product app origin. Public marketing lives on www.bestal.co. */
+export const SITE_ORIGIN = 'https://app.bestal.co';
 
 export const DEFAULT_OG_IMAGE_PATH = '/og-image.png';
 

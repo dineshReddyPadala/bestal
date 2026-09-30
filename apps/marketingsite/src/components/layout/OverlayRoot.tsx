@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { DIMENSIONS, STAGES, ZONES } from '@/constants/content';
 import { PROFESSIONALS } from '@/constants/workspace-data';
-import { ROUTES } from '@/constants/routes';
+import { CLIENT_WORKSPACE_URL } from '@/constants/app-urls';
 import { Chip } from '@/components/ui/Chip';
 import { Button } from '@/components/ui/Button';
 import { Passport, ProfileHead } from '@/components/workspace/Passport';
@@ -548,7 +547,6 @@ function PostProjectModal() {
 
 function EnquiryModal({ kind }: { kind: RequestKind }) {
   const { addRequest, closeOverlays, toast, setTab } = useApp();
-  const navigate = useNavigate();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [company, setCompany] = useState('');
@@ -610,7 +608,7 @@ function EnquiryModal({ kind }: { kind: RequestKind }) {
             });
             closeOverlays();
             setTab('consulting');
-            navigate(ROUTES.workspace);
+            window.location.assign(CLIENT_WORKSPACE_URL);
             toast('Request submitted - it appears under Submitted');
             return;
           }

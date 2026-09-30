@@ -1,10 +1,7 @@
-import { publicNav } from '@bestal/mock-data';
-import { MarketingLayout } from '@bestal/ui';
-import { createBrowserRouter, Navigate, Outlet, RouterProvider, useNavigate } from 'react-router-dom';
+import { createBrowserRouter, Navigate, Outlet, RouterProvider } from 'react-router-dom';
 import { AdminShell } from '../layouts/AdminShell';
 import { ClientShell } from '../layouts/ClientShell';
 import { RecruiterShell } from '../layouts/RecruiterShell';
-import { BESTAL_LOGO_SRC } from '../lib/brand';
 import { BackgroundChecksPage as AdminBackgroundChecksPage } from '../pages/admin/BackgroundChecksPage';
 import { CandidateCsvImportPage as AdminCandidateCsvImportPage } from '../pages/admin/CandidateCsvImportPage';
 import { CandidateApprovalsPage } from '../pages/admin/CandidateApprovalsPage';
@@ -25,33 +22,9 @@ import { CandidateSearchPage } from '../pages/client/CandidateSearchPage';
 import { DashboardPage as ClientDashboardPage } from '../pages/client/DashboardPage';
 import { TrialRequestsPage } from '../pages/client/TrialRequestsPage';
 import { DeploymentsPage as ClientDeploymentsPage } from '../pages/client/DeploymentsPage';
-import { AboutPage } from '../pages/public/AboutPage';
-import { CookiePolicyPage } from '../pages/public/CookiePolicyPage';
-import { FaqPage } from '../pages/public/FaqPage';
-import { FreeTrialTermsPage } from '../pages/public/FreeTrialTermsPage';
-import { PrivacyPolicyPage } from '../pages/public/PrivacyPolicyPage';
-import { TermsOfServicePage } from '../pages/public/TermsOfServicePage';
-import { CommunitiesPage } from '../pages/public/CommunitiesPage';
-import { ContactPage } from '../pages/public/ContactPage';
-import { ConsultingPage } from '../pages/public/ConsultingPage';
-import { ReachOutPage } from '../pages/public/ReachOutPage';
-import { EnterprisePage } from '../pages/public/EnterprisePage';
-import { EvaluationStandardPage } from '../pages/public/EvaluationStandardPage';
-import { ForEngineersPage } from '../pages/public/ForEngineersPage';
-import { HomePage } from '../pages/public/HomePage';
-import { HowItWorksPage } from '../pages/public/HowItWorksPage';
-import { JobDetailPage } from '../pages/public/JobDetailPage';
-import { JobsPage } from '../pages/public/JobsPage';
 import { ClientSignupPage, ClientSignupSuccessPage } from '../pages/public/ClientSignupPage';
 import { MarketingLoginPage } from '../pages/public/MarketingLoginPage';
 import { StaffPortalLoginPage } from '../pages/public/StaffPortalLoginPage';
-import { RatesPage } from '../pages/public/RatesPage';
-import { SampleTalentPage } from '../pages/public/SampleTalentPage';
-import { TalentPage } from '../pages/public/TalentPage';
-import { TrustPage } from '../pages/public/TrustPage';
-import { TryForAWeekPage } from '../pages/public/TryForAWeekPage';
-import { CareersPage } from '../pages/public/CareersPage';
-import { CareersJobDetailPage } from '../pages/public/CareersJobDetailPage';
 import { AddCandidatePage } from '../pages/recruiter/AddCandidatePage';
 import { BackgroundChecksPage } from '../pages/recruiter/BackgroundChecksPage';
 import { CandidateCsvImportPage as RecruiterCandidateCsvImportPage } from '../pages/recruiter/CandidateCsvImportPage';
@@ -75,6 +48,7 @@ import { TrialsPage as SalesTrialsPage } from '../pages/sales/TrialsPage';
 import { ProtectedRoute } from '../components/auth/ProtectedRoute';
 import { PermissionGate } from '../components/auth/PermissionGate';
 import { PortalAuthShell } from '../components/auth/PortalAuthShell';
+import { RedirectToMarketing } from '../components/RedirectToMarketing';
 import { ScrollToTop } from '../components/ScrollToTop';
 import { PORTAL_AUTH_CONFIG } from '../lib/auth-portal-config';
 import { PortalForgotPasswordPage } from '../pages/shared/PortalForgotPasswordPage';
@@ -110,9 +84,8 @@ import { SuperAdminReportsPage } from '../pages/super-admin/ReportsPage';
 import { SuperAdminAuditLogsPage } from '../pages/super-admin/AuditLogsPage';
 import { SuperAdminSettingsPage } from '../pages/super-admin/SettingsPage';
 import { useContext } from 'react';
-import { AuthContext, useAuth } from '../contexts/AuthContext';
+import { AuthContext } from '../contexts/AuthContext';
 import { usePermissions } from '../hooks/usePermissions';
-import { CLIENT_LOGIN_PATH, LOGIN_PORTAL_CHOOSER_PATH } from '../lib/login-portals';
 import { AppProviders } from '../providers/AppProviders';
 
 function ClientEnquiriesRoute({ redirectTo }: { redirectTo: string }) {
@@ -223,51 +196,6 @@ function ProtectedSalesShell() {
   );
 }
 
-const marketingNav = publicNav.map(({ label, href }) => ({
-  label,
-  href,
-}));
-
-function useMarketingAuthLayoutProps() {
-  const { isAuthenticated, logout } = useAuth();
-  const navigate = useNavigate();
-
-  async function handleLogout() {
-    try {
-      await logout();
-    } finally {
-      navigate(LOGIN_PORTAL_CHOOSER_PATH, { replace: true });
-    }
-  }
-
-  return {
-    isAuthenticated,
-    loginHref: CLIENT_LOGIN_PATH,
-    onLogout: handleLogout,
-  };
-}
-
-function MarketingShell() {
-  const authLayoutProps = useMarketingAuthLayoutProps();
-
-  return (
-    <div data-prerender-ready="">
-      <ScrollToTop />
-      <MarketingLayout
-        navItems={[...marketingNav]}
-        ctaLabel="Reach out to us"
-        ctaHref="/reach-out"
-        secondaryCtaLabel="Join Talent Community"
-        secondaryCtaHref="/talent"
-        brandLogoSrc={BESTAL_LOGO_SRC}
-        {...authLayoutProps}
-      >
-        <Outlet />
-      </MarketingLayout>
-    </div>
-  );
-}
-
 function PortalLoginShell() {
   return (
     <div className="marketing-site mkt-split-login-site" data-prerender-ready="">
@@ -308,37 +236,31 @@ const router = createBrowserRouter([
     ),
     children: [
   {
-    element: <MarketingShell />,
     children: [
-      { index: true, element: <HomePage /> },
-      { path: 'how-it-works', element: <HowItWorksPage /> },
-      { path: 'sample-talent', element: <SampleTalentPage /> },
-      { path: 'talent', element: <TalentPage /> },
-      { path: 'consulting', element: <ConsultingPage /> },
-      { path: 'evaluation-standard', element: <EvaluationStandardPage /> },
-      { path: 'trust', element: <TrustPage /> },
-      { path: 'rates', element: <RatesPage /> },
-      { path: 'try-for-a-week', element: <TryForAWeekPage /> },
-      { path: 'jobs', element: <JobsPage /> },
-      { path: 'jobs/:slug', element: <JobDetailPage /> },
-      { path: 'communities', element: <CommunitiesPage /> },
-      { path: 'enterprise', element: <EnterprisePage /> },
-      { path: 'about', element: <AboutPage /> },
-      { path: 'faq', element: <FaqPage /> },
-      { path: 'privacy-policy', element: <PrivacyPolicyPage /> },
-      { path: 'terms-of-service', element: <TermsOfServicePage /> },
-      { path: 'free-trial-terms', element: <FreeTrialTermsPage /> },
-      { path: 'cookie-policy', element: <CookiePolicyPage /> },
-      { path: 'for-engineers', element: <ForEngineersPage /> },
-      { path: 'contact', element: <ContactPage /> },
-      { path: 'reach-out', element: <ReachOutPage /> },
-      {
-        path: 'careers',
-        children: [
-          { index: true, element: <CareersPage /> },
-          { path: ':slug', element: <CareersJobDetailPage /> },
-        ],
-      },
+      { index: true, element: <RedirectToMarketing /> },
+      { path: 'how-it-works', element: <RedirectToMarketing /> },
+      { path: 'sample-talent', element: <RedirectToMarketing /> },
+      { path: 'talent', element: <RedirectToMarketing /> },
+      { path: 'consulting', element: <RedirectToMarketing /> },
+      { path: 'evaluation-standard', element: <RedirectToMarketing /> },
+      { path: 'trust', element: <RedirectToMarketing /> },
+      { path: 'rates', element: <RedirectToMarketing /> },
+      { path: 'try-for-a-week', element: <RedirectToMarketing /> },
+      { path: 'jobs', element: <RedirectToMarketing /> },
+      { path: 'jobs/:slug', element: <RedirectToMarketing /> },
+      { path: 'communities', element: <RedirectToMarketing /> },
+      { path: 'enterprise', element: <RedirectToMarketing /> },
+      { path: 'about', element: <RedirectToMarketing /> },
+      { path: 'faq', element: <RedirectToMarketing /> },
+      { path: 'privacy-policy', element: <RedirectToMarketing /> },
+      { path: 'terms-of-service', element: <RedirectToMarketing /> },
+      { path: 'free-trial-terms', element: <RedirectToMarketing /> },
+      { path: 'cookie-policy', element: <RedirectToMarketing /> },
+      { path: 'for-engineers', element: <RedirectToMarketing /> },
+      { path: 'contact', element: <RedirectToMarketing /> },
+      { path: 'reach-out', element: <RedirectToMarketing /> },
+      { path: 'careers', element: <RedirectToMarketing /> },
+      { path: 'careers/:slug', element: <RedirectToMarketing /> },
     ],
   },
   {
