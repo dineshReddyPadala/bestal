@@ -48,7 +48,7 @@ export function FreeTrialTermsPanel({
           type="checkbox"
           checked={accepted}
           onChange={(event) => onAcceptedChange(event.target.checked)}
-          className="mt-0.5 h-4 w-4 shrink-0 rounded border-border text-brand accent-[#0e6e76]"
+          className="mt-0.5 h-4 w-4 shrink-0 rounded border-border text-brand accent-[hsl(var(--brand))]"
         />
         <span className="text-sm leading-snug text-foreground">{FREE_TRIAL_TERMS_CHECKBOX_LABEL}</span>
       </label>

@@ -1,7 +1,7 @@
 import { cn } from '@bestal/shared-utils';
 import { Check, ShieldCheck } from 'lucide-react';
 
-export const DEFAULT_BESTAL_LOGO_SRC = '/bestal-logo.svg';
+export const DEFAULT_BESTAL_LOGO_SRC = '/bestal-logo.png';
 
 export type BesTalBrandProps = {
   logoSrc?: string;
@@ -44,7 +44,7 @@ export function BesTalBrand({
         alt="BesTal"
         className={cn(
           'bestal-brand-image shrink-0 object-contain object-left',
-          compact ? 'h-7 w-auto max-w-[8.5rem]' : 'h-9 w-auto max-w-[11.5rem]',
+          compact ? 'h-7 w-auto max-w-[10rem]' : 'h-9 w-auto max-w-[14rem]',
           logoClassName,
         )}
       />

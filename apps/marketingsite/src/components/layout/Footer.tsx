@@ -1,8 +1,11 @@
 import { Link } from 'react-router-dom';
 import { BrandMark } from '@/components/common/BrandMark';
+import { CLIENT_WORKSPACE_URL, PORTAL_LOGIN_URL } from '@/constants/app-urls';
 import { ROUTES } from '@/constants/routes';
 
-const COLUMNS = [
+type FooterLink = { label: string; to?: string; href?: string };
+
+const COLUMNS: { title: string; links: FooterLink[] }[] = [
   {
     title: 'Solutions',
     links: [
@@ -15,7 +18,8 @@ const COLUMNS = [
     title: 'Technology',
     links: [
       { to: ROUTES.communities, label: 'Technology Communities' },
-      { to: ROUTES.workspace, label: 'Client Workspace' },
+      { href: CLIENT_WORKSPACE_URL, label: 'Client Workspace' },
+      { href: PORTAL_LOGIN_URL, label: 'Portal' },
       { to: ROUTES.trust, label: 'Trust & Governance' },
     ],
   },
@@ -32,7 +36,7 @@ const COLUMNS = [
     links: [
       { to: ROUTES.candidate, label: 'Join Our Community' },
       { to: `${ROUTES.candidate}#fit`, label: 'How It Works' },
-      { to: `${ROUTES.workspace}?mode=candidate`, label: 'Professional Workspace' },
+      { to: ROUTES.candidate, label: 'Professional Workspace' },
     ],
   },
   {
@@ -65,8 +69,8 @@ export function Footer() {
               <h5>{column.title}</h5>
               <ul>
                 {column.links.map((link) => (
-                  <li key={link.to}>
-                    <Link to={link.to}>{link.label}</Link>
+                  <li key={`${column.title}-${link.label}`}>
+                    {link.href ? <a href={link.href}>{link.label}</a> : <Link to={link.to ?? '/'}>{link.label}</Link>}
                   </li>
                 ))}
               </ul>

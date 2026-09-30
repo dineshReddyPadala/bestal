@@ -1,7 +1,9 @@
 /// <reference types="vite/client" />
 
 interface ImportMetaEnv {
-  readonly VITE_API_BASE_URL: string;
+  readonly VITE_API_BASE_URL?: string;
+  readonly VITE_MARKETING_ORIGIN?: string;
+  readonly VITE_MARKETING_ORIGIN_LOCAL?: string;
   /** @deprecated Resume AI goes through Node AI_EXTRACTION_URL */
   readonly VITE_AI_EXTRACTION_URL?: string;
   /** @deprecated Evaluation AI goes through Node AI_EVALUATION_URL */

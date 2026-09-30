@@ -1,11 +1,11 @@
-/** BesTal wordmark — light theme SVG from src/asserts/Light Theme Website logo (1).svg */
-export const BESTAL_LOGO_SRC = '/bestal-logo.svg';
+/** BesTal wordmark — marketing-site brand mark */
+export const BESTAL_LOGO_SRC = '/bestal-logo.png';
 
-/** Browser tab icon — light theme SVG in public/ */
-export const BESTAL_FAVICON_SRC = '/Light%20Fav%20Icon.svg';
+/** Browser tab icon — marketing-site brand mark */
+export const BESTAL_FAVICON_SRC = '/bestal-logo.png';
 
-/** Browser tab icon — dark theme SVG in public/ */
-export const BESTAL_FAVICON_DARK_SRC = '/Dark%20Fav%20Icon.svg';
+/** Browser tab icon — marketing-site brand mark */
+export const BESTAL_FAVICON_DARK_SRC = '/bestal-logo.png';
 
 /** Client login split-layout hero */
 export const CLIENT_LOGIN_HERO_IMAGE_SRC = '/login_updated_img.png';
