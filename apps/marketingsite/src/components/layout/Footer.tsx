@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { BrandMark } from '@/components/common/BrandMark';
-import { CLIENT_WORKSPACE_URL, PORTAL_LOGIN_URL } from '@/constants/app-urls';
+import { CLIENT_WORKSPACE_URL } from '@/constants/app-urls';
 import { ROUTES } from '@/constants/routes';
 
 type FooterLink = { label: string; to?: string; href?: string };
@@ -19,7 +19,6 @@ const COLUMNS: { title: string; links: FooterLink[] }[] = [
     links: [
       { to: ROUTES.communities, label: 'Technology Communities' },
       { href: CLIENT_WORKSPACE_URL, label: 'Client Workspace' },
-      { href: PORTAL_LOGIN_URL, label: 'Portal' },
       { to: ROUTES.trust, label: 'Trust & Governance' },
     ],
   },
