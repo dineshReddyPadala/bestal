@@ -7,7 +7,6 @@ import { TrialDiagram } from '@/components/diagrams/Diagrams';
 import { Passport, ProfileHead } from '@/components/workspace/Passport';
 import { COMMUNITIES, EVAL_FRAMEWORK, MODELS, TALENT_FAQS } from '@/constants/content';
 import { PROFESSIONALS } from '@/constants/workspace-data';
-import { CLIENT_WORKSPACE_URL } from '@/constants/app-urls';
 import { ROUTES } from '@/constants/routes';
 import { useApp } from '@/context/app-context';
 
@@ -46,9 +45,9 @@ export function TalentPage() {
               to proceed.
             </p>
             <div className="acts">
-              <a className="btn primary lg" href={CLIENT_WORKSPACE_URL}>
+              <Link className="btn primary lg" to={ROUTES.workspace}>
                 Explore Technology Professionals
-              </a>
+              </Link>
               <Link className="btn outline lg" to={ROUTES.contact}>
                 Talk to BesTal
               </Link>
@@ -134,10 +133,10 @@ export function TalentPage() {
           />
           <div className="g4">
             {MODELS.map((model) => (
-              <a
+              <Link
                 className="card hover"
                 key={model.key}
-                href={CLIENT_WORKSPACE_URL}
+                to={ROUTES.workspace}
                 onClick={() => setModel(model.key)}
               >
                 <IconBadge cardKey={model.key} size="sm" />
@@ -147,7 +146,7 @@ export function TalentPage() {
                   {model.duration} · {PROFESSIONALS.filter((person) => person.models.includes(model.key)).length}{' '}
                   professionals
                 </div>
-              </a>
+              </Link>
             ))}
           </div>
         </div>
@@ -186,10 +185,10 @@ export function TalentPage() {
           />
           <div className="g5">
             {COMMUNITIES.map((community) => (
-              <a
+              <Link
                 className="comm-card hover"
                 key={community.id}
-                href={CLIENT_WORKSPACE_URL}
+                to={ROUTES.workspace}
                 onClick={() => setFilters((prev) => ({ ...prev, community: community.title }))}
               >
                 <IconBadge cardKey={community.title} size="sm" />
@@ -198,7 +197,7 @@ export function TalentPage() {
                 <div style={{ marginTop: 10, fontSize: 12, fontWeight: 700, color: 'var(--navy)' }}>
                   {PROFESSIONALS.filter((person) => person.community === community.title).length} available
                 </div>
-              </a>
+              </Link>
             ))}
           </div>
         </div>
