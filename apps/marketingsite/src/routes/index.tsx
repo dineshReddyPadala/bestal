@@ -1,8 +1,6 @@
 import { lazy } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
-import { ExternalRedirect } from '@/components/common/ExternalRedirect';
 import { AppLayout } from '@/components/layout/AppLayout';
-import { CLIENT_WORKSPACE_URL } from '@/constants/app-urls';
 import { ROUTES } from '@/constants/routes';
 
 const HomePage = lazy(() => import('@/pages/HomePage').then((m) => ({ default: m.HomePage })));
@@ -18,13 +16,14 @@ const ContactPage = lazy(() => import('@/pages/ContactPage').then((m) => ({ defa
 const PrivacyPage = lazy(() => import('@/pages/LegalPages').then((m) => ({ default: m.PrivacyPage })));
 const TermsPage = lazy(() => import('@/pages/LegalPages').then((m) => ({ default: m.TermsPage })));
 const CookiesPage = lazy(() => import('@/pages/LegalPages').then((m) => ({ default: m.CookiesPage })));
+const WorkspacePage = lazy(() => import('@/pages/WorkspacePage').then((m) => ({ default: m.WorkspacePage })));
 
 export function AppRoutes() {
   return (
     <Routes>
-      <Route path={ROUTES.workspace} element={<ExternalRedirect href={CLIENT_WORKSPACE_URL} />} />
       <Route element={<AppLayout />}>
         <Route path={ROUTES.home} element={<HomePage />} />
+        <Route path={ROUTES.workspace} element={<WorkspacePage />} />
         <Route path={ROUTES.consulting} element={<ConsultingPage />} />
         <Route path={ROUTES.delivery} element={<DeliveryPage />} />
         <Route path={ROUTES.talent} element={<TalentPage />} />

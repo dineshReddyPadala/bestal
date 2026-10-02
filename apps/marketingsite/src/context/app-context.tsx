@@ -8,8 +8,6 @@ import {
   type ReactNode,
 } from 'react';
 import { INITIAL_PODS, INITIAL_PROJECTS, INITIAL_REQUESTS, INITIAL_WORKFORCE } from '@/constants/workspace-data';
-import { PROFESSIONALS } from '@/constants/workspace-data';
-import { ROLES } from '@/constants/content';
 import type {
   ConsultingRequest,
   DeliveryPod,
@@ -60,11 +58,14 @@ interface AppState {
   drawer: DrawerKind | null;
   modal: ModalKind | null;
   toasts: ToastItem[];
+  unlockOpen: boolean;
 }
 
 interface AppContextValue extends AppState {
   toast: (message: string) => void;
   closeOverlays: () => void;
+  requestUnlock: () => void;
+  closeUnlock: () => void;
   openDrawer: (drawer: DrawerKind) => void;
   openModal: (modal: ModalKind) => void;
   setMode: (mode: WorkspaceMode) => void;
@@ -127,6 +128,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [drawer, setDrawer] = useState<DrawerKind | null>(null);
   const [modal, setModal] = useState<ModalKind | null>(null);
   const [toasts, setToasts] = useState<ToastItem[]>([]);
+  const [unlockOpen, setUnlockOpen] = useState(false);
 
   const toast = useCallback((message: string) => {
     const id = ++toastId;
@@ -141,15 +143,34 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setModal(null);
   }, []);
 
-  const openDrawer = useCallback((next: DrawerKind) => {
+  const requestUnlock = useCallback(() => {
+    setDrawer(null);
     setModal(null);
-    setDrawer(next);
+    setUnlockOpen(true);
   }, []);
 
-  const openModal = useCallback((next: ModalKind) => {
-    setDrawer(null);
-    setModal(next);
+  const closeUnlock = useCallback(() => {
+    setUnlockOpen(false);
   }, []);
+
+  const openDrawer = useCallback(
+    (_next: DrawerKind) => {
+      requestUnlock();
+    },
+    [requestUnlock],
+  );
+
+  const openModal = useCallback(
+    (next: ModalKind) => {
+      if (next.type === 'enquiry') {
+        setDrawer(null);
+        setModal(next);
+        return;
+      }
+      requestUnlock();
+    },
+    [requestUnlock],
+  );
 
   const setMode = useCallback((next: WorkspaceMode) => {
     setModeState(next);
@@ -164,52 +185,32 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const toggleShortlist = useCallback(
-    (index: number) => {
-      setShortlist((prev) => {
-        if (prev.includes(index)) {
-          toast(`${PROFESSIONALS[index].name} removed`);
-          return prev.filter((item) => item !== index);
-        }
-        toast(`${PROFESSIONALS[index].name} saved`);
-        return [...prev, index];
-      });
+    (_index: number) => {
+      requestUnlock();
     },
-    [toast],
+    [requestUnlock],
   );
 
   const toggleCompare = useCallback(
-    (index: number) => {
-      setCompare((prev) => {
-        if (prev.includes(index)) return prev.filter((item) => item !== index);
-        if (prev.length >= 3) {
-          toast('Compare holds three. Remove one first.');
-          return prev;
-        }
-        const next = [...prev, index];
-        if (next.length >= 2) toast(`${next.length} selected - Compare is in the toolbar`);
-        return next;
-      });
+    (_index: number) => {
+      requestUnlock();
     },
-    [toast],
+    [requestUnlock],
   );
 
   const addToTeam = useCallback(
-    (index: number) => {
-      setDraftTeam((prev) => {
-        if (prev.some((member) => member.professionalIndex === index)) {
-          toast(`${PROFESSIONALS[index].name} is already on the team`);
-          return prev;
-        }
-        toast(`${PROFESSIONALS[index].name} added to the team you're building`);
-        return [...prev, { professionalIndex: index, role: PROFESSIONALS[index].role, allocation: 100 }];
-      });
+    (_index: number) => {
+      requestUnlock();
     },
-    [toast],
+    [requestUnlock],
   );
 
-  const addRole = useCallback((role: string) => {
-    setDraftTeam((prev) => [...prev, { role, allocation: 100 }]);
-  }, []);
+  const addRole = useCallback(
+    (_role: string) => {
+      requestUnlock();
+    },
+    [requestUnlock],
+  );
 
   const updateDraftAlloc = useCallback((index: number, allocation: number) => {
     setDraftTeam((prev) => prev.map((member, i) => (i === index ? { ...member, allocation } : member)));
@@ -222,70 +223,28 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const clearDraft = useCallback(() => setDraftTeam([]), []);
 
   const requestTeam = useCallback(() => {
-    const monthly = draftTeam.reduce((sum, member) => {
-      const rate =
-        member.professionalIndex !== undefined
-          ? PROFESSIONALS[member.professionalIndex].rate
-          : ROLES[member.role][0];
-      return sum + rate * 40 * (member.allocation / 100) * 4.33;
-    }, 0);
-    setPods((prev) => [
-      ...prev,
-      {
-        name: `Requested team - ${draftTeam.length} people`,
-        team: draftTeam
-          .map((member) => member.professionalIndex)
-          .filter((index): index is number => index !== undefined),
-        lead: draftTeam.find((member) => member.professionalIndex !== undefined)?.professionalIndex ?? 0,
-        owner: 'Alex R.',
-        status: 'pending',
-        sprint: 0,
-        velocity: [],
-        commit: [],
-        start: 'Requested',
-        model: 'Managed Delivery Pod',
-        fee: Math.round((monthly / 1000) * 10) / 10,
-      },
-    ]);
-    setDraftTeam([]);
-    setTab('delivery');
-    toast('Team requested - named professionals and a fixed fee within two business days');
-  }, [draftTeam, toast]);
+    requestUnlock();
+  }, [requestUnlock]);
 
   const approveTimesheet = useCallback(
-    (index: number) => {
-      setWorkforce((prev) => {
-        const member = prev[index];
-        toast(`${PROFESSIONALS[member.professionalIndex].name}: ${member.hours} hours approved`);
-        return prev.map((item, i) => (i === index ? { ...item, pending: false } : item));
-      });
+    (_index: number) => {
+      requestUnlock();
     },
-    [toast],
+    [requestUnlock],
   );
 
   const continueTrial = useCallback(
-    (index: number) => {
-      setWorkforce((prev) =>
-        prev.map((item, i) =>
-          i === index ? { ...item, status: 'live', model: 'Dedicated', since: 'Today' } : item,
-        ),
-      );
-      toast('Engagement started. Rate and hours carried over.');
+    (_index: number) => {
+      requestUnlock();
     },
-    [toast],
+    [requestUnlock],
   );
 
   const moveRequest = useCallback(
-    (index: number) => {
-      setRequests((prev) =>
-        prev.map((item, i) => {
-          if (i !== index || item.stage >= 4) return item;
-          toast(`Moved to ${['Submitted', 'Scoping', 'Proposal', 'Active', 'Closed'][item.stage + 1]}`);
-          return { ...item, stage: item.stage + 1 };
-        }),
-      );
+    (_index: number) => {
+      requestUnlock();
     },
-    [toast],
+    [requestUnlock],
   );
 
   const addRequest = useCallback((request: ConsultingRequest) => {
@@ -297,21 +256,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const startTrial = useCallback(
-    (index: number) => {
-      setWorkforce((prev) => [
-        ...prev,
-        {
-          professionalIndex: index,
-          status: 'trial',
-          hours: 0,
-          pending: false,
-          since: 'Today',
-          model: 'Flexible',
-        },
-      ]);
-      toast('Trial requested - confirmation typically within 24 hours');
+    (_index: number) => {
+      requestUnlock();
     },
-    [toast],
+    [requestUnlock],
   );
 
   const value = useMemo<AppContextValue>(
@@ -335,8 +283,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
       drawer,
       modal,
       toasts,
+      unlockOpen,
       toast,
       closeOverlays,
+      requestUnlock,
+      closeUnlock,
       openDrawer,
       openModal,
       setMode,
@@ -384,8 +335,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
       drawer,
       modal,
       toasts,
+      unlockOpen,
       toast,
       closeOverlays,
+      requestUnlock,
+      closeUnlock,
       openDrawer,
       openModal,
       setMode,

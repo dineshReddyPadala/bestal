@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { Seo } from '@/components/common/Seo';
 import { Chip } from '@/components/ui/Chip';
 import { Icon } from '@/components/ui/Icon';
+import { IconBadge } from '@/components/ui/IconBadge';
 import { Avatar } from '@/components/workspace/Avatar';
 import { Passport, ProfileHead } from '@/components/workspace/Passport';
 import { availabilityLabel } from '@/utils/advisor';
@@ -304,6 +305,14 @@ function AdvisorTab() {
   );
 }
 
+function communityCandidateCount(id: string): number {
+  let hash = 0;
+  for (let i = 0; i < id.length; i += 1) {
+    hash = (hash * 31 + id.charCodeAt(i)) % 1000;
+  }
+  return 18 + (hash % 25);
+}
+
 function DiscoverTab() {
   const {
     filters,
@@ -326,14 +335,14 @@ function DiscoverTab() {
     setTab,
   } = useApp();
   const [ready, setReady] = useState(false);
+  const browsingCommunities = !filters.community;
 
   useEffect(() => {
     const timer = window.setTimeout(() => setReady(true), 240);
     return () => window.clearTimeout(timer);
-  }, []);
+  }, [filters.community]);
 
   const list = useMemo(() => {
-    const rateCap = Number(filters.rate) || 999;
     return PROFESSIONALS.map((professional, index) => ({
       professional,
       index,
@@ -347,18 +356,17 @@ function DiscoverTab() {
         if (model && !professional.models.includes(model)) return false;
         if (filters.availability === 'now' && professional.availableInDays !== 0) return false;
         if (filters.availability === 'week' && professional.availableInDays > 7) return false;
-        if (professional.rate >= rateCap) return false;
         if (match && (score ?? 0) < 50) return false;
         return true;
       })
       .sort((a, b) => {
+        const sortKey = filters.sort === 'rate' ? 'match' : filters.sort;
         const key = {
           score: () => b.professional.score - a.professional.score,
-          rate: () => a.professional.rate - b.professional.rate,
           exp: () => b.professional.years - a.professional.years,
           avail: () => a.professional.availableInDays - b.professional.availableInDays,
           match: () => (match ? (b.score ?? 0) - (a.score ?? 0) : b.professional.score - a.professional.score),
-        }[filters.sort];
+        }[sortKey];
         return key();
       });
   }, [filters, zone, model, match]);
@@ -401,170 +409,185 @@ function DiscoverTab() {
           </button>
         </div>
       ) : null}
-      <div className="fbar">
-        <input
-          value={filters.query}
-          placeholder="Search skills or roles"
-          onChange={(event) => setFilters((prev) => ({ ...prev, query: event.target.value }))}
-        />
-        <select value={filters.community} onChange={(event) => setFilters((prev) => ({ ...prev, community: event.target.value }))}>
-          <option value="">All communities</option>
+      {browsingCommunities ? (
+        <div className="discover-comm">
           {COMMUNITIES.map((community) => (
-            <option key={community.id} value={community.title}>
-              {community.title}
-            </option>
-          ))}
-        </select>
-        {ZONES.map((item) => (
-          <button
-            key={item}
-            type="button"
-            className={`zb ${zone === item ? 'on' : ''}`}
-            onClick={() => setZone(zone === item ? '' : item)}
-          >
-            {item.replace('US ', '')}
-          </button>
-        ))}
-        <select value={filters.availability} onChange={(event) => setFilters((prev) => ({ ...prev, availability: event.target.value }))}>
-          <option value="">Any availability</option>
-          <option value="now">Available now</option>
-          <option value="week">Within a week</option>
-        </select>
-        <select value={filters.rate} onChange={(event) => setFilters((prev) => ({ ...prev, rate: event.target.value }))}>
-          <option value="">Any rate</option>
-          <option value="25">Under $25</option>
-          <option value="35">Under $35</option>
-          <option value="45">Under $45</option>
-        </select>
-        <select
-          value={filters.sort}
-          onChange={(event) =>
-            setFilters((prev) => ({ ...prev, sort: event.target.value as typeof prev.sort }))
-          }
-        >
-          <option value="match">Best match</option>
-          <option value="score">Highest Passport</option>
-          <option value="rate">Lowest rate</option>
-          <option value="exp">Most experience</option>
-          <option value="avail">Soonest available</option>
-        </select>
-        <span className="cnt">
-          <b>{list.length}</b> professionals ·{' '}
-          <button type="button" className="linkish" style={{ background: 'none', border: 0, padding: 0 }} onClick={clearFilters}>
-            clear
-          </button>
-        </span>
-      </div>
-      <div className="grid">
-        {!ready ? (
-          <>
-            <div className="skel" />
-            <div className="skel" />
-            <div className="skel" />
-          </>
-        ) : list.length ? (
-          list.map(({ professional, index, score }) => (
-            <div
-              className={`cand ${compare.includes(index) ? 'sel' : ''}`}
-              key={professional.name}
-              onClick={() => openDrawer({ type: 'profile', index })}
+            <button
+              key={community.id}
+              type="button"
+              className="comm-card discover-comm-tile"
+              onClick={() => setFilters((prev) => ({ ...prev, community: community.title }))}
             >
-              <div className="ct">
-                <Avatar professional={professional} />
-                <div>
-                  <div className="nm">{professional.name}</div>
-                  <div className="rl">
-                    {professional.role} · {professional.years} yrs
+              <IconBadge cardKey={community.title} size="sm" />
+              <h4>{community.title}</h4>
+              <p>{community.description}</p>
+              <span className="discover-comm-count">
+                <b>{communityCandidateCount(community.id)}</b> candidates
+              </span>
+            </button>
+          ))}
+        </div>
+      ) : (
+        <>
+          <div className="fbar">
+            <button
+              className="btn outline xs"
+              type="button"
+              onClick={() => setFilters((prev) => ({ ...prev, community: '' }))}
+            >
+              All communities
+            </button>
+            <input
+              value={filters.query}
+              placeholder="Search skills or roles"
+              onChange={(event) => setFilters((prev) => ({ ...prev, query: event.target.value }))}
+            />
+            {ZONES.map((item) => (
+              <button
+                key={item}
+                type="button"
+                className={`zb ${zone === item ? 'on' : ''}`}
+                onClick={() => setZone(zone === item ? '' : item)}
+              >
+                {item.replace('US ', '')}
+              </button>
+            ))}
+            <select value={filters.availability} onChange={(event) => setFilters((prev) => ({ ...prev, availability: event.target.value }))}>
+              <option value="">Any availability</option>
+              <option value="now">Available now</option>
+              <option value="week">Within a week</option>
+            </select>
+            <select
+              value={filters.sort === 'rate' ? 'match' : filters.sort}
+              onChange={(event) =>
+                setFilters((prev) => ({ ...prev, sort: event.target.value as typeof prev.sort }))
+              }
+            >
+              <option value="match">Best match</option>
+              <option value="score">Highest Passport</option>
+              <option value="exp">Most experience</option>
+              <option value="avail">Soonest available</option>
+            </select>
+            <span className="cnt">
+              <b>{list.length}</b> in {filters.community} ·{' '}
+              <button type="button" className="linkish" style={{ background: 'none', border: 0, padding: 0 }} onClick={clearFilters}>
+                clear
+              </button>
+            </span>
+          </div>
+          <div className="grid">
+            {!ready ? (
+              <>
+                <div className="skel" />
+                <div className="skel" />
+                <div className="skel" />
+              </>
+            ) : list.length ? (
+              list.map(({ professional, index, score }) => (
+                <div
+                  className={`cand ${compare.includes(index) ? 'sel' : ''}`}
+                  key={professional.name}
+                  onClick={() => openDrawer({ type: 'profile', index })}
+                >
+                  <div className="ct">
+                    <Avatar professional={professional} />
+                    <div>
+                      <div className="nm">{professional.name}</div>
+                      <div className="rl">
+                        {professional.role} · {professional.years} yrs
+                      </div>
+                    </div>
+                    <div className="sc">
+                      <b>{professional.score}</b>
+                      {score !== null ? <span className="m">{score}% match</span> : <span>Passport</span>}
+                    </div>
+                  </div>
+                  <div className="chips">
+                    {professional.skills.slice(0, 3).map((skill) => (
+                      <Chip key={skill} accent={COMMUNITY_CHIP[professional.community]}>
+                        {skill}
+                      </Chip>
+                    ))}
+                  </div>
+                  {score !== null && match ? <div className="why">{matchWhy(professional, match)}</div> : null}
+                  <div className="facts">
+                    <div>
+                      <span>Hours</span>
+                      <b>{professional.zone}</b>
+                    </div>
+                    <div>
+                      <span>Availability</span>
+                      <b className="okc">{availabilityLabel(professional.availableInDays)}</b>
+                    </div>
+                    <div>
+                      <span>Rate</span>
+                      <b className="rate rate-masked">
+                        <Icon name="lock" size={12} />
+                        ••
+                        <small>/hr</small>
+                      </b>
+                    </div>
+                    <div>
+                      <span>Models</span>
+                      <b style={{ fontSize: 11 }}>{professional.models.join(' · ')}</b>
+                    </div>
+                  </div>
+                  <div className="cact">
+                    <button
+                      className="btn goldb xs"
+                      type="button"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        openModal({ type: 'trial', index });
+                      }}
+                    >
+                      Request trial
+                    </button>
+                    <button
+                      className="btn outline xs"
+                      type="button"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        toggleShortlist(index);
+                      }}
+                    >
+                      {shortlist.includes(index) ? 'Saved' : 'Save'}
+                    </button>
+                    <button
+                      className="btn outline xs"
+                      type="button"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        toggleCompare(index);
+                      }}
+                    >
+                      {compare.includes(index) ? 'Comparing' : 'Compare'}
+                    </button>
+                    <button
+                      className="btn outline xs"
+                      type="button"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        addToTeam(index);
+                      }}
+                    >
+                      + Team
+                    </button>
                   </div>
                 </div>
-                <div className="sc">
-                  <b>{professional.score}</b>
-                  {score !== null ? <span className="m">{score}% match</span> : <span>Passport</span>}
-                </div>
-              </div>
-              <div className="chips">
-                {professional.skills.slice(0, 3).map((skill) => (
-                  <Chip key={skill} accent={COMMUNITY_CHIP[professional.community]}>
-                    {skill}
-                  </Chip>
-                ))}
-              </div>
-              {score !== null && match ? <div className="why">{matchWhy(professional, match)}</div> : null}
-              <div className="facts">
-                <div>
-                  <span>Hours</span>
-                  <b>{professional.zone}</b>
-                </div>
-                <div>
-                  <span>Availability</span>
-                  <b className="okc">{availabilityLabel(professional.availableInDays)}</b>
-                </div>
-                <div>
-                  <span>Rate</span>
-                  <b className="rate">
-                    ${professional.rate}
-                    <small style={{ fontSize: 11, color: 'var(--muted)', fontWeight: 600 }}>/hr</small>
-                  </b>
-                </div>
-                <div>
-                  <span>Models</span>
-                  <b style={{ fontSize: 11 }}>{professional.models.join(' · ')}</b>
-                </div>
-              </div>
-              <div className="cact">
-                <button
-                  className="btn goldb xs"
-                  type="button"
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    openModal({ type: 'trial', index });
-                  }}
-                >
-                  Request trial
-                </button>
-                <button
-                  className="btn outline xs"
-                  type="button"
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    toggleShortlist(index);
-                  }}
-                >
-                  {shortlist.includes(index) ? 'Saved' : 'Save'}
-                </button>
-                <button
-                  className="btn outline xs"
-                  type="button"
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    toggleCompare(index);
-                  }}
-                >
-                  {compare.includes(index) ? 'Comparing' : 'Compare'}
-                </button>
-                <button
-                  className="btn outline xs"
-                  type="button"
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    addToTeam(index);
-                  }}
-                >
-                  + Team
+              ))
+            ) : (
+              <div className="empty">
+                <h3>No professionals match all of these filters</h3>
+                <p style={{ marginTop: 6, fontSize: 14 }}>Try widening availability or search.</p>
+                <button className="btn outline sm" style={{ marginTop: 12 }} type="button" onClick={clearFilters}>
+                  Clear filters
                 </button>
               </div>
-            </div>
-          ))
-        ) : (
-          <div className="empty">
-            <h3>No professionals match all of these filters</h3>
-            <p style={{ marginTop: 6, fontSize: 14 }}>Try widening the rate range or availability.</p>
-            <button className="btn outline sm" style={{ marginTop: 12 }} type="button" onClick={clearFilters}>
-              Clear filters
-            </button>
+            )}
           </div>
-        )}
-      </div>
+        </>
+      )}
     </>
   );
 }
@@ -819,7 +842,7 @@ function DeliveryTab() {
 }
 
 function ConsultingTab() {
-  const { requests, openModal, openDrawer, moveRequest } = useApp();
+  const { requests, requestUnlock, openDrawer, moveRequest } = useApp();
   return (
     <>
       <div className="top">
@@ -827,7 +850,7 @@ function ConsultingTab() {
           <span className="k">Technology Consulting</span>
           <h3>Requests and engagements</h3>
         </div>
-        <button className="btn primary sm" type="button" onClick={() => openModal({ type: 'enquiry', kind: 'consulting' })}>
+        <button className="btn primary sm" type="button" onClick={requestUnlock}>
           + New request
         </button>
       </div>
