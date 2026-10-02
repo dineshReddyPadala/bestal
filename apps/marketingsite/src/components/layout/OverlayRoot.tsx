@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
 import { DIMENSIONS, STAGES, ZONES } from '@/constants/content';
 import { PROFESSIONALS } from '@/constants/workspace-data';
-import { CLIENT_WORKSPACE_URL } from '@/constants/app-urls';
 import { Chip } from '@/components/ui/Chip';
 import { Button } from '@/components/ui/Button';
 import { Passport, ProfileHead } from '@/components/workspace/Passport';
+import { WorkspaceUnlockDialog } from '@/components/workspace/WorkspaceUnlockDialog';
 import { availabilityLabel } from '@/utils/advisor';
 import { Avatar } from '@/components/workspace/Avatar';
 import { PodDiagram, RadarDiagram, VelocityDiagram } from '@/components/diagrams/Diagrams';
@@ -482,7 +482,7 @@ function TrialModal({ index }: { index: number }) {
 }
 
 function PostProjectModal() {
-  const { addProject, closeOverlays, toast, setTab } = useApp();
+  const { requestUnlock, toast } = useApp();
   const [title, setTitle] = useState('');
   const [skills, setSkills] = useState('');
   const [hours, setHours] = useState('');
@@ -522,21 +522,7 @@ function PostProjectModal() {
             toast('Describe the outcome first');
             return;
           }
-          addProject({
-            title: title.trim(),
-            hours: `up to ${hours || '20'} hrs`,
-            rate: budget || 'Agreed on scope',
-            zone,
-            skills: (skills || 'General')
-              .split(',')
-              .map((item) => item.trim())
-              .filter(Boolean),
-            status: 'Open',
-            applicants: Math.floor(Math.random() * 4) + 2,
-          });
-          closeOverlays();
-          setTab('projects');
-          toast('Opportunity posted');
+          requestUnlock();
         }}
       >
         Post and match
@@ -546,7 +532,7 @@ function PostProjectModal() {
 }
 
 function EnquiryModal({ kind }: { kind: RequestKind }) {
-  const { addRequest, closeOverlays, toast, setTab } = useApp();
+  const { closeOverlays, toast } = useApp();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [company, setCompany] = useState('');
@@ -599,17 +585,8 @@ function EnquiryModal({ kind }: { kind: RequestKind }) {
             return;
           }
           if (kind === 'consulting') {
-            addRequest({
-              title: details.slice(0, 48) || 'New scoping request',
-              type: 'Advisory Engagement',
-              stage: 0,
-              owner: name || 'You',
-              due: 'To be scheduled',
-            });
             closeOverlays();
-            setTab('consulting');
-            window.location.assign(CLIENT_WORKSPACE_URL);
-            toast('Request submitted - it appears under Submitted');
+            toast('Thank you. We will be in touch.');
             return;
           }
           closeOverlays();
@@ -627,7 +604,7 @@ function EnquiryModal({ kind }: { kind: RequestKind }) {
 }
 
 export function OverlayRoot() {
-  const { drawer, modal, toasts, closeOverlays, toast, pods, requests } = useApp();
+  const { drawer, modal, toasts, unlockOpen, closeOverlays, closeUnlock, requestUnlock, toast, pods, requests } = useApp();
   const overlayOn = Boolean(drawer || modal);
 
   useEffect(() => {
@@ -690,10 +667,10 @@ export function OverlayRoot() {
         </div>
         {drawer?.type === 'pod' ? (
           <div className="df">
-            <Button variant="primary" onClick={() => toast('Additional capacity requested - proposal within two business days')}>
+            <Button variant="primary" onClick={requestUnlock}>
               Add capacity
             </Button>
-            <Button variant="outline" onClick={() => toast('Delivery report opened')}>
+            <Button variant="outline" onClick={requestUnlock}>
               Delivery report
             </Button>
           </div>
@@ -724,6 +701,7 @@ export function OverlayRoot() {
           </div>
         </div>
       </div>
+      <WorkspaceUnlockDialog open={unlockOpen} onClose={closeUnlock} />
       <div className="toasts">
         {toasts.map((item) => (
           <div className="toast" key={item.id}>

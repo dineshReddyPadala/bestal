@@ -1,6 +1,5 @@
 import { ZONES } from '@/constants/content';
 import type { ParsedNeed, Professional, Recommendation } from '@/types';
-import { CLIENT_WORKSPACE_URL } from '@/constants/app-urls';
 import { ROUTES } from '@/constants/routes';
 
 const SYNONYMS: Record<string, string[]> = {
@@ -84,7 +83,7 @@ export function recommendService(need: ParsedNeed): Recommendation {
     shape: 'Direct engagement',
     why: 'You know what to build and who leads it. Review evaluated professionals directly, with an eligible trial available.',
     ctaLabel: 'Explore Technology Professionals',
-    ctaTo: CLIENT_WORKSPACE_URL,
+    ctaTo: ROUTES.workspace,
   };
 }
 
