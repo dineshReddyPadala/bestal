@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { DIMENSIONS } from '@/constants/content';
 import { PROFESSIONALS } from '@/constants/workspace-data';
 import { SPEND } from '@/constants/workspace-data';
@@ -176,68 +177,82 @@ export function EngineDiagram() {
   );
 }
 
+const REQ_FLOW_STEPS = [
+  'Client Requirement',
+  'Relevant Community',
+  'Specialist Capability',
+  'Consulting / Managed Services / Talent Solutions',
+] as const;
+
 export function ReqFlowDiagram() {
-  const steps = [
-    'Client Requirement',
-    'Relevant Community',
-    'Specialist Capability',
-    'Consulting / Managed Services / Talent Solutions',
-  ];
-  const W = 900;
-  const n = steps.length;
-  const gap = 8;
-  const segW = (W - 20 - (n - 1) * gap) / n;
+  const [active, setActive] = useState(0);
+  const [paused, setPaused] = useState(false);
+
+  useEffect(() => {
+    if (paused) return undefined;
+    const timer = window.setInterval(() => {
+      setActive((index) => (index + 1) % REQ_FLOW_STEPS.length);
+    }, 3800);
+    return () => window.clearInterval(timer);
+  }, [paused]);
+
+  const progress = (active / (REQ_FLOW_STEPS.length - 1)) * 100;
 
   return (
-    <svg className="d" viewBox={`0 0 ${W} 110`} style={F}>
-      {steps.map((step, i) => {
-        const x = 10 + i * (segW + gap);
-        const words = step.split(' ');
-        const chunks: string[] = [];
-        let line = '';
-        words.forEach((word) => {
-          if ((`${line} ${word}`).trim().length > 16 && line) {
-            chunks.push(line);
-            line = word;
-          } else {
-            line = line ? `${line} ${word}` : word;
-          }
-        });
-        chunks.push(line);
-        const cy = 55 - (chunks.length - 1) * 13;
-        return (
-          <g key={step}>
-            <rect
-              x={x}
-              y="18"
-              width={segW}
-              height="72"
-              rx="9"
-              fill={i === 0 ? LGREY : i === n - 1 ? NAVY : '#fff'}
-              stroke={GREY}
-            />
-            {chunks.map((chunk, j) => (
-              <text
-                key={chunk}
-                x={x + segW / 2}
-                y={cy + j * 15}
-                textAnchor="middle"
-                fontSize="11.5"
-                fontWeight="700"
-                fill={i === n - 1 ? '#fff' : NAVY}
+    <div
+      className="req-flow-diagram"
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+    >
+      <span className="req-flow-diagram-rail" aria-hidden="true">
+        <span className="req-flow-diagram-rail-fill" style={{ width: `${progress}%` }} />
+      </span>
+      <ol className="req-flow-diagram-steps" aria-label="How a requirement flows">
+        {REQ_FLOW_STEPS.map((label, index) => {
+          const selected = index === active;
+          const done = index < active;
+          const last = index === REQ_FLOW_STEPS.length - 1;
+          return (
+            <li key={label} className={`req-flow-diagram-item${last ? ' is-end' : ''}`}>
+              <button
+                type="button"
+                className={`req-flow-diagram-step${selected ? ' is-on' : ''}${done ? ' is-done' : ''}${last ? ' is-end' : ''}`}
+                aria-current={selected ? 'step' : undefined}
+                onClick={() => setActive(index)}
+                onFocus={() => setPaused(true)}
+                onBlur={() => setPaused(false)}
               >
-                {chunk}
-              </text>
-            ))}
-            {i < n - 1 ? (
-              <text x={x + segW + gap / 2} y="58" textAnchor="middle" fontSize="14" fill={SLATE}>
-                →
-              </text>
-            ) : null}
-          </g>
-        );
-      })}
-    </svg>
+                <span className="req-flow-diagram-marker" aria-hidden="true">
+                  {done ? (
+                    <svg viewBox="0 0 16 16" width="12" height="12">
+                      <path
+                        d="M3.5 8.2 6.6 11.2 12.5 4.8"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.8"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  ) : (
+                    String(index + 1).padStart(2, '0')
+                  )}
+                </span>
+                {last ? (
+                  <span className="req-flow-diagram-end">
+                    {label.split(' / ').map((part) => (
+                      <span key={part}>{part}</span>
+                    ))}
+                  </span>
+                ) : (
+                  <span className="req-flow-diagram-title">{label}</span>
+                )}
+              </button>
+            </li>
+          );
+        })}
+      </ol>
+    </div>
   );
 }
 

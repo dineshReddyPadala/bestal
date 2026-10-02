@@ -16,6 +16,7 @@ export function getAppOrigin(): string {
 }
 
 export const CLIENT_WORKSPACE_URL = `${getAppOrigin()}/login/client`;
+export const CLIENT_SIGNUP_URL = `${getAppOrigin()}/login/client/signup`;
 export const PORTAL_LOGIN_URL = `${getAppOrigin()}/login/portal`;
 
 export function isExternalHref(href: string): boolean {
