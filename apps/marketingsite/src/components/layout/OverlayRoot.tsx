@@ -604,7 +604,7 @@ function EnquiryModal({ kind }: { kind: RequestKind }) {
 }
 
 export function OverlayRoot() {
-  const { drawer, modal, toasts, unlockOpen, closeOverlays, closeUnlock, requestUnlock, toast, pods, requests } = useApp();
+  const { drawer, modal, toasts, unlockOpen, closeOverlays, closeUnlock, requestUnlock, pods, requests } = useApp();
   const overlayOn = Boolean(drawer || modal);
 
   useEffect(() => {

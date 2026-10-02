@@ -115,16 +115,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [needText, setNeedText] = useState(
     'We need to migrate our legacy warehouse to Databricks in the next two quarters and want a team that owns it.',
   );
-  const [shortlist, setShortlist] = useState<number[]>([]);
-  const [compare, setCompare] = useState<number[]>([]);
+  const [shortlist] = useState<number[]>([]);
+  const [compare] = useState<number[]>([]);
   const [draftTeam, setDraftTeam] = useState<TeamDraftMember[]>([]);
   const [teamZone, setTeamZone] = useState('US Central');
   const [teamWeeks, setTeamWeeks] = useState(12);
   const [filters, setFilters] = useState<DiscoverFilters>(EMPTY_FILTERS);
-  const [pods, setPods] = useState<DeliveryPod[]>(INITIAL_PODS);
+  const [pods] = useState<DeliveryPod[]>(INITIAL_PODS);
   const [requests, setRequests] = useState<ConsultingRequest[]>(INITIAL_REQUESTS);
   const [projects, setProjects] = useState<ProjectOpportunity[]>(INITIAL_PROJECTS);
-  const [workforce, setWorkforce] = useState<WorkforceMember[]>(INITIAL_WORKFORCE);
+  const [workforce] = useState<WorkforceMember[]>(INITIAL_WORKFORCE);
   const [drawer, setDrawer] = useState<DrawerKind | null>(null);
   const [modal, setModal] = useState<ModalKind | null>(null);
   const [toasts, setToasts] = useState<ToastItem[]>([]);
