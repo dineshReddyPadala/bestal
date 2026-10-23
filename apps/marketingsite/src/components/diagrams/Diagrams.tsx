@@ -53,9 +53,9 @@ export function HeroDiagram() {
     <g key={label}>
       <rect x={x} y="40" width="160" height="118" rx="12" fill="#fff" stroke={GREY} filter="url(#heroSh)" />
       <rect x={x} y="40" width="160" height="4" rx="2" fill={accent} />
-      <circle cx={x + 30} cy="72" r="16" fill={accent === NAVY ? NAVY : '#EAF2FD'} />
+      <circle cx={x + 28} cy="66" r="16" fill={accent === NAVY ? NAVY : '#EAF2FD'} />
       <g
-        transform={`translate(${x + 30 - 9} ${72 - 9})`}
+        transform={`translate(${x + 19} ${57})`}
         stroke={accent === NAVY ? '#fff' : accent}
         strokeWidth="1.8"
         fill="none"
@@ -64,13 +64,13 @@ export function HeroDiagram() {
       >
         <IconGlyph name={icon} />
       </g>
-      <text x={x + 56} y="68" fontSize="10" fontWeight="700" fill={accent} letterSpacing=".5">
+      <text x={x + 14} y="100" fontSize="9" fontWeight="700" fill={accent} letterSpacing="0.4">
         {eyebrow}
       </text>
-      <text x={x + 56} y="83" fontSize="12.5" fontWeight="700" fill={NAVY}>
+      <text x={x + 14} y="117" fontSize="13" fontWeight="700" fill={NAVY}>
         {label}
       </text>
-      <text x={x + 18} y="112" fontSize="11" fill={SLATE}>
+      <text x={x + 14} y="138" fontSize="11" fill={SLATE}>
         {sub}
       </text>
     </g>
