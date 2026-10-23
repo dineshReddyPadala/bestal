@@ -1,21 +1,22 @@
 import { getEmailLogoDataUri, getEmailLogoSrc } from './brand-email.logo.js';
 
+/** Application palette: navy, violet, and lavender surfaces. */
 export const BRAND = {
-  teal: '#0b6e76',
-  tealDark: '#084f55',
-  orange: '#f2a93b',
-  ink: '#12100e',
-  inkMuted: '#535c68',
-  inkFaint: '#8a929c',
-  line: '#e6e2d7',
+  teal: '#5b4be8',
+  tealDark: '#151132',
+  orange: '#c9962e',
+  ink: '#1a1636',
+  inkMuted: '#5d5880',
+  inkFaint: '#5d5880',
+  line: '#e4e1f1',
   surface: '#ffffff',
-  surfaceMuted: '#eef3f7',
-  otpBox: '#eef3f7',
-  noticeBox: '#eef3f7',
-  pageBg: '#e8eaed',
+  surfaceMuted: '#f7f6fc',
+  otpBox: '#eeebfe',
+  noticeBox: '#eeebfe',
+  pageBg: '#f7f6fc',
   supportEmail: 'support@bestal.co',
   tagline: 'Remote Talent. Your Time Zone.',
-  companyLegalName: 'BesTal Technologies Pvt. Ltd.',
+  companyLegalName: 'BesTal Solutions',
   companyAddress: 'Hyderabad, Telangana, India',
 } as const;
 
@@ -55,7 +56,7 @@ function buildLogoBlock(): string {
         </td>
         <td style="vertical-align:top;">
           <div style="font-size:22px;line-height:1.1;font-weight:700;letter-spacing:-0.02em;">
-            <span style="color:${BRAND.teal};">Bes</span><span style="color:${BRAND.orange};">Tal</span>
+            <span style="color:${BRAND.tealDark};">Bes</span><span style="color:${BRAND.orange};">Tal</span>
           </div>
           <div style="margin-top:4px;font-size:12px;line-height:1.4;color:${BRAND.inkFaint};">
             ${BRAND.tagline}
